@@ -1,0 +1,13 @@
+{
+  "name": "marketing-service",
+  "version": "1.0.0",
+  "main": "src/servidor.js",
+  "scripts": {
+    "iniciar": "node src/servidor.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0"
+  }
+}

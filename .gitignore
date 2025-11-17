@@ -1,0 +1,54 @@
+# Dependencias
+node_modules/
+__pycache__/
+*.pyc
+
+# Variables de entorno
+.env
+.env.local
+.env.production
+.env.staging
+
+# Logs
+*.log
+logs/
+
+# Build
+dist/
+build/
+target/
+*.class
+
+# Sistema
+.DS_Store
+*.swp
+*.tmp
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Docker
+.dockerignore
+
+# Base de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificados y claves
+*.pem
+*.key
+*.crt
+*.p12
+
+# Archivos temporales
+*.bak
+*.backup
+*.cache

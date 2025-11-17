@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda de Ropa E-commerce - Flujo UX Sofisticado</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Uso de fuente Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- TEMA DE DISEÑO ÚNICO: Minimalista Puro/SOFISTICADO (Default) --- */
+        :root {
+            --bg-color: #f7f7f7; /* Fondo: Slightly whiter base */
+            --text-color: #1f2937; /* Texto: Deep Charcoal Text */
+            --primary-color: #1e293b; /* CTA y Elementos Primarios: Deep Blue/Black */
+            --secondary-color: #9ca3af; /* Texto Secundario: Softer gray */
+            --accent-color: #ffffff; /* Fondo de Tarjetas: Blanco puro */
+            --header-bg: #f3f4f6; /* Fondo del Header: Very subtle depth */
+            --primary-color-rgb: 30, 41, 59; 
+            --cod-color: #b91c1c; /* Rojo de alerta para COD */
+            --ai-color: #084d83; /* Azul Profundo/Índigo para Asesor Outfit */
+            --ai-color-rgb: 8, 77, 131;
+        }
+
+        /* Aplicación de variables a clases Tailwind */
+        .bg-page { background-color: var(--bg-color); }
+        .text-page { color: var(--text-color); }
+        .btn-primary { 
+            background-color: var(--primary-color); 
+            color: var(--accent-color); /* Color de texto claro en CTA oscuro/fuerte */
+            border: 2px solid var(--primary-color);
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-primary:hover { 
+            filter: brightness(1.1); 
+            /* Uso de la variable RGB para una sombra de color primario */
+            box-shadow: 0 6px 15px -3px rgba(var(--primary-color-rgb), 0.4); /* Sombra más suave y definida */
+        }
+        .text-secondary { color: var(--secondary-color); }
+        .bg-card { background-color: var(--accent-color); }
+        .border-primary { border-color: var(--primary-color); }
+        .text-primary-accent { color: var(--primary-color); }
+        .input-style { background-color: var(--bg-color); border-color: var(--secondary-color); color: var(--text-color); }
+
+        /* General styles */
+        .header-bg { background-color: var(--header-bg); }
+        .icon { fill: var(--text-color); }
+        .payment-icon { fill: var(--secondary-color); }
+        
+        /* Consistencia en Bordes y Sombra para Sofisticación */
+        .rounded-2xl { border-radius: 1rem; }
+        .shadow-xl { box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08); /* Sombra más sutil y amplia */ }
+
+        /* Botón Asesor Outfit */
+        .btn-ai {
+            background-color: var(--ai-color);
+            color: white;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .btn-ai:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 4px 10px -2px rgba(var(--ai-color-rgb), 0.5);
+        }
+        .ai-accent-text { color: var(--ai-color); }
+        .ai-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(var(--ai-color-rgb), 0.5);
+        }
+        .ai-border-active {
+            border-color: var(--ai-color);
+        }
+
+
+        /* Mensaje de confirmación */
+        .message-box {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: var(--accent-color); /* Texto del toast siempre contrastante */
+            border-radius: 1rem; /* Ajustado a rounded-2xl */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(20px);
+            z-index: 1000;
+        }
+        .message-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Estilo para el input de cantidad */
+        .quantity-input {
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+        .quantity-input::-webkit-outer-spin-button,
+        .quantity-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* ESTILOS ESPECÍFICOS DE BOTONES DE PAGO */
+        .payment-label-card {
+            border: 2px solid transparent;
+        }
+        .payment-label-card:hover {
+            border-color: var(--secondary-color);
+        }
+        .payment-label-card input:checked + div {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+        }
+
+        /* Estilo de alerta para COD */
+        .payment-label-cod .cod-text {
+            color: var(--cod-color);
+            font-weight: 700;
+        }
+        .payment-label-cod:hover {
+            border-color: var(--cod-color);
+        }
+        .payment-label-cod input:checked + div {
+            border-color: var(--cod-color);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        .payment-label-cod .payment-icon {
+            fill: var(--cod-color);
+        }
+        
+        /* ESTILO PARA OPCIÓN SELECCIONADA EN ASESOR OUTFIT */
+        .peer:checked + .ai-option-card {
+            background-color: var(--primary-color);
+            color: var(--accent-color); /* Texto blanco */
+            border-color: var(--primary-color) !important;
+            transform: scale(1.02);
+            box-shadow: 0 4px 10px -2px rgba(var(--primary-color-rgb), 0.4);
+        }
+
+        .peer:checked + .ai-option-card .font-semibold {
+            color: var(--accent-color); /* Asegura que el texto dentro también sea blanco */
+        }
+
+        .ai-option-card {
+            transition: all 0.2s ease-in-out;
+            border: 2px solid var(--secondary-color);
+        }
+    </style>
+</head>
+<body class="bg-page text-page transition-all duration-300">
+
+    <!-- CABECERA (Header) -->
+    <header class="header-bg shadow-md sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <button onclick="navigate('listing')" class="text-2xl font-bold text-page cursor-pointer">
+                Cloth<span class="text-primary-accent">Store</span>
+            </button>
+            
+            <div class="flex items-center space-x-4">
+                <!-- El Selector de Temas fue eliminado para fijar el diseño Minimalista Puro -->
+
+                <!-- Íconos de Usuario y Carrito (UX) -->
+                <button class="p-2 rounded-2xl hover:bg-secondary/20 transition duration-150 border-2 border-transparent hover:border-primary-accent" title="Perfil / Iniciar Sesión" onclick="openAuthModal('login')">
+                    <svg class="icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </button>
+                <button class="p-2 rounded-2xl hover:bg-secondary/20 transition duration-150 relative" title="Carrito de Compras" onclick="navigate('cart')">
+                    <!-- ICONO DE CARRITO CLÁSICO (TROLLEY) -->
+                    <svg class="icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.6 11.2a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                    </svg>
+                    <span id="cart-count" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CUERPO PRINCIPAL (Contenedor de Vistas SPA) -->
+    <main id="app-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 min-h-screen">
+        <!-- El contenido se renderiza aquí por JavaScript -->
+    </main>
+    
+    <!-- Mensaje de Confirmación (Reemplaza alert()) -->
+    <div id="message-box" class="message-box"></div>
+
+    <!-- Botón Flotante Asesor Outfit (Fijo en Esquina Inferior Derecha y Responsivo) -->
+    <button class="fixed bottom-6 right-6 z-50 btn-ai text-base font-bold px-5 py-3 rounded-2xl flex items-center space-x-2 shadow-2xl hover:shadow-xl transition-all duration-200"
+            onclick="openAIModal()" title="Asesor de Imagen con IA">
+        <!-- Icono de IA (Sparkle/Brillantez - Inspira Confianza) -->
+        <svg class="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L15 8L21 9L15 10L12 16L9 10L3 9L9 8L12 2z"/><path d="M22 17l-3 3M19 22l-3-3"/>
+        </svg>
+        <span class="hidden sm:inline">Asesor Outfit</span>
+    </button>
+
+    <!-- MODAL DE REALIDAD AUMENTADA (AR) - Simulación de Cámara -->
+    <div id="ar-modal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center transition-opacity duration-300">
+        <!-- Modal Content (Simulación de Feed) -->
+        <div class="relative w-11/12 max-w-2xl h-[80vh] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Close Button -->
+            <button onclick="openARSimulation()" class="absolute top-4 right-4 text-white hover:text-red-500 z-50 p-2 rounded-2xl bg-black/50 transition">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+
+            <!-- Simulated Camera Feed -->
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4">
+                    <p class="text-xl font-bold mb-4 text-center">PRUEBA VIRTUAL (AR) EN VIVO</p>
+                    <p class="text-sm text-gray-400 mb-6 text-center">Simulación: En un entorno real, tu cámara se activaría para proyectar el producto.</p>
+                    
+                    <!-- Placeholder de video/cámara -->
+                    <div class="w-full h-2/3 bg-gray-800 rounded-2xl flex items-center justify-center border-4 border-gray-600 border-dashed">
+                        <span class="text-gray-500">Esperando acceso a la cámara...</span>
+                    </div>
+                    
+                    <!-- Botón de retorno -->
+                    <button onclick="openARSimulation()" class="mt-8 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition duration-200">
+                        Salir de AR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Producto Overlay (Simulación AR) -->
+            <div id="ar-product-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <!-- La imagen del producto se carga aquí dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ASESOR OUTFIT (IA) - REDISEÑADO -->
+    <div id="ai-modal" class="fixed inset-0 bg-black/50 z-[9998] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div id="ai-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-lg p-8 relative transform scale-95 opacity-0 transition-all duration-300 max-h-[90vh] overflow-y-auto">
+            
+            <button onclick="openAIModal()" class="absolute top-4 right-4 text-page hover:text-red-500 transition">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+            
+            <div class="text-center mb-6">
+                <!-- Icono de Modal IA (Sparkle/Brillantez) -->
+                <svg class="w-10 h-10 mx-auto mb-2 ai-accent-text" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L15 8L21 9L15 10L12 16L9 10L3 9L9 8L12 2z"/><path d="M22 17l-3 3M19 22l-3-3"/>
+                </svg>
+                <h2 class="text-3xl font-extrabold text-primary-accent mb-2">Asesor Outfit</h2>
+                <p class="text-secondary text-sm">Creamos tu outfit ideal en 3 preguntas, ¡con estilo y sin etiquetas!</p>
+            </div>
+
+            <!-- Contenedor del Flujo de Preguntas/Resultados -->
+            <div id="ai-wizard-content">
+                <!-- Contenido se carga dinámicamente -->
+            </div>
+            
+            <div id="ai-controls" class="mt-6 flex justify-between">
+                <!-- Botón Anterior: Más sutil -->
+                <button id="ai-prev-btn" class="px-4 py-2 text-secondary hover:text-primary-accent rounded-2xl disabled:opacity-50 transition duration-150" onclick="prevStep()" disabled>
+                    &larr; Anterior
+                </button>
+                <!-- Botón Siguiente/Generar: Más fuerte, usando primary-color -->
+                <button id="ai-next-btn" class="btn-primary px-6 py-2 rounded-2xl disabled:opacity-50" onclick="nextStep()">
+                    Siguiente
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL DE AUTENTICACIÓN (LOGIN/REGISTRO) -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/50 z-[9998] hidden flex items-center justify-center p-4">
+        <!-- Default max-w-md, y JS añade/quita max-w-2xl -->
+        <div id="auth-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-md p-8 relative transform scale-100 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+            
+            <button onclick="openAuthModal()" class="absolute top-4 right-4 text-page hover:text-red-500 transition">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+
+            <!-- Título y Toggle -->
+            <div class="mb-6">
+                <h2 id="auth-title" class="text-3xl font-extrabold text-primary-accent mb-4 text-page">Iniciar Sesión</h2>
+                <p id="auth-toggle-text" class="text-secondary text-sm cursor-pointer hover:underline" onclick="toggleAuthMode()">
+                    ¿No tienes cuenta? <span class="font-bold text-primary-accent">Regístrate aquí.</span>
+                </p>
+            </div>
+
+            <!-- Contenedor de Formularios -->
+            <div id="login-form">
+                <form class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-page mb-1">Correo Electrónico</label>
+                        <input type="email" id="login-email" placeholder="tu.correo@ejemplo.com" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-page mb-1">Contraseña</label>
+                        <input type="password" id="login-password" placeholder="••••••••" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                    </div>
+                    <button type="submit" class="btn-primary w-full py-3 text-lg font-bold rounded-2xl mt-4" onclick="event.preventDefault(); handleLogin();">
+                        INICIAR SESIÓN
+                    </button>
+                    <p class="text-xs text-center text-secondary pt-2">¿Olvidaste tu contraseña? <a href="#" class="hover:text-primary-accent">Recuperar</a></p>
+                </form>
+            </div>
+            
+            <!-- FORMULARIO DE REGISTRO AMPLIADO Y OPTIMIZADO (DISEÑO PROPORCIONAL Y RESPONSIVE) -->
+            <div id="register-form" class="hidden">
+                <!-- NEW Success State Container -->
+                <div id="register-success-state" class="hidden text-center py-10 px-4 transition-all duration-500">
+                    <!-- Contenido de éxito dinámico (cargado por JS) -->
+                </div>
+
+                <div id="register-form-fields" class="space-y-4">
+                    <form class="space-y-4">
+                        <!-- Mensaje de Feedback de ERROR -->
+                        <div id="register-error-message" class="p-3 rounded-2xl text-sm font-semibold hidden transition-all duration-300 bg-red-100 text-red-700"></div>
+
+                        <!-- NOMBRES -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="register-first-name" class="block text-sm font-medium text-page mb-1">Primer Nombre <span class="text-red-500">*</span></label>
+                                <input type="text" id="register-first-name" placeholder="Juan" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                            <div>
+                                <label for="register-second-name" class="block text-sm font-medium text-page mb-1">Segundo Nombre (Opcional)</label>
+                                <input type="text" id="register-second-name" placeholder="Felipe" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                        </div>
+                        
+                        <!-- APELLIDOS -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="register-first-lastname" class="block text-sm font-medium text-page mb-1">Primer Apellido <span class="text-red-500">*</span></label>
+                                <input type="text" id="register-first-lastname" placeholder="Pérez" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                            <div>
+                                <label for="register-second-lastname" class="block text-sm font-medium text-page mb-1">Segundo Apellido</label>
+                                <input type="text" id="register-second-lastname" placeholder="Gómez" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                        </div>
+
+                        <!-- DOCUMENTO DE IDENTIDAD (Optimizado 1 col móvil, 1/3 - 2/3 en tablet+) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="sm:col-span-1">
+                                <label for="register-doc-type" class="block text-sm font-medium text-page mb-1">Tipo Doc. <span class="text-red-500">*</span></label>
+                                <select id="register-doc-type" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                                    <option>C.C.</option>
+                                    <option>C.E.</option>
+                                    <option>Pasaporte</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="register-doc-number" class="block text-sm font-medium text-page mb-1">Número Documento <span class="text-red-500">*</span></label>
+                                <input type="text" id="register-doc-number" placeholder="Ej: 1020304050" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                        </div>
+
+                        <!-- Correo Electrónico (Full Width para foco) -->
+                        <div>
+                            <label for="register-email" class="block text-sm font-medium text-page mb-1">Correo Electrónico <span class="text-red-500">*</span></label>
+                            <input type="email" id="register-email" placeholder="tu.correo@ejemplo.com" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                        </div>
+
+                        <!-- Teléfono y Fecha Nacimiento -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="register-phone" class="block text-sm font-medium text-page mb-1">Teléfono <span class="text-red-500">*</span></label>
+                                <input type="tel" id="register-phone" placeholder="300 000 0000" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                            <div>
+                                <label for="register-dob" class="block text-sm font-medium text-page mb-1">Fecha Nacimiento <span class="text-red-500">*</span></label>
+                                <input type="date" id="register-dob" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                        </div>
+
+                        <!-- Dirección Completa (Full Width para consistencia) -->
+                        <div>
+                            <label for="register-address" class="block text-sm font-medium text-page mb-1">Dirección Completa <span class="text-red-500">*</span></label>
+                                <input type="text" id="register-address" placeholder="Carrera 10 # 20-30, Barrio X" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                        </div>
+                        
+                        <!-- Ciudad y Contraseña -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="register-city" class="block text-sm font-medium text-page mb-1">Ciudad <span class="text-red-500">*</span></label>
+                                <input type="text" id="register-city" placeholder="Bogotá, Medellín, etc." class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style">
+                            </div>
+                            <div>
+                                <label for="register-password" class="block text-sm font-medium text-page mb-1">Contraseña <span class="text-red-500">*</span></label>
+                                <input type="password" id="register-password" placeholder="Mín. 8 caracteres" class="w-full p-3 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style" onkeyup="checkPasswordStrength(this.value)">
+                                <!-- Password Strength Feedback (NUEVO) -->
+                                <div id="password-feedback" class="mt-1 text-xs font-semibold h-4"></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary w-full py-3 text-lg font-bold rounded-2xl mt-4" onclick="event.preventDefault(); handleRegister();">
+                            REGISTRARME
+                        </button>
+                        <p class="text-xs text-center text-secondary pt-2">Al registrarte, aceptas nuestros términos y condiciones de tratamiento de datos (Ley 1581/2012).</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE INTERACTIVIDAD, TEMAS Y NAVEGACIÓN -->
+    <script>
+        // Mapeo de colores y textos para la simulación de fotografía (solo el tema Minimalista)
+        const themeImageMap = {
+            minimalist: { bg: 'e5e7eb', text: '000000', label: 'Minimalista+Puro' },
+        };
+        
+        // Mock de Productos con URLs de imágenes REALES y VARIANTE/STOCK
+        const products = [
+            { 
+                id: 1, 
+                name: "Chaqueta Cuero Urbano", 
+                price: 450000, 
+                oldPrice: 600000, 
+                description: "Chaqueta atemporal en cuero genuino y cierres de alta calidad. Edición limitada.", 
+                imageUrl: "https://images.pexels.com/photos/1036622/pexels-photo-1036622.jpeg?auto=compress&cs=tinysrgb&w=800",
+                variants: [
+                    { size: 'XS', stock: 15 },
+                    { size: 'S', stock: 10 },
+                    { size: 'M', stock: 3 }, // Bajo Stock
+                    { size: 'L', stock: 0 }, // Agotado
+                    { size: 'XL', stock: 8 },
+                ]
+            },
+            { 
+                id: 2, 
+                name: "Camisa Lino Azul", 
+                price: 120000, 
+                oldPrice: 150000, 
+                description: "Camisa ligera de lino, perfecta para climas cálidos. Corte moderno y ajuste cómodo.", 
+                imageUrl: "https://images.pexels.com/photos/1689731/pexels-photo-1689731.jpeg?auto=compress&cs=tinysrgb&w=800",
+                variants: [
+                    { size: 'S', stock: 50 },
+                    { size: 'M', stock: 1 }, // Muy bajo
+                    { size: 'L', stock: 25 },
+                ]
+            },
+            { 
+                id: 3, 
+                name: "Jeans Slim Fit Negro", 
+                price: 180000, 
+                oldPrice: 0, 
+                description: "Jeans de alta elasticidad con ajuste slim fit. Ideal para uso diario o casual elegante.", 
+                imageUrl: "https://images.pexels.com/photos/6770278/pexels-photo-6770278.jpeg?auto=compress&cs=tinysrgb&w=800",
+                variants: [
+                    { size: '28', stock: 5 },
+                    { size: '30', stock: 12 },
+                    { size: '32', stock: 3 },
+                    { size: '34', stock: 0 },
+                ]
+            },
+            { 
+                id: 4, 
+                name: "Vestido Midi Flores", 
+                price: 280000, 
+                oldPrice: 350000, 
+                description: "Vestido midi con estampado floral. Tela fluida y diseño romántico. Ideal para eventos.", 
+                imageUrl: "https://images.pexels.com/photos/1691888/pexels-photo-1691888.jpeg?auto=compress&cs=tinysrgb&w=800",
+                variants: [
+                    { size: 'S', stock: 10 },
+                    { size: 'M', stock: 10 },
+                ]
+            },
+            { 
+                id: 5, 
+                name: "Zapatos Oxford", 
+                price: 320000, 
+                oldPrice: 0, 
+                description: "Zapatos Oxford de cuero brillante, cómodos y elegantes. Hechos a mano en Colombia.", 
+                imageUrl: "https://images.pexels.com/photos/1035667/pexels-photo-1035667.jpeg?auto=compress&cs=tinysrgb&w=800",
+                variants: [
+                    { size: '38', stock: 12 },
+                    { size: '40', stock: 15 },
+                    { size: '42', stock: 1 },
+                ]
+            },
+            { 
+                id: 6, 
+                name: "Gafas de Sol Clásicas", 
+                price: 90000, 
+                oldPrice: 120000, 
+                description: "Diseño clásico atemporal con protección UV400. Montura ligera.", 
+                imageUrl: "https://images.pexels.com/photos/1000679/pexels-photo-1000679.jpeg?auto=compress&cs=tinysrgb&w=800",
+                variants: [
+                    { size: 'U', stock: 20 }, // Talla Única
+                ]
+            },
+        ];
+
+        let cart = [];
+        let currentTheme = 'minimalist'; // Tema fijado
+        let currentProduct = null;
+        let isARModalOpen = false;
+        let authMode = 'login'; // 'login' or 'register'
+        let registerTimeoutId = null; // ID para el temporizador de registro
+        
+        // --- ESTADO DEL ASESOR OUTFIT ---
+        let aiWizardStep = 1;
+        const aiWizardMaxSteps = 3;
+        let aiWizardAnswers = {
+            occasion: null,
+            vibe: null,
+            fit: null,
+        };
+        // --- FIN ESTADO AI ---
+
+
+        // --- FUNCIONES DE UTILIDAD ---
+
+        const updateCartCount = () => {
+            document.getElementById('cart-count').textContent = cart.length;
+        };
+
+        const showMessage = (text) => {
+            const messageBox = document.getElementById('message-box');
+            messageBox.textContent = text;
+            // Asegurar que el color de texto del mensaje tenga contraste con el fondo del tema
+            messageBox.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000);
+        };
+
+        // Función de aplicación de tema simplificada
+        const applyTheme = (theme) => {
+            // Se fuerza el tema Minimalista, ya no se requiere lógica de cambio
+            document.body.setAttribute('data-theme', 'minimalist');
+            
+            // Re-renderizar para aplicar cambios visuales (mantiene la reactividad del color)
+            const appContainer = document.getElementById('app-container');
+            if(appContainer.innerHTML) {
+                const currentPage = appContainer.dataset.page;
+                if(currentPage === 'detail' && currentProduct) {
+                    renderProductDetail(currentProduct.id);
+                } else if(currentPage === 'listing') {
+                    renderProductListing();
+                } else if(currentPage === 'cart') {
+                    renderCart();
+                }
+            }
+        };
+
+        window.navigate = (page, productId = null) => {
+            const container = document.getElementById('app-container');
+            container.dataset.page = page; // Guarda el estado actual
+            
+            if (page === 'detail' && productId) {
+                currentProduct = products.find(p => p.id === productId);
+                if (currentProduct) {
+                    renderProductDetail(productId);
+                } else {
+                    showMessage("Error: Producto no encontrado.");
+                    navigate('listing');
+                }
+            } else if (page === 'listing') {
+                currentProduct = null;
+                renderProductListing();
+            } else if (page === 'cart') {
+                currentProduct = null;
+                renderCart();
+            } else if (page === 'checkout') {
+                currentProduct = null;
+                renderCheckout();
+            }
+        };
+        
+        window.openARSimulation = (imageUrl, productName) => {
+            const modal = document.getElementById('ar-modal');
+            const overlay = document.getElementById('ar-product-overlay');
+            isARModalOpen = !isARModalOpen;
+
+            if (isARModalOpen) {
+                // Simulación de carga de imagen sobre el feed de cámara
+                overlay.innerHTML = `
+                    <div class="flex flex-col items-center p-8">
+                        <h3 class="text-2xl text-white font-bold mb-4 z-10">${productName}</h3>
+                        <img src="${imageUrl}" alt="Virtual Try-On: ${productName}" 
+                             class="w-full max-w-[200px] h-auto object-contain transform scale-[1.6] opacity-75 drop-shadow-lg"
+                             style="filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));"
+                             onerror="this.onerror=null;this.src='https://placehold.co/200x300/1e1e1e/f5f5f5?text=ERROR';">
+                        <p class="text-base text-white mt-10 z-10">¡Se ve genial! Proyección AR activa.</p>
+                    </div>
+                `;
+                showMessage("Iniciando Prueba Virtual (AR)...");
+            }
+
+            modal.classList.toggle('hidden', !isARModalOpen);
+            document.body.classList.toggle('overflow-hidden', isARModalOpen);
+        };
+
+        // --- FUNCIONES ASESOR OUTFIT ---
+
+        window.openAIModal = () => {
+            const modal = document.getElementById('ai-modal');
+            const content = document.getElementById('ai-content');
+            
+            const isOpening = modal.classList.contains('hidden');
+            
+            if (isOpening) {
+                modal.classList.remove('hidden');
+                // Trigger transition after adding it to the DOM
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                    // Reiniciar el wizard al abrir
+                    aiWizardStep = 1;
+                    aiWizardAnswers = { occasion: null, vibe: null, fit: null };
+                    renderAIWizard();
+                }, 10);
+            } else {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300); // Wait for transition
+            }
+            
+            document.body.classList.toggle('overflow-hidden', isOpening);
+        };
+
+
+        const renderAIWizard = (step = aiWizardStep) => {
+            const content = document.getElementById('ai-wizard-content');
+            const nextBtn = document.getElementById('ai-next-btn');
+            const prevBtn = document.getElementById('ai-prev-btn');
+            const controls = document.getElementById('ai-controls');
+
+            nextBtn.classList.remove('hidden');
+            controls.classList.remove('hidden');
+
+            // Actualizar botones de navegación
+            prevBtn.disabled = step === 1 || step === aiWizardMaxSteps + 1;
+            nextBtn.textContent = step === aiWizardMaxSteps ? 'Generar Outfit' : 'Siguiente';
+            
+            let html = '';
+
+            switch (step) {
+                case 1:
+                    html = renderQuestion(
+                        'occasion', 
+                        '¿Para qué ocasión buscas el outfit perfecto?', 
+                        ['Casual y Diario', 'Noche y Fiesta', 'Trabajo/Formal', 'Evento Especial', 'Deportivo/Outdoor']
+                    );
+                    break;
+                case 2:
+                    // Pregunta clave de INCLUSIVIDAD: Estilo y Vibe.
+                    html = renderQuestion(
+                        'vibe', 
+                        '¿Qué estilo o "vibe" quieres proyectar hoy? (Inclusivo)', 
+                        ['Minimalista y Neutro', 'Andrógino o Desestructurado', 'Femme Atrevido', 'Masculino Clásico', 'Lujo Discreto', 'Statement (Llamativo)']
+                    );
+                    break;
+                case 3:
+                    html = renderQuestion(
+                        'fit', 
+                        '¿Qué corte de prendas prefieres?', 
+                        ['Ajustado o Entallado', 'Oversize o Grande', 'Corte Estándar/Regular', 'Flotante o Ligeras']
+                    );
+                    break;
+                case 4:
+                    // Renderizar Resultado (Ocultar controles y simular llamada a IA)
+                    controls.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                    html = renderLoading();
+                    
+                    // Simular la llamada a la API de Gemini (Backend/AI)
+                    setTimeout(() => fetchAIRecommendation(), 2000); // 2 segundos de espera simulada
+                    break;
+
+                default:
+                    html = '<p class="text-center text-red-500">Error en el flujo del asesor.</p>';
+                    break;
+            }
+
+            content.innerHTML = html;
+            // Marcar la respuesta actual si existe
+            if (aiWizardAnswers[getStepKey(step)]) {
+                const selected = content.querySelector(`input[value="${aiWizardAnswers[getStepKey(step)]}"]`);
+                if (selected) selected.checked = true;
+                document.getElementById('ai-next-btn').disabled = false;
+            } else {
+                 document.getElementById('ai-next-btn').disabled = (step <= aiWizardMaxSteps);
+            }
+        };
+
+        const getStepKey = (step) => {
+            if (step === 1) return 'occasion';
+            if (step === 2) return 'vibe';
+            if (step === 3) return 'fit';
+            return null;
+        };
+
+        const renderQuestion = (key, question, options) => {
+            // Usamos una clase condicional 'is-selected' para aplicar el estilo de la opción marcada
+            const selectedValue = aiWizardAnswers[key];
+            
+            return `
+                <div class="mb-4">
+                    <p class="text-xl font-bold text-page mb-4 text-center">${question}</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        ${options.map(option => {
+                            const isSelected = option === selectedValue;
+                            return `
+                                <label class="block cursor-pointer">
+                                    <input type="radio" name="${key}" value="${option}" class="peer hidden" 
+                                        onclick="updateAIAnswer('${key}', '${option}')" ${isSelected ? 'checked' : ''}>
+                                    <div class="ai-option-card p-3 text-center rounded-2xl border-2 border-secondary/50 transition duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] bg-card text-page hover:bg-page/50">
+                                        <span class="font-semibold text-sm">${option}</span>
+                                    </div>
+                                </label>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
+        window.updateAIAnswer = (key, value) => {
+            aiWizardAnswers[key] = value;
+            // Rerenderiza para aplicar el estilo de 'seleccionado'
+            renderAIWizard(aiWizardStep);
+            
+            // Habilitar botón Siguiente una vez seleccionada la opción
+            document.getElementById('ai-next-btn').disabled = false;
+        };
+
+        window.nextStep = () => {
+            const key = getStepKey(aiWizardStep);
+            
+            // 1. Validar respuesta actual
+            if (aiWizardStep <= aiWizardMaxSteps && !aiWizardAnswers[key]) {
+                showMessage("Por favor, selecciona una opción para continuar.");
+                return;
+            }
+
+            // 2. Avanzar paso
+            if (aiWizardStep <= aiWizardMaxSteps) {
+                aiWizardStep++;
+            }
+
+            // 3. Renderizar y deshabilitar botón hasta la próxima selección
+            renderAIWizard();
+        };
+
+        window.prevStep = () => {
+            if (aiWizardStep > 1) {
+                aiWizardStep--;
+                renderAIWizard();
+            }
+        };
+
+        const renderLoading = () => {
+            return `
+                <div class="text-center py-10">
+                    <div class="w-16 h-16 border-4 border-t-4 rounded-full mx-auto mb-4 border-gray-200" 
+                         style="border-top-color: var(--ai-color); animation: spin 1s linear infinite;"></div>
+                    <p class="text-xl font-bold text-page mb-2">Analizando tus preferencias...</p>
+                    <p class="text-secondary">Generando una recomendación **inclusiva** basada en tu estilo.</p>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+        };
+        
+        // Simulación de LLM Call
+        const fetchAIRecommendation = async () => {
+            // **ESTO SIMULA LA LLAMADA A GEMINI (TEMA CRÍTICO DE ARQUITECTURA)**
+            const userQuery = `Recomiéndame un outfit de 3 piezas. Ocasión: ${aiWizardAnswers.occasion}, Vibe: ${aiWizardAnswers.vibe}, Corte: ${aiWizardAnswers.fit}. Usa productos de la tienda mock (ID 1, 3, 6).`;
+            
+            // Mock de la respuesta de la IA (debería ser un JSON estructurado del LLM)
+            const mockRecommendation = {
+                title: "Look Minimalista Andrógino para Noche",
+                description: `Basado en tu preferencia por un estilo **${aiWizardAnswers.vibe}** y un corte **${aiWizardAnswers.fit}** para una ocasión **${aiWizardAnswers.occasion}**, este conjunto te ofrece líneas limpias y una silueta definida, perfecta para proyectar confianza y elegancia.`,
+                items: [
+                    { id: 3, name: "Jeans Slim Fit Negro", imageUrl: products.find(p => p.id === 3).imageUrl }, // Pantalón
+                    { id: 2, name: "Camisa Lino Azul", imageUrl: products.find(p => p.id === 2).imageUrl }, // Parte superior
+                    { id: 6, name: "Gafas de Sol Clásicas", imageUrl: products.find(p => p.id === 6).imageUrl }, // Accesorio
+                ]
+            };
+            
+            renderAIResult(mockRecommendation);
+        };
+
+        const renderAIResult = (recommendation) => {
+            const content = document.getElementById('ai-wizard-content');
+            const controls = document.getElementById('ai-controls');
+            
+            // Mostrar control de navegación (solo para rehacer)
+            controls.classList.remove('hidden');
+            document.getElementById('ai-prev-btn').disabled = false;
+            document.getElementById('ai-next-btn').classList.add('hidden'); // Ocultar Siguiente/Generar
+
+            const itemsHtml = recommendation.items.map(item => `
+                <div class="flex items-center space-x-4 bg-page p-3 rounded-2xl border border-secondary/20 hover:shadow-lg transition duration-200">
+                    <img src="${item.imageUrl}" alt="${item.name}" class="w-12 h-16 object-cover rounded-xl shadow-md">
+                    <div>
+                        <p class="font-bold text-page">${item.name}</p>
+                        <p class="text-sm text-secondary">ID: PROD-${item.id}</p>
+                    </div>
+                </div>
+            `).join('');
+
+
+            content.innerHTML = `
+                <div class="text-center">
+                    <h3 class="text-3xl font-extrabold text-primary-accent mb-2">${recommendation.title}</h3>
+                    <p class="text-secondary mb-6">${recommendation.description}</p>
+                </div>
+                
+                <div class="space-y-4 mb-8">
+                    <p class="text-lg font-bold text-page border-b pb-2 border-secondary/20">Tu Look Exclusivo:</p>
+                    ${itemsHtml}
+                </div>
+
+                <button class="btn-ai w-full py-3 text-lg font-bold rounded-2xl shadow-xl" onclick="addAIOutfitToCart()">
+                    AÑADIR ESTE LOOK AL CARRITO
+                </button>
+                <button class="w-full py-2 text-secondary hover:text-red-500 mt-2 rounded-2xl" onclick="aiWizardStep=1; renderAIWizard()">
+                    Reiniciar Asesoría
+                </button>
+            `;
+            aiWizardStep = 4; // Marcar como paso final
+        };
+
+        window.addAIOutfitToCart = () => {
+             // Lógica de añadir los 3 mock items al carrito (simulado)
+            const item1 = products.find(p => p.id === 3);
+            const item2 = products.find(p => p.id === 2);
+            const item3 = products.find(p => p.id === 6);
+
+            if (item1) cart.push({ ...item1, size: 'M', quantity: 1, uniqueId: Date.now() + 1 });
+            if (item2) cart.push({ ...item2, size: 'L', quantity: 1, uniqueId: Date.now() + 2 });
+            if (item3) cart.push({ ...item3, size: 'U', quantity: 1, uniqueId: Date.now() + 3 });
+
+            updateCartCount();
+            openAIModal(); // Cerrar modal AI
+            navigate('cart'); // Ir al carrito
+            showMessage("¡Outfit completo añadido al carrito!");
+        };
+        
+        // --- FUNCIONES DE AUTENTICACIÓN ---
+
+        window.openAuthModal = (mode = null) => {
+            const modal = document.getElementById('auth-modal');
+            const isOpening = modal.classList.contains('hidden');
+
+            if (isOpening) {
+                if (mode) authMode = mode;
+                updateAuthModalContent();
+            }
+            
+            modal.classList.toggle('hidden', !isOpening);
+            document.body.classList.toggle('overflow-hidden', isOpening);
+        };
+
+        window.toggleAuthMode = () => {
+            authMode = authMode === 'login' ? 'register' : 'login';
+            updateAuthModalContent();
+        };
+
+        const updateAuthModalContent = () => {
+            const title = document.getElementById('auth-title');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const authContent = document.getElementById('auth-content'); // Obtener el contenedor
+            
+            // Obtener contenedores de registro
+            const registerFormFields = document.getElementById('register-form-fields');
+            const registerSuccessState = document.getElementById('register-success-state');
+            
+            // Limpiar mensaje y temporizador al cambiar de vista o abrir el modal
+            if (registerSuccessState) {
+                registerSuccessState.classList.add('hidden');
+                registerFormFields.classList.remove('hidden'); 
+                if (registerTimeoutId) {
+                    clearTimeout(registerTimeoutId);
+                    registerTimeoutId = null;
+                }
+            }
+
+            if (authMode === 'login') {
+                title.textContent = "Iniciar Sesión";
+                toggleText.innerHTML = '¿No tienes cuenta? <span class="font-bold text-primary-accent">Regístrate aquí.</span>';
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                
+                // Aplicar ancho pequeño para Login
+                authContent.classList.remove('max-w-2xl');
+                authContent.classList.add('max-w-md');
+                
+            } else {
+                title.textContent = "Crear Cuenta";
+                toggleText.innerHTML = '¿Ya tienes cuenta? <span class="font-bold text-primary-accent">Inicia sesión.</span>';
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+
+                // Aplicar ancho grande para Registro
+                authContent.classList.remove('max-w-md');
+                authContent.classList.add('max-w-2xl');
+            }
+        };
+
+        window.handleLogin = () => {
+            // Lógica de simulación de LOGIN (Backend Tema 1)
+            const email = document.getElementById('login-email').value;
+            if (email.includes('@')) {
+                showMessage(`Bienvenido(a) ${email.split('@')[0]}! (Sesión Simulada)`);
+                openAuthModal();
+            } else {
+                showMessage("Por favor, introduce un correo válido.");
+            }
+        };
+
+        // Función para verificar la fortaleza de la contraseña (NUEVA)
+        window.checkPasswordStrength = (password) => {
+            const feedbackElement = document.getElementById('password-feedback');
+            let score = 0;
+            let message = "";
+            let color = "text-red-500";
+
+            if (password.length === 0) {
+                feedbackElement.textContent = '';
+                feedbackElement.className = 'mt-1 text-xs font-semibold h-4';
+                return;
+            }
+
+            // Reglas de puntuación
+            if (password.length >= 8) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+
+            if (score <= 1) {
+                message = "Muy Débil";
+                color = "text-red-500";
+            } else if (score <= 3) {
+                message = "Media (Recomendado mejorar)";
+                color = "text-yellow-600";
+            } else if (score <= 4) {
+                message = "Fuerte";
+                color = "text-green-500";
+            } else if (score === 5) {
+                message = "Excelente";
+                color = "text-green-700";
+            }
+
+            feedbackElement.textContent = `Fortaleza: ${message}`;
+            feedbackElement.className = `mt-1 text-xs font-semibold h-4 ${color}`;
+        };
+        
+        // Función para cerrar la notificación de registro (NUEVA)
+        window.closeRegisterSuccessMessage = () => {
+            if (registerTimeoutId) {
+                clearTimeout(registerTimeoutId);
+                registerTimeoutId = null;
+            }
+            // Cambia a la vista de Login inmediatamente
+            openAuthModal('login'); 
+        };
+
+
+        window.handleRegister = () => {
+            const registerErrorMessage = document.getElementById('register-error-message');
+            const registerSuccessState = document.getElementById('register-success-state');
+            const registerFormFields = document.getElementById('register-form-fields');
+            
+            // 1. Resetear estados de mensajes
+            registerErrorMessage.classList.add('hidden');
+            registerSuccessState.classList.add('hidden');
+            registerFormFields.classList.remove('hidden'); // Asegura que el formulario esté visible inicialmente
+
+            // Lógica de simulación de REGISTRO (Backend Tema 1)
+            const firstName = document.getElementById('register-first-name').value;
+            const lastName1 = document.getElementById('register-first-lastname').value;
+            const email = document.getElementById('register-email').value;
+            const phone = document.getElementById('register-phone').value;
+            const dob = document.getElementById('register-dob').value;
+            const address = document.getElementById('register-address').value;
+            const city = document.getElementById('register-city').value;
+            const password = document.getElementById('register-password').value;
+            const docType = document.getElementById('register-doc-type').value;
+            const docNumber = document.getElementById('register-doc-number').value;
+            
+            // Validación de campos obligatorios (muy simple para el mock)
+            if (firstName && lastName1 && email.includes('@') && phone && dob && address && city && password.length >= 8 && docType && docNumber) {
+                
+                // --- REGISTRO EXITOSO: MOSTRAR ESTADO DE ÉXITO ELEGANTE (NEW) ---
+                
+                // Ocultar formulario de campos
+                registerFormFields.classList.add('hidden');
+
+                // Icono SVG de verificación (Color del tema)
+                const successIcon = `
+                    <!-- Ícono con margen inferior (mb-6) aumentado para separación visual -->
+                    <svg class="w-20 h-20 mx-auto mb-6" style="fill: var(--primary-color);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8.59l-9 9z"/>
+                    </svg>
+                `;
+
+                const successMsgHtml = `
+                    <div class="p-8 bg-card rounded-2xl shadow-xl border border-primary-accent/30">
+                        ${successIcon}
+                        <h3 class="text-3xl font-extrabold text-primary-accent mb-2">¡Cuenta Creada con Éxito!</h3>
+                        <!-- Párrafo con texto más grande y margen inferior (mb-8) aumentado -->
+                        <p class="text-xl text-page mb-8">
+                            Hemos enviado un **link de activación** a <span class="font-bold">${email}</span>.
+                            <br>
+                            Revisa tu correo (y carpeta de spam) para verificar tu identidad y poder iniciar sesión.
+                        </p>
+                        <!-- Botón más grande (py-4, text-xl) y con margen superior (mt-4) -->
+                        <button onclick="closeRegisterSuccessMessage()" class="btn-primary w-full py-4 text-xl font-bold rounded-2xl shadow-xl transition duration-150 mt-4">
+                            Aceptar y Continuar al Login
+                        </button>
+                    </div>
+                `;
+                
+                registerSuccessState.innerHTML = successMsgHtml;
+                registerSuccessState.classList.remove('hidden');
+
+                // Set el temporizador de 20 segundos
+                registerTimeoutId = setTimeout(() => {
+                    closeRegisterSuccessMessage(); // Cierra y va a login si el usuario no hizo clic
+                }, 20000); // 20 segundos
+                
+            } else {
+                // --- VALIDACIÓN FALLIDA: MOSTRAR MENSAJE DE ERROR ---
+                const errorMsg = "Por favor, completa todos los campos obligatorios (*) y verifica tu contraseña (mín. 8 caracteres).";
+                registerErrorMessage.textContent = errorMsg;
+                registerErrorMessage.classList.remove('hidden');
+            }
+        };
+
+        // --- VISTAS DEL FLUJO UX ---
+
+        // VISTA 1: LISTADO DE PRODUCTOS (INICIO)
+        const renderProductListing = () => {
+            const colors = themeImageMap[currentTheme];
+            
+            // Hero Banner que cambia con el tema
+            const heroHtml = `
+                <div class="mb-12 p-8 md:p-12 rounded-2xl shadow-xl transition-all duration-500" style="background-color: var(--primary-color);">
+                    <h1 class="text-4xl sm:text-5xl font-extrabold mb-3" style="color: var(--bg-color);">
+                        Colección ${colors.label.replace('+', ' ')}
+                    </h1>
+                    <p class="text-xl font-medium" style="color: var(--header-bg);">
+                        Descubre las tendencias con nuestro estilo exclusivo.
+                    </p>
+                    <!-- Imagen de Campaña Real (Fuente: Pexels) -->
+                    <img src="https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg?auto=compress&cs=tinysrgb&w=1200" 
+                         alt="Campaña de la colección" 
+                         class="mt-6 w-full h-auto rounded-2xl object-cover" 
+                         onerror="this.onerror=null;this.src='https://placehold.co/1200x400/c5c5c5/2d2d2d?text=Campaña';" />
+                </div>
+            `;
+
+
+            const productsHtml = products.map(p => `
+                <div class="bg-card rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer border border-secondary/10" onclick="navigate('detail', ${p.id})">
+                    <!-- Producto: Usa la URL real (p.imageUrl) -->
+                    <img src="${p.imageUrl}" 
+                         alt="${p.name}" class="w-full h-72 object-cover" 
+                         onerror="this.onerror=null;this.src='https://placehold.co/400x500/c5c5c5/2d2d2d?text=Error+Loading+Image';" />
+                    <div class="p-4">
+                        <h2 class="text-lg font-bold truncate text-page">${p.name}</h2>
+                        <p class="text-sm text-secondary mb-2">Ref: PROD-${p.id}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-black text-primary-accent">$${p.price.toLocaleString('es-CO')}</span>
+                            ${p.oldPrice > 0 ? `<span class="text-xs text-secondary line-through">$${p.oldPrice.toLocaleString('es-CO')}</span>` : ''}
+                        </div>
+                        <button class="btn-primary w-full mt-3 py-2 text-sm rounded-2xl" onclick="event.stopPropagation(); navigate('detail', ${p.id});">
+                            Ver Detalle
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('app-container').innerHTML = heroHtml + `
+                <div class="md:grid md:grid-cols-4 lg:grid-cols-5 gap-8">
+                    <!-- Columna de Filtros (Responsive) -->
+                    <div class="md:col-span-1 p-4 bg-card rounded-2xl shadow-xl mb-8 md:mb-0 border border-secondary/10">
+                        <h2 class="text-2xl font-bold mb-4 text-page">Filtros</h2>
+                        <div class="space-y-4 text-page">
+                            <!-- Filtro de Categoría -->
+                            <div>
+                                <h3 class="font-semibold mb-2">Categoría</h3>
+                                <select class="w-full bg-page border border-secondary/50 rounded-2xl p-2 text-sm focus:ring-primary-accent focus:border-primary-accent text-page">
+                                    <option>Todo</option>
+                                    <option>Chaquetas</option>
+                                    <option>Camisas</option>
+                                    <option>Pantalones</option>
+                                </select>
+                            </div>
+                            <!-- Filtro de Talla -->
+                            <div>
+                                <h3 class="font-semibold mb-2">Talla</h3>
+                                <div class="flex flex-wrap gap-2">
+                                    ${['S', 'M', 'L', 'XL'].map(size => `<span class="px-3 py-1 border border-secondary/50 rounded-2xl text-xs hover:bg-secondary/20 cursor-pointer">${size}</span>`).join('')}
+                                </div>
+                            </div>
+                            <!-- Filtro de Precio -->
+                            <div>
+                                <h3 class="font-semibold mb-2">Precio Máximo</h3>
+                                <input type="range" min="50000" max="500000" value="500000" class="w-full h-2 bg-secondary/30 rounded-2xl appearance-none cursor-pointer range-xl">
+                                <p class="text-sm text-right mt-1 text-secondary">$ 500.000 COP</p>
+                            </div>
+                            <button class="btn-primary w-full py-2 rounded-2xl mt-4">Aplicar Filtros</button>
+                        </div>
+                    </div>
+
+                    <!-- Columna de Resultados de Productos -->
+                    <div class="md:col-span-3 lg:col-span-4">
+                        <h1 class="text-3xl font-extrabold mb-6 text-page">Resultado de Búsqueda (6 artículos)</h1>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            ${productsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+        
+        // VISTA 2: DETALLE DE PRODUCTO (PDP)
+        const renderProductDetail = (productId) => {
+            const product = products.find(p => p.id === productId);
+            const colors = themeImageMap[currentTheme];
+            
+            // Generar los botones de talla con stock visual
+            const sizeButtonsHtml = product.variants.map((variant, index) => {
+                const isOutOfStock = variant.stock === 0;
+                const isLowStock = variant.stock > 0 && variant.stock <= 5;
+                const statusText = isOutOfStock ? 'Agotado' : (isLowStock ? 'Bajo Stock' : 'Disponible');
+                const disabledClass = isOutOfStock ? 'opacity-50 pointer-events-none' : 'hover:border-primary-accent/80';
+                const defaultChecked = index === 0 && !isOutOfStock; // Seleccionar el primer disponible
+
+                return `
+                    <label for="size-${variant.size}" class="cursor-pointer group relative ${disabledClass}" title="${statusText}">
+                        <input type="radio" id="size-${variant.size}" name="size" value="${variant.size}" class="hidden peer" ${defaultChecked ? 'checked' : ''} ${isOutOfStock ? 'disabled' : ''}>
+                        <div class="w-14 h-14 flex items-center justify-center border-2 rounded-2xl transition-all duration-200 peer-checked:bg-primary-accent peer-checked:text-white peer-checked:border-primary-accent border-secondary/50">
+                            <span class="text-base font-medium">${variant.size}</span>
+                        </div>
+                        ${isLowStock ? `<span class="absolute -top-2 -right-2 bg-yellow-500 text-xs font-bold text-white px-2 py-0.5 rounded-2xl shadow-md z-10">¡Pocas!</span>` : ''}
+                        ${isOutOfStock ? `<span class="absolute inset-0 flex items-center justify-center text-lg font-extrabold text-red-500/70 bg-gray-100/70 rounded-2xl">X</span>` : ''}
+                    </label>
+                `;
+            }).join('');
+
+
+            document.getElementById('app-container').innerHTML = `
+                <button onclick="navigate('listing')" class="text-secondary hover:text-primary-accent mb-6 flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    <span>Volver al Listado</span>
+                </button>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+                    <!-- Columna de Imágenes -->
+                    <div class="lg:col-span-1">
+                        <!-- Imagen Principal: Usa la URL real (product.imageUrl) -->
+                        <div class="bg-card rounded-2xl overflow-hidden shadow-xl border border-secondary/10">
+                            <img id="main-product-image" 
+                                 src="${product.imageUrl}" 
+                                 alt="${product.name}" 
+                                 class="w-full h-auto object-cover aspect-[4/5] transition duration-300 transform hover:scale-[1.02]"
+                                 onerror="this.onerror=null;this.src='https://placehold.co/1000x1200/c5c5c5/2d2d2d?text=Image+Not+Available';">
+                        </div>
+                        <!-- Miniaturas (Thumbnails) - Usan imágenes de detalle reales -->
+                        <div class="mt-4 flex space-x-3 overflow-x-auto pb-2">
+                            <!-- Miniatura 1: Vista Principal -->
+                            <img src="${product.imageUrl}" class="w-20 h-24 object-cover rounded-2xl cursor-pointer opacity-75 hover:opacity-100 border-2 border-primary-accent" alt="Vista Principal">
+                            <!-- Miniatura 2: Detalle (Real Image) -->
+                            <img src="https://images.pexels.com/photos/179909/pexels-photo-179909.jpeg?auto=compress&cs=tinysrgb&w=300" class="w-20 h-24 object-cover rounded-2xl cursor-pointer opacity-75 hover:opacity-100" alt="Detalle de la Tela">
+                            <!-- Miniatura 3: Modelo Puesto (Real Image) -->
+                            <img src="https://images.pexels.com/photos/1356272/pexels-photo-1356272.jpeg?auto=compress&cs=tinysrgb&w=300" class="w-20 h-24 object-cover rounded-2xl cursor-pointer opacity-75 hover:opacity-100" alt="Modelo Usando la Prenda">
+                        </div>
+                    </div>
+
+                    <!-- Columna de Detalles y Acciones -->
+                    <div class="lg:col-span-1">
+                        <h1 class="text-3xl sm:text-4xl font-extrabold mb-2 text-page">${product.name}</h1>
+                        <p class="text-sm font-medium text-secondary mb-4">SKU: PROD-${product.id} | Colección: ${colors.label.replace('+', ' ')}</p>
+                        
+                        <!-- Precio y Descuento -->
+                        <div class="flex items-baseline space-x-3 mb-6">
+                            <span class="text-4xl font-black text-primary-accent">$${product.price.toLocaleString('es-CO')} COP</span>
+                            ${product.oldPrice > 0 ? `<span class="text-xl text-secondary line-through">$${product.oldPrice.toLocaleString('es-CO')} COP</span>` : ''}
+                            ${product.oldPrice > 0 ? `<span class="text-base font-bold text-red-500 bg-red-100 dark:bg-red-900 px-3 py-1 rounded-2xl">- ${(100 - (product.price / product.oldPrice) * 100).toFixed(0)}%</span>` : ''}
+                        </div>
+
+                        <!-- Selección de Talla (UX: Tallas Claras + Stock) -->
+                        <div class="mb-6">
+                            <p class="text-lg font-semibold mb-3 text-page">Talla:</p>
+                            <div class="flex flex-wrap gap-3" id="size-selector">
+                                ${sizeButtonsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Cantidad y Botón de Añadir al Carrito (Mejora de UX) -->
+                        <div class="flex flex-col space-y-4 mb-6">
+                            <!-- Fila 1: Cantidad -->
+                            <div class="flex items-center space-x-2 border-2 border-secondary/50 rounded-2xl overflow-hidden bg-card h-14 max-w-[150px]">
+                                <button id="qty-minus" class="p-3 h-full border-r border-secondary/50 hover:bg-secondary/20 transition duration-150 text-page" aria-label="Disminuir cantidad">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                                </button>
+                                <input type="number" id="qty-input" value="1" min="1" max="10" class="quantity-input w-full text-center text-lg font-bold bg-transparent border-none focus:ring-0 text-page" aria-label="Cantidad">
+                                <button id="qty-plus" class="p-3 h-full border-l border-secondary/50 hover:bg-secondary/20 transition duration-150 text-page" aria-label="Aumentar cantidad">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+
+                            <!-- Fila 2: Botones de Acción (AR y Carrito) -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <button id="ar-try-on-btn" class="py-4 text-xl font-bold rounded-2xl shadow-xl transition-all duration-200 flex items-center justify-center space-x-3 bg-gray-700 hover:bg-gray-800 text-white" 
+                                    onclick="openARSimulation('${product.imageUrl}', '${product.name}')">
+                                    <!-- Icono de Realidad Aumentada (Cube/Camera) - NUEVO -->
+                                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2a3 3 0 0 0-3 3v.5A2.5 2.5 0 0 1 12 8a2.5 2.5 0 0 1 3-3.5V5a3 3 0 0 0-3-3zM3 15v3a2 2 0 0 0 2 2h3m10 0h3a2 2 0 0 0 2-2v-3m0-6v-3a2 2 0 0 0-2-2h-3M8 4V2"/>
+                                    </svg>
+                                    <span>PROBAR</span>
+                                </button>
+                                <button id="add-to-cart-btn-detail" class="btn-primary py-4 text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center space-x-3">
+                                    <!-- Icono de Añadir al Carrito -->
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm0-3l.1-1.4l1.5.8c.8.4 1.7.5 2.5.3l1.8-.4 1.8.8c.8.4 1.7.5 2.5.3l1.8-.4 1.5.8c.8.4 1.7.5 2.5.3l1.8-.4L22 4H7zM3 4h2l2 4.47l.1.53l.9 1.8l3 6.2h9.2l.5-.8c.7-.6 1.7-.8 2.7-.4l.7.2 2.7-3.6c.4-.5 1.1-.7 1.7-.4l2.4 2.8c.4.5 0 1.3-.8 1.4l-1.6.4c.1.1.1.2.2.3l1.5 1.3c.4.3.7.8.8 1.3l.1.5c.3 1.1-.3 2.3-1.4 2.6l-1.5.4c-1.5.1-2.6.9-3.1 2.1l-1.5 1.3c-1 .8-2.3 1.1-3.6.8L12 18c-.8.5-1.7.8-2.7.8zM20 18c-1.1 0-1.99.9-1.99 2S18.9 22 20 22s2-.9 2-2-.9-2-2-2z"/></svg>
+                                    <span>AÑADIR</span>
+                                </button>
+                            </div>
+                        </div>
+
+
+                        <!-- Información de Pagos y Envíos (UX: Claridad en el Checkout) -->
+                        <div class="bg-card p-6 rounded-2xl shadow-inner border border-secondary/10">
+                            <h3 class="text-lg font-bold mb-3 text-page">Pagos y Envíos:</h3>
+                            <div class="flex flex-wrap gap-4 items-center mb-4">
+                                <!-- Tarjeta de Crédito/Débito (NUEVO ICONO) -->
+                                <span class="flex items-center space-x-2 text-sm text-secondary">
+                                    <svg class="payment-icon w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="9" y2="15"/>
+                                    </svg>
+                                    <span class="text-page">Tarjeta (Visa/MC)</span>
+                                </span>
+                                <!-- PSE (Pagos Seguros en Línea) (NUEVO ICONO) -->
+                                <span class="flex items-center space-x-2 text-sm text-secondary">
+                                    <svg class="payment-icon w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 10a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2z"/>
+                                    </svg>
+                                    <span class="text-page">PSE (Transferencia)</span>
+                                </span>
+                                <!-- Efectivo Contra Entrega (COD) (NUEVO ICONO) -->
+                                <span class="flex items-center space-x-2 text-sm text-secondary">
+                                    <svg class="payment-icon w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                    </svg>
+                                    <span class="text-page font-bold text-red-500">Efectivo (COD)</span>
+                                </span>
+                            </div>
+                            <p class="text-xs text-secondary italic">Envío Gratis en pedidos superiores a $200.000 COP</p>
+                        </div>
+                        
+                        <!-- Descripción del Producto -->
+                        <div class="mt-8">
+                            <h3 class="text-xl font-bold mb-3 text-page">Detalles del Producto</h3>
+                            <p class="text-secondary leading-relaxed">${product.description}</p>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+            
+            // Lógica del Selector de Cantidad
+            const qtyInput = document.getElementById('qty-input');
+            const qtyMinus = document.getElementById('qty-minus');
+            const qtyPlus = document.getElementById('qty-plus');
+
+            const updateQuantity = (delta) => {
+                let current = parseInt(qtyInput.value) || 1;
+                let newQty = current + delta;
+                if (newQty < 1) newQty = 1;
+                if (newQty > 10) newQty = 10; // Max stock simulado
+                qtyInput.value = newQty;
+            };
+
+            qtyMinus.addEventListener('click', () => updateQuantity(-1));
+            qtyPlus.addEventListener('click', () => updateQuantity(1));
+
+
+            // Asignar evento al botón de Añadir al Carrito
+            document.getElementById('add-to-cart-btn-detail').addEventListener('click', () => {
+                const selectedSizeElement = document.querySelector('input[name="size"]:checked');
+                const quantity = parseInt(document.getElementById('qty-input').value) || 1;
+
+                if (!selectedSizeElement) {
+                    showMessage("Por favor, selecciona una talla antes de añadir al carrito.");
+                    return;
+                }
+                
+                const selectedSize = selectedSizeElement.value;
+                const variant = product.variants.find(v => v.size === selectedSize);
+
+                if (variant.stock < quantity) {
+                    showMessage(`Error: Solo quedan ${variant.stock} unidades de la talla ${selectedSize}.`);
+                    return;
+                }
+
+                cart.push({ ...product, size: selectedSize, quantity: quantity, uniqueId: Date.now() });
+                updateCartCount();
+                showMessage(`Añadido ${quantity}x "${product.name}" (Talla ${selectedSize}) al carrito.`);
+            });
+        };
+
+        // VISTA 3: CARRITO DE COMPRAS
+        const renderCart = () => {
+            if (cart.length === 0) {
+                document.getElementById('app-container').innerHTML = `
+                    <h1 class="text-4xl font-extrabold mb-6 text-page">Carrito de Compras</h1>
+                    <div class="text-center py-20 bg-card rounded-2xl shadow-xl border border-secondary/10">
+                        <!-- ICONO DE CARRITO CLÁSICO (TROLLEY) - ACTUALIZADO -->
+                        <svg class="w-16 h-16 mx-auto text-secondary mb-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.6 11.2a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                        </svg>
+                        <p class="text-xl font-semibold text-page mb-2">Tu carrito está vacío.</p>
+                        <p class="text-secondary mb-6">Añade algunas prendas elegantes para comenzar a comprar.</p>
+                        <button class="btn-primary px-6 py-2 rounded-2xl" onclick="navigate('listing')">Explorar Tienda</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const cartItemsHtml = cart.map(item => `
+                <div class="flex items-center justify-between py-4 border-b border-secondary/20 last:border-b-0">
+                    <div class="flex items-center space-x-4">
+                        <img src="${item.imageUrl}" alt="${item.name}" class="w-16 h-20 object-cover rounded-2xl" onerror="this.onerror=null;this.src='https://placehold.co/80x100/d9d9d9/555555?text=Img+Error';">
+                        <div>
+                            <p class="font-bold text-page">${item.name}</p>
+                            <p class="text-sm text-secondary">Talla: ${item.size} | Cantidad: ${item.quantity}</p>
+                            <p class="text-sm font-semibold text-primary-accent">$${item.price.toLocaleString('es-CO')}</p>
+                        </div>
+                    </div>
+                    <button class="text-red-500 hover:text-red-700 p-2 rounded-2xl transition" onclick="removeFromCart(${item.uniqueId})">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM18 4h-3.5l-1-1h-5l-1 1H6v2h12V4z"/></svg>
+                    </button>
+                </div>
+            `).join('');
+
+            document.getElementById('app-container').innerHTML = `
+                <h1 class="text-4xl font-extrabold mb-8 text-page">Carrito de Compras</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Columna de Ítems del Carrito -->
+                    <div class="lg:col-span-2 bg-card p-6 rounded-2xl shadow-xl border border-secondary/10">
+                        ${cartItemsHtml}
+                    </div>
+
+                    <!-- Columna de Resumen -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-card p-6 rounded-2xl shadow-xl border border-primary-accent/30 sticky top-24">
+                            <h2 class="text-2xl font-bold mb-4 text-page">Resumen del Pedido</h2>
+                            <div class="space-y-3 mb-6">
+                                <div class="flex justify-between text-secondary">
+                                    <span>Subtotal (${cart.length} ítems):</span>
+                                    <span>$${total.toLocaleString('es-CO')} COP</span>
+                                </div>
+                                <div class="flex justify-between text-secondary border-t pt-3 border-secondary/20">
+                                    <span>Envío:</span>
+                                    <span>$ 0 COP</span>
+                                </div>
+                                <div class="flex justify-between text-xl font-extrabold text-page border-t pt-3 border-primary-accent/50">
+                                    <span>Total Final:</span>
+                                    <span class="text-primary-accent">$${total.toLocaleString('es-CO')} COP</span>
+                                
+                            </div>
+                            <button class="btn-primary w-full py-3 text-lg font-bold rounded-2xl" onclick="navigate('checkout')">
+                                <span class="text-page">Proceder al Pago</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.removeFromCart = (uniqueId) => {
+            cart = cart.filter(item => item.uniqueId !== uniqueId);
+            updateCartCount();
+            renderCart();
+            showMessage("Artículo eliminado del carrito.");
+        };
+
+        // VISTA 4: CHECKOUT/PAGO
+        const renderCheckout = () => {
+            if (cart.length === 0) {
+                showMessage("El carrito está vacío, no se puede pagar.");
+                navigate('listing');
+                return;
+            }
+
+            document.getElementById('app-container').innerHTML = `
+                <h1 class="text-4xl font-extrabold mb-8 text-page">Finalizar Compra (Checkout)</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Columna 1: Información de Envío -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="bg-card p-6 rounded-2xl shadow-xl border border-secondary/10">
+                            <h2 class="text-2xl font-bold mb-4 text-primary-accent">1. Datos de Envío</h2>
+                            <form class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-sm font-medium mb-1">Nombre Completo</label><input type="text" placeholder="Juan Pérez" class="w-full p-2 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style"></div>
+                                <div><label class="block text-sm font-medium mb-1">Teléfono</label><input type="tel" placeholder="+57 300 000 0000" class="w-full p-2 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style"></div>
+                                <div class="col-span-2"><label class="block text-sm font-medium mb-1">Dirección Completa</label><input type="text" placeholder="Carrera 10 # 20-30, Apto 501" class="w-full p-2 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style"></div>
+                                <div><label class="block text-sm font-medium mb-1">Ciudad</label><input type="text" placeholder="Bogotá" class="w-full p-2 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style"></div>
+                                <div><label class="block text-sm font-medium mb-1">Departamento</label><input type="text" placeholder="Cundinamarca" class="w-full p-2 border rounded-2xl focus:ring-primary-accent focus:border-primary-accent input-style"></div>
+                            </form>
+                        </div>
+
+                        <!-- Columna 2: Método de Pago (DISEÑO MEJORADO) -->
+                        <div class="bg-card p-6 rounded-2xl shadow-xl border border-secondary/10">
+                            <h2 class="text-2xl font-bold mb-4 text-primary-accent">2. Método de Pago</h2>
+                            <div class="space-y-4" id="payment-methods">
+                                <!-- Opción 1: Tarjeta de Crédito / Débito (NUEVO ICONO) -->
+                                <label class="block cursor-pointer transition duration-200 payment-label-card">
+                                    <input type="radio" name="payment" value="card" class="peer hidden" checked>
+                                    <div class="p-4 rounded-2xl border-2 border-secondary/50 peer-checked:border-primary-accent transition duration-200 shadow-sm hover:shadow-md">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-bold text-page">Tarjeta de Crédito / Débito</span>
+                                            <!-- Icono de Tarjeta Detallado (Credit Card) - NUEVO -->
+                                            <svg class="w-6 h-6 payment-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="9" y2="15"/><circle cx="15" cy="15" r="1"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-xs text-secondary">Acepta Visa, Mastercard y American Express. Pago inmediato.</div>
+                                    </div>
+                                </label>
+                                
+                                <!-- Opción 2: PSE (Pagos Seguros en Línea) (NUEVO ICONO) -->
+                                <label class="block cursor-pointer transition duration-200 payment-label-card">
+                                    <input type="radio" name="payment" value="pse" class="peer hidden">
+                                    <div class="p-4 rounded-2xl border-2 border-secondary/50 peer-checked:border-primary-accent transition duration-200 shadow-sm hover:shadow-md">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-bold text-page">PSE (Pagos Seguros en Línea)</span>
+                                            <!-- Icono de Red Bancaria/Transferencia (Account Balance) - NUEVO -->
+                                            <svg class="w-6 h-6 payment-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 10a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-xs text-secondary">Transferencia directa desde tu banco. Requiere validación asíncrona.</div>
+                                    </div>
+                                </label>
+                                
+                                <!-- Opción 3: Efectivo Contra Entrega (COD) (NUEVO ICONO) -->
+                                <label class="block cursor-pointer transition duration-200 payment-label-cod">
+                                    <input type="radio" name="payment" value="cod" class="peer hidden">
+                                    <div class="p-4 rounded-2xl border-2 border-secondary/50 peer-checked:border-cod-color transition duration-200 shadow-sm hover:shadow-md">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-bold cod-text">Efectivo Contra Entrega (COD)</span>
+                                            <!-- Icono de Billetes (Money/Cash) - NUEVO -->
+                                            <svg class="w-6 h-6 payment-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-xs text-secondary">Paga al mensajero al recibir tu pedido. Puede aplicar costo adicional.</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna 3: Resumen Final y CTA -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-card p-6 rounded-2xl shadow-xl border border-primary-accent/30 sticky top-24">
+                            <h2 class="text-2xl font-bold mb-4 text-page">Total a Pagar</h2>
+                            <div class="space-y-3 mb-6">
+                                <div class="flex justify-between text-secondary">
+                                    <span>Subtotal:</span>
+                                    <span>$${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('es-CO')} COP</span>
+                                </div>
+                                <div class="flex justify-between text-secondary">
+                                    <span>Envío:</span>
+                                    <span>$ 0 COP</span>
+                                </div>
+                                <div class="flex justify-between text-xl font-extrabold text-page border-t pt-3 border-primary-accent/50">
+                                    <span>Total:</span>
+                                    <span class="text-primary-accent">$${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('es-CO')} COP</span>
+                                </div>
+                            </div>
+                            <button class="btn-primary w-full py-4 text-xl font-bold rounded-2xl" onclick="placeOrder()">
+                                <span class="text-page">CONFIRMAR Y PAGAR</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.placeOrder = () => {
+            const selectedPayment = document.querySelector('input[name="payment"]:checked').value;
+            // Simulamos la llamada a la API de Pagos (Backend Tema 3: Orquestación de Pagos)
+            if (selectedPayment === 'cod') {
+                showMessage("¡Pedido Confirmado! Pagarás en efectivo al recibir.");
+            } else if (selectedPayment === 'pse') {
+                showMessage("Redirigiendo a PSE para pago asíncrono...");
+            } else {
+                showMessage("Procesando pago con tarjeta...");
+            }
+            cart = []; // Vaciar carrito después de "pagar"
+            updateCartCount();
+            // Retraso para simular el proceso de pago/confirmación
+            setTimeout(() => {
+                navigate('listing');
+                showMessage("El flujo de compra ha finalizado. ¡Gracias!");
+            }, 3000);
+        };
+
+
+        // --- INICIALIZACIÓN ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar tema y contadores
+            applyTheme('minimalist'); // Aplicación forzada del único tema
+            updateCartCount();
+            
+            // Iniciar en la vista de Listado de Productos
+            navigate('listing');
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,161 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+:root {
+    --bg-color: #f7f7f7;
+    --text-color: #1f2937;
+    --primary-color: #1e293b;
+    --secondary-color: #9ca3af;
+    --accent-color: #ffffff;
+    --header-bg: #f3f4f6;
+    --primary-color-rgb: 30, 41, 59;
+    --cod-color: #b91c1c;
+    --ai-color: #084d83;
+    --ai-color-rgb: 8, 77, 131;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s, color 0.3s;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* Clases personalizadas del tema */
+.bg-page { background-color: var(--bg-color); }
+.text-page { color: var(--text-color); }
+.btn-primary { 
+    background-color: var(--primary-color); 
+    color: var(--accent-color);
+    border: 2px solid var(--primary-color);
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover { 
+    filter: brightness(1.1); 
+    box-shadow: 0 6px 15px -3px rgba(var(--primary-color-rgb), 0.4);
+}
+
+.text-secondary { color: var(--secondary-color); }
+.bg-card { background-color: var(--accent-color); }
+.border-primary { border-color: var(--primary-color); }
+.text-primary-accent { color: var(--primary-color); }
+.input-style { 
+    background-color: var(--bg-color); 
+    border-color: var(--secondary-color); 
+    color: var(--text-color); 
+}
+
+.header-bg { background-color: var(--header-bg); }
+.icon { fill: var(--text-color); }
+.payment-icon { fill: var(--secondary-color); }
+
+/* Botón Asesor Outfit */
+.btn-ai {
+    background-color: var(--ai-color);
+    color: white;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+.btn-ai:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 10px -2px rgba(var(--ai-color-rgb), 0.5);
+}
+.ai-accent-text { color: var(--ai-color); }
+
+/* Mensaje de confirmación */
+.message-box {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--primary-color);
+    color: var(--accent-color);
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateY(20px);
+    z-index: 1000;
+}
+.message-box.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Estilo para el input de cantidad */
+.quantity-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Estilos específicos de botones de pago */
+.payment-label-card {
+    border: 2px solid transparent;
+}
+.payment-label-card:hover {
+    border-color: var(--secondary-color);
+}
+.payment-label-card input:checked + div {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+}
+
+/* Estilo de alerta para COD */
+.payment-label-cod .cod-text {
+    color: var(--cod-color);
+    font-weight: 700;
+}
+.payment-label-cod:hover {
+    border-color: var(--cod-color);
+}
+.payment-label-cod input:checked + div {
+    border-color: var(--cod-color);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+.payment-label-cod .payment-icon {
+    fill: var(--cod-color);
+}
+
+/* Estilo para opción seleccionada en asesor outfit */
+.peer:checked + .ai-option-card {
+    background-color: var(--primary-color);
+    color: var(--accent-color);
+    border-color: var(--primary-color) !important;
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px -2px rgba(var(--primary-color-rgb), 0.4);
+}
+
+.peer:checked + .ai-option-card .font-semibold {
+    color: var(--accent-color);
+}
+
+.ai-option-card {
+    transition: all 0.2s ease-in-out;
+    border: 2px solid var(--secondary-color);
+}
+
+/* Contenedor principal */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+    .container {
+        padding: 0 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container {
+        padding: 0 2rem;
+    }
+}

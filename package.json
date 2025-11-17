@@ -1,0 +1,17 @@
+{
+  "name": "ecommerce-microservices",
+  "version": "1.0.0",
+  "description": "Sistema de e-commerce basado en microservicios",
+  "scripts": {
+    "iniciar": "docker-compose up -d",
+    "detener": "docker-compose down",
+    "logs": "docker-compose logs -f",
+    "test": "node test-servicios.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "backend-ecommerce",
+  "version": "1.0.0",
+  "description": "Backend para e-commerce con microservicios",
+  "scripts": {
+    "iniciar": "node api-gateway/src/servidor.js",
+    "desarrollo": "nodemon api-gateway/src/servidor.js",
+    "iniciar-auth": "cd services/auth-service && npm run iniciar",
+    "iniciar-catalog": "cd services/catalog-service && python src/main.py",
+    "iniciar-transaction": "cd services/transaction-service && npm run iniciar",
+    "iniciar-social": "cd services/social-service && npm run iniciar"
+  },
+  "dependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

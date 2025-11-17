@@ -1,0 +1,315 @@
+@startuml ECommerce_Microservices_UML
+
+' Configuración de estilos para una mejor visualización
+skinparam {
+    ArrowColor #2c5282
+    ArrowFontColor #2c5282
+    BorderColor #4A5568
+    BackgroundColor #F8F9FA
+    shadowing true
+    wrapWidth 250
+
+    Package {
+        BorderColor #2c5282
+        BackgroundColor #E0EFFF
+    }
+    Class {
+        BackgroundColor #FFFFFF
+        BorderColor #2c5282
+        HeaderBackgroundColor #D6E4FF
+    }
+}
+
+title Modelo de E-commerce: Arquitectura de Microservicios
+
+' ----------------------------------------------------
+' 1. Servicio de Usuarios y Autenticación (Auth)
+' ----------------------------------------------------
+package "1. Servicio de Usuarios y Autenticación (Auth)" {
+    class Usuario {
+        + id: String
+        + nombre: String
+        + email: String
+        + contraseña: String
+        + rol: String [cliente, invitado]
+        -- Regla de Negocio --
+        + totalComprasHistorico: Decimal (Para cálculo de crédito)
+    }
+
+    class Administrador {
+        + id: String
+        + nombre: String
+        + email: String
+    }
+
+    class SesionUsuario {
+        + id: String
+        + usuarioId: String
+        + token: String
+        + fechaExpiracion: DateTime
+    }
+
+    class LogAuditoria {
+        + id: String
+        + usuarioId: String
+        + accion: String
+        + entidadAfectada: String
+        + timestamp: DateTime
+    }
+}
+
+' ----------------------------------------------------
+' 2. Servicio de Catálogo (Catálogo)
+' ----------------------------------------------------
+package "2. Servicio de Catálogo (Catálogo)" {
+    class Producto {
+        + id: String
+        + nombre: String
+        + talla: String
+        + color: String
+        + precio: Decimal
+        + imagen: URL
+        + stock: ReferenciaExterna (a UbicacionStock)
+    }
+
+    class Categoria {
+        + id: String
+        + nombre: String
+        + parentCategoriaId: String
+    }
+
+    class TendenciaModa {
+        + id: String
+        + nombre: String [Clásica, Urbana]
+        + atributosAsociados: JSON (ej. {color: Neutro})
+    }
+}
+
+' ----------------------------------------------------
+' 3. Servicio de Transacciones (Transacciones)
+' ----------------------------------------------------
+package "3. Servicio de Transacciones (Transacciones)" {
+    class Carrito {
+        + id: String
+        + usuarioId: String
+        + productos: List<Producto>
+    }
+
+    class Pedido {
+        + id: String
+        + usuarioId: String
+        + estado: String [Creado, Enviado, Entregado]
+        + fechaEntrega: Date
+    }
+
+    class Pago {
+        + id: String
+        + tipoPago: String [Tarjeta, PSE, Credito_Interno, Credito_Externo]
+        + monto: Decimal
+        + estado: String [Aprobado, Pendiente]
+        + metodo: String
+        + referenciaTransaccion: String (ID externo)
+    }
+
+    class Devolucion {
+        + id: String
+        + razon: String
+        + estado: String [Solicitada, Aprobada]
+    }
+}
+
+' ----------------------------------------------------
+' 4. Servicio de Inventario y Logística (Logística)
+' ----------------------------------------------------
+package "4. Servicio de Inventario y Logística (Logística)" {
+    class Logistica {
+        + id: String
+        + ruta: String
+        + estadoEntrega: String
+    }
+
+    class Domicilio {
+        + id: String
+        + nombre: String
+        + zona: String
+        + disponibilidad: Boolean
+    }
+
+    class Almacen {
+        + id: String
+        + nombre: String
+        + zonaGeografica: String
+    }
+
+    class UbicacionStock {
+        + id: String
+        + cantidad: Integer
+        + stockMinimo: Integer
+    }
+}
+
+' ----------------------------------------------------
+' 5. Servicio de Contenido Social (Social)
+' ----------------------------------------------------
+package "5. Servicio de Contenido Social (Social)" {
+    class Reseña {
+        + id: String
+        + calificacion: Integer (1-5)
+        + comentario: Text
+        + utilidad: Integer (Votos de 'Me Gusta')
+    }
+
+    class Pregunta {
+        + id: String
+        + textoPregunta: Text
+    }
+
+    class Respuesta {
+        + id: String
+        + textoRespuesta: Text
+    }
+
+    class ListaDeseos {
+        + id: String
+        + fechaAgregado: DateTime
+    }
+}
+
+' ----------------------------------------------------
+' 6. Servicio de Fidelidad y Marketing (Marketing)
+' ----------------------------------------------------
+package "6. Servicio de Fidelidad y Marketing (Marketing)" {
+    class Fidelizacion {
+        + id: String
+        + puntos: Integer
+        + beneficios: String
+    }
+
+    class CampañaMarketing {
+        + id: String
+        + nombre: String
+        + segmento: String
+        + estado: String
+    }
+
+    class Cupon {
+        + id: String
+        + codigo: String
+        + tipoDescuento: String
+        + valor: Decimal
+        + usosMaximos: Integer
+    }
+}
+
+' ----------------------------------------------------
+' 7. Servicio de Imagen e IA (Inteligencia Artificial)
+' ----------------------------------------------------
+package "7. Servicio de Imagen e IA (Inteligencia Artificial)" {
+    class AsesorIA {
+        + id: String
+        + tipoAlgoritmo: String [RecomendacionEstilo]
+        + simulacionVisual: Boolean
+    }
+
+    class RecomendacionIA {
+        + id: String
+        + productos: List<String> (IDs)
+        + motivo: String
+    }
+
+    class EstiloUsuario {
+        + id: String
+        + estiloDominante: String
+        + puntuacionAfinidad: Decimal
+    }
+
+    class RegistroSesionAR {
+        + id: String
+        + duracionSesion: Time
+        + puntosInteres: JSON
+        + accionFinal: String [guardarOutfit, agregarCarrito]
+    }
+}
+
+' ----------------------------------------------------
+' 8. Servicio de Crédito y Financiamiento (Credit) (NUEVO)
+' ----------------------------------------------------
+package "8. Servicio de Crédito y Financiamiento (Credit)" {
+    class CreditoInterno {
+        + id: String
+        + limiteCredito: Decimal
+        + saldoUsado: Decimal
+        + estado: String [Aprobado, Bloqueado]
+    }
+
+    class SolicitudCreditoExterno {
+        + id: String
+        + proveedor: String [Sistecredito, Addi, etc]
+        + montoSolicitado: Decimal
+        + estado: String [Pendiente, Aprobado, Rechazado]
+    }
+}
+
+' ----------------------------------------------------
+' 9. Soporte Arquitectónico
+' ----------------------------------------------------
+package "9. Soporte Arquitectónico" {
+    class "API Gateway" as APIGateway
+    class "Base de Datos" as DB
+}
+
+
+' ====================================================
+' RELACIONES ENTRE ENTIDADES (Cardinalidades)
+' ====================================================
+
+' --- Auth y Transacciones ---
+Usuario "1" --> "0..*" Pedido : realiza
+Usuario "1" --> "1" Carrito : posee
+Usuario "1" --> "0..*" Devolucion : solicita
+
+' --- Auth y Crédito (NUEVO) ---
+Usuario "1" --> "0..1" CreditoInterno : califica_para
+Usuario "1" --> "0..*" SolicitudCreditoExterno : inicia
+
+' --- Transacciones y Logística ---
+Pedido "1" --> "1" Logistica : gestiona
+Pedido "1" --> "1" Domicilio : entrega_a
+Pedido "1" --> "1" Pago : se_procesa_con
+
+' --- Transacciones y Crédito ---
+Pago "1" --> "0..1" CreditoInterno : usa
+Pago "1" --> "0..1" SolicitudCreditoExterno : usa
+
+' --- Catálogo e Inventario ---
+Producto "1" --> "1..*" UbicacionStock : tiene
+
+' --- Inventario ---
+Almacen "1" --> "1..*" UbicacionStock : gestiona
+
+' --- Fidelización y Marketing ---
+Usuario "1" --> "1" Fidelizacion : tiene
+Usuario "1..*" <-- "1" CampañaMarketing : impacta
+AsesorIA "1" --> "0..*" CampañaMarketing : asesora
+
+' --- IA y Catálogo/Usuario ---
+Producto "1" --> "1..*" RecomendacionIA : sugiere
+Usuario "1" --> "0..*" RecomendacionIA : recibe
+Producto "1" --> "1" TendenciaModa : clasifica
+Usuario "1" --> "1" EstiloUsuario : perfila
+Usuario "1" --> "0..*" RegistroSesionAR : interactua_con
+Producto "1" --> "0..*" RegistroSesionAR : visualiza
+
+' --- Social y Catálogo/Usuario ---
+Producto "1" --> "0..*" Reseña : tiene
+Producto "1" --> "0..*" Pregunta : tiene
+Usuario "1" --> "0..*" Reseña : escribe
+Usuario "1" --> "0..*" Pregunta : pregunta
+Pregunta "1" --> "1..*" Respuesta : es_respondida
+
+' --- Soporte Arquitectónico ---
+Administrador "1" --> "1" APIGateway : accede_a
+DB "1" --> "0..*" APIGateway : accede_a
+APIGateway "1" --> "0..*" DB : accede_a
+
+@enduml
