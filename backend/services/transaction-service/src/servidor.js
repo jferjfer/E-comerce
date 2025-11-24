@@ -27,12 +27,22 @@ aplicacion.use((req, res, next) => {
 });
 
 // Rutas
-aplicacion.use('/api/carrito', rutasCarrito);
-aplicacion.use('/api/pedidos', rutasPedido);
-aplicacion.use('/api/pagos', rutasPago);
+// aplicacion.use('/api/carrito', rutasCarrito);
+// aplicacion.use('/api/pedidos', rutasPedido);
+// aplicacion.use('/api/pagos', rutasPago);
 
 // Base de datos simulada para carritos
 const carritosPorUsuario = new Map();
+
+// Middleware de autenticación simple
+const autenticacion = (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).json({ error: 'Token requerido' });
+  }
+  req.usuario = { id: '1', nombre: 'Usuario Demo', email: 'demo@estilomoda.com' };
+  next();
+};
 
 // Endpoints directos para desarrollo
 aplicacion.get('/api/carrito', autenticacion, (req, res) => {

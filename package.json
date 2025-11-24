@@ -11,7 +11,7 @@
     "frontend": "cd frontend && npm run dev",
     "test-armonizacion": "node test-armonizacion.js",
     "auth-service": "cd backend/services/auth-service && npm run desarrollo",
-    "catalog-service": "cd backend/services/catalog-service && python src/main-completo.py",
+    "catalog-service": "cd backend/services/catalog-service && python src/main.py",
     "transaction-service": "cd backend/services/transaction-service && node src/servidor.js",
     "social-service": "cd backend/services/social-service && node src/servidor-completo.js",
     "marketing-service": "cd backend/services/marketing-service && node src/servidor-completo.js",

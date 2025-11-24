@@ -17,7 +17,7 @@ const servicios = [
     nombre: '📦 Catalog Service',
     directorio: path.join(__dirname, 'backend', 'services', 'catalog-service'),
     comando: 'python',
-    argumentos: ['src/main-completo.py'],
+    argumentos: ['src/main.py'],
     puerto: 3002,
     delay: 2000
   },

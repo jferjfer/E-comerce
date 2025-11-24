@@ -13,11 +13,12 @@ const puerto = process.env.PUERTO || 3000;
 // Middleware de seguridad
 aplicacion.use(helmet());
 
+// Trust proxy para evitar errores de rate limiting
+aplicacion.set('trust proxy', 1);
+
 // CORS configurado específicamente
 const corsOptions = {
-  origin: process.env.ENTORNO === 'produccion' 
-    ? ['https://tudominio.com'] 
-    : ['http://localhost:3005', 'http://localhost:3000', 'http://localhost:5173'],
+  origin: ['http://localhost:3005', 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -460,7 +461,7 @@ io.on('connection', (socket) => {
   });
 });
 
-servidor.listen(puerto, () => {
+servidor.listen(puerto, '0.0.0.0', () => {
   console.log(`🚀 API Gateway ejecutándose en puerto ${puerto}`);
   console.log(`📋 Servicios configurados: ${Object.keys(servicios).length}`);
   console.log(`🔗 Documentación: http://localhost:${puerto}/estado-servicios`);
