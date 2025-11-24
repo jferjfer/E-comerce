@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
-import { mockProducts } from '@/data/products'
+import { useState, useMemo, useEffect } from 'react'
+import { productosSimulados } from '@/data/products'
 import { api } from '@/services/api'
 import ProductCard from '@/components/ProductCard'
 import Modal from '@/components/Modal'
 import ARModal from '@/components/ARModal'
 import Footer from '@/components/Footer'
-import { Product } from '@/types'
+import { Producto } from '@/types'
 import { formatPrice } from '@/utils/sanitize'
 import { useCartStore } from '@/store/useCartStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
@@ -17,58 +17,61 @@ export default function CatalogPage() {
     color: '',
     sortBy: 'relevance'
   })
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [showProductModal, setShowProductModal] = useState(false)
-  const [showAR, setShowAR] = useState(false)
-  const [products, setProducts] = useState(mockProducts)
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null)
+  const [mostrarModalProducto, setMostrarModalProducto] = useState(false)
+  const [mostrarAR, setMostrarAR] = useState(false)
+  const [productos, setProductos] = useState<Producto[]>([])
+  const [cargando, setCargando] = useState(true)
   
   // Cargar productos del backend
-  useState(() => {
-    api.getProducts().then(data => {
-      if (data.productos) {
-        const backendProducts = data.productos.map((p: any) => ({
-          id: p.id.toString(),
-          name: p.nombre,
-          price: p.precio * 100, // Convertir a centavos
-          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
-          description: p.descripcion || 'Producto de calidad',
-          category: p.categoria || 'General',
-          size: ['S', 'M', 'L'],
-          color: ['Negro', 'Blanco'],
-          rating: 5,
-          inStock: true,
-          compatibility: 95
-        }))
-        setProducts([...mockProducts, ...backendProducts])
+  useEffect(() => {
+    const cargarProductos = async () => {
+      setCargando(true)
+      try {
+        const data = await api.obtenerProductos()
+        if (data.productos && data.productos.length > 0) {
+          // Combinar productos del backend con los simulados
+          setProductos([...productosSimulados, ...data.productos])
+        } else {
+          // Usar solo productos simulados si no hay datos del backend
+          setProductos(productosSimulados)
+        }
+      } catch (error) {
+        console.error('Error al cargar productos:', error)
+        setProductos(productosSimulados)
+      } finally {
+        setCargando(false)
       }
-    }).catch(() => setProducts(mockProducts))
-  })
+    }
+    
+    cargarProductos()
+  }, [])
   
-  const handleViewDetails = (product: Product) => {
-    setSelectedProduct(product)
-    setShowProductModal(true)
+  const manejarVerDetalles = (producto: Producto) => {
+    setProductoSeleccionado(producto)
+    setMostrarModalProducto(true)
   }
   
-  const closeProductModal = () => {
-    setShowProductModal(false)
-    setSelectedProduct(null)
+  const cerrarModalProducto = () => {
+    setMostrarModalProducto(false)
+    setProductoSeleccionado(null)
   }
   
-  const filteredProducts = useMemo(() => {
-    let filtered = [...products]
+  const productosFiltrados = useMemo(() => {
+    let filtrados = [...productos]
     
     if (filters.category) {
-      filtered = filtered.filter(p => p.category === filters.category)
+      filtrados = filtrados.filter(p => p.categoria === filters.category)
     }
     
     if (filters.sortBy === 'price-low') {
-      filtered.sort((a, b) => a.price - b.price)
+      filtrados.sort((a, b) => a.precio - b.precio)
     } else if (filters.sortBy === 'price-high') {
-      filtered.sort((a, b) => b.price - a.price)
+      filtrados.sort((a, b) => b.precio - a.precio)
     }
     
-    return filtered
-  }, [filters])
+    return filtrados
+  }, [productos, filters])
   
   const clearFilters = () => {
     setFilters({ category: '', size: '', color: '', sortBy: 'relevance' })
@@ -114,18 +117,26 @@ export default function CatalogPage() {
         
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-primary">Catálogo</h1>
-          <span className="text-sm text-gray-600">{filteredProducts.length} productos encontrados</span>
+          <span className="text-sm text-gray-600">
+            {cargando ? 'Cargando...' : `${productosFiltrados.length} productos encontrados`}
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onViewDetails={handleViewDetails}
-            />
-          ))}
-        </div>
+        {cargando ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {productosFiltrados.map((producto) => (
+              <ProductCard
+                key={producto.id}
+                product={producto}
+                onViewDetails={manejarVerDetalles}
+              />
+            ))}
+          </div>
+        )}
       </div>
       
       {selectedProduct && (

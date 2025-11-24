@@ -70,9 +70,48 @@ const servicios = {
 aplicacion.get('/api/productos', (req, res) => {
   res.json({
     productos: [
-      { id: 1, nombre: 'Vestido Elegante', precio: 89.99, categoria: 'Ropa Mujer' },
-      { id: 2, nombre: 'Camisa Casual', precio: 45.50, categoria: 'Ropa Hombre' },
-      { id: 3, nombre: 'Zapatos Deportivos', precio: 120.00, categoria: 'Calzado' }
+      { 
+        id: 1, 
+        nombre: 'Vestido Elegante', 
+        precio: 89.99, 
+        categoria: 'Vestidos',
+        descripcion: 'Vestido elegante perfecto para ocasiones especiales',
+        imagen: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
+        tallas: ['S', 'M', 'L', 'XL'],
+        colores: ['Negro', 'Azul marino', 'Rojo'],
+        calificacion: 5,
+        en_stock: true,
+        es_eco: true,
+        compatibilidad: 98
+      },
+      { 
+        id: 2, 
+        nombre: 'Camisa Casual', 
+        precio: 45.50, 
+        categoria: 'Camisas',
+        descripcion: 'Camisa cómoda para el día a día',
+        imagen: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop',
+        tallas: ['S', 'M', 'L', 'XL'],
+        colores: ['Blanco', 'Azul', 'Gris'],
+        calificacion: 4,
+        en_stock: true,
+        es_eco: false,
+        compatibilidad: 95
+      },
+      { 
+        id: 3, 
+        nombre: 'Zapatos Deportivos', 
+        precio: 120.00, 
+        categoria: 'Calzado',
+        descripcion: 'Zapatos deportivos de alta calidad',
+        imagen: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop',
+        tallas: ['38', '39', '40', '41', '42'],
+        colores: ['Negro', 'Blanco', 'Azul'],
+        calificacion: 5,
+        en_stock: true,
+        es_eco: false,
+        compatibilidad: 92
+      }
     ],
     total: 3
   });
@@ -81,9 +120,11 @@ aplicacion.get('/api/productos', (req, res) => {
 aplicacion.get('/api/categorias', (req, res) => {
   res.json({
     categorias: [
-      { id: 1, nombre: 'Ropa Mujer', descripcion: 'Ropa y accesorios para mujer' },
-      { id: 2, nombre: 'Ropa Hombre', descripcion: 'Ropa y accesorios para hombre' },
-      { id: 3, nombre: 'Calzado', descripcion: 'Zapatos y calzado en general' }
+      { id: 1, nombre: 'Vestidos', descripcion: 'Vestidos elegantes y casuales' },
+      { id: 2, nombre: 'Camisas', descripcion: 'Camisas y blusas' },
+      { id: 3, nombre: 'Pantalones', descripcion: 'Pantalones y jeans' },
+      { id: 4, nombre: 'Blazers', descripcion: 'Blazers y chaquetas' },
+      { id: 5, nombre: 'Calzado', descripcion: 'Zapatos y calzado en general' }
     ]
   });
 });
@@ -95,10 +136,71 @@ aplicacion.post('/api/auth/login', async (req, res) => {
     console.log('✅ Login exitoso desde auth-service');
     res.json(respuesta.data);
   } catch (error) {
-    console.log('❌ Login fallido desde auth-service:', error.response?.data?.error || error.message);
-    res.status(401).json({ error: 'Credenciales inválidas' });
+    console.log('❌ Login fallido desde auth-service, usando fallback');
+    
+    // Fallback para desarrollo
+    const { email, password } = req.body
+    if (email === 'demo@estilomoda.com' && password === 'admin123') {
+      res.json({
+        token: 'demo_token_' + Date.now(),
+        usuario: { 
+          id: 1, 
+          email, 
+          nombre: 'Usuario Demo', 
+          rol: 'cliente' 
+        }
+      })
+    } else {
+      res.status(401).json({ error: 'Credenciales inválidas' })
+    }
   }
 });
+
+// Rutas de carrito
+aplicacion.get('/api/carrito', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Token requerido' })
+  }
+  
+  // Simulación de carrito por usuario
+  const carritoSimulado = {
+    datos: {
+      productos: [
+        {
+          id: '1',
+          nombre: 'Vestido Elegante',
+          precio: 8999,
+          cantidad: 1,
+          imagen: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop'
+        }
+      ],
+      total: 8999
+    }
+  }
+  
+  res.json(carritoSimulado)
+})
+
+aplicacion.post('/api/carrito', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  const { id_producto, cantidad } = req.body
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Token requerido' })
+  }
+  
+  console.log(`🛒 Agregando al carrito: Producto ${id_producto}, Cantidad: ${cantidad}`)
+  
+  res.json({
+    mensaje: 'Producto agregado al carrito exitosamente',
+    datos: {
+      id_producto,
+      cantidad
+    }
+  })
+})
 
 aplicacion.post('/api/auth/register', (req, res) => {
   const { 

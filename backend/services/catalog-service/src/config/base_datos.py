@@ -11,15 +11,23 @@ class BaseDatos:
 bd = BaseDatos()
 
 async def conectar_bd():
-    """Conectar a MongoDB"""
-    host = os.getenv("MONGO_HOST", "localhost")
-    puerto = int(os.getenv("MONGO_PUERTO", 27017))
-    nombre_bd = os.getenv("MONGO_BD", "bd_catalogo")
+    """Conectar a MongoDB Atlas o local"""
+    # Usar MongoDB Atlas si está disponible
+    mongodb_uri = os.getenv("MONGODB_URI")
     
-    bd.cliente = AsyncIOMotorClient(f"mongodb://{host}:{puerto}")
-    bd.bd = bd.cliente[nombre_bd]
-    
-    print(f"✅ Conectado a MongoDB: {nombre_bd}")
+    if mongodb_uri:
+        bd.cliente = AsyncIOMotorClient(mongodb_uri)
+        bd.bd = bd.cliente["ecomerce"]  # Base de datos en Atlas
+        print("✅ Conectado a MongoDB Atlas")
+    else:
+        # Fallback a MongoDB local
+        host = os.getenv("MONGO_HOST", "localhost")
+        puerto = int(os.getenv("MONGO_PUERTO", 27017))
+        nombre_bd = os.getenv("MONGO_BD", "bd_catalogo")
+        
+        bd.cliente = AsyncIOMotorClient(f"mongodb://{host}:{puerto}")
+        bd.bd = bd.cliente[nombre_bd]
+        print(f"✅ Conectado a MongoDB local: {nombre_bd}")
 
 async def cerrar_bd():
     """Cerrar conexión a MongoDB"""

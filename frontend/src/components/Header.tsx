@@ -1,7 +1,7 @@
 import { useCartStore } from '@/store/useCartStore'
 import { useUserStore } from '@/store/useUserStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { ROLE_DEFINITIONS } from '@/config/roles'
+
 import { Link } from 'react-router-dom'
 import TypewriterText from '@/components/TypewriterText'
 
@@ -10,11 +10,11 @@ interface HeaderProps {
 }
 
 export default function Header({ onCartClick }: HeaderProps) {
-  const totalItems = useCartStore(state => state.getTotalItems())
+  const totalItems = useCartStore(state => state.obtenerTotalItems())
   const favorites = useUserStore(state => state.favorites)
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { usuario: user, estaAutenticado: isAuthenticated, cerrarSesion: logout } = useAuthStore()
   
-  const userRole = user ? ROLE_DEFINITIONS[user.roles[0]] : null
+  const userRole = user ? { name: user.rol, icon: 'fas fa-user', color: 'bg-primary' } : null
   
   return (
     <header className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200 sticky top-0 z-50">
@@ -63,7 +63,7 @@ export default function Header({ onCartClick }: HeaderProps) {
                   </div>
                   <div className="absolute right-0 top-14 bg-white rounded-lg shadow-xl p-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto z-50 min-w-[200px]">
                     <div className="mb-3">
-                      <p className="font-semibold text-gray-900">{user?.name}</p>
+                      <p className="font-semibold text-gray-900">{user?.nombre}</p>
                       <p className="text-sm text-gray-600">{userRole?.name}</p>
                     </div>
                     <div className="border-t pt-3 space-y-2">

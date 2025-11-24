@@ -19,7 +19,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 function App() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
-  const { isAuthenticated } = useAuthStore()
+  const { estaAutenticado } = useAuthStore()
 
   const handleCheckout = () => {
     setShowCart(false)
@@ -35,7 +35,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />
+            estaAutenticado ? <Navigate to="/dashboard" /> : <LoginPage />
           } />
           <Route path="/recuperar-contrasena" element={<RecoverPasswordPage />} />
           <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
@@ -45,7 +45,7 @@ function App() {
             </RoleGuard>
           } />
           <Route path="/profile" element={
-            isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />
+            estaAutenticado ? <ProfilePage /> : <Navigate to="/login" />
           } />
           <Route path="/admin/products" element={
             <RoleGuard requiredPermissions={['products:read']}>

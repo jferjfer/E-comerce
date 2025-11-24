@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCartStore } from '@/store/useCartStore'
-import { paymentMethods } from '@/data/products'
+import { metodosPago } from '@/data/products'
 import { formatPrice } from '@/utils/sanitize'
 import Modal from './Modal'
 
@@ -10,12 +10,12 @@ interface CheckoutModalProps {
 }
 
 export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
-  const { items, getTotalPrice, clearCart } = useCartStore()
+  const { items, obtenerPrecioTotal, vaciarCarrito } = useCartStore()
   const [selectedMethod, setSelectedMethod] = useState('')
   const [showPaymentDetails, setShowPaymentDetails] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const total = getTotalPrice()
+  const total = obtenerPrecioTotal()
 
   const handleMethodSelect = (methodId: string) => {
     setSelectedMethod(methodId)
@@ -25,7 +25,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const processPayment = () => {
     setShowPaymentDetails(false)
     setShowSuccess(true)
-    clearCart()
+    vaciarCarrito()
     
     setTimeout(() => {
       setShowSuccess(false)
@@ -54,7 +54,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   }
 
   if (showPaymentDetails) {
-    const method = paymentMethods.find(m => m.id === selectedMethod)
+    const method = metodosPago.find(m => m.id === selectedMethod)
     
     return (
       <Modal isOpen={isOpen} onClose={() => setShowPaymentDetails(false)} title="Finalizar Compra" size="md">
@@ -68,9 +68,9 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">{method?.name}</h4>
+            <h4 className="text-lg font-semibold">{method?.nombre}</h4>
             
-            {selectedMethod === 'cash' && (
+            {selectedMethod === 'contado' && (
               <div className="space-y-3">
                 <button className="w-full p-3 border rounded-lg hover:bg-gray-50 text-left">
                   <i className="fas fa-credit-card mr-2"></i> Tarjeta de Crédito/Débito
@@ -84,7 +84,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               </div>
             )}
 
-            {selectedMethod === 'internal' && (
+            {selectedMethod === 'interno' && (
               <div className="space-y-3">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-green-800"><i className="fas fa-check mr-2"></i>¡Aprobación inmediata!</p>
@@ -143,17 +143,17 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         <div className="space-y-4">
           <h4 className="text-lg font-semibold">Selecciona tu método de pago:</h4>
           
-          {paymentMethods.map((method) => (
+          {metodosPago.map((method) => (
             <div 
               key={method.id}
               onClick={() => handleMethodSelect(method.id)}
               className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <i className={`${method.icon} text-primary text-xl`}></i>
+                <i className={`${method.icono} text-primary text-xl`}></i>
                 <div>
-                  <h5 className="font-semibold">{method.name}</h5>
-                  <p className="text-sm text-gray-600">{method.description}</p>
+                  <h5 className="font-semibold">{method.nombre}</h5>
+                  <p className="text-sm text-gray-600">{method.descripcion}</p>
                 </div>
               </div>
             </div>

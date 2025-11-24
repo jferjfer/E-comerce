@@ -9,13 +9,13 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProps) {
-  const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore()
+  const { items, eliminarItem, actualizarCantidad, obtenerPrecioTotal, vaciarCarrito } = useCartStore()
   
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      removeItem(productId)
+      eliminarItem(productId)
     } else {
-      updateQuantity(productId, newQuantity)
+      actualizarCantidad(productId, newQuantity)
     }
   }
   
@@ -28,23 +28,23 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
           items.map((item) => (
             <div key={item.id} className="flex items-center space-x-4 p-4 border-b">
               <img 
-                src={item.image} 
+                src={item.imagen || item.image} 
                 className="w-16 h-16 object-cover rounded" 
-                alt={item.name}
+                alt={item.nombre || item.name}
               />
               <div className="flex-1">
-                <h4 className="font-medium">{item.name}</h4>
-                <p className="text-primary font-bold">{formatPrice(item.price)}</p>
+                <h4 className="font-medium">{item.nombre || item.name}</h4>
+                <p className="text-primary font-bold">{formatPrice(item.precio || item.price)}</p>
                 <div className="flex items-center space-x-2 mt-2">
                   <button
-                    onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                    onClick={() => handleQuantityChange(item.id, (item.cantidad || item.quantity) - 1)}
                     className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
                   >
                     <i className="fas fa-minus text-xs"></i>
                   </button>
-                  <span className="w-8 text-center">{item.quantity}</span>
+                  <span className="w-8 text-center">{item.cantidad || item.quantity}</span>
                   <button
-                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                    onClick={() => handleQuantityChange(item.id, (item.cantidad || item.quantity) + 1)}
                     className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
                   >
                     <i className="fas fa-plus text-xs"></i>
@@ -52,7 +52,7 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
                 </div>
               </div>
               <button 
-                onClick={() => removeItem(item.id)}
+                onClick={() => eliminarItem(item.id)}
                 className="text-red-500 hover:text-red-700 p-2"
               >
                 <i className="fas fa-trash"></i>
@@ -65,9 +65,9 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
       {items.length > 0 && (
         <div className="border-t pt-4 mt-4">
           <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-bold">Total: {formatPrice(getTotalPrice())}</span>
+            <span className="text-lg font-bold">Total: {formatPrice(obtenerPrecioTotal())}</span>
             <button
-              onClick={clearCart}
+              onClick={vaciarCarrito}
               className="text-sm text-gray-500 hover:text-gray-700"
             >
               Limpiar carrito

@@ -1,114 +1,71 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { User, UserRole, Permission } from '@/types/auth'
-import { hasPermission, hasAnyRole } from '@/config/roles'
+import { Usuario } from '@/types'
+import { api } from '@/services/api'
+import { useTiendaCarrito } from './useCartStore'
 
-interface AuthStore {
-  user: User | null
-  isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<boolean>
-  logout: () => void
-  hasPermission: (permission: Permission) => boolean
-  hasRole: (roles: UserRole | UserRole[]) => boolean
-  canAccess: (requiredRoles?: UserRole[], requiredPermissions?: Permission[]) => boolean
+interface TiendaAuth {
+  usuario: Usuario | null
+  token: string | null
+  estaAutenticado: boolean
+  iniciarSesion: (email: string, contrasena: string) => Promise<boolean>
+  cerrarSesion: () => void
+  registrar: (datos: any) => Promise<boolean>
 }
 
-export const useAuthStore = create<AuthStore>()(
+export const useTiendaAuth = create<TiendaAuth>()(
   persist(
     (set, get) => ({
-      user: null,
-      isAuthenticated: false,
+      usuario: null,
+      token: null,
+      estaAutenticado: false,
 
-      login: async (email: string, password: string) => {
-        // Simulación de login - en producción sería API call
-        const mockUsers: Record<string, User> = {
-          'admin@stylehub.com': {
-            id: '1',
-            email: 'admin@stylehub.com',
-            name: 'Admin StyleHub',
-            roles: ['ceo'],
-            permissions: ['*'] as Permission[],
-            organizationId: 'stylehub',
-            isActive: true,
-            lastLogin: new Date(),
-            createdAt: new Date()
-          },
-          'manager@stylehub.com': {
-            id: '2',
-            email: 'manager@stylehub.com',
-            name: 'Category Manager',
-            roles: ['category_manager'],
-            permissions: ['products:create', 'products:update', 'products:publish', 'pricing:edit'],
-            organizationId: 'stylehub',
-            categoryIds: ['women', 'men'],
-            isActive: true,
-            lastLogin: new Date(),
-            createdAt: new Date()
-          },
-          'editor@stylehub.com': {
-            id: '3',
-            email: 'editor@stylehub.com',
-            name: 'Content Editor',
-            roles: ['content_editor'],
-            permissions: ['content:edit', 'products:read', 'products:update'],
-            organizationId: 'stylehub',
-            isActive: true,
-            lastLogin: new Date(),
-            createdAt: new Date()
-          },
-          'customer@stylehub.com': {
-            id: '4',
-            email: 'customer@stylehub.com',
-            name: 'Regular Customer',
-            roles: ['regular_customer'],
-            permissions: ['orders:view'],
-            organizationId: 'stylehub',
-            isActive: true,
-            lastLogin: new Date(),
-            createdAt: new Date()
+      iniciarSesion: async (email: string, contrasena: string) => {
+        try {
+          const resultado = await api.iniciarSesion(email, contrasena)
+          
+          if (resultado.exito && resultado.usuario && resultado.token) {
+            set({ 
+              usuario: resultado.usuario, 
+              token: resultado.token,
+              estaAutenticado: true 
+            })
+            
+            // Sincronizar carrito con backend
+            const establecerToken = useTiendaCarrito.getState().establecerToken
+            establecerToken(resultado.token)
+            
+            return true
           }
-        }
-
-        const user = mockUsers[email]
-        if (user && password === '123456') {
-          set({ user, isAuthenticated: true })
-          return true
-        }
-        return false
-      },
-
-      logout: () => {
-        set({ user: null, isAuthenticated: false })
-      },
-
-      hasPermission: (permission: Permission) => {
-        const { user } = get()
-        if (!user) return false
-        return hasPermission(user.permissions, permission)
-      },
-
-      hasRole: (roles: UserRole | UserRole[]) => {
-        const { user } = get()
-        if (!user) return false
-        const roleArray = Array.isArray(roles) ? roles : [roles]
-        return hasAnyRole(user.roles, roleArray)
-      },
-
-      canAccess: (requiredRoles?: UserRole[], requiredPermissions?: Permission[]) => {
-        const { user } = get()
-        if (!user) return false
-
-        if (requiredRoles && !hasAnyRole(user.roles, requiredRoles)) {
+          
+          return false
+        } catch (error) {
+          console.error('Error al iniciar sesión:', error)
           return false
         }
+      },
 
-        if (requiredPermissions) {
-          return requiredPermissions.every(permission => 
-            hasPermission(user.permissions, permission)
-          )
+      cerrarSesion: () => {
+        set({ usuario: null, token: null, estaAutenticado: false })
+        // Limpiar carrito
+        const vaciarCarrito = useTiendaCarrito.getState().vaciarCarrito
+        vaciarCarrito()
+      },
+
+      registrar: async (datos: any) => {
+        try {
+          const resultado = await api.registrar(datos)
+          
+          if (resultado && !resultado.error) {
+            // Después del registro, iniciar sesión automáticamente
+            return await get().iniciarSesion(datos.email, datos.password)
+          }
+          
+          return false
+        } catch (error) {
+          console.error('Error al registrar:', error)
+          return false
         }
-
-        return true
       }
     }),
     {
@@ -116,3 +73,6 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 )
+
+// Mantener compatibilidad con nombre anterior
+export const useAuthStore = useTiendaAuth

@@ -1,74 +1,109 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CartItem, Product } from '@/types'
+import { ItemCarrito, Producto } from '@/types'
+import { api } from '@/services/api'
 
-interface CartStore {
-  items: CartItem[]
-  addItem: (product: Product) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
-  clearCart: () => void
-  getTotalItems: () => number
-  getTotalPrice: () => number
+interface TiendaCarrito {
+  items: ItemCarrito[]
+  token?: string
+  agregarItem: (producto: Producto) => void
+  eliminarItem: (productoId: string) => void
+  actualizarCantidad: (productoId: string, cantidad: number) => void
+  vaciarCarrito: () => void
+  obtenerTotalItems: () => number
+  obtenerPrecioTotal: () => number
+  establecerToken: (token: string) => void
+  sincronizarConBackend: () => Promise<void>
 }
 
-export const useCartStore = create<CartStore>()(
+export const useTiendaCarrito = create<TiendaCarrito>()(
   persist(
     (set, get) => ({
       items: [],
+      token: undefined,
       
-      addItem: (product: Product) => {
-        const items = get().items
-        const existingItem = items.find(item => item.id === product.id)
+      agregarItem: async (producto: Producto) => {
+        const { items, token } = get()
+        const itemExistente = items.find(item => item.id === producto.id)
         
-        if (existingItem) {
+        // Actualizar localmente primero
+        if (itemExistente) {
           set({
             items: items.map(item =>
-              item.id === product.id
-                ? { ...item, quantity: item.quantity + 1 }
+              item.id === producto.id
+                ? { ...item, cantidad: item.cantidad + 1 }
                 : item
             )
           })
         } else {
           set({
-            items: [...items, { ...product, quantity: 1 }]
+            items: [...items, { ...producto, cantidad: 1 }]
           })
+        }
+        
+        // Sincronizar con backend si hay token
+        if (token) {
+          try {
+            await api.agregarAlCarrito(token, producto.id, 1)
+          } catch (error) {
+            console.error('Error al sincronizar carrito:', error)
+          }
         }
       },
       
-      removeItem: (productId: string) => {
+      eliminarItem: (productoId: string) => {
         set({
-          items: get().items.filter(item => item.id !== productId)
+          items: get().items.filter(item => item.id !== productoId)
         })
       },
       
-      updateQuantity: (productId: string, quantity: number) => {
-        if (quantity <= 0) {
-          get().removeItem(productId)
+      actualizarCantidad: (productoId: string, cantidad: number) => {
+        if (cantidad <= 0) {
+          get().eliminarItem(productoId)
           return
         }
         
         set({
           items: get().items.map(item =>
-            item.id === productId
-              ? { ...item, quantity }
+            item.id === productoId
+              ? { ...item, cantidad }
               : item
           )
         })
       },
       
-      clearCart: () => set({ items: [] }),
+      vaciarCarrito: () => set({ items: [] }),
       
-      getTotalItems: () => {
-        return get().items.reduce((total, item) => total + item.quantity, 0)
+      obtenerTotalItems: () => {
+        return get().items.reduce((total, item) => total + item.cantidad, 0)
       },
       
-      getTotalPrice: () => {
-        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0)
+      obtenerPrecioTotal: () => {
+        return get().items.reduce((total, item) => total + (item.precio * item.cantidad), 0)
+      },
+      
+      establecerToken: (token: string) => {
+        set({ token })
+        get().sincronizarConBackend()
+      },
+      
+      sincronizarConBackend: async () => {
+        const { token } = get()
+        if (!token) return
+        
+        try {
+          const carritoBackend = await api.obtenerCarrito(token)
+          set({ items: carritoBackend.items })
+        } catch (error) {
+          console.error('Error al sincronizar carrito:', error)
+        }
       }
     }),
     {
-      name: 'cart-storage'
+      name: 'carrito-storage'
     }
   )
 )
+
+// Mantener compatibilidad con nombre anterior
+export const useCartStore = useTiendaCarrito

@@ -13,7 +13,7 @@ export default function LoginPage() {
     acepta_terminos: false, acepta_datos: false, acepta_marketing: false
   })
   const [loading, setLoading] = useState(false)
-  const { login } = useAuthStore()
+  const { iniciarSesion } = useAuthStore()
   const { addNotification } = useNotificationStore()
   const navigate = useNavigate()
 
@@ -23,18 +23,15 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        const response = await api.login(formData.email, formData.password)
-        if (response.token) {
-          const success = await login(formData.email, formData.password)
-          if (success) {
-            addNotification('Inicio de sesión exitoso', 'success')
-            navigate('/dashboard')
-          }
+        const success = await iniciarSesion(formData.email, formData.password)
+        if (success) {
+          addNotification('Inicio de sesión exitoso', 'success')
+          navigate('/dashboard')
         } else {
           addNotification('Credenciales incorrectas', 'error')
         }
       } else {
-        const response = await api.register(formData)
+        const response = await api.registrar(formData)
         if (response.id) {
           addNotification('Registro exitoso. Ahora puedes iniciar sesión', 'success')
           setIsLogin(true)

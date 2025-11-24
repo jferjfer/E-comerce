@@ -1,48 +1,56 @@
-export interface Product {
+export interface Producto {
   id: string;
-  name: string;
-  price: number;
-  image: string;
-  description: string;
-  category: string;
-  size?: string[];
-  color?: string[];
-  rating: number;
-  inStock: boolean;
-  isEco?: boolean;
-  compatibility?: number;
+  nombre: string;
+  precio: number;
+  imagen: string;
+  descripcion: string;
+  categoria: string;
+  tallas?: string[];
+  colores?: string[];
+  calificacion: number;
+  en_stock: boolean;
+  es_eco?: boolean;
+  compatibilidad?: number;
 }
 
-export interface CartItem extends Product {
-  quantity: number;
+export interface ItemCarrito extends Producto {
+  cantidad: number;
 }
 
-export interface User {
+export interface Usuario {
   id: string;
-  name: string;
+  nombre: string;
   email: string;
-  preferences?: {
-    style: string;
-    colors: string[];
-    size: string;
+  rol: string;
+  preferencias?: {
+    estilo: string;
+    colores: string[];
+    talla: string;
   };
 }
 
-export interface PaymentMethod {
+export interface MetodoPago {
   id: string;
-  name: string;
-  type: 'cash' | 'credit' | 'external';
-  description: string;
-  icon: string;
-  maxAmount?: number;
-  interestRate?: number;
+  nombre: string;
+  tipo: 'contado' | 'credito' | 'externo';
+  descripcion: string;
+  icono: string;
+  monto_maximo?: number;
+  tasa_interes?: number;
 }
 
-export interface Order {
+export interface Pedido {
   id: string;
-  items: CartItem[];
+  items: ItemCarrito[];
   total: number;
-  paymentMethod: PaymentMethod;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
-  createdAt: Date;
+  metodo_pago: MetodoPago;
+  estado: 'pendiente' | 'procesando' | 'completado' | 'cancelado';
+  fecha_creacion: Date;
 }
+
+// Tipos legacy para compatibilidad
+export type Product = Producto;
+export type CartItem = ItemCarrito;
+export type User = Usuario;
+export type PaymentMethod = MetodoPago;
+export type Order = Pedido;

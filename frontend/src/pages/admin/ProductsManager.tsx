@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { mockProducts } from '@/data/products'
-import { Product } from '@/types'
+import { productosSimulados } from '@/data/products'
+import { Producto } from '@/types'
 import { formatPrice } from '@/utils/sanitize'
 import RoleGuard from '@/components/auth/RoleGuard'
 
 export default function ProductsManager() {
-  const [products, setProducts] = useState(mockProducts)
+  const [products, setProducts] = useState(productosSimulados)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -14,8 +14,8 @@ export default function ProductsManager() {
   const itemsPerPage = 10
   
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = !selectedCategory || product.category === selectedCategory
+    const matchesSearch = (product.nombre || product.name).toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = !selectedCategory || (product.categoria || product.category) === selectedCategory
     return matchesSearch && matchesCategory
   })
   
@@ -23,7 +23,7 @@ export default function ProductsManager() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage)
   
-  const categories = [...new Set(products.map(p => p.category))]
+  const categories = [...new Set(products.map(p => p.categoria || p.category))]
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,13 +125,13 @@ export default function ProductsManager() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img 
-                          src={product.image} 
-                          alt={product.name}
+                          src={product.imagen || product.image} 
+                          alt={product.nombre || product.name}
                           className="w-12 h-12 object-cover rounded-lg mr-4"
                         />
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {product.name}
+                            {product.nombre || product.name}
                           </div>
                           <div className="text-sm text-gray-500">
                             ID: {product.id}
@@ -141,19 +141,19 @@ export default function ProductsManager() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {product.category}
+                        {product.categoria || product.category}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatPrice(product.price)}
+                      {formatPrice(product.precio || product.price)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.inStock 
+                        product.en_stock !== false && product.inStock !== false 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {product.inStock ? 'En Stock' : 'Agotado'}
+                        {(product.en_stock !== false && product.inStock !== false) ? 'En Stock' : 'Agotado'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

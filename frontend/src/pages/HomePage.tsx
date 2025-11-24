@@ -1,28 +1,29 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { mockProducts } from '@/data/products'
+import { productosSimulados } from '@/data/products'
+import { api } from '@/services/api'
 import ProductCard from '@/components/ProductCard'
 import Modal from '@/components/Modal'
 import ARModal from '@/components/ARModal'
 import Footer from '@/components/Footer'
-import { Product } from '@/types'
+import { Producto } from '@/types'
 import { formatPrice } from '@/utils/sanitize'
 import { useCartStore } from '@/store/useCartStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 
 export default function HomePage() {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null)
   const [showProductModal, setShowProductModal] = useState(false)
   const [showAR, setShowAR] = useState(false)
   
-  const handleViewDetails = (product: Product) => {
-    setSelectedProduct(product)
+  const manejarVerDetalles = (producto: Producto) => {
+    setProductoSeleccionado(producto)
     setShowProductModal(true)
   }
   
-  const closeProductModal = () => {
+  const cerrarModalProducto = () => {
     setShowProductModal(false)
-    setSelectedProduct(null)
+    setProductoSeleccionado(null)
   }
   
   return (
@@ -82,45 +83,45 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {mockProducts.map((product) => (
+            {productosSimulados.map((producto) => (
               <ProductCard
-                key={product.id}
-                product={product}
-                onViewDetails={handleViewDetails}
+                key={producto.id}
+                product={producto}
+                onViewDetails={manejarVerDetalles}
               />
             ))}
           </div>
         </div>
       </section>
       
-      {selectedProduct && (
+      {productoSeleccionado && (
         <Modal 
           isOpen={showProductModal} 
-          onClose={closeProductModal}
-          title={selectedProduct.name}
+          onClose={cerrarModalProducto}
+          title={productoSeleccionado.nombre}
           size="lg"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <img 
-                src={selectedProduct.image} 
+                src={productoSeleccionado.imagen} 
                 className="w-full h-auto rounded-lg" 
-                alt={selectedProduct.name}
+                alt={productoSeleccionado.nombre}
               />
             </div>
             <div className="space-y-4">
               <div>
-                <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
+                <p className="text-gray-600 mb-4">{productoSeleccionado.descripcion}</p>
                 <p className="text-3xl font-bold text-primary mb-6">
-                  {formatPrice(selectedProduct.price)}
+                  {formatPrice(productoSeleccionado.precio)}
                 </p>
                 <div className="space-y-3 mb-6">
                   <button 
                     onClick={() => {
-                      const addItem = useCartStore.getState().addItem
+                      const agregarItem = useCartStore.getState().agregarItem
                       const addNotification = useNotificationStore.getState().addNotification
-                      addItem(selectedProduct)
-                      addNotification(`${selectedProduct.name} agregado al carrito`, 'success')
+                      agregarItem(productoSeleccionado)
+                      addNotification(`${productoSeleccionado.nombre} agregado al carrito`, 'success')
                     }}
                     className="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition-colors"
                   >
@@ -140,7 +141,7 @@ export default function HomePage() {
                 <h5 className="font-semibold mb-2">Características:</h5>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Material sostenible</li>
-                  <li>• Tallas disponibles: {selectedProduct.size?.join(', ')}</li>
+                  <li>• Tallas disponibles: {productoSeleccionado.tallas?.join(', ')}</li>
                   <li>• Envío gratuito</li>
                   <li>• Devolución 30 días</li>
                 </ul>
@@ -150,12 +151,12 @@ export default function HomePage() {
         </Modal>
       )}
       
-      {selectedProduct && (
+      {productoSeleccionado && (
         <ARModal
           isOpen={showAR}
           onClose={() => setShowAR(false)}
-          productName={selectedProduct.name}
-          productImage={selectedProduct.image}
+          productName={productoSeleccionado.nombre}
+          productImage={productoSeleccionado.imagen}
         />
       )}
       
