@@ -1,0 +1,70 @@
+# ====================================================
+# DEPENDENCIAS PYTHON - ESTILO Y MODA E-COMMERCE
+# ====================================================
+# Microservicios: Catalog Service + AI Service
+# Tecnologías: FastAPI + Machine Learning + MongoDB
+# ====================================================
+
+# ============ FRAMEWORK WEB ============
+fastapi==0.121.3              # Framework web moderno y rápido
+uvicorn==0.38.0               # Servidor ASGI para FastAPI
+starlette==0.50.0             # Framework base de FastAPI
+
+# ============ VALIDACIÓN DE DATOS ============
+pydantic==2.12.4              # Validación y serialización de datos
+pydantic_core==2.41.5         # Core de Pydantic (compilado en Rust)
+annotated-types==0.7.0        # Tipos anotados para Pydantic
+annotated-doc==0.0.4          # Documentación automática
+typing-inspection==0.4.2      # Inspección de tipos
+typing_extensions==4.15.0     # Extensiones de tipado
+
+# ============ BASE DE DATOS ============
+pymongo==4.15.4               # Driver MongoDB para Python
+motor==3.7.1                  # Driver MongoDB asíncrono
+dnspython==2.8.0              # Resolución DNS para MongoDB
+
+# ============ HTTP Y NETWORKING ============
+httpx==0.28.1                 # Cliente HTTP asíncrono
+httpcore==1.0.9               # Core HTTP para httpx
+h11==0.16.0                   # Protocolo HTTP/1.1
+certifi==2025.11.12           # Certificados SSL/TLS
+idna==3.11                    # Codificación de dominios internacionales
+
+# ============ UTILIDADES GENERALES ============
+python-dotenv==1.2.1          # Carga variables de entorno desde .env
+python-multipart==0.0.20      # Manejo de formularios multipart
+click==8.3.1                  # Interfaz de línea de comandos
+colorama==0.4.6               # Colores en terminal (Windows)
+
+# ============ PROGRAMACIÓN ASÍNCRONA ============
+anyio==4.11.0                 # Biblioteca de concurrencia asíncrona
+sniffio==1.3.1                # Detección de bibliotecas async
+
+# ============ MACHINE LEARNING (AI SERVICE) ============
+numpy==2.3.5                  # Computación numérica fundamental
+scipy==1.16.3                 # Algoritmos científicos y matemáticos
+scikit-learn==1.7.2           # Machine Learning y análisis de datos
+joblib==1.5.2                 # Paralelización y persistencia
+threadpoolctl==3.6.0          # Control de hilos para librerías numéricas
+
+# ====================================================
+# INSTALACIÓN:
+# 1. python -m venv venv
+# 2. venv\Scripts\activate (Windows) / source venv/bin/activate (Linux/Mac)
+# 3. pip install -r requirements.txt
+# ====================================================
+
+# ====================================================
+# SERVICIOS QUE USAN ESTAS DEPENDENCIAS:
+# 
+# 📦 CATALOG SERVICE (Puerto 3002):
+#    - FastAPI + MongoDB
+#    - Gestión de productos y categorías
+#    - Búsqueda y filtros avanzados
+#
+# 🤖 AI SERVICE (Puerto 3007):
+#    - FastAPI + scikit-learn
+#    - Recomendaciones personalizadas
+#    - Análisis de compatibilidad de estilo
+#    - Machine Learning básico
+# ====================================================
