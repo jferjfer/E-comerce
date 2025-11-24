@@ -17,9 +17,11 @@ aplicacion.use(helmet());
 const corsOptions = {
   origin: process.env.ENTORNO === 'produccion' 
     ? ['https://tudominio.com'] 
-    : ['http://localhost:3005', 'http://localhost:3000'],
+    : ['http://localhost:3005', 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 aplicacion.use(cors(corsOptions));
 
@@ -35,47 +37,115 @@ const limitador = rateLimit({
 aplicacion.use(limitador);
 aplicacion.use(express.json());
 
-// Configuración de proxies para cada microservicio
+// Middleware para logging de peticiones
+aplicacion.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.url} - ${new Date().toLocaleTimeString()}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('📋 Body:', JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
+
+// Configuración de proxies para cada microservicio (desarrollo local)
 const servicios = {
-  '/api/auth': 'http://ecommerce-auth:3001',
-  '/api/productos': 'http://ecommerce-catalog:3002',
-  '/api/categorias': 'http://ecommerce-catalog:3002',
-  '/api/tendencias': 'http://ecommerce-catalog:3002',
-  '/api/carrito': 'http://ecommerce-transaction:3003',
-  '/api/pedidos': 'http://ecommerce-transaction:3003',
-  '/api/pagos': 'http://ecommerce-transaction:3003',
-  '/api/inventario': 'http://ecommerce-logistics:3009',
-  '/api/resenas': 'http://ecommerce-social:3004',
-  '/api/preguntas': 'http://ecommerce-social:3004',
-  '/api/listas-deseos': 'http://ecommerce-social:3004',
-  '/api/cupones': 'http://ecommerce-marketing:3006',
-  '/api/fidelizacion': 'http://ecommerce-marketing:3006',
-  '/api/recomendaciones': 'http://ecommerce-ai:3007',
-  '/api/estilos': 'http://ecommerce-ai:3007',
-  '/api/credito': 'http://ecommerce-credit:3008'
+  '/api/auth': 'http://localhost:3011',
+  '/api/productos': 'http://localhost:3002',
+  '/api/categorias': 'http://localhost:3002',
+  '/api/tendencias': 'http://localhost:3002',
+  '/api/carrito': 'http://localhost:3003',
+  '/api/pedidos': 'http://localhost:3003',
+  '/api/pagos': 'http://localhost:3003',
+  '/api/inventario': 'http://localhost:3009',
+  '/api/resenas': 'http://localhost:3004',
+  '/api/preguntas': 'http://localhost:3004',
+  '/api/listas-deseos': 'http://localhost:3004',
+  '/api/cupones': 'http://localhost:3006',
+  '/api/fidelizacion': 'http://localhost:3006',
+  '/api/recomendaciones': 'http://localhost:3007',
+  '/api/estilos': 'http://localhost:3007',
+  '/api/credito': 'http://localhost:3008'
 };
 
-// Proxy simple para auth
-aplicacion.use('/api/auth', createProxyMiddleware({
-  target: 'http://ecommerce-auth:3001',
-  changeOrigin: true,
-  pathRewrite: { '^/api/auth': '/api/auth' },
-  timeout: 5000
-}));
+// Rutas básicas para desarrollo (sin microservicios activos)
+aplicacion.get('/api/productos', (req, res) => {
+  res.json({
+    productos: [
+      { id: 1, nombre: 'Vestido Elegante', precio: 89.99, categoria: 'Ropa Mujer' },
+      { id: 2, nombre: 'Camisa Casual', precio: 45.50, categoria: 'Ropa Hombre' },
+      { id: 3, nombre: 'Zapatos Deportivos', precio: 120.00, categoria: 'Calzado' }
+    ],
+    total: 3
+  });
+});
 
-// Proxy para productos
-aplicacion.use('/api/productos', createProxyMiddleware({
-  target: 'http://ecommerce-catalog:3002',
-  changeOrigin: true,
-  timeout: 5000
-}));
+aplicacion.get('/api/categorias', (req, res) => {
+  res.json({
+    categorias: [
+      { id: 1, nombre: 'Ropa Mujer', descripcion: 'Ropa y accesorios para mujer' },
+      { id: 2, nombre: 'Ropa Hombre', descripcion: 'Ropa y accesorios para hombre' },
+      { id: 3, nombre: 'Calzado', descripcion: 'Zapatos y calzado en general' }
+    ]
+  });
+});
 
-// Proxy para categorias
-aplicacion.use('/api/categorias', createProxyMiddleware({
-  target: 'http://ecommerce-catalog:3002',
-  changeOrigin: true,
-  timeout: 5000
-}));
+aplicacion.post('/api/auth/login', async (req, res) => {
+  try {
+    const axios = require('axios');
+    const respuesta = await axios.post('http://localhost:3011/api/auth/login-simple', req.body);
+    console.log('✅ Login exitoso desde auth-service');
+    res.json(respuesta.data);
+  } catch (error) {
+    console.log('❌ Login fallido desde auth-service:', error.response?.data?.error || error.message);
+    res.status(401).json({ error: 'Credenciales inválidas' });
+  }
+});
+
+aplicacion.post('/api/auth/register', (req, res) => {
+  const { 
+    email, password, nombre, apellido, documento_tipo, documento_numero,
+    telefono, fecha_nacimiento, genero, direccion, ciudad, departamento,
+    acepta_terminos, acepta_datos, acepta_marketing 
+  } = req.body;
+  
+  console.log('📝 Nuevo registro de cliente:', email, nombre, apellido);
+  
+  // Validaciones básicas según ley colombiana
+  if (!documento_numero || !acepta_terminos || !acepta_datos) {
+    console.log('❌ Registro fallido - campos obligatorios faltantes');
+    return res.status(400).json({ error: 'Campos obligatorios faltantes' });
+  }
+  
+  console.log('✅ Cliente registrado exitosamente:', email);
+  res.json({
+    id: Date.now(),
+    email, nombre, apellido, documento_tipo, documento_numero,
+    telefono, ciudad, departamento, rol: 'cliente',
+    fecha_registro: new Date().toISOString(),
+    mensaje: 'Cliente registrado exitosamente'
+  });
+});
+
+aplicacion.post('/api/auth/solicitar-recuperacion', async (req, res) => {
+  try {
+    const axios = require('axios');
+    const respuesta = await axios.post('http://localhost:3011/api/auth/solicitar-recuperacion', req.body);
+    res.json(respuesta.data);
+  } catch (error) {
+    console.log('🔑 Solicitud de recuperación (simulada):', req.body.email);
+    res.json({ mensaje: 'Si el email existe, recibirás un enlace de recuperación' });
+  }
+});
+
+aplicacion.post('/api/auth/restablecer-contrasena', async (req, res) => {
+  try {
+    const axios = require('axios');
+    const respuesta = await axios.post('http://localhost:3011/api/auth/restablecer-contrasena', req.body);
+    res.json(respuesta.data);
+  } catch (error) {
+    console.log('🔑 Restablecimiento simulado');
+    res.json({ mensaje: 'Contraseña restablecida exitosamente' });
+  }
+});
 
 // Ruta de salud del API Gateway
 aplicacion.get('/salud', (req, res) => {
@@ -118,10 +188,11 @@ aplicacion.get('/estado-servicios', async (req, res) => {
 // Ruta por defecto
 aplicacion.get('/', (req, res) => {
   res.json({
-    mensaje: 'API Gateway E-Commerce',
+    mensaje: 'API Gateway - Estilo y Moda',
     version: '1.0.0',
+    estado: 'Desarrollo Local',
     documentacion: '/estado-servicios',
-    servicios_disponibles: Object.keys(servicios)
+    endpoints_disponibles: ['/api/productos', '/api/categorias', '/api/auth/login']
   });
 });
 

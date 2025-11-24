@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const Usuario = require('../modelos/Usuario');
 const SesionUsuario = require('../modelos/SesionUsuario');
 
@@ -81,6 +82,36 @@ class ServicioAuth {
     } catch (error) {
       throw new Error('Token inválido');
     }
+  }
+
+  static async buscarUsuarioPorEmail(email) {
+    return await Usuario.buscarPorEmail(email);
+  }
+
+  static async guardarTokenRecuperacion(usuarioId, token, expiracion) {
+    return await Usuario.guardarTokenRecuperacion(usuarioId, token, expiracion);
+  }
+
+  static async restablecerContrasena(token, nuevaContrasena) {
+    // Buscar usuario por token de recuperación
+    const usuario = await Usuario.buscarPorTokenRecuperacion(token);
+    if (!usuario) {
+      throw new Error('Token inválido o expirado');
+    }
+
+    // Verificar que el token no haya expirado
+    if (new Date() > usuario.token_expiracion) {
+      throw new Error('Token expirado');
+    }
+
+    // Encriptar nueva contraseña
+    const contrasenaEncriptada = await bcrypt.hash(nuevaContrasena, 10);
+
+    // Actualizar contraseña y limpiar token
+    await Usuario.actualizarContrasena(usuario.id, contrasenaEncriptada);
+    await Usuario.limpiarTokenRecuperacion(usuario.id);
+
+    return true;
   }
 }
 

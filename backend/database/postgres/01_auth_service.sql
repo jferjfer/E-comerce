@@ -13,6 +13,8 @@ CREATE TABLE usuario (
     contrasena VARCHAR(255) NOT NULL,
     rol VARCHAR(50) NOT NULL CHECK (rol IN ('cliente', 'invitado')),
     total_compras_historico DECIMAL(12, 2) DEFAULT 0.00,
+    token_recuperacion VARCHAR(255),
+    token_expiracion TIMESTAMP,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -46,6 +48,7 @@ CREATE TABLE log_auditoria (
 
 -- Índices para optimizar consultas
 CREATE INDEX idx_usuario_email ON usuario(email);
+CREATE INDEX idx_usuario_token_recuperacion ON usuario(token_recuperacion);
 CREATE INDEX idx_sesion_token ON sesion_usuario(token);
 CREATE INDEX idx_log_usuario ON log_auditoria(id_usuario);
 CREATE INDEX idx_log_fecha_hora ON log_auditoria(fecha_hora);

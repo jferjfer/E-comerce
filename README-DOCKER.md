@@ -1,118 +1,200 @@
-# E-Commerce - Guía Docker
+# E-Commerce - Ejecución con Docker
 
-## Inicio Rápido
+## Descripción
 
-### 1. Inicializar Proyecto Completo
-```bash
-# Ejecutar script de inicialización
-iniciar-docker.bat
-
-# O manualmente:
-docker compose up -d --build
-```
-
-### 2. Verificar Estado
-```bash
-docker compose ps
-```
-
-### 3. Ver Logs
-```bash
-# Todos los servicios
-docker compose logs -f
-
-# Servicio específico
-docker compose logs -f auth-service
-```
-
-## URLs de Servicios
-
-| Servicio | URL | Puerto |
-|----------|-----|--------|
-| Frontend | http://localhost:3005 | 3005 |
-| API Gateway | http://localhost:3000 | 3000 |
-| Auth Service | http://localhost:3001 | 3001 |
-| Catalog Service | http://localhost:3002 | 3002 |
-| Transaction Service | http://localhost:3003 | 3003 |
-| Social Service | http://localhost:3004 | 3004 |
-| AI Service | http://localhost:3007 | 3007 |
-| Credit Service | http://localhost:3008 | 3008 |
-| Logistics Service | http://localhost:3009 | 3009 |
-
-## Bases de Datos
-
-| Base de Datos | URL | Puerto |
-|---------------|-----|--------|
-| PostgreSQL | localhost:5432 | 5432 |
-| MongoDB | localhost:27017 | 27017 |
-| Redis | localhost:6379 | 6379 |
+Ejecuta todo el stack de E-Commerce con Docker Compose, incluyendo:
+- **Frontend Vue.js** (puerto 3005)
+- **8 Microservicios** (puertos 3001-3009)
+- **API Gateway** (puerto 3000)
+- **3 Bases de datos** (PostgreSQL, MongoDB, Redis)
 
 ## Scripts Disponibles
 
-- `iniciar-docker.bat` - Inicia todo el proyecto
-- `detener-docker.bat` - Detiene el proyecto
-- `monitorear-servicios.bat` - Monitor interactivo
-
-## Comandos Útiles
-
-### Gestión de Contenedores
+### 🚀 Iniciar Todo el Stack
 ```bash
-# Iniciar servicios
-docker compose up -d
+iniciar-docker-completo.bat
+```
+Construye y ejecuta todos los servicios en contenedores Docker.
 
-# Detener servicios
-docker compose down
+### 📊 Monitorear Servicios
+```bash
+monitorear-docker.bat
+```
+Menú interactivo para:
+- Ver estado de contenedores
+- Monitorear logs
+- Reiniciar servicios específicos
+- Detener servicios
 
-# Reiniciar servicio específico
-docker compose restart auth-service
+### 🧹 Limpiar Docker
+```bash
+limpiar-docker.bat
+```
+Elimina completamente todos los contenedores, imágenes y volúmenes del proyecto.
 
-# Reconstruir imágenes
-docker compose build --no-cache
+## URLs de Acceso
+
+Una vez iniciado, los servicios estarán disponibles en:
+
+### Frontend y Gateway
+- **Frontend Vue.js**: http://localhost:3005
+- **API Gateway**: http://localhost:3000
+
+### Microservicios
+- **Auth Service**: http://localhost:3001
+- **Catalog Service**: http://localhost:3002
+- **Transaction Service**: http://localhost:3003
+- **Social Service**: http://localhost:3004
+- **Marketing Service**: http://localhost:3006
+- **AI Service**: http://localhost:3007
+- **Credit Service**: http://localhost:3008
+- **Logistics Service**: http://localhost:3009
+
+### Bases de Datos
+- **PostgreSQL**: localhost:5432
+- **MongoDB**: localhost:27017
+- **Redis**: localhost:6379
+
+## Comandos Docker Útiles
+
+### Ver estado de contenedores
+```bash
+docker-compose ps
 ```
 
-### Debugging
+### Ver logs de todos los servicios
 ```bash
-# Entrar a un contenedor
-docker compose exec auth-service sh
-
-# Ver logs en tiempo real
-docker compose logs -f --tail=100 auth-service
-
-# Verificar salud de servicios
-docker compose ps
+docker-compose logs -f
 ```
 
-### Limpieza
+### Ver logs de un servicio específico
 ```bash
-# Detener y eliminar volúmenes
-docker compose down -v
-
-# Limpiar sistema
-docker system prune -f
+docker-compose logs -f frontend
+docker-compose logs -f api-gateway
+docker-compose logs -f auth-service
 ```
+
+### Reiniciar un servicio
+```bash
+docker-compose restart frontend
+docker-compose restart api-gateway
+```
+
+### Detener todos los servicios
+```bash
+docker-compose down
+```
+
+### Detener y eliminar volúmenes (datos)
+```bash
+docker-compose down -v
+```
+
+### Reconstruir un servicio específico
+```bash
+docker-compose up --build frontend
+```
+
+## Estructura de Contenedores
+
+```
+ecommerce-network (Docker Network)
+├── ecommerce-postgres     (Base de datos principal)
+├── ecommerce-mongodb      (Base de datos NoSQL)
+├── ecommerce-redis        (Cache y sesiones)
+├── ecommerce-auth         (Microservicio de autenticación)
+├── ecommerce-catalog      (Microservicio de catálogo)
+├── ecommerce-transaction  (Microservicio de transacciones)
+├── ecommerce-social       (Microservicio social)
+├── ecommerce-ai           (Microservicio de IA)
+├── ecommerce-credit       (Microservicio de crédito)
+├── ecommerce-logistics    (Microservicio de logística)
+├── ecommerce-marketing    (Microservicio de marketing)
+├── ecommerce-gateway      (API Gateway)
+└── ecommerce-frontend     (Frontend Vue.js)
+```
+
+## Volúmenes Persistentes
+
+Los siguientes datos se mantienen entre reinicios:
+- **postgres_data**: Datos de PostgreSQL
+- **mongodb_data**: Datos de MongoDB
+- **redis_data**: Datos de Redis
+
+## Variables de Entorno
+
+Configuradas en `.env`:
+- Credenciales de bases de datos
+- Puertos de servicios
+- URLs de conexión
+- Configuración JWT
 
 ## Troubleshooting
 
 ### Problema: Puerto ocupado
 ```bash
-# Ver qué proceso usa el puerto
-netstat -ano | findstr :3000
+# Verificar qué proceso usa el puerto
+netstat -ano | findstr :3005
+
+# Detener el proceso si es necesario
+taskkill /PID <PID> /F
+```
+
+### Problema: Contenedor no inicia
+```bash
+# Ver logs detallados
+docker-compose logs <nombre-servicio>
+
+# Reconstruir el contenedor
+docker-compose up --build <nombre-servicio>
 ```
 
 ### Problema: Base de datos no conecta
 ```bash
-# Verificar logs de PostgreSQL
-docker compose logs postgres
+# Verificar que las bases de datos estén healthy
+docker-compose ps
 
-# Verificar logs de MongoDB
-docker compose logs mongodb
+# Reiniciar base de datos específica
+docker-compose restart postgres
+docker-compose restart mongodb
 ```
 
-### Problema: Servicio no responde
+### Problema: Falta de espacio en disco
 ```bash
-# Reiniciar servicio específico
-docker compose restart [nombre-servicio]
+# Limpiar imágenes no utilizadas
+docker system prune -f
 
-# Ver logs del servicio
-docker compose logs -f [nombre-servicio]
+# Ver uso de espacio
+docker system df
 ```
+
+## Desarrollo
+
+### Modificar código y ver cambios
+1. Modifica el código fuente
+2. Reconstruye el servicio específico:
+   ```bash
+   docker-compose up --build frontend
+   ```
+
+### Acceder a un contenedor
+```bash
+# Acceder al contenedor del frontend
+docker exec -it ecommerce-frontend sh
+
+# Acceder al contenedor de PostgreSQL
+docker exec -it ecommerce-postgres psql -U admin -d ecommerce
+```
+
+### Ver recursos utilizados
+```bash
+# Ver uso de CPU y memoria
+docker stats
+
+# Ver uso específico del proyecto
+docker-compose top
+```
+
+---
+
+**Nota**: Asegúrate de tener Docker y Docker Compose instalados antes de ejecutar los scripts.

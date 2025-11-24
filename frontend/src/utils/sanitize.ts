@@ -1,0 +1,17 @@
+import DOMPurify from 'dompurify'
+
+export const sanitizeHTML = (html: string): string => {
+  return DOMPurify.sanitize(html)
+}
+
+export const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0
+  }).format(price)
+}
+
+export const generateId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+}

@@ -1,268 +1,123 @@
+version: '3.8'
+
 services:
-  # Bases de Datos
+  # PostgreSQL - Base de datos principal
   postgres:
-    image: postgres:15
-    container_name: ecommerce-postgres
+    image: postgres:15-alpine
+    container_name: stylehub_postgres
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-ecommerce}
-      - POSTGRES_USER=${POSTGRES_USER:-admin}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-admin123}
+      POSTGRES_DB: stylehub_db
+      POSTGRES_USER: stylehub_user
+      POSTGRES_PASSWORD: stylehub_pass
+      POSTGRES_MULTIPLE_DATABASES: auth_db,catalog_db,transaction_db,logistics_db,credit_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/postgres:/docker-entrypoint-initdb.d
+      - ./backend/database/init:/docker-entrypoint-initdb.d
     networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-ecommerce}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - stylehub_network
 
+  # MongoDB - Datos no estructurados
   mongodb:
-    image: mongo:6
-    container_name: ecommerce-mongodb
+    image: mongo:7.0
+    container_name: stylehub_mongodb
     environment:
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE:-ecommerce}
+      MONGO_INITDB_ROOT_USERNAME: stylehub_user
+      MONGO_INITDB_ROOT_PASSWORD: stylehub_pass
+      MONGO_INITDB_DATABASE: stylehub_mongo
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-      - ./database/mongodb:/docker-entrypoint-initdb.d
+      - ./backend/database/mongo-init:/docker-entrypoint-initdb.d
     networks:
-      - ecommerce-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - stylehub_network
 
+  # Redis - Cache y sesiones
   redis:
     image: redis:7-alpine
-    container_name: ecommerce-redis
+    container_name: stylehub_redis
+    command: redis-server --requirepass stylehub_pass
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - stylehub_network
 
-  # Microservicios
-  auth-service:
-    build: ./backend/services/auth-service
-    container_name: ecommerce-auth
-    ports:
-      - "${PUERTO_AUTH:-3001}:3001"
+  # Elasticsearch - Búsqueda avanzada
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: stylehub_elasticsearch
     environment:
-      - PUERTO=3001
-      - BD_HOST=postgres
-      - BD_PUERTO=5432
-      - BD_NOMBRE=${POSTGRES_DB:-ecommerce}
-      - BD_USUARIO=${POSTGRES_USER:-admin}
-      - BD_CONTRASENA=${POSTGRES_PASSWORD:-admin123}
-      - JWT_SECRETO=${JWT_SECRETO:-mi_secreto_super_seguro_para_jwt_2024}
-      - JWT_EXPIRACION=${JWT_EXPIRACION:-24h}
-      - ENTORNO=${ENTORNO:-desarrollo}
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - stylehub_network
+
+  # RabbitMQ - Mensajería
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: stylehub_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: stylehub_user
+      RABBITMQ_DEFAULT_PASS: stylehub_pass
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - stylehub_network
+
+  # PgAdmin - Administración PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: stylehub_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@stylehub.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - stylehub_network
     depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
+      - postgres
 
-  catalog-service:
-    build: ./backend/services/catalog-service
-    container_name: ecommerce-catalog
-    ports:
-      - "${PUERTO_CATALOG:-3002}:3002"
+  # Mongo Express - Administración MongoDB
+  mongo-express:
+    image: mongo-express:latest
+    container_name: stylehub_mongo_express
     environment:
-      - PUERTO=3002
-      - MONGO_HOST=mongodb
-      - MONGO_PUERTO=27017
-      - MONGO_BD=${MONGO_INITDB_DATABASE:-ecommerce}
-      - ENTORNO=${ENTORNO:-desarrollo}
-      - SERVICIO_AUTH_URL=http://auth-service:3001
+      ME_CONFIG_MONGODB_ADMINUSERNAME: stylehub_user
+      ME_CONFIG_MONGODB_ADMINPASSWORD: stylehub_pass
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    ports:
+      - "8081:8081"
+    networks:
+      - stylehub_network
     depends_on:
-      mongodb:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  transaction-service:
-    build: ./backend/services/transaction-service
-    container_name: ecommerce-transaction
-    ports:
-      - "${PUERTO_TRANSACTION:-3003}:3003"
-    environment:
-      - PUERTO=3003
-      - BD_HOST=postgres
-      - BD_PUERTO=5432
-      - BD_NOMBRE=${POSTGRES_DB:-ecommerce}
-      - BD_USUARIO=${POSTGRES_USER:-admin}
-      - BD_CONTRASENA=${POSTGRES_PASSWORD:-admin123}
-      - ENTORNO=${ENTORNO:-desarrollo}
-      - SERVICIO_AUTH_URL=http://auth-service:3001
-      - SERVICIO_CATALOGO_URL=http://catalog-service:3002
-    depends_on:
-      postgres:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
-      catalog-service:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  social-service:
-    build: ./backend/services/social-service
-    container_name: ecommerce-social
-    ports:
-      - "${PUERTO_SOCIAL:-3004}:3004"
-    environment:
-      - PUERTO=3004
-      - MONGO_HOST=mongodb
-      - MONGO_PUERTO=27017
-      - MONGO_BD=${MONGO_INITDB_DATABASE:-ecommerce}
-      - ENTORNO=${ENTORNO:-desarrollo}
-      - SERVICIO_AUTH_URL=http://auth-service:3001
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  ai-service:
-    build: ./backend/services/ai-service
-    container_name: ecommerce-ai
-    ports:
-      - "${PUERTO_AI:-3007}:3007"
-    environment:
-      - PUERTO=3007
-      - MONGO_HOST=mongodb
-      - MONGO_PUERTO=27017
-      - MONGO_BD=${MONGO_INITDB_DATABASE:-ecommerce}
-      - ENTORNO=${ENTORNO:-desarrollo}
-      - SERVICIO_CATALOGO_URL=http://catalog-service:3002
-      - SERVICIO_AUTH_URL=http://auth-service:3001
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      catalog-service:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  credit-service:
-    build: ./backend/services/credit-service
-    container_name: ecommerce-credit
-    ports:
-      - "${PUERTO_CREDIT:-3008}:3008"
-    environment:
-      - SERVER_PORT=3008
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ecommerce}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-admin}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-admin123}
-      - SPRING_PROFILES_ACTIVE=${ENTORNO:-desarrollo}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  logistics-service:
-    build: ./backend/services/logistics-service
-    container_name: ecommerce-logistics
-    ports:
-      - "${PUERTO_LOGISTICS:-3009}:3009"
-    environment:
-      - SERVER_PORT=3009
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ecommerce}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-admin}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-admin123}
-      - SPRING_PROFILES_ACTIVE=${ENTORNO:-desarrollo}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  marketing-service:
-    build: ./backend/services/marketing-service
-    container_name: ecommerce-marketing
-    ports:
-      - "${PUERTO_MARKETING:-3006}:3006"
-    environment:
-      - PUERTO=3006
-      - ENTORNO=${ENTORNO:-desarrollo}
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  # API Gateway
-  api-gateway:
-    build: ./backend/api-gateway
-    container_name: ecommerce-gateway
-    ports:
-      - "${PUERTO_GATEWAY:-3000}:3000"
-    environment:
-      - PUERTO=3000
-      - ENTORNO=${ENTORNO:-desarrollo}
-      - SERVICIO_AUTH_URL=http://auth-service:3001
-      - SERVICIO_CATALOGO_URL=http://catalog-service:3002
-      - SERVICIO_TRANSACCIONES_URL=http://transaction-service:3003
-      - SERVICIO_SOCIAL_URL=http://social-service:3004
-      - SERVICIO_MARKETING_URL=http://marketing-service:3006
-      - SERVICIO_IA_URL=http://ai-service:3007
-      - SERVICIO_CREDITO_URL=http://credit-service:3008
-      - SERVICIO_LOGISTICA_URL=http://logistics-service:3009
-    depends_on:
-      - auth-service
-      - catalog-service
-      - transaction-service
-      - social-service
-      - ai-service
-      - credit-service
-      - logistics-service
-      - marketing-service
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  # Frontend Vue (Nuevo)
-  frontend:
-    build: ./frontend-vue
-    container_name: ecommerce-frontend
-    ports:
-      - "${PUERTO_FRONTEND:-3005}:80"
-    environment:
-      - VUE_APP_API_BASE_URL=${VUE_APP_API_BASE_URL:-http://localhost:3000}
-    depends_on:
-      - api-gateway
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
+      - mongodb
 
 volumes:
   postgres_data:
   mongodb_data:
   redis_data:
+  elasticsearch_data:
+  rabbitmq_data:
+  pgadmin_data:
 
 networks:
-  ecommerce-network:
+  stylehub_network:
     driver: bridge

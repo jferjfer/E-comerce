@@ -1,63 +1,30 @@
 const express = require('express');
+const ControladorAuth = require('../controladores/controladorAuth');
+const { autenticar } = require('../middleware/autenticacion');
+
 const router = express.Router();
 
-// Rutas simples para pruebas
-router.post('/login', async (req, res) => {
-  try {
-    const { email, contrasena } = req.body;
-    
-    // Validación simple
-    if (!email || !contrasena) {
-      return res.status(400).json({ error: 'Email y contraseña requeridos' });
-    }
+// Rutas de autenticación
+router.post('/registro', ControladorAuth.registrar);
+router.post('/login', ControladorAuth.iniciarSesion);
+router.post('/logout', ControladorAuth.cerrarSesion);
+router.get('/verificar', autenticar, ControladorAuth.verificarToken);
 
-    // Login simulado
-    const usuario = {
-      id: 1,
-      email: email,
-      nombre: 'Usuario Test'
-    };
-
-    const token = 'token_simulado_' + Date.now();
-
+// Ruta de login simple para pruebas
+router.post('/login-simple', async (req, res) => {
+  const { email, password } = req.body;
+  if (email === 'demo@estilomoda.com' && password === 'admin123') {
     res.json({
-      mensaje: 'Login exitoso',
-      token: token,
-      usuario: usuario
+      token: 'demo_token_' + Date.now(),
+      usuario: { id: 1, email, nombre: 'Usuario Demo', rol: 'cliente' }
     });
-  } catch (error) {
-    console.error('Error en login:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+  } else {
+    res.status(401).json({ error: 'Credenciales inválidas' });
   }
 });
 
-router.post('/registro', async (req, res) => {
-  try {
-    const { email, contrasena } = req.body;
-    
-    // Validación simple
-    if (!email || !contrasena) {
-      return res.status(400).json({ error: 'Email y contraseña requeridos' });
-    }
-
-    // Registro simulado
-    const usuario = {
-      id: Date.now(),
-      email: email,
-      nombre: 'Usuario Nuevo'
-    };
-
-    const token = 'token_simulado_' + Date.now();
-
-    res.json({
-      mensaje: 'Registro exitoso',
-      token: token,
-      usuario: usuario
-    });
-  } catch (error) {
-    console.error('Error en registro:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
+// Rutas de recuperación de contraseña
+router.post('/solicitar-recuperacion', ControladorAuth.solicitarRecuperacion);
+router.post('/restablecer-contrasena', ControladorAuth.restablecerContrasena);
 
 module.exports = router;

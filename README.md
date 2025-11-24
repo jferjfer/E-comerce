@@ -31,8 +31,7 @@ Sistema de e-commerce basado en microservicios con capacidades de IA, realidad a
 - **Backend**: Node.js / Python / Java
 - **Base de datos**: PostgreSQL / MongoDB
 - **Mensajería**: RabbitMQ / Kafka
-- **Contenedores**: Docker
-- **Orquestación**: Kubernetes
+- **Desarrollo**: Local
 
 ## Estructura del Proyecto
 
@@ -83,18 +82,7 @@ npm install
 npm run desarrollo
 ```
 
-### Con Docker
 
-```bash
-# Levantar todo el stack
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Detener servicios
-docker-compose down
-```
 
 ## URLs de Servicios
 
@@ -123,4 +111,4 @@ docker-compose down
 - ✅ Microservicio de catálogo
 - ✅ Microservicio de transacciones
 - ✅ Base de datos PostgreSQL y MongoDB
-- ✅ Dockerización completa
+- ✅ Configuración para desarrollo local

@@ -1,17 +1,17 @@
 {
-  "name": "ecommerce-microservices",
+  "name": "estilo-y-moda-ecomerce",
   "version": "1.0.0",
-  "description": "Sistema de e-commerce basado en microservicios",
+  "description": "Sistema de e-commerce con microservicios - Estilo y Moda",
   "scripts": {
-    "iniciar": "docker-compose up -d",
-    "detener": "docker-compose down",
-    "logs": "docker-compose logs -f",
-    "test": "node test-servicios.js"
+    "start": "node start.js",
+    "dev": "node start.js",
+    "setup": "node setup_completo.js",
+    "backend": "cd backend && npm run desarrollo",
+    "frontend": "cd frontend && npm run dev"
   },
   "dependencies": {
-    "axios": "^1.6.0"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.2",
+    "mongodb": "^6.21.0",
+    "pg": "^8.16.3"
   }
 }

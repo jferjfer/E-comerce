@@ -1,30 +1,21 @@
-// Usar simulador de BD en modo prueba
-if (process.env.MODO_PRUEBA === 'true') {
-  console.log('🧪 Usando simulador de base de datos para pruebas');
-  module.exports = require('./baseDatosPrueba');
-} else {
-  const { Pool } = require('pg');
+const { Pool } = require('pg');
 
-  const configuracionBD = {
-    host: process.env.BD_HOST || 'postgres',
-    port: process.env.BD_PUERTO || 5432,
-    database: process.env.BD_NOMBRE || 'ecommerce',
-    user: process.env.BD_USUARIO || 'admin',
-    password: process.env.BD_CONTRASENA || 'admin123',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-  };
+// Usar connectionString directa (funciona mejor con Neon)
+const configuracionBD = {
+  connectionString: 'postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
+  max: 10,
+  connectionTimeoutMillis: 20000,
+};
+console.log('🌍 Conectando a Neon Postgres...');
 
-  const pool = new Pool(configuracionBD);
+const pool = new Pool(configuracionBD);
 
-  pool.on('connect', () => {
-    console.log('✅ Conectado a la base de datos PostgreSQL');
-  });
+pool.on('connect', () => {
+  console.log('✅ Conectado a la base de datos');
+});
 
-  pool.on('error', (err) => {
-    console.error('❌ Error en la conexión a la base de datos:', err);
-  });
+pool.on('error', (err) => {
+  console.error('❌ Error en base de datos:', err);
+});
 
-  module.exports = pool;
-}
+module.exports = pool;

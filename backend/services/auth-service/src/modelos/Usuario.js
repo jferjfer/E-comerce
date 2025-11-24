@@ -45,6 +45,43 @@ class Usuario {
     const resultado = await pool.query(consulta, [nuevoTotal, idUsuario]);
     return resultado.rows[0];
   }
+
+  static async guardarTokenRecuperacion(usuarioId, token, expiracion) {
+    const consulta = `
+      UPDATE usuario 
+      SET token_recuperacion = $1, token_expiracion = $2, fecha_actualizacion = CURRENT_TIMESTAMP
+      WHERE id = $3
+    `;
+    await pool.query(consulta, [token, expiracion, usuarioId]);
+  }
+
+  static async buscarPorTokenRecuperacion(token) {
+    const consulta = `
+      SELECT id, nombre, email, token_expiracion 
+      FROM usuario 
+      WHERE token_recuperacion = $1
+    `;
+    const resultado = await pool.query(consulta, [token]);
+    return resultado.rows[0];
+  }
+
+  static async actualizarContrasena(usuarioId, nuevaContrasena) {
+    const consulta = `
+      UPDATE usuario 
+      SET contrasena = $1, fecha_actualizacion = CURRENT_TIMESTAMP
+      WHERE id = $2
+    `;
+    await pool.query(consulta, [nuevaContrasena, usuarioId]);
+  }
+
+  static async limpiarTokenRecuperacion(usuarioId) {
+    const consulta = `
+      UPDATE usuario 
+      SET token_recuperacion = NULL, token_expiracion = NULL, fecha_actualizacion = CURRENT_TIMESTAMP
+      WHERE id = $1
+    `;
+    await pool.query(consulta, [usuarioId]);
+  }
 }
 
 module.exports = Usuario;
