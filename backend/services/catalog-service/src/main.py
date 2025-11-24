@@ -4,6 +4,7 @@ from typing import Optional, List
 import uvicorn
 import os
 from datetime import datetime
+from config.database import conectar_bd, desconectar_bd, get_database
 
 app = FastAPI(
     title="Servicio de Catálogo v2.0",
@@ -20,52 +21,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Base de datos simulada mejorada
-PRODUCTOS_DB = [
-    {
-        "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
-        "categoria": "Vestidos", "descripcion": "Vestido elegante perfecto para el trabajo. Confeccionado en algodón orgánico de alta calidad.",
-        "imagen": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop",
-        "tallas": ["XS", "S", "M", "L", "XL"], "colores": ["Negro", "Azul marino", "Gris"],
-        "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 98, "stock": 25
-    },
-    {
-        "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
-        "categoria": "Camisas", "descripcion": "Camisa cómoda de lino sostenible, ideal para el día a día. Diseño versátil y fresco.",
-        "imagen": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
-        "tallas": ["S", "M", "L", "XL"], "colores": ["Blanco", "Beige", "Azul claro"],
-        "calificacion": 4, "en_stock": True, "es_eco": True, "compatibilidad": 95, "stock": 18
-    },
-    {
-        "id": "3", "nombre": "Pantalón Versátil", "precio": 79.90,
-        "categoria": "Pantalones", "descripcion": "Pantalón de denim reciclado que combina con todo tu guardarropa. Corte moderno y cómodo.",
-        "imagen": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
-        "tallas": ["28", "30", "32", "34", "36"], "colores": ["Azul", "Negro", "Gris"],
-        "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 92, "stock": 12
-    },
-    {
-        "id": "4", "nombre": "Blazer Inteligente IA", "precio": 129.90,
-        "categoria": "Blazers", "descripcion": "Blazer premium de lana merino. Perfecto para completar tu look profesional con elegancia.",
-        "imagen": "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=500&fit=crop",
-        "tallas": ["S", "M", "L", "XL"], "colores": ["Negro", "Gris oscuro", "Azul marino"],
-        "calificacion": 5, "en_stock": True, "compatibilidad": 96, "stock": 8
-    },
-    {
-        "id": "5", "nombre": "Falda Midi Elegante", "precio": 65.90,
-        "categoria": "Faldas", "descripcion": "Falda midi con corte A, perfecta para ocasiones formales e informales.",
-        "imagen": "https://images.unsplash.com/photo-1583496661160-fb5886a13d27?w=400&h=500&fit=crop",
-        "tallas": ["XS", "S", "M", "L"], "colores": ["Negro", "Camel", "Verde oliva"],
-        "calificacion": 4, "en_stock": True, "es_eco": False, "compatibilidad": 89, "stock": 15
-    }
-]
+# Eventos de inicio y cierre
+@app.on_event("startup")
+async def startup_event():
+    await conectar_bd()
+    await inicializar_datos()
 
-CATEGORIAS_DB = [
-    {"id": "1", "nombre": "Vestidos", "descripcion": "Vestidos elegantes y casuales", "productos_count": 1},
-    {"id": "2", "nombre": "Camisas", "descripcion": "Camisas y blusas", "productos_count": 1},
-    {"id": "3", "nombre": "Pantalones", "descripcion": "Pantalones y jeans", "productos_count": 1},
-    {"id": "4", "nombre": "Blazers", "descripcion": "Blazers y chaquetas", "productos_count": 1},
-    {"id": "5", "nombre": "Faldas", "descripcion": "Faldas de todos los estilos", "productos_count": 1}
-]
+@app.on_event("shutdown")
+async def shutdown_event():
+    await desconectar_bd()
+
+async def inicializar_datos():
+    """Inicializar datos si no existen"""
+    db = get_database()
+    
+    # Verificar si ya hay productos
+    productos_count = await db.productos.count_documents({})
+    if productos_count == 0:
+        # Insertar productos iniciales
+        productos_iniciales = [
+            {
+                "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
+                "categoria": "Vestidos", "descripcion": "Vestido elegante perfecto para el trabajo. Confeccionado en algodón orgánico de alta calidad.",
+                "imagen": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop",
+                "tallas": ["XS", "S", "M", "L", "XL"], "colores": ["Negro", "Azul marino", "Gris"],
+                "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 98, "stock": 25
+            },
+            {
+                "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
+                "categoria": "Camisas", "descripcion": "Camisa cómoda de lino sostenible, ideal para el día a día. Diseño versátil y fresco.",
+                "imagen": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
+                "tallas": ["S", "M", "L", "XL"], "colores": ["Blanco", "Beige", "Azul claro"],
+                "calificacion": 4, "en_stock": True, "es_eco": True, "compatibilidad": 95, "stock": 18
+            },
+            {
+                "id": "3", "nombre": "Pantalón Versátil", "precio": 79.90,
+                "categoria": "Pantalones", "descripcion": "Pantalón de denim reciclado que combina con todo tu guardarropa. Corte moderno y cómodo.",
+                "imagen": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
+                "tallas": ["28", "30", "32", "34", "36"], "colores": ["Azul", "Negro", "Gris"],
+                "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 92, "stock": 12
+            }
+        ]
+        await db.productos.insert_many(productos_iniciales)
+        print("✅ Productos iniciales insertados en MongoDB")
+
+
 
 # Endpoints de productos
 @app.get("/api/productos")
@@ -80,42 +80,58 @@ async def listar_productos(
 ):
     print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar}")
     
-    productos = PRODUCTOS_DB.copy()
+    db = get_database()
+    filtro = {}
     
-    # Filtros
+    # Construir filtros MongoDB
     if categoria:
-        productos = [p for p in productos if p["categoria"].lower() == categoria.lower()]
+        filtro["categoria"] = {"$regex": categoria, "$options": "i"}
     
-    if precio_min is not None:
-        productos = [p for p in productos if p["precio"] >= precio_min]
-    
-    if precio_max is not None:
-        productos = [p for p in productos if p["precio"] <= precio_max]
+    if precio_min is not None or precio_max is not None:
+        filtro["precio"] = {}
+        if precio_min is not None:
+            filtro["precio"]["$gte"] = precio_min
+        if precio_max is not None:
+            filtro["precio"]["$lte"] = precio_max
     
     if buscar:
-        productos = [p for p in productos if buscar.lower() in p["nombre"].lower() or buscar.lower() in p["descripcion"].lower()]
+        filtro["$or"] = [
+            {"nombre": {"$regex": buscar, "$options": "i"}},
+            {"descripcion": {"$regex": buscar, "$options": "i"}}
+        ]
     
     # Ordenamiento
+    sort_field = "_id"
+    sort_direction = 1
     if ordenar == "precio_asc":
-        productos.sort(key=lambda x: x["precio"])
+        sort_field, sort_direction = "precio", 1
     elif ordenar == "precio_desc":
-        productos.sort(key=lambda x: x["precio"], reverse=True)
+        sort_field, sort_direction = "precio", -1
     elif ordenar == "nombre":
-        productos.sort(key=lambda x: x["nombre"])
+        sort_field, sort_direction = "nombre", 1
     elif ordenar == "calificacion":
-        productos.sort(key=lambda x: x["calificacion"], reverse=True)
+        sort_field, sort_direction = "calificacion", -1
     
-    # Paginación
-    inicio = (pagina - 1) * limite
-    fin = inicio + limite
-    productos_paginados = productos[inicio:fin]
+    # Consulta con paginación
+    skip = (pagina - 1) * limite
+    
+    productos_cursor = db.productos.find(filtro).sort(sort_field, sort_direction).skip(skip).limit(limite)
+    productos = await productos_cursor.to_list(length=limite)
+    
+    # Contar total
+    total = await db.productos.count_documents(filtro)
+    
+    # Limpiar _id de MongoDB
+    for producto in productos:
+        if "_id" in producto:
+            del producto["_id"]
     
     return {
-        "productos": productos_paginados,
-        "total": len(productos),
+        "productos": productos,
+        "total": total,
         "pagina": pagina,
         "limite": limite,
-        "total_paginas": (len(productos) + limite - 1) // limite
+        "total_paginas": (total + limite - 1) // limite
     }
 
 @app.get("/api/productos/destacados")
@@ -126,9 +142,15 @@ async def productos_destacados():
 
 @app.get("/api/productos/{producto_id}")
 async def obtener_producto(producto_id: str):
-    producto = next((p for p in PRODUCTOS_DB if p["id"] == producto_id), None)
+    db = get_database()
+    producto = await db.productos.find_one({"id": producto_id})
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+    
+    # Limpiar _id de MongoDB
+    if "_id" in producto:
+        del producto["_id"]
+    
     return {"producto": producto}
 
 @app.get("/api/categorias")

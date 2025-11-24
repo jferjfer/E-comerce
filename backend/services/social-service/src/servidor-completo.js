@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
+const dbManager = require('./config/baseDatos');
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3004;
@@ -20,29 +21,32 @@ aplicacion.use((req, res, next) => {
   next();
 });
 
-// Base de datos simulada
-const resenasDB = [
-  {
-    id: '1', producto_id: '1', usuario_id: '1', usuario_nombre: 'Ana García',
-    calificacion: 5, comentario: 'Excelente vestido, muy cómodo y elegante. Lo recomiendo 100%.',
-    fecha: '2024-01-15T10:30:00Z', verificado: true
-  },
-  {
-    id: '2', producto_id: '2', usuario_id: '2', usuario_nombre: 'Carlos López',
-    calificacion: 4, comentario: 'Buena calidad de tela, aunque el color es un poco diferente a la foto.',
-    fecha: '2024-01-10T14:20:00Z', verificado: true
-  }
-];
+// Inicializar conexión a MongoDB
+let db;
 
-const preguntasDB = [
-  {
-    id: '1', producto_id: '1', usuario_id: '3', usuario_nombre: 'María Rodríguez',
-    pregunta: '¿Este vestido viene en talla XS?', respuesta: 'Sí, tenemos disponible en talla XS.',
-    fecha_pregunta: '2024-01-12T09:15:00Z', fecha_respuesta: '2024-01-12T11:30:00Z'
+async function inicializarDB() {
+  try {
+    db = await dbManager.conectar();
+    console.log('✅ Social Service conectado a MongoDB');
+    
+    // Inicializar datos si no existen
+    const resenasCount = await db.collection('resenas').countDocuments();
+    if (resenasCount === 0) {
+      await db.collection('resenas').insertMany([
+        {
+          id: '1', producto_id: '1', usuario_id: '1', usuario_nombre: 'Ana García',
+          calificacion: 5, comentario: 'Excelente vestido, muy cómodo y elegante. Lo recomiendo 100%.',
+          fecha: '2024-01-15T10:30:00Z', verificado: true
+        }
+      ]);
+      console.log('✅ Datos iniciales insertados en MongoDB');
+    }
+  } catch (error) {
+    console.error('❌ Error conectando Social Service:', error);
   }
-];
+}
 
-const listasDeseosDB = new Map(); // usuarioId -> [productoIds]
+inicializarDB();
 
 // Middleware de autenticación simple
 const autenticacion = (req, res, next) => {
@@ -57,45 +61,55 @@ const autenticacion = (req, res, next) => {
 };
 
 // Endpoints de reseñas
-aplicacion.get('/api/resenas/:productoId', (req, res) => {
-  const productoId = req.params.productoId;
-  console.log(`⭐ Obteniendo reseñas para producto ${productoId}`);
-  
-  const resenas = resenasDB.filter(r => r.producto_id === productoId);
-  const promedioCalificacion = resenas.length > 0 
-    ? resenas.reduce((sum, r) => sum + r.calificacion, 0) / resenas.length 
-    : 0;
-  
-  res.json({
-    resenas,
-    total: resenas.length,
-    promedio_calificacion: Math.round(promedioCalificacion * 10) / 10
-  });
+aplicacion.get('/api/resenas/:productoId', async (req, res) => {
+  try {
+    const productoId = req.params.productoId;
+    console.log(`⭐ Obteniendo reseñas para producto ${productoId}`);
+    
+    const resenas = await db.collection('resenas').find({ producto_id: productoId }).toArray();
+    const promedioCalificacion = resenas.length > 0 
+      ? resenas.reduce((sum, r) => sum + r.calificacion, 0) / resenas.length 
+      : 0;
+    
+    res.json({
+      resenas,
+      total: resenas.length,
+      promedio_calificacion: Math.round(promedioCalificacion * 10) / 10
+    });
+  } catch (error) {
+    console.error('Error obteniendo reseñas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
-aplicacion.post('/api/resenas', autenticacion, (req, res) => {
-  const { producto_id, calificacion, comentario } = req.body;
-  const usuario = req.usuario;
-  
-  console.log(`⭐ Nueva reseña de ${usuario.nombre} para producto ${producto_id}`);
-  
-  const nuevaResena = {
-    id: String(resenasDB.length + 1),
-    producto_id,
-    usuario_id: usuario.id,
-    usuario_nombre: usuario.nombre,
-    calificacion,
-    comentario,
-    fecha: new Date().toISOString(),
-    verificado: false
-  };
-  
-  resenasDB.push(nuevaResena);
-  
-  res.status(201).json({
-    mensaje: 'Reseña agregada exitosamente',
-    resena: nuevaResena
-  });
+aplicacion.post('/api/resenas', autenticacion, async (req, res) => {
+  try {
+    const { producto_id, calificacion, comentario } = req.body;
+    const usuario = req.usuario;
+    
+    console.log(`⭐ Nueva reseña de ${usuario.nombre} para producto ${producto_id}`);
+    
+    const nuevaResena = {
+      id: String(Date.now()),
+      producto_id,
+      usuario_id: usuario.id,
+      usuario_nombre: usuario.nombre,
+      calificacion,
+      comentario,
+      fecha: new Date().toISOString(),
+      verificado: false
+    };
+    
+    await db.collection('resenas').insertOne(nuevaResena);
+    
+    res.status(201).json({
+      mensaje: 'Reseña agregada exitosamente',
+      resena: nuevaResena
+    });
+  } catch (error) {
+    console.error('Error agregando reseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // Endpoints de preguntas

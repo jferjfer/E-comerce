@@ -6,8 +6,9 @@
     "iniciar": "node src/servidor.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
     "helmet": "^7.1.0"
   }
 }

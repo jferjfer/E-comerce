@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
+const pool = require('./config/baseDatos');
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3006;
@@ -20,7 +21,46 @@ aplicacion.use((req, res, next) => {
   next();
 });
 
-// Base de datos simulada
+// Inicializar tablas si no existen
+async function inicializarDB() {
+  try {
+    // Verificar si las tablas existen, si no, crearlas
+    const fs = require('fs');
+    const path = require('path');
+    const sqlPath = path.join(__dirname, '../sql/crear-tablas.sql');
+    
+    if (fs.existsSync(sqlPath)) {
+      const sql = fs.readFileSync(sqlPath, 'utf8');
+      await pool.query(sql);
+      console.log('✅ Marketing Service - Tablas verificadas/creadas');
+    }
+  } catch (error) {
+    console.error('❌ Error inicializando BD Marketing:', error);
+  }
+}
+
+inicializarDB();
+
+// Funciones de base de datos
+async function obtenerCupones() {
+  const consulta = 'SELECT * FROM cupon WHERE activo = true ORDER BY fecha_creacion DESC';
+  const resultado = await pool.query(consulta);
+  return resultado.rows;
+}
+
+async function validarCupon(codigo) {
+  const consulta = 'SELECT * FROM cupon WHERE codigo = $1 AND activo = true';
+  const resultado = await pool.query(consulta, [codigo]);
+  return resultado.rows[0];
+}
+
+async function obtenerFidelizacion(usuarioId) {
+  const consulta = 'SELECT * FROM fidelizacion WHERE usuario_id = $1';
+  const resultado = await pool.query(consulta, [usuarioId]);
+  return resultado.rows[0] || { puntos_acumulados: 0, nivel: 'bronce' };
+}
+
+// Base de datos simulada (mantener para compatibilidad)
 const cuponesDB = [
   {
     id: 'BIENVENIDA20',
@@ -120,59 +160,65 @@ const autenticacion = (req, res, next) => {
 };
 
 // Endpoints de cupones
-aplicacion.get('/api/cupones', (req, res) => {
-  console.log('🎫 Obteniendo cupones disponibles');
-  
-  const cuponesActivos = cuponesDB.filter(c => c.activo);
-  
-  res.json({
-    cupones: cuponesActivos,
-    total: cuponesActivos.length
-  });
+aplicacion.get('/api/cupones', async (req, res) => {
+  try {
+    console.log('🎫 Obteniendo cupones disponibles');
+    
+    const cupones = await obtenerCupones();
+    
+    res.json({
+      cupones: cupones,
+      total: cupones.length
+    });
+  } catch (error) {
+    console.error('Error obteniendo cupones:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
-aplicacion.post('/api/cupones/validar', (req, res) => {
-  const { codigo, monto_compra } = req.body;
-  
-  console.log(`🎫 Validando cupón: ${codigo} para compra de $${monto_compra}`);
-  
-  const cupon = cuponesDB.find(c => c.id === codigo && c.activo);
-  
-  if (!cupon) {
-    return res.status(404).json({ error: 'Cupón no válido o expirado' });
-  }
-  
-  if (cupon.minimo_compra && monto_compra < cupon.minimo_compra) {
-    return res.status(400).json({ 
-      error: `Compra mínima requerida: $${cupon.minimo_compra}` 
-    });
-  }
-  
-  if (cupon.usos_maximos > 0 && cupon.usos_actuales >= cupon.usos_maximos) {
-    return res.status(400).json({ error: 'Cupón agotado' });
-  }
-  
-  let descuento = 0;
-  
-  if (cupon.tipo === 'porcentaje') {
-    descuento = Math.min(
-      (monto_compra * cupon.valor) / 100,
-      cupon.maximo_descuento || monto_compra
-    );
-  } else if (cupon.tipo === 'monto_fijo') {
-    descuento = cupon.valor;
-  }
-  
-  res.json({
-    valido: true,
-    cupon: {
-      codigo: cupon.id,
-      nombre: cupon.nombre,
-      tipo: cupon.tipo,
-      descuento: Math.round(descuento),
-      envio_gratis: cupon.tipo === 'envio_gratis'
+aplicacion.post('/api/cupones/validar', async (req, res) => {
+  try {
+    const { codigo, monto_compra } = req.body;
+    
+    console.log(`🎫 Validando cupón: ${codigo} para compra de $${monto_compra}`);
+    
+    const cupon = await validarCupon(codigo);
+    
+    if (!cupon) {
+      return res.status(404).json({ error: 'Cupón no válido o expirado' });
     }
-  });
+    
+    if (cupon.minimo_compra && monto_compra < cupon.minimo_compra) {
+      return res.status(400).json({ 
+        error: `Compra mínima requerida: $${cupon.minimo_compra}` 
+      });
+    }
+    
+    if (cupon.usos_maximos > 0 && cupon.usos_actuales >= cupon.usos_maximos) {
+      return res.status(400).json({ error: 'Cupón agotado' });
+    }
+    
+    let descuento = 0;
+    
+    if (cupon.tipo === 'porcentaje') {
+      descuento = (monto_compra * cupon.valor) / 100;
+    } else if (cupon.tipo === 'monto_fijo') {
+      descuento = cupon.valor;
+    }
+    
+    res.json({
+      valido: true,
+      cupon: {
+        codigo: cupon.codigo,
+        descripcion: cupon.descripcion,
+        tipo: cupon.tipo,
+        descuento: Math.round(descuento * 100) / 100
+      }
+    });
+  } catch (error) {
+    console.error('Error validando cupón:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 aplicacion.post('/api/cupones/aplicar', autenticacion, (req, res) => {

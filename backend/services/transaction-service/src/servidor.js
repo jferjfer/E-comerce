@@ -6,8 +6,9 @@ require('dotenv').config();
 const rutasCarrito = require('./rutas/rutasCarrito');
 const rutasPedido = require('./rutas/rutasPedido');
 const rutasPago = require('./rutas/rutasPago');
-const autenticacion = require('./middleware/autenticacion');
+// const autenticacion = require('./middleware/autenticacion');
 const manejadorErrores = require('./middleware/manejadorErrores');
+const pool = require('./config/baseDatos');
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3003;
@@ -31,8 +32,22 @@ aplicacion.use((req, res, next) => {
 // aplicacion.use('/api/pedidos', rutasPedido);
 // aplicacion.use('/api/pagos', rutasPago);
 
-// Base de datos simulada para carritos
-const carritosPorUsuario = new Map();
+// Funciones de base de datos
+async function obtenerCarrito(usuarioId) {
+  const consulta = 'SELECT * FROM carrito WHERE usuario_id = $1';
+  const resultado = await pool.query(consulta, [usuarioId]);
+  return resultado.rows[0] || { productos: [], total: 0 };
+}
+
+async function guardarCarrito(usuarioId, carrito) {
+  const consulta = `
+    INSERT INTO carrito (usuario_id, productos, total, fecha_actualizacion)
+    VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+    ON CONFLICT (usuario_id) 
+    DO UPDATE SET productos = $2, total = $3, fecha_actualizacion = CURRENT_TIMESTAMP
+  `;
+  await pool.query(consulta, [usuarioId, JSON.stringify(carrito.productos), carrito.total]);
+}
 
 // Middleware de autenticación simple
 const autenticacion = (req, res, next) => {
@@ -45,50 +60,66 @@ const autenticacion = (req, res, next) => {
 };
 
 // Endpoints directos para desarrollo
-aplicacion.get('/api/carrito', autenticacion, (req, res) => {
-  const usuarioId = req.usuario.id;
-  const carrito = carritosPorUsuario.get(usuarioId) || { productos: [], total: 0 };
-  
-  console.log(`🛒 Obteniendo carrito para usuario ${usuarioId}`);
-  res.json({ datos: carrito });
+aplicacion.get('/api/carrito', autenticacion, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const carrito = await obtenerCarrito(usuarioId);
+    
+    console.log(`🛒 Obteniendo carrito para usuario ${usuarioId}`);
+    res.json({ datos: carrito });
+  } catch (error) {
+    console.error('Error obteniendo carrito:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
-aplicacion.post('/api/carrito', autenticacion, (req, res) => {
-  const usuarioId = req.usuario.id;
-  const { id_producto, cantidad = 1 } = req.body;
-  
-  console.log(`🛒 Agregando producto ${id_producto} (cantidad: ${cantidad}) al carrito del usuario ${usuarioId}`);
-  
-  // Obtener carrito actual
-  let carrito = carritosPorUsuario.get(usuarioId) || { productos: [], total: 0 };
-  
-  // Buscar si el producto ya existe
-  const productoExistente = carrito.productos.find(p => p.id === id_producto);
-  
-  if (productoExistente) {
-    productoExistente.cantidad += cantidad;
-  } else {
-    // Simular datos del producto
-    const nuevoProducto = {
-      id: id_producto,
-      nombre: `Producto ${id_producto}`,
-      precio: Math.floor(Math.random() * 10000) + 2000, // Precio aleatorio en centavos
-      cantidad: cantidad,
-      imagen: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop'
-    };
-    carrito.productos.push(nuevoProducto);
+aplicacion.post('/api/carrito', autenticacion, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { id_producto, cantidad = 1 } = req.body;
+    
+    console.log(`🛒 Agregando producto ${id_producto} (cantidad: ${cantidad}) al carrito del usuario ${usuarioId}`);
+    
+    // Obtener carrito actual
+    let carrito = await obtenerCarrito(usuarioId);
+    if (typeof carrito.productos === 'string') {
+      carrito.productos = JSON.parse(carrito.productos);
+    }
+    if (!Array.isArray(carrito.productos)) {
+      carrito.productos = [];
+    }
+    
+    // Buscar si el producto ya existe
+    const productoExistente = carrito.productos.find(p => p.id === id_producto);
+    
+    if (productoExistente) {
+      productoExistente.cantidad += cantidad;
+    } else {
+      // Simular datos del producto
+      const nuevoProducto = {
+        id: id_producto,
+        nombre: `Producto ${id_producto}`,
+        precio: Math.floor(Math.random() * 10000) + 2000,
+        cantidad: cantidad,
+        imagen: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop'
+      };
+      carrito.productos.push(nuevoProducto);
+    }
+    
+    // Recalcular total
+    carrito.total = carrito.productos.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
+    
+    // Guardar carrito
+    await guardarCarrito(usuarioId, carrito);
+    
+    res.json({
+      mensaje: 'Producto agregado al carrito exitosamente',
+      datos: { id_producto, cantidad, total_items: carrito.productos.length }
+    });
+  } catch (error) {
+    console.error('Error agregando al carrito:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
-  
-  // Recalcular total
-  carrito.total = carrito.productos.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
-  
-  // Guardar carrito
-  carritosPorUsuario.set(usuarioId, carrito);
-  
-  res.json({
-    mensaje: 'Producto agregado al carrito exitosamente',
-    datos: { id_producto, cantidad, total_items: carrito.productos.length }
-  });
 });
 
 aplicacion.delete('/api/carrito/:productoId', autenticacion, (req, res) => {

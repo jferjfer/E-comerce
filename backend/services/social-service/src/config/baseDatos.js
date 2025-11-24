@@ -1,45 +1,40 @@
 const { MongoClient } = require('mongodb');
 
-class BaseDatos {
+// Configuración MongoDB Atlas
+const MONGODB_URI = "mongodb+srv://Vercel-Admin-social_sevice:eEK842ToV46JasUj@social-sevice.rx6mlhq.mongodb.net/?retryWrites=true&w=majority";
+
+class DatabaseManager {
   constructor() {
-    this.cliente = null;
-    this.bd = null;
+    this.client = null;
+    this.db = null;
   }
 
   async conectar() {
     try {
-      // Conexión directa a MongoDB Atlas para producción
-      const uri = "mongodb+srv://Vercel-Admin-ecomerce:phva2EOCWSW1cybE@ecomerce.ckxq5b1.mongodb.net/?retryWrites=true&w=majority";
+      this.client = new MongoClient(MONGODB_URI);
+      await this.client.connect();
+      this.db = this.client.db('social_db');
       
-      this.cliente = new MongoClient(uri);
-      await this.cliente.connect();
-      this.bd = this.cliente.db('ecomerce');
-      
-      console.log('✅ Social Service conectado a MongoDB Atlas (Producción)');
+      console.log('✅ Social Service conectado a MongoDB Atlas');
+      return this.db;
     } catch (error) {
       console.error('❌ Error conectando Social Service a MongoDB:', error);
       throw error;
     }
   }
 
-  obtenerBD() {
-    if (!this.bd) {
-      throw new Error('Base de datos no conectada');
+  async desconectar() {
+    if (this.client) {
+      await this.client.close();
+      console.log('🔌 Social Service desconectado de MongoDB');
     }
-    return this.bd;
   }
 
-  async cerrar() {
-    if (this.cliente) {
-      await this.cliente.close();
-      console.log('❌ Social Service desconectado de MongoDB');
-    }
+  getDb() {
+    return this.db;
   }
 }
 
-const baseDatos = new BaseDatos();
+const dbManager = new DatabaseManager();
 
-// Conectar al iniciar
-baseDatos.conectar().catch(console.error);
-
-module.exports = baseDatos;
+module.exports = dbManager;

@@ -46,12 +46,33 @@ scipy==1.16.3                 # Algoritmos científicos y matemáticos
 scikit-learn==1.7.2           # Machine Learning y análisis de datos
 joblib==1.5.2                 # Paralelización y persistencia
 threadpoolctl==3.6.0          # Control de hilos para librerías numéricas
+pandas==2.2.3                 # Análisis y manipulación de datos
+matplotlib==3.9.3             # Visualización de datos
+seaborn==0.13.2               # Visualización estadística
+
+# ============ CACHE Y REDIS ============
+redis==5.2.1                  # Cliente Redis para Python
+hiredis==3.1.0                # Parser C para Redis (más rápido)
+
+# ============ SEGURIDAD Y AUTENTICACIÓN ============
+passlib==1.7.4                # Hashing de contraseñas
+bcrypt==4.2.1                 # Algoritmo de hashing bcrypt
+python-jose==3.3.0            # JWT tokens
+cryptography==44.0.0          # Criptografía moderna
+
+# ============ VALIDACIÓN Y UTILIDADES ============
+email-validator==2.2.0        # Validación de emails
+pillow==11.1.0                # Procesamiento de imágenes
+requests==2.32.3              # Cliente HTTP simple
+urllib3==2.3.0                # Biblioteca HTTP de bajo nivel
 
 # ====================================================
-# INSTALACIÓN:
+# INSTALACIÓN COMPLETA:
 # 1. python -m venv venv
 # 2. venv\Scripts\activate (Windows) / source venv/bin/activate (Linux/Mac)
 # 3. pip install -r requirements.txt
+# 4. npm install (en raíz del proyecto)
+# 5. npm run install-all (instala todas las dependencias Node.js)
 # ====================================================
 
 # ====================================================

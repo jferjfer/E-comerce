@@ -6,6 +6,7 @@ import uvicorn
 import os
 import random
 from datetime import datetime
+from config.database import conectar_bd, desconectar_bd, get_database
 
 app = FastAPI(
     title="AI Service v2.0",
@@ -22,6 +23,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Eventos de inicio y cierre
+@app.on_event("startup")
+async def startup_event():
+    await conectar_bd()
+    await inicializar_datos()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await desconectar_bd()
+
+async def inicializar_datos():
+    """Inicializar datos si no existen"""
+    db = get_database()
+    
+    # Verificar si ya hay productos
+    productos_count = await db.productos.count_documents({})
+    if productos_count == 0:
+        # Insertar productos iniciales para IA
+        productos_iniciales = [
+            {
+                "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
+                "categoria": "Vestidos", "estilo": "profesional", "colores": ["Negro", "Azul marino", "Gris"],
+                "compatibilidad_ia": 98, "popularidad": 95
+            },
+            {
+                "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
+                "categoria": "Camisas", "estilo": "casual", "colores": ["Blanco", "Beige", "Azul claro"],
+                "compatibilidad_ia": 95, "popularidad": 88
+            }
+        ]
+        await db.productos.insert_many(productos_iniciales)
+        print("✅ Productos IA iniciales insertados en MongoDB")
+
 # Modelos de datos
 class PerfilUsuario(BaseModel):
     usuario_id: str
@@ -36,71 +70,57 @@ class RecomendacionRequest(BaseModel):
     ocasion: Optional[str] = None
     limite: int = 5
 
-# Base de datos simulada
-productos_db = [
-    {
-        "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
-        "categoria": "Vestidos", "estilo": "profesional", "colores": ["Negro", "Azul marino", "Gris"],
-        "compatibilidad_ia": 98, "popularidad": 95
-    },
-    {
-        "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
-        "categoria": "Camisas", "estilo": "casual", "colores": ["Blanco", "Beige", "Azul claro"],
-        "compatibilidad_ia": 95, "popularidad": 88
-    },
-    {
-        "id": "3", "nombre": "Pantalón Versátil", "precio": 79.90,
-        "categoria": "Pantalones", "estilo": "versatil", "colores": ["Azul", "Negro", "Gris"],
-        "compatibilidad_ia": 92, "popularidad": 90
-    },
-    {
-        "id": "4", "nombre": "Blazer Inteligente IA", "precio": 129.90,
-        "categoria": "Blazers", "estilo": "profesional", "colores": ["Negro", "Gris oscuro", "Azul marino"],
-        "compatibilidad_ia": 96, "popularidad": 85
-    }
-]
 
-perfiles_usuarios = {}
-historial_compras = {}
 
 # Endpoints de recomendaciones
 @app.post("/api/recomendaciones/personalizada")
 async def obtener_recomendaciones_personalizadas(request: RecomendacionRequest):
     print(f"🤖 Generando recomendaciones para usuario {request.usuario_id}")
     
-    # Obtener perfil del usuario
-    perfil = perfiles_usuarios.get(request.usuario_id, {
+    db = get_database()
+    
+    # Obtener perfil del usuario desde MongoDB
+    perfil_doc = await db.perfiles.find_one({"usuario_id": request.usuario_id})
+    perfil = perfil_doc or {
         "estilo_preferido": "casual",
         "colores_favoritos": ["Negro", "Blanco", "Azul"],
         "talla": "M"
-    })
+    }
     
-    # Algoritmo de recomendación simulado
+    # Obtener productos desde MongoDB
+    filtro_productos = {}
+    if request.categoria:
+        filtro_productos["categoria"] = {"$regex": request.categoria, "$options": "i"}
+    
+    productos_cursor = db.productos.find(filtro_productos)
+    productos = await productos_cursor.to_list(length=None)
+    
+    # Algoritmo de recomendación
     productos_recomendados = []
     
-    for producto in productos_db:
+    for producto in productos:
         score = 0
         
         # Compatibilidad de estilo
-        if producto["estilo"] == perfil["estilo_preferido"]:
+        if producto.get("estilo") == perfil.get("estilo_preferido"):
             score += 30
         
         # Compatibilidad de colores
-        colores_comunes = set(producto["colores"]) & set(perfil["colores_favoritos"])
+        colores_comunes = set(producto.get("colores", [])) & set(perfil.get("colores_favoritos", []))
         score += len(colores_comunes) * 10
         
         # Compatibilidad IA del producto
-        score += producto["compatibilidad_ia"] * 0.3
+        score += producto.get("compatibilidad_ia", 0) * 0.3
         
         # Popularidad
-        score += producto["popularidad"] * 0.2
+        score += producto.get("popularidad", 0) * 0.2
         
-        # Filtro por categoría si se especifica
-        if request.categoria and producto["categoria"].lower() != request.categoria.lower():
-            continue
+        # Limpiar _id de MongoDB
+        if "_id" in producto:
+            del producto["_id"]
         
-        producto_con_score = {**producto, "score_recomendacion": round(score, 2)}
-        productos_recomendados.append(producto_con_score)
+        producto["score_recomendacion"] = round(score, 2)
+        productos_recomendados.append(producto)
     
     # Ordenar por score y limitar resultados
     productos_recomendados.sort(key=lambda x: x["score_recomendacion"], reverse=True)
@@ -150,7 +170,10 @@ async def obtener_tendencias():
 async def actualizar_perfil_usuario(perfil: PerfilUsuario):
     print(f"👤 Actualizando perfil para usuario {perfil.usuario_id}")
     
-    perfiles_usuarios[perfil.usuario_id] = {
+    db = get_database()
+    
+    perfil_data = {
+        "usuario_id": perfil.usuario_id,
         "estilo_preferido": perfil.estilo_preferido,
         "colores_favoritos": perfil.colores_favoritos,
         "talla": perfil.talla,
@@ -158,16 +181,29 @@ async def actualizar_perfil_usuario(perfil: PerfilUsuario):
         "fecha_actualizacion": datetime.now().isoformat()
     }
     
+    # Actualizar o insertar perfil
+    await db.perfiles.update_one(
+        {"usuario_id": perfil.usuario_id},
+        {"$set": perfil_data},
+        upsert=True
+    )
+    
     return {
         "mensaje": "Perfil actualizado exitosamente",
-        "perfil": perfiles_usuarios[perfil.usuario_id]
+        "perfil": perfil_data
     }
 
 @app.get("/api/perfil/{usuario_id}")
 async def obtener_perfil_usuario(usuario_id: str):
-    perfil = perfiles_usuarios.get(usuario_id)
+    db = get_database()
+    
+    perfil = await db.perfiles.find_one({"usuario_id": usuario_id})
     if not perfil:
         raise HTTPException(status_code=404, detail="Perfil no encontrado")
+    
+    # Limpiar _id de MongoDB
+    if "_id" in perfil:
+        del perfil["_id"]
     
     return {"perfil": perfil}
 

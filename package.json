@@ -7,6 +7,8 @@
     "dev": "node start.js",
     "dev-completo": "node iniciar-todos-servicios.js",
     "setup": "node setup_completo.js",
+    "install-all": "node instalar-dependencias.js",
+    "setup-completo": "npm run install-all && echo \"\\n🐍 Ahora activa el entorno virtual y ejecuta: pip install -r requirements.txt\"",
     "backend": "cd backend && npm run desarrollo",
     "frontend": "cd frontend && npm run dev",
     "test-armonizacion": "node test-armonizacion.js",
@@ -21,6 +23,10 @@
     "axios": "^1.6.2",
     "concurrently": "^8.2.2",
     "mongodb": "^6.21.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0"
   }
 }
