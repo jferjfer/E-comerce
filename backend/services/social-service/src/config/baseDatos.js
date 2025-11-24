@@ -8,19 +8,16 @@ class BaseDatos {
 
   async conectar() {
     try {
-      const host = process.env.MONGO_HOST || 'localhost';
-      const puerto = process.env.MONGO_PUERTO || 27017;
-      const nombreBD = process.env.MONGO_BD || 'bd_social';
-      
-      const uri = `mongodb://${host}:${puerto}`;
+      // Conexión directa a MongoDB Atlas para producción
+      const uri = "mongodb+srv://Vercel-Admin-ecomerce:phva2EOCWSW1cybE@ecomerce.ckxq5b1.mongodb.net/?retryWrites=true&w=majority";
       
       this.cliente = new MongoClient(uri);
       await this.cliente.connect();
-      this.bd = this.cliente.db(nombreBD);
+      this.bd = this.cliente.db('ecomerce');
       
-      console.log('✅ Conectado a MongoDB Social');
+      console.log('✅ Social Service conectado a MongoDB Atlas (Producción)');
     } catch (error) {
-      console.error('❌ Error conectando a MongoDB:', error);
+      console.error('❌ Error conectando Social Service a MongoDB:', error);
       throw error;
     }
   }
@@ -35,7 +32,7 @@ class BaseDatos {
   async cerrar() {
     if (this.cliente) {
       await this.cliente.close();
-      console.log('❌ Conexión a MongoDB cerrada');
+      console.log('❌ Social Service desconectado de MongoDB');
     }
   }
 }

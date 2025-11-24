@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react'
-import { productosSimulados } from '@/data/products'
 import { api } from '@/services/api'
 import ProductCard from '@/components/ProductCard'
 import Modal from '@/components/Modal'
@@ -28,17 +27,13 @@ export default function CatalogPage() {
     const cargarProductos = async () => {
       setCargando(true)
       try {
+        console.log('🔄 Cargando productos del catálogo...')
         const data = await api.obtenerProductos()
-        if (data.productos && data.productos.length > 0) {
-          // Combinar productos del backend con los simulados
-          setProductos([...productosSimulados, ...data.productos])
-        } else {
-          // Usar solo productos simulados si no hay datos del backend
-          setProductos(productosSimulados)
-        }
+        setProductos(data.productos || [])
+        console.log(`✅ ${data.productos?.length || 0} productos cargados`)
       } catch (error) {
-        console.error('Error al cargar productos:', error)
-        setProductos(productosSimulados)
+        console.error('❌ Error al cargar productos:', error)
+        setProductos([])
       } finally {
         setCargando(false)
       }
@@ -139,34 +134,34 @@ export default function CatalogPage() {
         )}
       </div>
       
-      {selectedProduct && (
+      {productoSeleccionado && (
         <Modal 
-          isOpen={showProductModal} 
-          onClose={closeProductModal}
-          title={selectedProduct.name}
+          isOpen={mostrarModalProducto} 
+          onClose={cerrarModalProducto}
+          title={productoSeleccionado.nombre}
           size="lg"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <img 
-                src={selectedProduct.image} 
+                src={productoSeleccionado.imagen} 
                 className="w-full h-auto rounded-lg" 
-                alt={selectedProduct.name}
+                alt={productoSeleccionado.nombre}
               />
             </div>
             <div className="space-y-4">
               <div>
-                <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
+                <p className="text-gray-600 mb-4">{productoSeleccionado.descripcion}</p>
                 <p className="text-3xl font-bold text-primary mb-6">
-                  {formatPrice(selectedProduct.price)}
+                  {formatPrice(productoSeleccionado.precio)}
                 </p>
                 <div className="space-y-3 mb-6">
                   <button 
                     onClick={() => {
-                      const addItem = useCartStore.getState().addItem
+                      const agregarItem = useCartStore.getState().agregarItem
                       const addNotification = useNotificationStore.getState().addNotification
-                      addItem(selectedProduct)
-                      addNotification(`${selectedProduct.name} agregado al carrito`, 'success')
+                      agregarItem(productoSeleccionado)
+                      addNotification(`${productoSeleccionado.nombre} agregado al carrito`, 'success')
                     }}
                     className="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition-colors"
                   >
@@ -174,7 +169,7 @@ export default function CatalogPage() {
                     Agregar al Carrito
                   </button>
                   <button 
-                    onClick={() => setShowAR(true)}
+                    onClick={() => setMostrarAR(true)}
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                   >
                     <i className="fas fa-camera mr-2"></i>
@@ -186,7 +181,7 @@ export default function CatalogPage() {
                 <h5 className="font-semibold mb-2">Características:</h5>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Material sostenible</li>
-                  <li>• Tallas disponibles: {selectedProduct.size?.join(', ')}</li>
+                  <li>• Tallas disponibles: {productoSeleccionado.tallas?.join(', ')}</li>
                   <li>• Envío gratuito</li>
                   <li>• Devolución 30 días</li>
                 </ul>
@@ -196,12 +191,12 @@ export default function CatalogPage() {
         </Modal>
       )}
       
-      {selectedProduct && (
+      {productoSeleccionado && (
         <ARModal
-          isOpen={showAR}
-          onClose={() => setShowAR(false)}
-          productName={selectedProduct.name}
-          productImage={selectedProduct.image}
+          isOpen={mostrarAR}
+          onClose={() => setMostrarAR(false)}
+          productName={productoSeleccionado.nombre}
+          productImage={productoSeleccionado.imagen}
         />
       )}
       

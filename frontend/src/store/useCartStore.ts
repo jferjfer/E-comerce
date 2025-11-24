@@ -23,10 +23,12 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
       token: undefined,
       
       agregarItem: async (producto: Producto) => {
-        const { items, token } = get()
-        const itemExistente = items.find(item => item.id === producto.id)
+        const { items, token } = get();
+        const itemExistente = items.find(item => item.id === producto.id);
         
-        // Actualizar localmente primero
+        console.log(`🛒 Agregando ${producto.nombre} al carrito local`);
+        
+        // Actualizar localmente primero para UX inmediata
         if (itemExistente) {
           set({
             items: items.map(item =>
@@ -34,19 +36,34 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
                 ? { ...item, cantidad: item.cantidad + 1 }
                 : item
             )
-          })
+          });
         } else {
           set({
             items: [...items, { ...producto, cantidad: 1 }]
-          })
+          });
         }
         
         // Sincronizar con backend si hay token
         if (token) {
           try {
-            await api.agregarAlCarrito(token, producto.id, 1)
+            const resultado = await api.agregarAlCarrito(token, producto.id, 1);
+            if (resultado.error) {
+              console.error('❌ Error del backend:', resultado.error);
+              // Revertir cambio local si falla el backend
+              if (itemExistente) {
+                set({
+                  items: items.map(item =>
+                    item.id === producto.id
+                      ? { ...item, cantidad: item.cantidad }
+                      : item
+                  )
+                });
+              } else {
+                set({ items: items.filter(item => item.id !== producto.id) });
+              }
+            }
           } catch (error) {
-            console.error('Error al sincronizar carrito:', error)
+            console.error('❌ Error de conexión al sincronizar carrito:', error);
           }
         }
       },
@@ -88,14 +105,19 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
       },
       
       sincronizarConBackend: async () => {
-        const { token } = get()
-        if (!token) return
+        const { token } = get();
+        if (!token) {
+          console.log('🔄 No hay token, omitiendo sincronización de carrito');
+          return;
+        }
         
         try {
-          const carritoBackend = await api.obtenerCarrito(token)
-          set({ items: carritoBackend.items })
+          console.log('🔄 Sincronizando carrito con backend...');
+          const carritoBackend = await api.obtenerCarrito(token);
+          set({ items: carritoBackend.items });
+          console.log('✅ Carrito sincronizado exitosamente');
         } catch (error) {
-          console.error('Error al sincronizar carrito:', error)
+          console.error('❌ Error al sincronizar carrito:', error);
         }
       }
     }),

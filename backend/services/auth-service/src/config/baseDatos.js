@@ -1,21 +1,23 @@
 const { Pool } = require('pg');
 
-// Configuración adaptativa: Vercel o Neon
+// Conexión directa a Neon PostgreSQL para producción
 const configuracionBD = {
-  connectionString: process.env.POSTGRES_URL || 'postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
+  connectionString: 'postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
   max: 10,
   connectionTimeoutMillis: 20000,
+  ssl: { rejectUnauthorized: false }
 };
-console.log('🌍 Conectando a:', process.env.POSTGRES_URL ? 'Vercel Postgres' : 'Neon Postgres');
+
+console.log('🌍 Conectando a Neon PostgreSQL (Producción)');
 
 const pool = new Pool(configuracionBD);
 
 pool.on('connect', () => {
-  console.log('✅ Conectado a la base de datos');
+  console.log('✅ Auth Service conectado a Neon PostgreSQL');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Error en base de datos:', err);
+  console.error('❌ Error en Auth Service BD:', err);
 });
 
 module.exports = pool;

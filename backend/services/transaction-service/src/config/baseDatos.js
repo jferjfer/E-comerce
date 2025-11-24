@@ -1,30 +1,23 @@
-// Usar simulador de BD en modo prueba
-if (process.env.MODO_PRUEBA === 'true') {
-  console.log('🧪 Usando simulador de base de datos para pruebas');
-  module.exports = require('./baseDatosPrueba');
-} else {
-  const { Pool } = require('pg');
+const { Pool } = require('pg');
 
-  const configuracionBD = {
-    host: process.env.BD_HOST || 'localhost',
-    port: process.env.BD_PUERTO || 5432,
-    database: process.env.BD_NOMBRE || 'bd_transacciones',
-    user: process.env.BD_USUARIO || 'admin',
-    password: process.env.BD_CONTRASENA || 'password',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-  };
+// Conexión directa a Neon PostgreSQL para producción
+const configuracionBD = {
+  connectionString: 'postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
+  max: 15,
+  connectionTimeoutMillis: 20000,
+  ssl: { rejectUnauthorized: false }
+};
 
-  const pool = new Pool(configuracionBD);
+console.log('🌍 Transaction Service conectando a Neon PostgreSQL');
 
-  pool.on('connect', () => {
-    console.log('✅ Conectado a la base de datos PostgreSQL');
-  });
+const pool = new Pool(configuracionBD);
 
-  pool.on('error', (err) => {
-    console.error('❌ Error en la conexión a la base de datos:', err);
-  });
+pool.on('connect', () => {
+  console.log('✅ Transaction Service conectado a Neon PostgreSQL');
+});
 
-  module.exports = pool;
-}
+pool.on('error', (err) => {
+  console.error('❌ Error en Transaction Service BD:', err);
+});
+
+module.exports = pool;

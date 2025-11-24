@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { productosSimulados } from '@/data/products'
 import { api } from '@/services/api'
 import ProductCard from '@/components/ProductCard'
 import Modal from '@/components/Modal'
@@ -15,6 +14,25 @@ export default function HomePage() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null)
   const [showProductModal, setShowProductModal] = useState(false)
   const [showAR, setShowAR] = useState(false)
+  const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
+  const [cargando, setCargando] = useState(true)
+  
+  // Cargar productos destacados del backend
+  useEffect(() => {
+    const cargarProductosDestacados = async () => {
+      try {
+        setCargando(true)
+        const { productos } = await api.obtenerProductosDestacados()
+        setProductosDestacados(productos)
+      } catch (error) {
+        console.error('Error al cargar productos destacados:', error)
+      } finally {
+        setCargando(false)
+      }
+    }
+    
+    cargarProductosDestacados()
+  }, [])
   
   const manejarVerDetalles = (producto: Producto) => {
     setProductoSeleccionado(producto)
@@ -83,13 +101,30 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {productosSimulados.map((producto) => (
-              <ProductCard
-                key={producto.id}
-                product={producto}
-                onViewDetails={manejarVerDetalles}
-              />
-            ))}
+            {cargando ? (
+              // Skeleton loading
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-md p-4 animate-pulse">
+                  <div className="bg-gray-300 h-48 rounded-lg mb-4"></div>
+                  <div className="bg-gray-300 h-4 rounded mb-2"></div>
+                  <div className="bg-gray-300 h-6 rounded mb-2 w-3/4"></div>
+                  <div className="bg-gray-300 h-8 rounded"></div>
+                </div>
+              ))
+            ) : productosDestacados.length > 0 ? (
+              productosDestacados.map((producto) => (
+                <ProductCard
+                  key={producto.id}
+                  product={producto}
+                  onViewDetails={manejarVerDetalles}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <i className="fas fa-box-open text-4xl text-gray-400 mb-4"></i>
+                <p className="text-gray-600">No hay productos destacados disponibles</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
