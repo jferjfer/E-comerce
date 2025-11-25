@@ -32,7 +32,7 @@ export default function LoginPage() {
         }
       } else {
         const response = await api.registrar(formData)
-        if (response.id) {
+        if (response.exito) {
           addNotification('Registro exitoso. Ahora puedes iniciar sesión', 'success')
           setIsLogin(true)
         } else {

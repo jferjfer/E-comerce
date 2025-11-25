@@ -121,82 +121,90 @@ async def listar_productos(
     print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar}")
     
     db = get_database()
-    filtro = {}
+    if db is None:
+        raise HTTPException(status_code=500, detail="Base de datos no disponible")
     
-    # Construir filtros MongoDB
-    if categoria:
-        filtro["categoria"] = {"$regex": categoria, "$options": "i"}
-    
-    if precio_min is not None or precio_max is not None:
-        filtro["precio"] = {}
-        if precio_min is not None:
-            filtro["precio"]["$gte"] = precio_min
-        if precio_max is not None:
-            filtro["precio"]["$lte"] = precio_max
-    
-    if buscar:
-        filtro["$or"] = [
-            {"nombre": {"$regex": buscar, "$options": "i"}},
-            {"descripcion": {"$regex": buscar, "$options": "i"}}
-        ]
-    
-    # Ordenamiento
-    sort_field = "_id"
-    sort_direction = 1
-    if ordenar == "precio_asc":
-        sort_field, sort_direction = "precio", 1
-    elif ordenar == "precio_desc":
-        sort_field, sort_direction = "precio", -1
-    elif ordenar == "nombre":
-        sort_field, sort_direction = "nombre", 1
-    elif ordenar == "calificacion":
-        sort_field, sort_direction = "calificacion", -1
-    
-    # Consulta con paginación
-    skip = (pagina - 1) * limite
-    
-    productos_cursor = db.productos.find(filtro).sort(sort_field, sort_direction).skip(skip).limit(limite)
-    productos = await productos_cursor.to_list(length=limite)
-    
-    # Contar total
-    total = await db.productos.count_documents(filtro)
-    
-    # Limpiar _id de MongoDB
-    for producto in productos:
-        if "_id" in producto:
-            del producto["_id"]
-    
-    return {
-        "productos": productos,
-        "total": total,
-        "pagina": pagina,
-        "limite": limite,
-        "total_paginas": (total + limite - 1) // limite
-    }
+    try:
+        filtro = {}
+        
+        # Construir filtros MongoDB
+        if categoria:
+            filtro["categoria"] = {"$regex": categoria, "$options": "i"}
+        
+        if precio_min is not None or precio_max is not None:
+            filtro["precio"] = {}
+            if precio_min is not None:
+                filtro["precio"]["$gte"] = precio_min
+            if precio_max is not None:
+                filtro["precio"]["$lte"] = precio_max
+        
+        if buscar:
+            filtro["$or"] = [
+                {"nombre": {"$regex": buscar, "$options": "i"}},
+                {"descripcion": {"$regex": buscar, "$options": "i"}}
+            ]
+        
+        # Ordenamiento
+        sort_field = "_id"
+        sort_direction = 1
+        if ordenar == "precio_asc":
+            sort_field, sort_direction = "precio", 1
+        elif ordenar == "precio_desc":
+            sort_field, sort_direction = "precio", -1
+        elif ordenar == "nombre":
+            sort_field, sort_direction = "nombre", 1
+        elif ordenar == "calificacion":
+            sort_field, sort_direction = "calificacion", -1
+        
+        # Consulta con paginación
+        skip = (pagina - 1) * limite
+        
+        productos_cursor = db.productos.find(filtro).sort(sort_field, sort_direction).skip(skip).limit(limite)
+        productos = await productos_cursor.to_list(length=limite)
+        
+        # Contar total
+        total = await db.productos.count_documents(filtro)
+        
+        print(f"✅ Productos encontrados: {len(productos)} de {total} total")
+        
+        # Limpiar _id de MongoDB
+        for producto in productos:
+            if "_id" in producto:
+                del producto["_id"]
+        
+        return {
+            "productos": productos,
+            "total": total,
+            "pagina": pagina,
+            "limite": limite,
+            "total_paginas": (total + limite - 1) // limite
+        }
+    except Exception as e:
+        print(f"❌ Error consultando MongoDB: {e}")
+        raise HTTPException(status_code=500, detail=f"Error consultando productos: {str(e)}")
 
 @app.get("/api/productos/destacados")
 async def productos_destacados():
     print("⭐ Obteniendo productos destacados")
     
     db = get_database()
-    if db is not None:
-        # Usar MongoDB si está disponible
-        try:
-            productos_cursor = db.productos.find({"calificacion": {"$gte": 5}}).limit(3)
-            productos = await productos_cursor.to_list(length=3)
-            
-            # Limpiar _id de MongoDB
-            for producto in productos:
-                if "_id" in producto:
-                    del producto["_id"]
-                    
-            return {"productos": productos, "total": len(productos)}
-        except Exception as e:
-            print(f"❌ Error MongoDB: {e}")
+    if db is None:
+        raise HTTPException(status_code=500, detail="Base de datos no disponible")
     
-    # Fallback a datos estáticos
-    destacados = [p for p in PRODUCTOS_DB if p["calificacion"] >= 5][:3]
-    return {"productos": destacados, "total": len(destacados)}
+    try:
+        productos_cursor = db.productos.find({"calificacion": {"$gte": 4}}).limit(6)
+        productos = await productos_cursor.to_list(length=6)
+        
+        # Limpiar _id de MongoDB
+        for producto in productos:
+            if "_id" in producto:
+                del producto["_id"]
+                
+        print(f"✅ Productos destacados encontrados: {len(productos)}")
+        return {"productos": productos, "total": len(productos)}
+    except Exception as e:
+        print(f"❌ Error MongoDB: {e}")
+        raise HTTPException(status_code=500, detail=f"Error obteniendo destacados: {str(e)}")
 
 @app.get("/api/productos/{producto_id}")
 async def obtener_producto(producto_id: str):

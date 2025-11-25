@@ -23,11 +23,10 @@ const usuariosPostgreSQL = [
   { email: 'analista.datos@estilomoda.com', nombre: 'Analista Datos', rol: 'analista_datos' },
   { email: 'coordinador.inventario@estilomoda.com', nombre: 'Coordinador Inventario', rol: 'coordinador_inventario' },
   { email: 'soporte.cliente@estilomoda.com', nombre: 'Soporte Cliente', rol: 'soporte_cliente' },
-  { email: 'cliente.vip@estilomoda.com', nombre: 'Cliente VIP', rol: 'cliente_vip' },
-  { email: 'cliente.premium@estilomoda.com', nombre: 'Cliente Premium', rol: 'cliente_premium' },
-  { email: 'cliente.gold@estilomoda.com', nombre: 'Cliente Gold', rol: 'cliente_gold' },
-  { email: 'cliente.regular@estilomoda.com', nombre: 'Cliente Regular', rol: 'cliente_regular' },
-  { email: 'cliente.nuevo@estilomoda.com', nombre: 'Cliente Nuevo', rol: 'cliente_nuevo' },
+  { email: 'cliente1@estilomoda.com', nombre: 'María García', rol: 'cliente' },
+  { email: 'cliente2@estilomoda.com', nombre: 'Juan Pérez', rol: 'cliente' },
+  { email: 'cliente3@estilomoda.com', nombre: 'Ana López', rol: 'cliente' },
+  { email: 'demo@estilomoda.com', nombre: 'Usuario Demo', rol: 'cliente' },
   { email: 'invitado@estilomoda.com', nombre: 'Usuario Invitado', rol: 'invitado' }
 ];
 

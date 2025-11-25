@@ -1,7 +1,7 @@
 import { useCartStore } from '@/store/useCartStore'
 import { useUserStore } from '@/store/useUserStore'
 import { useAuthStore } from '@/store/useAuthStore'
-
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import TypewriterText from '@/components/TypewriterText'
 
@@ -10,11 +10,25 @@ interface HeaderProps {
 }
 
 export default function Header({ onCartClick }: HeaderProps) {
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const totalItems = useCartStore(state => state.obtenerTotalItems())
   const favorites = useUserStore(state => state.favorites)
   const { usuario: user, estaAutenticado: isAuthenticated, cerrarSesion: logout } = useAuthStore()
   
   const userRole = user ? { name: user.rol, icon: 'fas fa-user', color: 'bg-primary' } : null
+
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   
   return (
     <header className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200 sticky top-0 z-50">
@@ -57,33 +71,49 @@ export default function Header({ onCartClick }: HeaderProps) {
                 )}
               </button>
               {isAuthenticated ? (
-                <div className="relative group">
-                  <div className={`w-12 h-12 ${userRole?.color || 'bg-gradient-to-r from-primary to-secondary'} rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform`}>
+                <div className="relative" ref={menuRef}>
+                  <button 
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className={`w-12 h-12 ${userRole?.color || 'bg-gradient-to-r from-primary to-secondary'} rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform`}
+                  >
                     <i className={`${userRole?.icon || 'fas fa-user'} text-white text-lg`}></i>
-                  </div>
-                  <div className="absolute right-0 top-14 bg-white rounded-lg shadow-xl p-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto z-50 min-w-[200px]">
-                    <div className="mb-3">
-                      <p className="font-semibold text-gray-900">{user?.nombre}</p>
-                      <p className="text-sm text-gray-600">{userRole?.name}</p>
+                  </button>
+                  {showUserMenu && (
+                    <div className="absolute right-0 top-14 bg-white rounded-lg shadow-xl p-4 z-50 min-w-[200px]">
+                      <div className="mb-3">
+                        <p className="font-semibold text-gray-900">{user?.nombre}</p>
+                        <p className="text-sm text-gray-600">{userRole?.name}</p>
+                      </div>
+                      <div className="border-t pt-3 space-y-2">
+                        <Link 
+                          to="/dashboard" 
+                          onClick={() => setShowUserMenu(false)}
+                          className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                        >
+                          <i className="fas fa-tachometer-alt mr-2"></i>
+                          Dashboard
+                        </Link>
+                        <Link 
+                          to="/profile" 
+                          onClick={() => setShowUserMenu(false)}
+                          className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                        >
+                          <i className="fas fa-user mr-2"></i>
+                          Mi Perfil
+                        </Link>
+                        <button 
+                          onClick={() => {
+                            logout()
+                            setShowUserMenu(false)
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <i className="fas fa-sign-out-alt mr-2"></i>
+                          Cerrar Sesión
+                        </button>
+                      </div>
                     </div>
-                    <div className="border-t pt-3 space-y-2">
-                      <Link to="/dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                        <i className="fas fa-tachometer-alt mr-2"></i>
-                        Dashboard
-                      </Link>
-                      <Link to="/profile" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                        <i className="fas fa-user mr-2"></i>
-                        Mi Perfil
-                      </Link>
-                      <button 
-                        onClick={logout}
-                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                      >
-                        <i className="fas fa-sign-out-alt mr-2"></i>
-                        Cerrar Sesión
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <Link to="/login" className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors">

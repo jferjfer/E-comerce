@@ -227,6 +227,16 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
   },
 
   // CLIENTES
+  cliente: {
+    role: 'cliente',
+    name: 'Cliente',
+    description: 'Cliente regular del e-commerce',
+    level: 10,
+    color: 'bg-blue-500',
+    icon: 'fas fa-user',
+    permissions: ['orders:view', 'products:view', 'cart:manage', 'profile:edit']
+  },
+
   vip_customer: {
     role: 'vip_customer',
     name: 'Cliente VIP',

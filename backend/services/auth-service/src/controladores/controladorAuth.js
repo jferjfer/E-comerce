@@ -22,7 +22,10 @@ class ControladorAuth {
       const resultado = await ServicioAuth.registrarUsuario(value);
 
       res.status(201).json({
+        exito: true,
         mensaje: 'Usuario registrado exitosamente',
+        usuario: resultado.usuario,
+        token: resultado.token,
         datos: resultado
       });
     } catch (error) {
@@ -46,7 +49,10 @@ class ControladorAuth {
       const resultado = await ServicioAuth.iniciarSesion(value.email, contrasena);
 
       res.json({
+        exito: true,
         mensaje: 'Sesión iniciada exitosamente',
+        usuario: resultado.usuario,
+        token: resultado.token,
         datos: resultado
       });
     } catch (error) {

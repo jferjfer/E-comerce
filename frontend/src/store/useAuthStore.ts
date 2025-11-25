@@ -54,16 +54,21 @@ export const useTiendaAuth = create<TiendaAuth>()(
 
       registrar: async (datos: any) => {
         try {
+          console.log('📝 Iniciando proceso de registro...');
           const resultado = await api.registrar(datos)
           
-          if (resultado && !resultado.error) {
-            // Después del registro, iniciar sesión automáticamente
+          console.log('📋 Resultado del registro:', resultado);
+          
+          if (resultado.exito) {
+            console.log('✅ Registro exitoso, iniciando sesión automática...');
+            // Si el registro fue exitoso, iniciar sesión automáticamente
             return await get().iniciarSesion(datos.email, datos.password)
           }
           
+          console.error('❌ Error en registro:', resultado.error);
           return false
         } catch (error) {
-          console.error('Error al registrar:', error)
+          console.error('❌ Error al registrar:', error)
           return false
         }
       }

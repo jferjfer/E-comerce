@@ -132,17 +132,43 @@ export const api = {
     }
   },
 
-  async registrar(datos: any) {
+  async registrar(datos: any): Promise<{ exito: boolean; usuario?: Usuario; token?: string; error?: string }> {
     try {
+      console.log('📝 Registrando usuario:', datos.email);
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
-      return await response.json();
+      
+      const data = await response.json();
+      console.log('📋 Respuesta del servidor:', { status: response.status, data });
+      
+      if (response.ok && (response.status === 200 || response.status === 201)) {
+        console.log('✅ Registro exitoso');
+        return {
+          exito: true,
+          usuario: data.usuario ? {
+            id: data.usuario.id?.toString() || '',
+            nombre: data.usuario.nombre || datos.nombre,
+            email: data.usuario.email || datos.email,
+            rol: data.usuario.rol || 'cliente'
+          } : undefined,
+          token: data.token
+        };
+      }
+      
+      console.error('❌ Error en registro:', data);
+      return {
+        exito: false,
+        error: data.error || data.mensaje || 'Error en el registro'
+      };
     } catch (error) {
-      console.error('Error al registrar:', error);
-      return { error: 'Error de conexión' };
+      console.error('❌ Error de conexión al registrar:', error);
+      return { 
+        exito: false,
+        error: 'Error de conexión con el servidor' 
+      };
     }
   },
 
