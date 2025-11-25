@@ -4,6 +4,10 @@ const helmet = require('helmet');
 require('dotenv').config();
 const dbManager = require('./config/baseDatos');
 
+// Datos en memoria como fallback
+const preguntasDB = [];
+const listasDeseosDB = new Map();
+
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3004;
 
@@ -205,7 +209,7 @@ aplicacion.get('/salud', (req, res) => {
     version: '2.0.0',
     timestamp: new Date().toISOString(),
     estadisticas: {
-      total_resenas: resenasDB.length,
+      total_resenas: 0,
       total_preguntas: preguntasDB.length,
       listas_deseos_activas: listasDeseosDB.size
     }

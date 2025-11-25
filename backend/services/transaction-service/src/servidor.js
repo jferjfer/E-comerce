@@ -10,6 +10,9 @@ const rutasPago = require('./rutas/rutasPago');
 const manejadorErrores = require('./middleware/manejadorErrores');
 const pool = require('./config/baseDatos');
 
+// Almacenamiento temporal de carritos (en memoria)
+const carritosPorUsuario = new Map();
+
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3003;
 
@@ -21,10 +24,37 @@ aplicacion.use(cors({
 }));
 aplicacion.use(express.json({ limit: '10mb' }));
 
-// Logging middleware
+// Logging middleware detallado
 aplicacion.use((req, res, next) => {
-  console.log(`🛒 ${req.method} ${req.url} - ${new Date().toLocaleTimeString()}`);
+  const timestamp = new Date().toISOString();
+  console.log(`🛒 [${timestamp}] ${req.method} ${req.url}`);
+  
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log(`   └─ Body:`, JSON.stringify(req.body, null, 2));
+  }
+  
+  const originalSend = res.send;
+  res.send = function(data) {
+    if (res.statusCode >= 400) {
+      console.error(`❌ [${timestamp}] Transaction Error ${res.statusCode}:`);
+      console.error(`   └─ Response:`, data);
+    }
+    originalSend.call(this, data);
+  };
+  
   next();
+});
+
+// Capturar errores globales
+process.on('uncaughtException', (err) => {
+  console.error(`🚨 [${new Date().toISOString()}] Transaction - Uncaught Exception:`);
+  console.error(`   └─ Error: ${err.message}`);
+  console.error(`   └─ Stack: ${err.stack}`);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`🚨 [${new Date().toISOString()}] Transaction - Unhandled Rejection:`);
+  console.error(`   └─ Reason:`, reason);
 });
 
 // Rutas
@@ -122,52 +152,75 @@ aplicacion.post('/api/carrito', autenticacion, async (req, res) => {
   }
 });
 
-aplicacion.delete('/api/carrito/:productoId', autenticacion, (req, res) => {
-  const usuarioId = req.usuario.id;
-  const productoId = req.params.productoId;
-  
-  console.log(`🗑️ Eliminando producto ${productoId} del carrito del usuario ${usuarioId}`);
-  
-  let carrito = carritosPorUsuario.get(usuarioId) || { productos: [], total: 0 };
-  carrito.productos = carrito.productos.filter(p => p.id !== productoId);
-  carrito.total = carrito.productos.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
-  
-  carritosPorUsuario.set(usuarioId, carrito);
-  
-  res.json({ mensaje: 'Producto eliminado del carrito' });
+aplicacion.delete('/api/carrito/:productoId', autenticacion, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const productoId = req.params.productoId;
+    
+    console.log(`🗑️ Eliminando producto ${productoId} del carrito del usuario ${usuarioId}`);
+    
+    let carrito = await obtenerCarrito(usuarioId);
+    if (typeof carrito.productos === 'string') {
+      carrito.productos = JSON.parse(carrito.productos);
+    }
+    if (!Array.isArray(carrito.productos)) {
+      carrito.productos = [];
+    }
+    
+    carrito.productos = carrito.productos.filter(p => p.id !== productoId);
+    carrito.total = carrito.productos.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
+    
+    await guardarCarrito(usuarioId, carrito);
+    
+    res.json({ mensaje: 'Producto eliminado del carrito' });
+  } catch (error) {
+    console.error('Error eliminando del carrito:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
-aplicacion.post('/api/checkout', autenticacion, (req, res) => {
-  const usuarioId = req.usuario.id;
-  const { metodo_pago, direccion_envio } = req.body;
-  
-  console.log(`💳 Procesando checkout para usuario ${usuarioId}`);
-  
-  const carrito = carritosPorUsuario.get(usuarioId) || { productos: [], total: 0 };
-  
-  if (carrito.productos.length === 0) {
-    return res.status(400).json({ error: 'El carrito está vacío' });
+aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { metodo_pago, direccion_envio } = req.body;
+    
+    console.log(`💳 Procesando checkout para usuario ${usuarioId}`);
+    
+    let carrito = await obtenerCarrito(usuarioId);
+    if (typeof carrito.productos === 'string') {
+      carrito.productos = JSON.parse(carrito.productos);
+    }
+    if (!Array.isArray(carrito.productos)) {
+      carrito.productos = [];
+    }
+    
+    if (carrito.productos.length === 0) {
+      return res.status(400).json({ error: 'El carrito está vacío' });
+    }
+    
+    // Simular procesamiento de pago
+    const pedido = {
+      id: `pedido_${Date.now()}`,
+      usuario_id: usuarioId,
+      productos: carrito.productos,
+      total: carrito.total,
+      metodo_pago,
+      direccion_envio,
+      estado: 'procesando',
+      fecha_creacion: new Date().toISOString()
+    };
+    
+    // Limpiar carrito
+    await guardarCarrito(usuarioId, { productos: [], total: 0 });
+    
+    res.json({
+      mensaje: 'Pedido creado exitosamente',
+      pedido: pedido
+    });
+  } catch (error) {
+    console.error('Error en checkout:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
-  
-  // Simular procesamiento de pago
-  const pedido = {
-    id: `pedido_${Date.now()}`,
-    usuario_id: usuarioId,
-    productos: carrito.productos,
-    total: carrito.total,
-    metodo_pago,
-    direccion_envio,
-    estado: 'procesando',
-    fecha_creacion: new Date().toISOString()
-  };
-  
-  // Limpiar carrito
-  carritosPorUsuario.set(usuarioId, { productos: [], total: 0 });
-  
-  res.json({
-    mensaje: 'Pedido creado exitosamente',
-    pedido: pedido
-  });
 });
 
 // Ruta de salud
@@ -177,7 +230,7 @@ aplicacion.get('/salud', (req, res) => {
     servicio: 'transacciones',
     version: '2.0.0',
     timestamp: new Date().toISOString(),
-    carritos_activos: carritosPorUsuario.size
+    carritos_activos: 0
   });
 });
 

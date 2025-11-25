@@ -1,6 +1,17 @@
 import { Producto, Usuario, ItemCarrito } from '@/types';
 
+// URL del Simple Gateway
 const API_BASE_URL = 'http://localhost:3000';
+
+// URLs directas a microservicios (respaldo)
+const MICROSERVICES = {
+  AUTH: 'http://localhost:3011',
+  CATALOG: 'http://localhost:3002',
+  TRANSACTION: 'http://localhost:3003',
+  SOCIAL: 'http://localhost:3004',
+  MARKETING: 'http://localhost:3006',
+  AI: 'http://localhost:3007'
+};
 
 // Función para transformar producto del backend al frontend (armonizada)
 const transformarProducto = (productoBackend: any): Producto => ({

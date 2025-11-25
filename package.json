@@ -1,32 +1,44 @@
 {
-  "name": "estilo-y-moda-ecomerce",
+  "name": "estilo-y-moda-ecommerce",
   "version": "1.0.0",
-  "description": "Sistema de e-commerce con microservicios - Estilo y Moda",
+  "description": "Sistema de e-commerce con microservicios",
+  "main": "iniciar-todos-servicios.js",
   "scripts": {
-    "start": "node start.js",
-    "dev": "node start.js",
+    "dev": "node iniciar-todos-servicios.js",
     "dev-completo": "node iniciar-todos-servicios.js",
-    "setup": "node setup_completo.js",
-    "install-all": "node instalar-dependencias.js",
-    "setup-completo": "npm run install-all && echo \"\\n🐍 Ahora activa el entorno virtual y ejecuta: pip install -r requirements.txt\"",
-    "backend": "cd backend && npm run desarrollo",
-    "frontend": "cd frontend && npm run dev",
-    "test-armonizacion": "node test-armonizacion.js",
-    "auth-service": "cd backend/services/auth-service && npm run desarrollo",
-    "catalog-service": "cd backend/services/catalog-service && python src/main.py",
-    "transaction-service": "cd backend/services/transaction-service && node src/servidor.js",
-    "social-service": "cd backend/services/social-service && node src/servidor-completo.js",
-    "marketing-service": "cd backend/services/marketing-service && node src/servidor-completo.js",
-    "ai-service": "cd backend/services/ai-service && python src/main-completo.py"
+    "frontend": "node iniciar-frontend.js",
+    "backend": "node iniciar-backend-basico.js",
+    "servicios": "node iniciar-servicios-extra.js",
+
+    "limpiar-definitivo": "node limpiar-puertos-definitivo.js",
+    "iniciar-robusto": "node limpiar-puertos-definitivo.js && timeout /t 3 /nobreak > nul && npm run dev-completo",
+    "robusto": "node inicio-robusto-puertos.js",
+    "kill-ports": "node limpiar-puertos-definitivo.js",
+    "start": "node iniciar-sistema-completo.js",
+    "sistema-completo": "node iniciar-sistema-completo.js",
+
+    "crear-usuarios": "node scripts/crear-usuarios-todos-roles.js",
+    "setup-completo": "npm install && cd frontend && npm install && cd backend/services/auth-service && npm install && cd ../transaction-service && npm install && cd ../social-service && npm install && cd ../marketing-service && npm install",
+    "install-all": "npm run setup-completo",
+    "test-armonizacion": "curl http://localhost:3000/estado-servicios",
+    "logs": "node monitor-logs.js",
+    "logs-auth": "node monitor-logs.js auth",
+    "logs-catalog": "node monitor-logs.js catalog",
+    "logs-transaction": "node monitor-logs.js transaction",
+    "logs-errors": "node monitor-logs.js | grep ERROR"
   },
   "dependencies": {
-    "axios": "^1.6.2",
-    "concurrently": "^8.2.2",
-    "mongodb": "^6.21.0",
-    "pg": "^8.16.3",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0"
-  }
+    "bcrypt": "^5.1.0",
+
+    "mongodb": "^6.0.0",
+    "pg": "^8.11.0"
+  },
+  "keywords": [
+    "ecommerce",
+    "microservicios",
+    "nodejs",
+    "react"
+  ],
+  "author": "Jose Fernando Vertel",
+  "license": "MIT"
 }

@@ -1,7 +1,49 @@
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const path = require('path');
 
 console.log('🚀 Iniciando TODOS los Microservicios - Estilo y Moda v2.0\n');
+
+// Limpiar puertos primero
+const puertos = [3000, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3011, 5173];
+
+console.log('🧹 Limpiando puertos ocupados...');
+
+async function limpiarPuerto(puerto) {
+  return new Promise((resolve) => {
+    exec(`netstat -ano | findstr :${puerto}`, (error, stdout) => {
+      if (stdout) {
+        const lineas = stdout.split('\n').filter(linea => linea.includes('LISTENING'));
+        
+        lineas.forEach(linea => {
+          const partes = linea.trim().split(/\s+/);
+          const pid = partes[partes.length - 1];
+          
+          if (pid && pid !== '0') {
+            exec(`taskkill /PID ${pid} /F`, (killError) => {
+              if (!killError) {
+                console.log(`✅ Puerto ${puerto} liberado`);
+              }
+            });
+          }
+        });
+      }
+      resolve();
+    });
+  });
+}
+
+async function limpiarTodosPuertos() {
+  for (const puerto of puertos) {
+    await limpiarPuerto(puerto);
+  }
+  
+  console.log('🎉 Limpieza de puertos completada!');
+  console.log('⏳ Esperando 3 segundos antes de iniciar servicios...\n');
+  
+  setTimeout(() => {
+    iniciarTodosLosServicios();
+  }, 3000);
+}
 
 // Configuración de todos los servicios
 const servicios = [
@@ -16,8 +58,8 @@ const servicios = [
   {
     nombre: '📦 Catalog Service',
     directorio: path.join(__dirname, 'backend', 'services', 'catalog-service'),
-    comando: 'python',
-    argumentos: ['src/main.py'],
+    comando: 'uvicorn',
+    argumentos: ['src.main:app', '--host', '0.0.0.0', '--port', '3002', '--reload'],
     puerto: 3002,
     delay: 2000
   },
@@ -48,16 +90,16 @@ const servicios = [
   {
     nombre: '🤖 AI Service',
     directorio: path.join(__dirname, 'backend', 'services', 'ai-service'),
-    comando: 'python',
-    argumentos: ['src/main-completo.py'],
+    comando: 'uvicorn',
+    argumentos: ['src.main-completo:app', '--host', '0.0.0.0', '--port', '3007', '--reload'],
     puerto: 3007,
     delay: 10000
   },
   {
-    nombre: '🌐 API Gateway',
-    directorio: path.join(__dirname, 'backend'),
-    comando: 'npm',
-    argumentos: ['run', 'desarrollo'],
+    nombre: '🌐 Simple Gateway',
+    directorio: path.join(__dirname, 'simple-gateway'),
+    comando: 'node',
+    argumentos: ['server.js'],
     puerto: 3000,
     delay: 12000
   },
@@ -158,5 +200,67 @@ process.on('SIGINT', () => {
   }, 2000);
 });
 
+// Capturar errores globales del sistema
+process.on('uncaughtException', (err) => {
+  console.error(`\n🚨 [${new Date().toISOString()}] SISTEMA - Error No Capturado:`);
+  console.error(`   └─ Error: ${err.message}`);
+  console.error(`   └─ Stack: ${err.stack}`);
+  console.error(`   └─ Reiniciando servicios...\n`);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`\n🚨 [${new Date().toISOString()}] SISTEMA - Promesa Rechazada:`);
+  console.error(`   └─ Razón:`, reason);
+  console.error(`   └─ Promesa:`, promise);
+});
+
+// Logging de inicio de servicios mejorado
+function iniciarServicio(servicio) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const timestamp = new Date().toISOString();
+      console.log(`\n🚀 [${timestamp}] Iniciando ${servicio.nombre} en puerto ${servicio.puerto}...`);
+      
+      const proceso = spawn(servicio.comando, servicio.argumentos, {
+        cwd: servicio.directorio,
+        stdio: 'inherit',
+        shell: true,
+        env: { ...process.env, PUERTO: servicio.puerto }
+      });
+
+      proceso.on('error', (err) => {
+        console.error(`\n❌ [${new Date().toISOString()}] ERROR en ${servicio.nombre}:`);
+        console.error(`   └─ Comando: ${servicio.comando} ${servicio.argumentos.join(' ')}`);
+        console.error(`   └─ Directorio: ${servicio.directorio}`);
+        console.error(`   └─ Error: ${err.message}`);
+        console.error(`   └─ Stack: ${err.stack}`);
+      });
+
+      proceso.on('exit', (code, signal) => {
+        const timestamp = new Date().toISOString();
+        if (code !== 0) {
+          console.error(`\n⚠️ [${timestamp}] ${servicio.nombre} terminó inesperadamente:`);
+          console.error(`   └─ Código de salida: ${code}`);
+          console.error(`   └─ Señal: ${signal}`);
+        } else {
+          console.log(`\n✅ [${timestamp}] ${servicio.nombre} terminó correctamente`);
+        }
+      });
+
+      procesosActivos.push({
+        nombre: servicio.nombre,
+        proceso: proceso,
+        puerto: servicio.puerto
+      });
+
+      resolve();
+    }, servicio.delay);
+  });
+}
+
 // Iniciar el sistema completo
-iniciarTodosLosServicios().catch(console.error);
+limpiarTodosPuertos().catch((err) => {
+  console.error(`\n❌ Error al limpiar puertos:`, err);
+  console.error('Continuando con el inicio de servicios...\n');
+  iniciarTodosLosServicios();
+});

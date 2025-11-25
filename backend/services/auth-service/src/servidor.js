@@ -18,9 +18,29 @@ aplicacion.use(cors({
 }));
 aplicacion.use(express.json({ limit: '10mb' }));
 
-// Logging middleware
+// Logging middleware detallado
 aplicacion.use((req, res, next) => {
-  console.log(`🔐 ${req.method} ${req.url} - ${new Date().toLocaleTimeString()}`);
+  const timestamp = new Date().toISOString();
+  console.log(`🔐 [${timestamp}] ${req.method} ${req.url}`);
+  
+  if (req.body && Object.keys(req.body).length > 0) {
+    const bodyLog = { ...req.body };
+    if (bodyLog.password) bodyLog.password = '***';
+    if (bodyLog.contrasena) bodyLog.contrasena = '***';
+    console.log(`   └─ Body:`, JSON.stringify(bodyLog, null, 2));
+  }
+  
+  // Log de respuesta
+  const originalSend = res.send;
+  res.send = function(data) {
+    if (res.statusCode >= 400) {
+      console.error(`❌ [${timestamp}] Error Response ${res.statusCode}:`, data);
+    } else {
+      console.log(`✅ [${timestamp}] Success Response ${res.statusCode}`);
+    }
+    originalSend.call(this, data);
+  };
+  
   next();
 });
 

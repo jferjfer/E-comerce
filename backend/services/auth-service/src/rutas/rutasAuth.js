@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Rutas de autenticación
 router.post('/registro', ControladorAuth.registrar);
+router.post('/register', ControladorAuth.registrar); // Alias para frontend
 router.post('/login', ControladorAuth.iniciarSesion);
 router.post('/logout', ControladorAuth.cerrarSesion);
 router.get('/verificar', autenticar, ControladorAuth.verificarToken);

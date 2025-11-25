@@ -22,7 +22,7 @@ Sistema de e-commerce moderno basado en arquitectura de microservicios con capac
 ### 🌐 Componentes Principales
 
 - **🎨 Frontend**: React + TypeScript + Tailwind CSS
-- **🌉 API Gateway**: Punto de entrada único (Puerto 3000)
+- **🌐 Simple Gateway**: Proxy ligero para microservicios (Puerto 3000)
 - **🗄️ Base de Datos**: PostgreSQL + MongoDB + Redis
 - **📚 Documentación**: Completa y actualizada
 
@@ -39,7 +39,7 @@ Sistema de e-commerce moderno basado en arquitectura de microservicios con capac
 - **Node.js** + Express (Auth, Transaction, Social, Marketing)
 - **Python** + FastAPI (Catalog, AI)
 - **Java** + Spring Boot (Credit, Logistics)
-- **API Gateway** centralizado
+- **Simple Gateway** como proxy ligero
 
 ### Base de Datos
 - **PostgreSQL** - Datos estructurados
@@ -113,7 +113,7 @@ npm run auth-service # Solo autenticación
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
 | **Frontend** | http://localhost:3005 | Interfaz de usuario |
-| **API Gateway** | http://localhost:3000 | Punto de entrada |
+| **Simple Gateway** | http://localhost:3000 | Proxy de microservicios |
 | **Estado Servicios** | http://localhost:3000/estado-servicios | Monitor de servicios |
 | **Auth Service** | http://localhost:3011/salud | Servicio de autenticación |
 | **Catalog Service** | http://localhost:3002/salud | Servicio de catálogo |
@@ -122,9 +122,12 @@ npm run auth-service # Solo autenticación
 
 | Email | Contraseña | Rol | Permisos |
 |-------|------------|-----|----------|
-| `demo@estilomoda.com` | `admin123` | cliente | Compras básicas |
-| `admin@estilomoda.com` | `admin123` | admin | Administración completa |
-| `vendedor@estilomoda.com` | `admin123` | vendedor | Gestión de productos |
+| `ceo@estilomoda.com` | `admin123` | CEO | Control total del sistema |
+| `demo@estilomoda.com` | `admin123` | Cliente Regular | Compras básicas |
+| `admin@estilomoda.com` | `admin123` | Admin | Administración completa |
+| `vendedor@estilomoda.com` | `admin123` | Seller Premium | Gestión avanzada productos |
+| `manager@estilomoda.com` | `admin123` | Product Manager | Crear/gestionar productos |
+| `vip@estilomoda.com` | `admin123` | Cliente VIP | Experiencia premium |
 
 ## ✨ Funcionalidades Implementadas
 

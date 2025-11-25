@@ -5,27 +5,27 @@ const Usuario = require('../modelos/Usuario');
 class ServicioAuth {
   async registrarUsuario(datosUsuario) {
     try {
+      console.log('📝 Iniciando registro de usuario:', datosUsuario.email);
       const { email, password, nombre, apellido } = datosUsuario;
       
       // Verificar si el usuario ya existe
+      console.log('🔍 Verificando si el usuario existe:', email);
       const usuarioExistente = await Usuario.buscarPorEmail(email);
       if (usuarioExistente) {
+        console.log('❌ Usuario ya existe:', email);
         return { exito: false, error: 'El usuario ya existe' };
       }
+      console.log('✅ Usuario no existe, procediendo con registro');
 
-      // Encriptar contraseña
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(password, saltRounds);
-
-      // Crear usuario
+      // Crear usuario (el modelo ya hashea la contraseña)
+      console.log('📝 Creando usuario en base de datos...');
       const nuevoUsuario = await Usuario.crear({
         email,
-        password_hash: passwordHash,
-        nombre,
-        apellido,
-        rol: 'cliente',
-        activo: true
+        contrasena: password,
+        nombre: nombre + (apellido ? ` ${apellido}` : ''),
+        rol: 'cliente'
       });
+      console.log('✅ Usuario creado exitosamente:', nuevoUsuario.id);
 
       // Generar token
       const token = this.generarToken(nuevoUsuario);
@@ -49,34 +49,6 @@ class ServicioAuth {
 
   async iniciarSesion(email, password) {
     try {
-      // Usuarios demo para desarrollo
-      const usuariosDemo = {
-        'demo@estilomoda.com': { 
-          id: '1', nombre: 'Cliente Demo', rol: 'cliente', password: 'admin123' 
-        },
-        'admin@estilomoda.com': { 
-          id: '2', nombre: 'Admin Demo', rol: 'admin', password: 'admin123' 
-        },
-        'vendedor@estilomoda.com': { 
-          id: '3', nombre: 'Vendedor Demo', rol: 'vendedor', password: 'admin123' 
-        }
-      };
-
-      const usuarioDemo = usuariosDemo[email];
-      if (usuarioDemo && usuarioDemo.password === password) {
-        const token = this.generarToken(usuarioDemo);
-        return {
-          exito: true,
-          token,
-          usuario: {
-            id: usuarioDemo.id,
-            email,
-            nombre: usuarioDemo.nombre,
-            rol: usuarioDemo.rol
-          }
-        };
-      }
-
       // Buscar en base de datos
       const usuario = await Usuario.buscarPorEmail(email);
       if (!usuario) {
@@ -84,7 +56,7 @@ class ServicioAuth {
       }
 
       // Verificar contraseña
-      const passwordValida = await bcrypt.compare(password, usuario.password_hash);
+      const passwordValida = await bcrypt.compare(password, usuario.contrasena);
       if (!passwordValida) {
         return { exito: false, error: 'Credenciales inválidas' };
       }
@@ -99,7 +71,6 @@ class ServicioAuth {
           id: usuario.id,
           email: usuario.email,
           nombre: usuario.nombre,
-          apellido: usuario.apellido,
           rol: usuario.rol
         }
       };

@@ -106,6 +106,18 @@ export default function LoginPage() {
               </div>
               
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Género</label>
+                <select value={formData.genero} onChange={(e) => setFormData({...formData, genero: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="">Seleccionar</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="LGBTI+">LGBTI+</option>
+                  <option value="Otro">Otro</option>
+                  <option value="Prefiero no decir">Prefiero no decir</option>
+                </select>
+              </div>
+              
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
                 <input type="text" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>

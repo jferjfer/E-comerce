@@ -6,6 +6,46 @@ import os
 from datetime import datetime
 from config.database import conectar_bd, desconectar_bd, get_database
 
+# Datos estáticos como fallback
+PRODUCTOS_DB = [
+    {
+        "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
+        "categoria": "Vestidos", "descripcion": "Vestido elegante perfecto para el trabajo. Confeccionado en algodón orgánico de alta calidad.",
+        "imagen": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop",
+        "tallas": ["XS", "S", "M", "L", "XL"], "colores": ["Negro", "Azul marino", "Gris"],
+        "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 98, "stock": 25
+    },
+    {
+        "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
+        "categoria": "Camisas", "descripcion": "Camisa cómoda de lino sostenible, ideal para el día a día. Diseño versátil y fresco.",
+        "imagen": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
+        "tallas": ["S", "M", "L", "XL"], "colores": ["Blanco", "Beige", "Azul claro"],
+        "calificacion": 4, "en_stock": True, "es_eco": True, "compatibilidad": 95, "stock": 18
+    },
+    {
+        "id": "3", "nombre": "Pantalón Versátil", "precio": 79.90,
+        "categoria": "Pantalones", "descripcion": "Pantalón de denim reciclado que combina con todo tu guardarropa. Corte moderno y cómodo.",
+        "imagen": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
+        "tallas": ["28", "30", "32", "34", "36"], "colores": ["Azul", "Negro", "Gris"],
+        "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 92, "stock": 12
+    },
+    {
+        "id": "4", "nombre": "Blazer Inteligente IA", "precio": 129.90,
+        "categoria": "Blazers", "descripcion": "Blazer premium de lana merino. Perfecto para completar tu look profesional con elegancia.",
+        "imagen": "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=500&fit=crop",
+        "tallas": ["S", "M", "L", "XL"], "colores": ["Negro", "Gris oscuro", "Azul marino"],
+        "calificacion": 5, "en_stock": True, "compatibilidad": 96, "stock": 15
+    }
+]
+
+CATEGORIAS_DB = [
+    {"id": "1", "nombre": "Vestidos", "descripcion": "Vestidos elegantes y casuales"},
+    {"id": "2", "nombre": "Camisas", "descripcion": "Camisas y blusas"},
+    {"id": "3", "nombre": "Pantalones", "descripcion": "Pantalones y jeans"},
+    {"id": "4", "nombre": "Blazers", "descripcion": "Blazers y chaquetas"},
+    {"id": "5", "nombre": "Calzado", "descripcion": "Zapatos y calzado en general"}
+]
+
 app = FastAPI(
     title="Servicio de Catálogo v2.0",
     description="API completa para gestión de productos, categorías y tendencias de moda",
@@ -137,6 +177,24 @@ async def listar_productos(
 @app.get("/api/productos/destacados")
 async def productos_destacados():
     print("⭐ Obteniendo productos destacados")
+    
+    db = get_database()
+    if db is not None:
+        # Usar MongoDB si está disponible
+        try:
+            productos_cursor = db.productos.find({"calificacion": {"$gte": 5}}).limit(3)
+            productos = await productos_cursor.to_list(length=3)
+            
+            # Limpiar _id de MongoDB
+            for producto in productos:
+                if "_id" in producto:
+                    del producto["_id"]
+                    
+            return {"productos": productos, "total": len(productos)}
+        except Exception as e:
+            print(f"❌ Error MongoDB: {e}")
+    
+    # Fallback a datos estáticos
     destacados = [p for p in PRODUCTOS_DB if p["calificacion"] >= 5][:3]
     return {"productos": destacados, "total": len(destacados)}
 
@@ -161,6 +219,30 @@ async def listar_categorias():
 @app.get("/api/buscar")
 async def buscar_productos(q: str = Query(..., description="Término de búsqueda")):
     print(f"🔍 Búsqueda: {q}")
+    
+    db = get_database()
+    if db is not None:
+        # Usar MongoDB si está disponible
+        try:
+            filtro = {
+                "$or": [
+                    {"nombre": {"$regex": q, "$options": "i"}},
+                    {"descripcion": {"$regex": q, "$options": "i"}}
+                ]
+            }
+            productos_cursor = db.productos.find(filtro)
+            productos = await productos_cursor.to_list(length=50)
+            
+            # Limpiar _id de MongoDB
+            for producto in productos:
+                if "_id" in producto:
+                    del producto["_id"]
+                    
+            return {"productos": productos, "total": len(productos), "termino": q}
+        except Exception as e:
+            print(f"❌ Error MongoDB: {e}")
+    
+    # Fallback a datos estáticos
     resultados = [p for p in PRODUCTOS_DB if q.lower() in p["nombre"].lower() or q.lower() in p["descripcion"].lower()]
     return {"productos": resultados, "total": len(resultados), "termino": q}
 
@@ -177,13 +259,23 @@ async def obtener_tendencias():
 
 @app.get("/salud")
 async def verificar_salud():
+    db = get_database()
+    productos_total = len(PRODUCTOS_DB)
+    
+    if db is not None:
+        try:
+            productos_total = await db.productos.count_documents({})
+        except:
+            pass
+    
     return {
         "estado": "activo",
         "servicio": "catalogo",
         "version": "2.0.0",
         "timestamp": datetime.now().isoformat(),
-        "productos_total": len(PRODUCTOS_DB),
-        "categorias_total": len(CATEGORIAS_DB)
+        "productos_total": productos_total,
+        "categorias_total": len(CATEGORIAS_DB),
+        "mongodb_conectado": db is not None
     }
 
 if __name__ == "__main__":

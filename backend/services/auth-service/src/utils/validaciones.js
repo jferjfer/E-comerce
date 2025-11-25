@@ -1,38 +1,24 @@
 const Joi = require('joi');
 
 const esquemaRegistro = Joi.object({
-  nombre: Joi.string()
-    .min(2)
-    .max(255)
-    .required()
-    .messages({
-      'string.min': 'El nombre debe tener al menos 2 caracteres',
-      'string.max': 'El nombre no puede exceder 255 caracteres',
-      'any.required': 'El nombre es requerido'
-    }),
-  
-  email: Joi.string()
-    .email()
-    .required()
-    .messages({
-      'string.email': 'Debe ser un email válido',
-      'any.required': 'El email es requerido'
-    }),
-  
-  contrasena: Joi.string()
-    .min(8)
-    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])'))
-    .required()
-    .messages({
-      'string.min': 'La contraseña debe tener al menos 8 caracteres',
-      'string.pattern.base': 'La contraseña debe contener al menos: 1 minúscula, 1 mayúscula, 1 número y 1 carácter especial',
-      'any.required': 'La contraseña es requerida'
-    }),
-  
-  rol: Joi.string()
-    .valid('cliente', 'invitado')
-    .default('cliente')
-});
+  nombre: Joi.string().min(2).max(255).required(),
+  apellido: Joi.string().optional(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+  contrasena: Joi.string().min(6).optional(),
+  documento_tipo: Joi.string().optional(),
+  documento_numero: Joi.string().optional(),
+  telefono: Joi.string().optional(),
+  fecha_nacimiento: Joi.string().optional(),
+  genero: Joi.string().allow('').optional(),
+  direccion: Joi.string().optional(),
+  ciudad: Joi.string().optional(),
+  departamento: Joi.string().optional(),
+  acepta_terminos: Joi.boolean().optional(),
+  acepta_datos: Joi.boolean().optional(),
+  acepta_marketing: Joi.boolean().optional(),
+  rol: Joi.string().valid('cliente', 'invitado').default('cliente')
+}).options({ allowUnknown: true, abortEarly: true, stripUnknown: true });
 
 const esquemaInicioSesion = Joi.object({
   email: Joi.string()
@@ -43,11 +29,14 @@ const esquemaInicioSesion = Joi.object({
       'any.required': 'El email es requerido'
     }),
   
-  contrasena: Joi.string()
+  password: Joi.string()
     .required()
     .messages({
       'any.required': 'La contraseña es requerida'
-    })
+    }),
+  
+  contrasena: Joi.string()
+    .optional()
 });
 
 const validarRegistro = (datos) => {

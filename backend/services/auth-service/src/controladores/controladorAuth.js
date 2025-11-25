@@ -13,6 +13,11 @@ class ControladorAuth {
         return next(error);
       }
 
+      // Normalizar password/contrasena
+      if (value.password && !value.contrasena) {
+        value.contrasena = value.password;
+      }
+      
       // Registrar usuario
       const resultado = await ServicioAuth.registrarUsuario(value);
 
@@ -34,8 +39,11 @@ class ControladorAuth {
         return next(error);
       }
 
+      // Normalizar password/contrasena
+      const contrasena = value.password || value.contrasena;
+      
       // Iniciar sesión
-      const resultado = await ServicioAuth.iniciarSesion(value.email, value.contrasena);
+      const resultado = await ServicioAuth.iniciarSesion(value.email, contrasena);
 
       res.json({
         mensaje: 'Sesión iniciada exitosamente',

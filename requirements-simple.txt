@@ -1,0 +1,35 @@
+# DEPENDENCIAS PYTHON - SIN VERSIONES FIJAS
+# Compatible con Python 3.11
+
+fastapi
+uvicorn
+starlette
+pydantic
+annotated-types
+typing_extensions
+pymongo
+motor
+dnspython
+httpx
+httpcore
+h11
+certifi
+idna
+python-dotenv
+python-multipart
+click
+colorama
+anyio
+sniffio
+numpy
+scikit-learn
+joblib
+threadpoolctl
+redis
+passlib
+bcrypt
+python-jose
+cryptography
+email-validator
+requests
+urllib3

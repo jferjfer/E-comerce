@@ -8,6 +8,21 @@ import random
 from datetime import datetime
 from config.database import conectar_bd, desconectar_bd, get_database
 
+# Datos en memoria como fallback
+perfiles_usuarios = {}
+productos_db = [
+    {
+        "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
+        "categoria": "Vestidos", "estilo": "profesional", "colores": ["Negro", "Azul marino", "Gris"],
+        "compatibilidad_ia": 98, "popularidad": 95
+    },
+    {
+        "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
+        "categoria": "Camisas", "estilo": "casual", "colores": ["Blanco", "Beige", "Azul claro"],
+        "compatibilidad_ia": 95, "popularidad": 88
+    }
+]
+
 app = FastAPI(
     title="AI Service v2.0",
     description="Servicio de IA para recomendaciones personalizadas y análisis de estilo",

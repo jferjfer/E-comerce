@@ -32,6 +32,38 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     permissions: ['promotions:create', 'promotions:approve', 'analytics:customers', 'content:publish']
   },
 
+  // NIVEL DIRECTIVO
+  operations_director: {
+    role: 'operations_director',
+    name: 'Director de Operaciones',
+    description: 'Gestión operacional completa',
+    level: 3,
+    color: 'bg-indigo-600',
+    icon: 'fas fa-cogs',
+    permissions: ['operations:manage', 'analytics:operations', 'users:manage', 'inventory:manage']
+  },
+
+  tech_director: {
+    role: 'tech_director',
+    name: 'Director Técnico',
+    description: 'Gestión técnica y desarrollo',
+    level: 3,
+    color: 'bg-blue-600',
+    icon: 'fas fa-code',
+    permissions: ['system:config', 'system:logs', 'system:backup', 'analytics:technical']
+  },
+
+  regional_manager: {
+    role: 'regional_manager',
+    name: 'Gerente Regional',
+    description: 'Gestión por zona geográfica',
+    level: 3,
+    color: 'bg-emerald-600',
+    icon: 'fas fa-globe-americas',
+    permissions: ['analytics:regional', 'users:regional', 'inventory:regional', 'orders:regional']
+  },
+
+  // NIVEL GERENCIAL
   category_manager: {
     role: 'category_manager',
     name: 'Gerente de Categoría',
@@ -42,6 +74,37 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     permissions: ['products:create', 'products:update', 'products:publish', 'pricing:edit', 'promotions:create']
   },
 
+  brand_manager: {
+    role: 'brand_manager',
+    name: 'Gerente de Marca',
+    description: 'Gestión de marca específica',
+    level: 4,
+    color: 'bg-rose-600',
+    icon: 'fas fa-award',
+    permissions: ['products:brand', 'promotions:brand', 'analytics:brand', 'content:brand']
+  },
+
+  inventory_manager: {
+    role: 'inventory_manager',
+    name: 'Gerente de Inventario',
+    description: 'Gestión completa de inventario',
+    level: 4,
+    color: 'bg-amber-600',
+    icon: 'fas fa-warehouse',
+    permissions: ['inventory:manage', 'inventory:transfer', 'analytics:inventory', 'orders:inventory']
+  },
+
+  marketing_manager: {
+    role: 'marketing_manager',
+    name: 'Gerente de Marketing',
+    description: 'Gestión de campañas y promociones',
+    level: 4,
+    color: 'bg-fuchsia-600',
+    icon: 'fas fa-megaphone',
+    permissions: ['promotions:create', 'promotions:update', 'analytics:marketing', 'content:marketing']
+  },
+
+  // NIVEL OPERATIVO
   product_manager: {
     role: 'product_manager',
     name: 'Gestor de Productos',
@@ -50,6 +113,16 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     color: 'bg-teal-600',
     icon: 'fas fa-box',
     permissions: ['products:create', 'products:update', 'products:read', 'inventory:view']
+  },
+
+  pricing_analyst: {
+    role: 'pricing_analyst',
+    name: 'Analista de Precios',
+    description: 'Análisis y optimización de precios',
+    level: 5,
+    color: 'bg-lime-600',
+    icon: 'fas fa-calculator',
+    permissions: ['pricing:view', 'pricing:edit', 'analytics:pricing', 'products:read']
   },
 
   content_editor: {
@@ -62,6 +135,36 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     permissions: ['content:edit', 'products:read', 'products:update']
   },
 
+  visual_merchandiser: {
+    role: 'visual_merchandiser',
+    name: 'Merchandiser Visual',
+    description: 'Diseño y experiencia visual',
+    level: 5,
+    color: 'bg-violet-600',
+    icon: 'fas fa-palette',
+    permissions: ['content:visual', 'products:visual', 'analytics:visual']
+  },
+
+  photographer: {
+    role: 'photographer',
+    name: 'Fotógrafo',
+    description: 'Gestión de imágenes y multimedia',
+    level: 6,
+    color: 'bg-slate-600',
+    icon: 'fas fa-camera',
+    permissions: ['content:images', 'products:images']
+  },
+
+  customer_success: {
+    role: 'customer_success',
+    name: 'Éxito del Cliente',
+    description: 'Retención y satisfacción',
+    level: 6,
+    color: 'bg-emerald-500',
+    icon: 'fas fa-heart',
+    permissions: ['users:view', 'analytics:customers', 'orders:view']
+  },
+
   support_agent: {
     role: 'support_agent',
     name: 'Agente de Soporte',
@@ -72,6 +175,27 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     permissions: ['orders:view', 'orders:process', 'users:view']
   },
 
+  logistics_coordinator: {
+    role: 'logistics_coordinator',
+    name: 'Coordinador Logístico',
+    description: 'Gestión de envíos y logística',
+    level: 6,
+    color: 'bg-orange-500',
+    icon: 'fas fa-truck',
+    permissions: ['orders:logistics', 'inventory:logistics', 'analytics:logistics']
+  },
+
+  qa_specialist: {
+    role: 'qa_specialist',
+    name: 'Especialista en Calidad',
+    description: 'Control de calidad',
+    level: 6,
+    color: 'bg-red-500',
+    icon: 'fas fa-check-circle',
+    permissions: ['products:qa', 'orders:qa', 'analytics:quality']
+  },
+
+  // VENDEDORES
   seller_premium: {
     role: 'seller_premium',
     name: 'Vendedor Premium',
@@ -79,17 +203,68 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     level: 7,
     color: 'bg-amber-600',
     icon: 'fas fa-store',
-    permissions: ['products:create', 'products:update', 'analytics:sales', 'orders:view']
+    permissions: ['products:create', 'products:update', 'analytics:sales', 'orders:view', 'promotions:seller']
+  },
+
+  seller_standard: {
+    role: 'seller_standard',
+    name: 'Vendedor Estándar',
+    description: 'Vendedor con funciones básicas',
+    level: 8,
+    color: 'bg-yellow-500',
+    icon: 'fas fa-shopping-bag',
+    permissions: ['products:update', 'analytics:basic', 'orders:view']
+  },
+
+  seller_basic: {
+    role: 'seller_basic',
+    name: 'Vendedor Básico',
+    description: 'Vendedor con acceso limitado',
+    level: 9,
+    color: 'bg-gray-400',
+    icon: 'fas fa-cash-register',
+    permissions: ['products:read', 'orders:basic']
+  },
+
+  // CLIENTES
+  vip_customer: {
+    role: 'vip_customer',
+    name: 'Cliente VIP',
+    description: 'Cliente de máximo valor',
+    level: 10,
+    color: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    icon: 'fas fa-gem',
+    permissions: ['orders:vip', 'products:exclusive', 'support:priority']
+  },
+
+  premium_customer: {
+    role: 'premium_customer',
+    name: 'Cliente Premium',
+    description: 'Cliente con beneficios mejorados',
+    level: 11,
+    color: 'bg-purple-500',
+    icon: 'fas fa-star',
+    permissions: ['orders:premium', 'products:early_access', 'support:enhanced']
   },
 
   regular_customer: {
     role: 'regular_customer',
     name: 'Cliente Regular',
     description: 'Cliente estándar',
-    level: 11,
+    level: 12,
     color: 'bg-gray-500',
     icon: 'fas fa-user',
-    permissions: ['orders:view']
+    permissions: ['orders:view', 'products:standard']
+  },
+
+  guest: {
+    role: 'guest',
+    name: 'Invitado',
+    description: 'Usuario no registrado',
+    level: 13,
+    color: 'bg-gray-300',
+    icon: 'fas fa-user-circle',
+    permissions: ['products:public']
   }
 }
 

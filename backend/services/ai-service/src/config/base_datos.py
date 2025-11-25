@@ -11,15 +11,15 @@ class BaseDatos:
 bd = BaseDatos()
 
 async def conectar_bd():
-    """Conectar a MongoDB"""
-    host = os.getenv("MONGO_HOST", "localhost")
-    puerto = int(os.getenv("MONGO_PUERTO", 27017))
-    nombre_bd = os.getenv("MONGO_BD", "bd_ia")
+    """Conectar a MongoDB Atlas para AI Service"""
+    # URL específica para AI Service
+    mongodb_uri = "mongodb+srv://Vercel-Admin-serviceia:ZHCXKOwgzj4Gq2IV@serviceia.pi2owta.mongodb.net/?retryWrites=true&w=majority"
+    nombre_bd = "ai_db"
     
-    bd.cliente = AsyncIOMotorClient(f"mongodb://{host}:{puerto}")
+    bd.cliente = AsyncIOMotorClient(mongodb_uri)
     bd.bd = bd.cliente[nombre_bd]
     
-    print(f"✅ Conectado a MongoDB: {nombre_bd}")
+    print(f"✅ AI Service conectado a MongoDB Atlas: {nombre_bd}")
 
 async def cerrar_bd():
     """Cerrar conexión a MongoDB"""

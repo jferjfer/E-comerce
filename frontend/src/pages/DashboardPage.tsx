@@ -4,7 +4,7 @@ import RoleGuard from '@/components/auth/RoleGuard'
 import { Link } from 'react-router-dom'
 
 export default function DashboardPage() {
-  const { user } = useAuthStore()
+  const { usuario } = useAuthStore()
 
   if (!user) return null
 
