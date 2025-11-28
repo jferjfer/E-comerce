@@ -34,16 +34,16 @@ export const api = {
     try {
       console.log('🔄 Sincronizando productos con backend...');
       const response = await fetch(`${API_BASE_URL}/api/productos`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const data = await response.json();
       const productos = (data.productos || []).map(transformarProducto);
-      
+
       console.log(`✅ ${productos.length} productos sincronizados`);
-      
+
       return {
         productos,
         total: data.total || productos.length
@@ -58,16 +58,16 @@ export const api = {
     try {
       console.log('⭐ Obteniendo productos destacados...');
       const response = await fetch(`${API_BASE_URL}/api/productos/destacados`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const data = await response.json();
       const productos = (data.productos || []).map(transformarProducto);
-      
+
       console.log(`✅ ${productos.length} productos destacados obtenidos`);
-      
+
       return {
         productos,
         total: data.total || productos.length
@@ -82,14 +82,14 @@ export const api = {
     try {
       console.log('📂 Obteniendo categorías...');
       const response = await fetch(`${API_BASE_URL}/api/categorias`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log(`✅ ${data.categorias?.length || 0} categorías obtenidas`);
-      
+
       return data;
     } catch (error) {
       console.error('❌ Error al obtener categorías:', error);
@@ -104,9 +104,9 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: contrasena })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.token) {
         return {
           exito: true,
@@ -119,7 +119,7 @@ export const api = {
           token: data.token
         };
       }
-      
+
       return {
         exito: false,
         error: data.error || 'Credenciales inválidas'
@@ -140,10 +140,10 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
-      
+
       const data = await response.json();
       console.log('📋 Respuesta del servidor:', { status: response.status, data });
-      
+
       if (response.ok && (response.status === 200 || response.status === 201)) {
         console.log('✅ Registro exitoso');
         return {
@@ -157,7 +157,7 @@ export const api = {
           token: data.token
         };
       }
-      
+
       console.error('❌ Error en registro:', data);
       return {
         exito: false,
@@ -165,9 +165,9 @@ export const api = {
       };
     } catch (error) {
       console.error('❌ Error de conexión al registrar:', error);
-      return { 
+      return {
         exito: false,
-        error: 'Error de conexión con el servidor' 
+        error: 'Error de conexión con el servidor'
       };
     }
   },
@@ -178,17 +178,17 @@ export const api = {
       const response = await fetch(`${API_BASE_URL}/api/carrito`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const data = await response.json();
       const items = (data.datos?.productos || []).map((item: any) => ({
         ...transformarProducto(item),
         cantidad: item.cantidad || 1
       }));
-      
+
       console.log(`✅ Carrito sincronizado: ${items.length} items`);
       return { items };
     } catch (error) {
@@ -208,19 +208,46 @@ export const api = {
         },
         body: JSON.stringify({ id_producto: productoId, cantidad })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         console.log('✅ Producto agregado al carrito exitosamente');
       } else {
         console.error('❌ Error del servidor:', data.error);
       }
-      
+
       return data;
     } catch (error) {
       console.error('❌ Error al agregar al carrito:', error);
       return { error: 'Error de conexión' };
+    }
+  },
+
+  async procesarCheckout(token: string, datos: any) {
+    try {
+      console.log('💳 Procesando checkout...', datos);
+      const response = await fetch(`${API_BASE_URL}/api/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Checkout exitoso:', data);
+        return { exito: true, orden: data.orden };
+      } else {
+        console.error('❌ Error en checkout:', data.error);
+        return { exito: false, error: data.error || 'Error al procesar el pago' };
+      }
+    } catch (error) {
+      console.error('❌ Error de conexión en checkout:', error);
+      return { exito: false, error: 'Error de conexión con el servidor' };
     }
   }
 };

@@ -14,7 +14,7 @@ const autenticar = async (req, res, next) => {
     const urlAuth = process.env.SERVICIO_AUTH_URL || 'http://localhost:3001';
     
     try {
-      const respuesta = await axios.get(`${urlAuth}/api/auth/verificar-token`, {
+      const respuesta = await axios.get(`${urlAuth}/api/auth/verificar`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

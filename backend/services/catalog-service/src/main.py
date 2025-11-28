@@ -6,46 +6,6 @@ import os
 from datetime import datetime
 from config.database import conectar_bd, desconectar_bd, get_database
 
-# Datos estáticos como fallback
-PRODUCTOS_DB = [
-    {
-        "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
-        "categoria": "Vestidos", "descripcion": "Vestido elegante perfecto para el trabajo. Confeccionado en algodón orgánico de alta calidad.",
-        "imagen": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop",
-        "tallas": ["XS", "S", "M", "L", "XL"], "colores": ["Negro", "Azul marino", "Gris"],
-        "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 98, "stock": 25
-    },
-    {
-        "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
-        "categoria": "Camisas", "descripcion": "Camisa cómoda de lino sostenible, ideal para el día a día. Diseño versátil y fresco.",
-        "imagen": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
-        "tallas": ["S", "M", "L", "XL"], "colores": ["Blanco", "Beige", "Azul claro"],
-        "calificacion": 4, "en_stock": True, "es_eco": True, "compatibilidad": 95, "stock": 18
-    },
-    {
-        "id": "3", "nombre": "Pantalón Versátil", "precio": 79.90,
-        "categoria": "Pantalones", "descripcion": "Pantalón de denim reciclado que combina con todo tu guardarropa. Corte moderno y cómodo.",
-        "imagen": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
-        "tallas": ["28", "30", "32", "34", "36"], "colores": ["Azul", "Negro", "Gris"],
-        "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 92, "stock": 12
-    },
-    {
-        "id": "4", "nombre": "Blazer Inteligente IA", "precio": 129.90,
-        "categoria": "Blazers", "descripcion": "Blazer premium de lana merino. Perfecto para completar tu look profesional con elegancia.",
-        "imagen": "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=500&fit=crop",
-        "tallas": ["S", "M", "L", "XL"], "colores": ["Negro", "Gris oscuro", "Azul marino"],
-        "calificacion": 5, "en_stock": True, "compatibilidad": 96, "stock": 15
-    }
-]
-
-CATEGORIAS_DB = [
-    {"id": "1", "nombre": "Vestidos", "descripcion": "Vestidos elegantes y casuales"},
-    {"id": "2", "nombre": "Camisas", "descripcion": "Camisas y blusas"},
-    {"id": "3", "nombre": "Pantalones", "descripcion": "Pantalones y jeans"},
-    {"id": "4", "nombre": "Blazers", "descripcion": "Blazers y chaquetas"},
-    {"id": "5", "nombre": "Calzado", "descripcion": "Zapatos y calzado en general"}
-]
-
 app = FastAPI(
     title="Servicio de Catálogo v2.0",
     description="API completa para gestión de productos, categorías y tendencias de moda",
@@ -65,47 +25,10 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     await conectar_bd()
-    await inicializar_datos()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await desconectar_bd()
-
-async def inicializar_datos():
-    """Inicializar datos si no existen"""
-    db = get_database()
-    
-    # Verificar si ya hay productos
-    productos_count = await db.productos.count_documents({})
-    if productos_count == 0:
-        # Insertar productos iniciales
-        productos_iniciales = [
-            {
-                "id": "1", "nombre": "Vestido Profesional IA", "precio": 89.99,
-                "categoria": "Vestidos", "descripcion": "Vestido elegante perfecto para el trabajo. Confeccionado en algodón orgánico de alta calidad.",
-                "imagen": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop",
-                "tallas": ["XS", "S", "M", "L", "XL"], "colores": ["Negro", "Azul marino", "Gris"],
-                "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 98, "stock": 25
-            },
-            {
-                "id": "2", "nombre": "Camisa Casual IA", "precio": 47.90,
-                "categoria": "Camisas", "descripcion": "Camisa cómoda de lino sostenible, ideal para el día a día. Diseño versátil y fresco.",
-                "imagen": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
-                "tallas": ["S", "M", "L", "XL"], "colores": ["Blanco", "Beige", "Azul claro"],
-                "calificacion": 4, "en_stock": True, "es_eco": True, "compatibilidad": 95, "stock": 18
-            },
-            {
-                "id": "3", "nombre": "Pantalón Versátil", "precio": 79.90,
-                "categoria": "Pantalones", "descripcion": "Pantalón de denim reciclado que combina con todo tu guardarropa. Corte moderno y cómodo.",
-                "imagen": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
-                "tallas": ["28", "30", "32", "34", "36"], "colores": ["Azul", "Negro", "Gris"],
-                "calificacion": 5, "en_stock": True, "es_eco": True, "compatibilidad": 92, "stock": 12
-            }
-        ]
-        await db.productos.insert_many(productos_iniciales)
-        print("✅ Productos iniciales insertados en MongoDB")
-
-
 
 # Endpoints de productos
 @app.get("/api/productos")
@@ -115,13 +38,14 @@ async def listar_productos(
     precio_max: Optional[float] = Query(None, description="Precio máximo"),
     buscar: Optional[str] = Query(None, description="Buscar en nombre y descripción"),
     ordenar: Optional[str] = Query("relevancia", description="Ordenar por: precio_asc, precio_desc, nombre, calificacion"),
-    limite: int = Query(20, description="Límite de productos"),
+    limite: int = Query(50, description="Límite de productos"),
     pagina: int = Query(1, description="Página")
 ):
     print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar}")
     
     db = get_database()
     if db is None:
+        print("❌ MongoDB no disponible")
         raise HTTPException(status_code=500, detail="Base de datos no disponible")
     
     try:
@@ -222,7 +146,14 @@ async def obtener_producto(producto_id: str):
 @app.get("/api/categorias")
 async def listar_categorias():
     print("📂 Obteniendo categorías")
-    return {"categorias": CATEGORIAS_DB}
+    categorias = [
+        {"id": "1", "nombre": "Vestidos", "descripcion": "Vestidos elegantes y casuales"},
+        {"id": "2", "nombre": "Camisas", "descripcion": "Camisas y blusas"},
+        {"id": "3", "nombre": "Pantalones", "descripcion": "Pantalones y jeans"},
+        {"id": "4", "nombre": "Blazers", "descripcion": "Blazers y chaquetas"},
+        {"id": "5", "nombre": "Calzado", "descripcion": "Zapatos y calzado en general"}
+    ]
+    return {"categorias": categorias}
 
 @app.get("/api/buscar")
 async def buscar_productos(q: str = Query(..., description="Término de búsqueda")):
@@ -230,7 +161,6 @@ async def buscar_productos(q: str = Query(..., description="Término de búsqued
     
     db = get_database()
     if db is not None:
-        # Usar MongoDB si está disponible
         try:
             filtro = {
                 "$or": [
@@ -249,10 +179,7 @@ async def buscar_productos(q: str = Query(..., description="Término de búsqued
             return {"productos": productos, "total": len(productos), "termino": q}
         except Exception as e:
             print(f"❌ Error MongoDB: {e}")
-    
-    # Fallback a datos estáticos
-    resultados = [p for p in PRODUCTOS_DB if q.lower() in p["nombre"].lower() or q.lower() in p["descripcion"].lower()]
-    return {"productos": resultados, "total": len(resultados), "termino": q}
+            raise HTTPException(status_code=500, detail=f"Error en búsqueda: {str(e)}")
 
 @app.get("/api/tendencias")
 async def obtener_tendencias():
@@ -268,7 +195,7 @@ async def obtener_tendencias():
 @app.get("/salud")
 async def verificar_salud():
     db = get_database()
-    productos_total = len(PRODUCTOS_DB)
+    productos_total = 0
     
     if db is not None:
         try:
@@ -282,7 +209,7 @@ async def verificar_salud():
         "version": "2.0.0",
         "timestamp": datetime.now().isoformat(),
         "productos_total": productos_total,
-        "categorias_total": len(CATEGORIAS_DB),
+        "categorias_total": 5,
         "mongodb_conectado": db is not None
     }
 

@@ -18,15 +18,15 @@ app.use(express.json());
 app.use((req, res, next) => {
   const timestamp = new Date().toLocaleTimeString();
   console.log(`📥 ${req.method} ${req.url} - ${timestamp}`);
-  
+
   if (req.body && Object.keys(req.body).length > 0) {
     console.log(`📋 Body:`, JSON.stringify(req.body, null, 2));
   }
-  
+
   if (req.headers.authorization) {
     console.log(`🔑 Auth: Bearer ***${req.headers.authorization.slice(-10)}`);
   }
-  
+
   next();
 });
 
@@ -63,7 +63,7 @@ const services = {
 const manejarAuthDirecto = async (req, res, endpoint) => {
   const inicio = Date.now();
   console.log(`🔐 ${endpoint.toUpperCase()} DIRECTO iniciado`);
-  
+
   try {
     const respuesta = await axios({
       method: req.method,
@@ -75,15 +75,15 @@ const manejarAuthDirecto = async (req, res, endpoint) => {
       },
       timeout: 30000
     });
-    
+
     const duracion = Date.now() - inicio;
     console.log(`✅ ${endpoint.toUpperCase()} completado en ${duracion}ms`);
-    
+
     res.status(respuesta.status).json(respuesta.data);
   } catch (error) {
     const duracion = Date.now() - inicio;
     console.error(`❌ ${endpoint.toUpperCase()} falló en ${duracion}ms:`, error.message);
-    
+
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
@@ -103,7 +103,7 @@ app.post('/api/auth/logout', (req, res) => manejarAuthDirecto(req, res, 'logout'
 Object.keys(services).forEach(path => {
   // Saltar /api/auth ya que se maneja directamente arriba
   if (path === '/api/auth') return;
-  
+
   app.use(path, createProxyMiddleware({
     target: services[path],
     changeOrigin: true,
@@ -123,10 +123,10 @@ Object.keys(services).forEach(path => {
 // Ruta de estado de servicios
 app.get('/estado-servicios', async (req, res) => {
   console.log('🔍 Verificando estado de microservicios...');
-  
+
   const estadoServicios = {};
   const serviciosUnicos = [...new Set(Object.values(services))];
-  
+
   for (const url of serviciosUnicos) {
     const puerto = url.split(':')[2];
     try {
@@ -147,10 +147,10 @@ app.get('/estado-servicios', async (req, res) => {
       console.log(`❌ Servicio ${puerto} - Inactivo`);
     }
   }
-  
+
   const activos = Object.values(estadoServicios).filter(s => s.estado === 'activo').length;
   const total = Object.keys(estadoServicios).length;
-  
+
   res.json({
     timestamp: new Date().toISOString(),
     resumen: {
@@ -165,8 +165,8 @@ app.get('/estado-servicios', async (req, res) => {
 
 // Ruta de salud
 app.get('/salud', (req, res) => {
-  res.json({ 
-    estado: 'activo', 
+  res.json({
+    estado: 'activo',
     gateway: 'simple-proxy',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
@@ -187,8 +187,18 @@ app.get('/', (req, res) => {
   });
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`🚀 Simple Gateway ejecutándose en puerto ${port}`);
   console.log(`📋 ${Object.keys(services).length} rutas configuradas`);
   console.log(`🔗 Estado servicios: http://localhost:${port}/estado-servicios`);
+});
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`\n❌ ERROR CRÍTICO: El puerto ${port} está ocupado.`);
+    console.error(`👉 Solución: Ejecuta 'npm run limpiar-puertos' o cierra la terminal que esté usando este puerto.\n`);
+    process.exit(1);
+  } else {
+    console.error('❌ Error del servidor:', e);
+  }
 });

@@ -2,34 +2,13 @@
   "name": "estilo-y-moda-ecommerce",
   "version": "1.0.0",
   "description": "Sistema de e-commerce con microservicios",
-  "main": "iniciar-todos-servicios.js",
+  "main": "iniciar.js",
   "scripts": {
-    "dev": "node iniciar-todos-servicios.js",
-    "dev-completo": "node iniciar-todos-servicios.js",
-    "frontend": "node iniciar-frontend.js",
-    "backend": "node iniciar-backend-basico.js",
-    "servicios": "node iniciar-servicios-extra.js",
-
-    "limpiar-definitivo": "node limpiar-puertos-definitivo.js",
-    "iniciar-robusto": "node limpiar-puertos-definitivo.js && timeout /t 3 /nobreak > nul && npm run dev-completo",
-    "robusto": "node inicio-robusto-puertos.js",
-    "kill-ports": "node limpiar-puertos-definitivo.js",
-    "start": "node iniciar-sistema-completo.js",
-    "sistema-completo": "node iniciar-sistema-completo.js",
-
-    "crear-usuarios": "node scripts/crear-usuarios-todos-roles.js",
-    "setup-completo": "npm install && cd frontend && npm install && cd backend/services/auth-service && npm install && cd ../transaction-service && npm install && cd ../social-service && npm install && cd ../marketing-service && npm install",
-    "install-all": "npm run setup-completo",
-    "test-armonizacion": "curl http://localhost:3000/estado-servicios",
-    "logs": "node monitor-logs.js",
-    "logs-auth": "node monitor-logs.js auth",
-    "logs-catalog": "node monitor-logs.js catalog",
-    "logs-transaction": "node monitor-logs.js transaction",
-    "logs-errors": "node monitor-logs.js | grep ERROR"
+    "start": "node iniciar.js"
   },
   "dependencies": {
+    "axios": "^1.13.2",
     "bcrypt": "^5.1.0",
-
     "mongodb": "^6.0.0",
     "pg": "^8.11.0"
   },

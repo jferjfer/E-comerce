@@ -1,5 +1,5 @@
 @echo off
-title Estilo y Moda - Sistema Completo
+title Estilo y Moda - E-Commerce
 color 0A
 
 echo.
@@ -11,7 +11,6 @@ echo  ███████╗███████║   ██║   ██║�
 echo  ╚══════╝╚══════╝   ╚═╝   ╚═╝╚══════╝ ╚═════╝        ╚═╝       ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝
 echo.
 echo                                    E-COMMERCE MICROSERVICIOS
-echo                                      Sistema Completo v1.0
 echo.
 
-node iniciar-sistema-completo.js
+node iniciar.js

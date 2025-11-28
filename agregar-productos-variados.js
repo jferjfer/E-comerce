@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
 // Configuración MongoDB (misma del catalog-service)
-const mongoUri = 'mongodb+srv://Vercel-Admin-catalogo:92HI0xaJVpfpogCL@catalogo.eocsgaj.mongodb.net/?retryWrites=true&w=majority';
+const mongoUri = 'mongodb+srv://Vercel-Admin-ecomerce:phva2EOCWSW1cybE@ecomerce.ckxq5b1.mongodb.net/?retryWrites=true&w=majority';
 
 // 20 productos variados con imágenes reales
 const productos = [
@@ -155,7 +155,7 @@ async function agregarProductos() {
     client = new MongoClient(mongoUri);
     await client.connect();
     
-    const db = client.db('catalogo_db');
+    const db = client.db('ecomerce');
     const collection = db.collection('productos');
     
     console.log('🗑️ Limpiando productos existentes...');
