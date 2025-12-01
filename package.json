@@ -4,13 +4,21 @@
   "description": "Sistema de e-commerce con microservicios",
   "main": "iniciar.js",
   "scripts": {
-    "start": "node iniciar.js"
+    "start": "node iniciar.js",
+    "gateway": "cd simple-gateway && node iniciar.js",
+    "auth": "cd backend/services/auth-service && npm run iniciar",
+    "catalog": "cd backend/services/catalog-service && python iniciar.py",
+    "transaction": "cd backend/services/transaction-service && npm run iniciar",
+    "social": "cd backend/services/social-service && npm run iniciar",
+    "marketing": "cd backend/services/marketing-service && npm run iniciar",
+    "ai": "cd backend/services/ai-service && python iniciar.py",
+    "frontend": "cd frontend && npm run dev"
   },
   "dependencies": {
-    "axios": "^1.13.2",
+    "axios": "^1.6.2",
     "bcrypt": "^5.1.0",
-    "mongodb": "^6.0.0",
-    "pg": "^8.11.0"
+    "mongodb": "^6.3.0",
+    "pg": "^8.11.3"
   },
   "keywords": [
     "ecommerce",

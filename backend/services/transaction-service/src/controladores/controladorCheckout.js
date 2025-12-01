@@ -10,6 +10,14 @@ const ControladorCheckout = {
                 return res.status(400).json({ error: 'Datos de pedido inválidos' });
             }
 
+            // Validar que solo clientes puedan realizar compras
+            if (usuario.rol !== 'cliente') {
+                return res.status(403).json({ 
+                    error: 'Acceso denegado',
+                    mensaje: 'Solo los clientes pueden realizar compras' 
+                });
+            }
+
             console.log(`🛒 Procesando checkout para usuario ${usuario.email || 'Anónimo'}`);
             console.log(`💰 Total: ${total}, Método: ${metodoPago}`);
 

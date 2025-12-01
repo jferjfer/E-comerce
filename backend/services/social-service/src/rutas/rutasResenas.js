@@ -21,6 +21,12 @@ const resenas = [
   }
 ];
 
+router.get('/producto/:productoId', (req, res) => {
+  const { productoId } = req.params;
+  const resenasProducto = resenas.filter(r => r.productoId === productoId);
+  res.json({ resenas: resenasProducto });
+});
+
 router.get('/:productoId', (req, res) => {
   const { productoId } = req.params;
   const resenasProducto = resenas.filter(r => r.productoId === productoId);

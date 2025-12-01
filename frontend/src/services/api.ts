@@ -1,12 +1,3 @@
-import { Producto, Usuario, ItemCarrito } from '@/types';
-
-// URL del Simple Gateway
-const API_BASE_URL = 'http://localhost:3000';
-
-// URLs directas a microservicios (respaldo)
-const MICROSERVICES = {
-  AUTH: 'http://localhost:3011',
-  CATALOG: 'http://localhost:3002',
   TRANSACTION: 'http://localhost:3003',
   SOCIAL: 'http://localhost:3004',
   MARKETING: 'http://localhost:3006',
@@ -224,6 +215,27 @@ export const api = {
     }
   },
 
+  async obtenerPedidos(token: string) {
+    try {
+      console.log('📦 Obteniendo historial de pedidos...');
+      const response = await fetch(`${API_BASE_URL}/api/pedidos`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log(`✅ ${data.pedidos?.length || 0} pedidos obtenidos`);
+        return { exito: true, pedidos: data.pedidos || [] };
+      } else {
+        return { exito: false, error: data.error || 'Error al obtener pedidos' };
+      }
+    } catch (error) {
+      console.error('❌ Error obteniendo pedidos:', error);
+      return { exito: false, error: 'Error de conexión' };
+    }
+  },
+
   async procesarCheckout(token: string, datos: any) {
     try {
       console.log('💳 Procesando checkout...', datos);
@@ -247,6 +259,32 @@ export const api = {
       }
     } catch (error) {
       console.error('❌ Error de conexión en checkout:', error);
+      return { exito: false, error: 'Error de conexión con el servidor' };
+    }
+  },
+
+  async crearProducto(producto: any): Promise<{ exito: boolean; producto?: any; error?: string }> {
+    try {
+      console.log('📦 Creando producto:', producto.nombre);
+      const response = await fetch(`${API_BASE_URL}/api/productos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(producto)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Producto creado exitosamente:', data);
+        return { exito: true, producto: data.producto };
+      } else {
+        console.error('❌ Error creando producto:', data.error);
+        return { exito: false, error: data.error || 'Error al crear el producto' };
+      }
+    } catch (error) {
+      console.error('❌ Error de conexión creando producto:', error);
       return { exito: false, error: 'Error de conexión con el servidor' };
     }
   }

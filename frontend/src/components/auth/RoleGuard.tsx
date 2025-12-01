@@ -29,7 +29,21 @@ export default function RoleGuard({
     )
   }
 
-  // Por ahora, permitir acceso a usuarios autenticados
-  // TODO: Implementar lógica de roles más adelante
+  // Verificar roles si se especifican
+  if (requiredRoles && requiredRoles.length > 0) {
+    const tieneRolRequerido = requiredRoles.includes(usuario.rol)
+    if (!tieneRolRequerido) {
+      return fallback || (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="text-center">
+            <i className="fas fa-user-slash text-4xl text-gray-400 mb-4"></i>
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">Sin Permisos</h3>
+            <p className="text-gray-500">No tienes permisos para acceder a esta sección</p>
+          </div>
+        </div>
+      )
+    }
+  }
+
   return <>{children}</>
 }

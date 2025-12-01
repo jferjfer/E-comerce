@@ -27,6 +27,7 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
         const itemExistente = items.find(item => item.id === producto.id);
         
         console.log(`🛒 Agregando ${producto.nombre} al carrito local`);
+        console.log(`🔑 Token disponible:`, !!token);
         
         // Actualizar localmente primero para UX inmediata
         if (itemExistente) {
@@ -37,15 +38,18 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
                 : item
             )
           });
+          console.log(`✅ Cantidad actualizada para ${producto.nombre}`);
         } else {
           set({
             items: [...items, { ...producto, cantidad: 1 }]
           });
+          console.log(`✅ ${producto.nombre} agregado al carrito`);
         }
         
         // Sincronizar con backend si hay token
         if (token) {
           try {
+            console.log(`🔄 Sincronizando con backend...`);
             const resultado = await api.agregarAlCarrito(token, producto.id, 1);
             if (resultado.error) {
               console.error('❌ Error del backend:', resultado.error);
@@ -61,10 +65,14 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
               } else {
                 set({ items: items.filter(item => item.id !== producto.id) });
               }
+            } else {
+              console.log(`✅ Sincronizado con backend`);
             }
           } catch (error) {
             console.error('❌ Error de conexión al sincronizar carrito:', error);
           }
+        } else {
+          console.log(`⚠️ Sin token - solo carrito local`);
         }
       },
       

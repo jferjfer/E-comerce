@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opciones de Promociones - Dashboard Cliente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .bg-primary { background-color: #8B5CF6; }
+        .text-primary { color: #8B5CF6; }
+        .hover\:bg-secondary:hover { background-color: #7C3AED; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">
+            🎯 Opciones para Mostrar Promociones
+        </h1>
+
+        <!-- OPCIÓN 1: BANNER SUPERIOR -->
+        <div class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                1️⃣ Banner Superior Rotativo
+            </h2>
+            <div class="bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg p-6 mb-4 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-fire text-3xl mr-4 animate-pulse"></i>
+                        <div>
+                            <h3 class="text-xl font-bold">🔥 OFERTA ESPECIAL</h3>
+                            <p class="text-sm opacity-90">50% OFF en toda la colección de verano • Válido hasta el 31 de Enero</p>
+                        </div>
+                    </div>
+                    <button class="bg-white text-red-500 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors">
+                        Ver Ofertas
+                    </button>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-gift text-3xl mr-4"></i>
+                        <div>
+                            <h3 class="text-xl font-bold">🎁 ENVÍO GRATIS</h3>
+                            <p class="text-sm opacity-90">En compras mayores a $200.000 • Sin mínimo para clientes VIP</p>
+                        </div>
+                    </div>
+                    <button class="bg-white text-blue-500 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors">
+                        Comprar Ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPCIÓN 2: TARJETAS EN GRID -->
+        <div class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                2️⃣ Tarjetas en Grid (Con estadísticas)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <!-- Estadísticas normales -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">En tu carrito</p>
+                            <p class="text-2xl font-bold text-gray-900">3</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="fas fa-shopping-bag text-green-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Pedidos</p>
+                            <p class="text-2xl font-bold text-gray-900">12</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- PROMOCIÓN INTEGRADA -->
+                <div class="bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-lg shadow-sm p-6 transform hover:scale-105 transition-transform">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-white/20 rounded-lg">
+                            <i class="fas fa-fire text-white text-xl animate-pulse"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm opacity-90">Promoción activa</p>
+                            <p class="text-2xl font-bold">30% OFF</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-lg">
+                            <i class="fas fa-heart text-red-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Favoritos</p>
+                            <p class="text-2xl font-bold text-gray-900">8</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <i class="fas fa-star text-purple-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Puntos</p>
+                            <p class="text-2xl font-bold text-gray-900">2,450</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPCIÓN 3: SECCIÓN DEDICADA -->
+        <div class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                3️⃣ Sección Dedicada de Promociones
+            </h2>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        🎉 Promociones Activas
+                        <span class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">¡NUEVAS!</span>
+                    </h3>
+                    <button class="text-primary hover:text-purple-700 text-sm font-medium">Ver todas →</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="border-2 border-dashed border-red-300 bg-red-50 rounded-lg p-4 hover:bg-red-100 transition-colors">
+                        <div class="flex items-start justify-between mb-2">
+                            <h4 class="font-bold text-red-800">🔥 Flash Sale</h4>
+                            <span class="text-xs bg-red-500 text-white px-2 py-1 rounded-full">2h restantes</span>
+                        </div>
+                        <p class="text-red-600 text-sm mb-3">70% OFF en vestidos seleccionados</p>
+                        <button class="w-full bg-red-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-600">
+                            Aprovechar Oferta
+                        </button>
+                    </div>
+                    <div class="border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg p-4 hover:bg-blue-100 transition-colors">
+                        <div class="flex items-start justify-between mb-2">
+                            <h4 class="font-bold text-blue-800">🚚 Envío Gratis</h4>
+                            <span class="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">Hasta 31 Ene</span>
+                        </div>
+                        <p class="text-blue-600 text-sm mb-3">En compras mayores a $200.000</p>
+                        <button class="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600">
+                            Comprar Ahora
+                        </button>
+                    </div>
+                    <div class="border-2 border-dashed border-green-300 bg-green-50 rounded-lg p-4 hover:bg-green-100 transition-colors">
+                        <div class="flex items-start justify-between mb-2">
+                            <h4 class="font-bold text-green-800">💳 3 Cuotas Sin Interés</h4>
+                            <span class="text-xs bg-green-500 text-white px-2 py-1 rounded-full">Permanente</span>
+                        </div>
+                        <p class="text-green-600 text-sm mb-3">En toda la tienda con tarjeta</p>
+                        <button class="w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600">
+                            Ver Catálogo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPCIÓN 4: MODAL POPUP -->
+        <div class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                4️⃣ Modal Popup (Simulación)
+            </h2>
+            <div class="bg-gray-800 bg-opacity-50 rounded-lg p-8 relative">
+                <div class="bg-white rounded-lg p-8 max-w-md mx-auto shadow-2xl">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-gift text-white text-2xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">🎊 ¡OFERTA ESPECIAL!</h2>
+                        <p class="text-gray-600 mb-6">Solo por hoy: 40% de descuento en toda la colección de invierno</p>
+                        <div class="space-y-3">
+                            <button class="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-lg font-bold hover:from-red-600 hover:to-pink-600 transition-colors">
+                                🔥 Aprovechar Oferta
+                            </button>
+                            <button class="w-full text-gray-500 hover:text-gray-700 text-sm">
+                                Recordar más tarde
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPCIÓN 5: SIDEBAR FLOTANTE -->
+        <div class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                5️⃣ Sidebar Flotante (Simulación)
+            </h2>
+            <div class="relative bg-gray-100 rounded-lg p-8 min-h-96">
+                <p class="text-gray-600 text-center">Contenido del dashboard aquí...</p>
+                
+                <!-- Sidebar flotante simulado -->
+                <div class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-b from-yellow-400 to-orange-500 text-black p-4 rounded-lg shadow-lg animate-pulse">
+                    <div class="text-center">
+                        <i class="fas fa-gift text-2xl mb-2"></i>
+                        <p class="font-bold text-sm">PROMO</p>
+                        <p class="text-xs">25% OFF</p>
+                        <button class="mt-2 bg-black text-white px-3 py-1 rounded text-xs hover:bg-gray-800">
+                            Ver
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPARACIÓN -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">📊 Comparación de Opciones</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-2">Opción</th>
+                            <th class="text-left py-2">Visibilidad</th>
+                            <th class="text-left py-2">Invasivo</th>
+                            <th class="text-left py-2">Múltiples Promos</th>
+                            <th class="text-left py-2">Recomendación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="py-2">1. Banner Superior</td>
+                            <td class="py-2">🟢 Alta</td>
+                            <td class="py-2">🟡 Medio</td>
+                            <td class="py-2">🟡 Rotativo</td>
+                            <td class="py-2">⭐⭐⭐⭐</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-2">2. Tarjeta en Grid</td>
+                            <td class="py-2">🟡 Media</td>
+                            <td class="py-2">🟢 Bajo</td>
+                            <td class="py-2">🔴 Una sola</td>
+                            <td class="py-2">⭐⭐⭐</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-2">3. Sección Dedicada</td>
+                            <td class="py-2">🟢 Alta</td>
+                            <td class="py-2">🟢 Bajo</td>
+                            <td class="py-2">🟢 Múltiples</td>
+                            <td class="py-2">⭐⭐⭐⭐⭐</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-2">4. Modal Popup</td>
+                            <td class="py-2">🟢 Máxima</td>
+                            <td class="py-2">🔴 Alto</td>
+                            <td class="py-2">🔴 Una sola</td>
+                            <td class="py-2">⭐⭐</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">5. Sidebar Flotante</td>
+                            <td class="py-2">🟡 Media</td>
+                            <td class="py-2">🟡 Medio</td>
+                            <td class="py-2">🔴 Una sola</td>
+                            <td class="py-2">⭐⭐⭐</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

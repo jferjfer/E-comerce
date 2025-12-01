@@ -58,9 +58,9 @@ export default function HomePage() {
         
         <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
           <h2 className="text-5xl font-serif font-bold mb-4 leading-tight">
-            Moda Inteligente
+            Estilo y Moda
             <span className="block text-white">
-              Personalizada
+              Para Todos
             </span>
           </h2>
           <p className="text-lg mb-6 opacity-90">
@@ -68,17 +68,17 @@ export default function HomePage() {
           </p>
           <div className="flex justify-center space-x-6">
             <Link 
-              to="/profile"
+              to="/catalog"
               className="bg-white text-primary px-10 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
-              <i className="fas fa-user mr-2"></i>
-              Configurar IA
+              Ver Catálogo
             </Link>
             <Link 
-              to="/catalog"
+              to="/profile"
               className="bg-transparent text-white px-10 py-4 rounded-lg font-semibold hover:bg-white/10 transition-colors border border-white"
             >
-              Ver Catálogo
+              <i className="fas fa-user mr-2"></i>
+              Mi Perfil
             </Link>
           </div>
         </div>
@@ -86,18 +86,12 @@ export default function HomePage() {
 
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl font-sans font-bold text-primary mb-3">
-                <i className="fas fa-star text-accent mr-2"></i>
-                Recomendado para Ti
-              </h2>
-              <p className="text-lg text-gray-600">Selección personalizada por IA</p>
-            </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span>IA activa</span>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-sans font-bold text-primary mb-3">
+              <i className="fas fa-star text-accent mr-2"></i>
+              Productos Destacados
+            </h2>
+            <p className="text-lg text-gray-600">Los mejores productos de nuestra colección</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

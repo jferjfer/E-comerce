@@ -1,0 +1,37 @@
+FROM node:18-alpine
+
+# Instalar herramientas necesarias
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Configurar npm
+RUN npm config set registry https://registry.npmjs.org/
+RUN npm config set fetch-retry-mintimeout 20000
+RUN npm config set fetch-retry-maxtimeout 120000
+
+# Limpiar cache
+RUN npm cache clean --force
+
+# Copiar package files
+COPY package*.json ./
+
+# Eliminar node_modules si existe
+RUN rm -rf node_modules
+
+# Instalar dependencias paso a paso
+RUN npm install --no-package-lock --no-save --verbose
+
+# Verificar que vite se instaló correctamente
+RUN npm list vite || npm install vite@latest --save-dev
+
+# Copiar código fuente
+COPY . .
+
+# Verificar estructura
+RUN ls -la node_modules/vite/ || echo "Vite no encontrado"
+
+EXPOSE 3005
+
+# Comando más robusto
+CMD ["sh", "-c", "npm run dev || (npm install vite@latest && npm run dev)"]

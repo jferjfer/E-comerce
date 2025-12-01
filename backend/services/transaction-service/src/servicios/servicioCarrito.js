@@ -31,7 +31,9 @@ class ServicioCarrito {
         carrito.id, 
         idProducto, 
         cantidad, 
-        producto.precio
+        producto.precio,
+        null, // talla
+        null  // color
       );
 
       return {

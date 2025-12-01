@@ -8,7 +8,7 @@ const rutasUsuario = require('./rutas/rutasUsuario');
 const manejadorErrores = require('./middleware/manejadorErrores');
 
 const aplicacion = express();
-const puerto = process.env.PUERTO || 3011;
+const puerto = process.env.PUERTO || 3012;
 
 // Middleware de seguridad
 aplicacion.use(helmet());

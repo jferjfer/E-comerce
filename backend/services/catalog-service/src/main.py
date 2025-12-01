@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
 import uvicorn
 import os
+import time
 from datetime import datetime
 from config.database import conectar_bd, desconectar_bd, get_database
 
@@ -106,6 +107,38 @@ async def listar_productos(
     except Exception as e:
         print(f"❌ Error consultando MongoDB: {e}")
         raise HTTPException(status_code=500, detail=f"Error consultando productos: {str(e)}")
+
+@app.post("/api/productos")
+async def crear_producto(producto: dict):
+    print(f"📦 Creando nuevo producto: {producto.get('nombre')}")
+    
+    db = get_database()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Base de datos no disponible")
+    
+    try:
+        # Generar ID único
+        producto['id'] = str(int(time.time() * 1000))
+        
+        # Insertar en MongoDB
+        resultado = await db.productos.insert_one(producto)
+        
+        if resultado.inserted_id:
+            print(f"✅ Producto creado con ID: {producto['id']}")
+            return {
+                "exito": True,
+                "mensaje": "Producto creado exitosamente",
+                "producto": {
+                    "id": producto['id'],
+                    "nombre": producto['nombre']
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Error al insertar producto")
+            
+    except Exception as e:
+        print(f"❌ Error creando producto: {e}")
+        raise HTTPException(status_code=500, detail=f"Error creando producto: {str(e)}")
 
 @app.get("/api/productos/destacados")
 async def productos_destacados():

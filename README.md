@@ -48,7 +48,27 @@ Sistema de e-commerce moderno basado en arquitectura de microservicios con capac
 
 ## 🚀 Inicio Rápido
 
-### Prerrequisitos
+### 🐳 Opción 1: Docker (RECOMENDADO)
+
+1. **Instalar Docker Desktop**
+   - Descarga: https://www.docker.com/products/docker-desktop
+
+2. **Iniciar todo el sistema**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Acceder**
+   - Frontend: http://localhost:3005
+   - Gateway: http://localhost:3000
+
+**Ver documentación completa**: [DOCKER-README.md](DOCKER-README.md)
+
+---
+
+### 💻 Opción 2: Instalación Local
+
+#### Prerrequisitos
 - Node.js 18+
 - Python 3.8+
 - Java 11+

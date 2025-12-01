@@ -16,6 +16,9 @@ export default function Header({ onCartClick }: HeaderProps) {
   const favorites = useUserStore(state => state.favorites)
   const { usuario: user, estaAutenticado: isAuthenticated, cerrarSesion: logout } = useAuthStore()
   
+  console.log('🛒 Total items:', totalItems)
+  console.log('❤️ Favoritos:', favorites.length)
+  
   const userRole = user ? { name: user.rol, icon: 'fas fa-user', color: 'bg-primary' } : null
 
   // Cerrar menú al hacer click fuera
@@ -59,17 +62,19 @@ export default function Header({ onCartClick }: HeaderProps) {
                   </span>
                 )}
               </button>
-              <button 
-                onClick={onCartClick}
-                className="relative p-3 text-gray-600 hover:text-primary transition-colors"
-              >
-                <i className="fas fa-shopping-cart text-xl"></i>
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
-                    {totalItems}
-                  </span>
-                )}
-              </button>
+              {user?.rol === 'cliente' && (
+                <button 
+                  onClick={onCartClick}
+                  className="relative p-3 text-gray-600 hover:text-primary transition-colors"
+                >
+                  <i className="fas fa-shopping-cart text-xl"></i>
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+              )}
               {isAuthenticated ? (
                 <div className="relative" ref={menuRef}>
                   <button 
@@ -85,21 +90,75 @@ export default function Header({ onCartClick }: HeaderProps) {
                         <p className="text-sm text-gray-600">{userRole?.name}</p>
                       </div>
                       <div className="border-t pt-3 space-y-2">
+                        {/* Dashboard para clientes */}
+                        {user?.rol === 'cliente' && (
+                          <Link 
+                            to="/customer-dashboard" 
+                            onClick={() => setTimeout(() => setShowUserMenu(false), 100)}
+                            className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                          >
+                            <i className="fas fa-home mr-2"></i>
+                            Mi Dashboard
+                          </Link>
+                        )}
+                        {/* Dashboard para gestores de productos */}
+                        {['product_manager', 'category_manager', 'seller_premium'].includes(user?.rol || '') && (
+                          <Link 
+                            to="/products" 
+                            onClick={() => setTimeout(() => setShowUserMenu(false), 100)}
+                            className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                          >
+                            <i className="fas fa-box mr-2"></i>
+                            Gestión Productos
+                          </Link>
+                        )}
+                        {/* Dashboard para administradores */}
+                        {[
+                          'ceo', 'cfo', 'cmo', 'operations_director', 'tech_director', 'regional_manager',
+                          'brand_manager', 'inventory_manager', 'marketing_manager', 'pricing_analyst', 
+                          'content_editor', 'visual_merchandiser', 'photographer', 'customer_success', 
+                          'support_agent', 'logistics_coordinator', 'qa_specialist', 'seller_standard', 'seller_basic'
+                        ].includes(user?.rol || '') && (
+                          <Link 
+                            to="/admin" 
+                            onClick={() => setTimeout(() => setShowUserMenu(false), 100)}
+                            className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                          >
+                            <i className="fas fa-tachometer-alt mr-2"></i>
+                            Dashboard Admin
+                          </Link>
+                        )}
                         <Link 
-                          to="/dashboard" 
-                          onClick={() => setShowUserMenu(false)}
+                          to="/orders" 
+                          onClick={() => setTimeout(() => setShowUserMenu(false), 100)}
                           className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
                         >
-                          <i className="fas fa-tachometer-alt mr-2"></i>
-                          Dashboard
+                          <i className="fas fa-shopping-bag mr-2"></i>
+                          Pedidos
+                        </Link>
+                        <Link 
+                          to="/favorites" 
+                          onClick={() => setTimeout(() => setShowUserMenu(false), 100)}
+                          className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                        >
+                          <i className="fas fa-heart mr-2"></i>
+                          Favoritos
+                        </Link>
+                        <Link 
+                          to="/payments" 
+                          onClick={() => setTimeout(() => setShowUserMenu(false), 100)}
+                          className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                        >
+                          <i className="fas fa-credit-card mr-2"></i>
+                          Pagos
                         </Link>
                         <Link 
                           to="/profile" 
-                          onClick={() => setShowUserMenu(false)}
+                          onClick={() => setTimeout(() => setShowUserMenu(false), 100)}
                           className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
                         >
                           <i className="fas fa-user mr-2"></i>
-                          Mi Perfil
+                          Perfil
                         </Link>
                         <button 
                           onClick={() => {
@@ -109,7 +168,7 @@ export default function Header({ onCartClick }: HeaderProps) {
                           className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
                         >
                           <i className="fas fa-sign-out-alt mr-2"></i>
-                          Cerrar Sesión
+                          Salir
                         </button>
                       </div>
                     </div>

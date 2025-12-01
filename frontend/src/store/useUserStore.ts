@@ -26,13 +26,14 @@ export const useUserStore = create<UserStore>()(
         const favorites = get().favorites
         if (!favorites.includes(productId)) {
           set({ favorites: [...favorites, productId] })
+          console.log(`❤️ Producto ${productId} agregado a favoritos. Total: ${favorites.length + 1}`)
         }
       },
       
       removeFromFavorites: (productId: string) => {
-        set({
-          favorites: get().favorites.filter(id => id !== productId)
-        })
+        const newFavorites = get().favorites.filter(id => id !== productId)
+        set({ favorites: newFavorites })
+        console.log(`💔 Producto ${productId} eliminado de favoritos. Total: ${newFavorites.length}`)
       },
       
       isFavorite: (productId: string) => {

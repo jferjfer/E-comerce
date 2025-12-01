@@ -1,0 +1,132 @@
+services:
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      PUERTO: 3011
+      JWT_SECRETO: mi_secreto_jwt_super_seguro_2024
+      POSTGRES_URL: postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require
+    ports:
+      - "3011:3011"
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Catalog Service
+  catalog-service:
+    build:
+      context: ./backend/services/catalog-service
+      dockerfile: Dockerfile
+    container_name: catalog-service
+    environment:
+      PUERTO: 3002
+      MONGODB_URI: mongodb+srv://jfvertel:jfvertel123@cluster0.vvagb.mongodb.net/ecommerce?retryWrites=true&w=majority
+    ports:
+      - "3002:3002"
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Transaction Service
+  transaction-service:
+    build:
+      context: ./backend/services/transaction-service
+      dockerfile: Dockerfile
+    container_name: transaction-service
+    environment:
+      PUERTO: 3003
+      JWT_SECRETO: mi_secreto_jwt_super_seguro_2024
+      DATABASE_URL: postgresql://neondb_owner:npg_2gVs9CfQRuHn@ep-broad-dew-aeujycvn-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
+    ports:
+      - "3003:3003"
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Social Service
+  social-service:
+    build:
+      context: ./backend/services/social-service
+      dockerfile: Dockerfile
+    container_name: social-service
+    environment:
+      PUERTO: 3004
+      MONGODB_URI: mongodb+srv://jfvertel:jfvertel123@cluster0.vvagb.mongodb.net/ecommerce?retryWrites=true&w=majority
+    ports:
+      - "3004:3004"
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Marketing Service
+  marketing-service:
+    build:
+      context: ./backend/services/marketing-service
+      dockerfile: Dockerfile
+    container_name: marketing-service
+    environment:
+      PUERTO: 3006
+      DATABASE_URL: postgresql://neondb_owner:npg_2gVs9CfQRuHn@ep-broad-dew-aeujycvn-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
+    ports:
+      - "3006:3006"
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # AI Service
+  ai-service:
+    build:
+      context: ./backend/services/ai-service
+      dockerfile: Dockerfile
+    container_name: ai-service
+    environment:
+      PUERTO: 3007
+      MONGODB_URI: mongodb+srv://jfvertel:jfvertel123@cluster0.vvagb.mongodb.net/ecommerce?retryWrites=true&w=majority
+    ports:
+      - "3007:3007"
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Gateway
+  gateway:
+    build:
+      context: ./simple-gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    environment:
+      PUERTO: 3000
+      NODE_OPTIONS: "--max-http-header-size=16384"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - catalog-service
+      - transaction-service
+      - social-service
+      - marketing-service
+      - ai-service
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3005:3005"
+    depends_on:
+      - gateway
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+networks:
+  estilo-network:
+    driver: bridge

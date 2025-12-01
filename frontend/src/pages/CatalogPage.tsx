@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '@/services/api'
 import ProductCard from '@/components/ProductCard'
 import Modal from '@/components/Modal'
@@ -111,7 +112,13 @@ export default function CatalogPage() {
         </div>
         
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-primary">Catálogo</h1>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-primary hover:text-secondary">
+              <i className="fas fa-arrow-left mr-2"></i>
+              Volver
+            </Link>
+            <h1 className="text-2xl font-bold text-primary">Catálogo</h1>
+          </div>
           <span className="text-sm text-gray-600">
             {cargando ? 'Cargando...' : `${productosFiltrados.length} productos encontrados`}
           </span>

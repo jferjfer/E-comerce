@@ -7,7 +7,7 @@ class ServicioAuth {
     try {
       console.log('📝 Iniciando registro de usuario:', datosUsuario.email);
       const { email, password, nombre, apellido } = datosUsuario;
-      
+
       // Verificar si el usuario ya existe
       console.log('🔍 Verificando si el usuario existe:', email);
       const usuarioExistente = await Usuario.buscarPorEmail(email);
@@ -90,7 +90,7 @@ class ServicioAuth {
       // Generar token de recuperación
       const tokenRecuperacion = jwt.sign(
         { id: usuario.id, tipo: 'recuperacion' },
-        'estilo_moda_jwt_secreto_produccion_2024',
+        'mi_secreto_jwt_super_seguro_2024',
         { expiresIn: '1h' }
       );
 
@@ -107,7 +107,7 @@ class ServicioAuth {
   async restablecerContrasena(token, nuevaContrasena) {
     try {
       // Verificar token
-      const decoded = jwt.verify(token, 'estilo_moda_jwt_secreto_produccion_2024');
+      const decoded = jwt.verify(token, 'mi_secreto_jwt_super_seguro_2024');
       if (decoded.tipo !== 'recuperacion') {
         return { exito: false, error: 'Token inválido' };
       }
@@ -130,20 +130,25 @@ class ServicioAuth {
   }
 
   generarToken(usuario) {
+    // Usar variable de entorno si existe, sino el default
+    const secret = 'mi_secreto_jwt_super_seguro_2024';
+    console.log('🔑 GENERANDO TOKEN CON SECRETO:', secret);
+
     return jwt.sign(
-      { 
-        id: usuario.id, 
-        email: usuario.email, 
-        rol: usuario.rol 
+      {
+        id: usuario.id,
+        email: usuario.email,
+        rol: usuario.rol
       },
-      'estilo_moda_jwt_secreto_produccion_2024',
+      secret,
       { expiresIn: '24h' }
     );
   }
 
   async verificarToken(token) {
     try {
-      const decoded = jwt.verify(token, 'estilo_moda_jwt_secreto_produccion_2024');
+      const secret = 'mi_secreto_jwt_super_seguro_2024';
+      const decoded = jwt.verify(token, secret);
       return { valido: true, usuario: decoded };
     } catch (error) {
       return { valido: false, error: 'Token inválido' };
