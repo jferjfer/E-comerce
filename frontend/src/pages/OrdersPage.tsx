@@ -4,12 +4,21 @@ import { api } from '@/services/api'
 import { formatPrice } from '@/utils/sanitize'
 import { Link } from 'react-router-dom'
 
+interface ProductoPedido {
+  id: string
+  nombre?: string
+  precio: number
+  cantidad: number
+  imagen?: string
+  descripcion?: string
+}
+
 interface Pedido {
   id: string
   estado: string
   total: number
   fecha_creacion: string
-  productos: any[]
+  productos: ProductoPedido[]
 }
 
 export default function OrdersPage() {
@@ -17,6 +26,7 @@ export default function OrdersPage() {
   const [cargando, setCargando] = useState(true)
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<string | null>(null)
   const [historial, setHistorial] = useState<any[]>([])
+  const [productosDetalle, setProductosDetalle] = useState<Record<string, any>>({})
   const { token } = useAuthStore()
 
   useEffect(() => {
@@ -25,12 +35,14 @@ export default function OrdersPage() {
 
   const cargarPedidos = async () => {
     if (!token) return
-    
+
     setCargando(true)
     try {
       const resultado = await api.obtenerPedidos(token)
       if (resultado.exito) {
         setPedidos(resultado.pedidos)
+        // Cargar detalles de productos
+        await cargarDetallesProductos(resultado.pedidos)
       }
     } catch (error) {
       console.error('Error cargando pedidos:', error)
@@ -39,9 +51,36 @@ export default function OrdersPage() {
     }
   }
 
+  const cargarDetallesProductos = async (pedidosList: Pedido[]) => {
+    const productosIds = new Set<string>()
+    
+    // Recopilar todos los IDs de productos
+    pedidosList.forEach(pedido => {
+      pedido.productos?.forEach(producto => {
+        productosIds.add(producto.id)
+      })
+    })
+
+    // Cargar detalles de cada producto
+    const detalles: Record<string, any> = {}
+    for (const productoId of productosIds) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/productos/${productoId}`)
+        if (response.ok) {
+          const data = await response.json()
+          detalles[productoId] = data.producto
+        }
+      } catch (error) {
+        console.error(`Error cargando producto ${productoId}:`, error)
+      }
+    }
+    
+    setProductosDetalle(detalles)
+  }
+
   const verHistorial = async (pedidoId: string) => {
     if (!token) return
-    
+
     try {
       const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/historial`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -135,14 +174,94 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="border-t pt-4 mt-4">
-                  <button
-                    onClick={() => verHistorial(pedido.id)}
-                    className="text-primary hover:text-secondary font-semibold text-sm"
-                  >
-                    <i className="fas fa-history mr-2"></i>
-                    Ver seguimiento
-                  </button>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setPedidoSeleccionado(pedidoSeleccionado === pedido.id ? null : pedido.id)}
+                      className="text-primary hover:text-secondary font-semibold text-sm"
+                    >
+                      <i className={`fas fa-${pedidoSeleccionado === pedido.id ? 'chevron-up' : 'chevron-down'} mr-2`}></i>
+                      {pedidoSeleccionado === pedido.id ? 'Ocultar' : 'Ver'} productos
+                    </button>
+                    <button
+                      onClick={() => verHistorial(pedido.id)}
+                      className="text-primary hover:text-secondary font-semibold text-sm"
+                    >
+                      <i className="fas fa-history mr-2"></i>
+                      Ver seguimiento
+                    </button>
+                  </div>
                 </div>
+
+                {/* Mostrar productos del pedido */}
+                {pedidoSeleccionado === pedido.id && pedido.productos && pedido.productos.length > 0 && (
+                  <div className="mt-4 bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">
+                      <i className="fas fa-box mr-2"></i>
+                      Productos del pedido ({pedido.productos.length})
+                    </h4>
+                    <div className="space-y-3">
+                      {pedido.productos.map((producto: ProductoPedido, index: number) => {
+                        const detalleProducto = productosDetalle[producto.id]
+                        return (
+                          <div key={index} className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
+                            <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                              {detalleProducto?.imagen ? (
+                                <img 
+                                  src={detalleProducto.imagen} 
+                                  alt={detalleProducto.nombre}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <i className="fas fa-image text-gray-400"></i>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-gray-800">
+                                {detalleProducto?.nombre || `Producto #${producto.id.slice(0, 8)}`}
+                              </h5>
+                              {detalleProducto?.descripcion && (
+                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                  {detalleProducto.descripcion}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-4 mt-2">
+                                <span className="text-sm text-gray-500">
+                                  <i className="fas fa-shopping-cart mr-1"></i>
+                                  Cantidad: {producto.cantidad}
+                                </span>
+                                {detalleProducto?.categoria && (
+                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                    {detalleProducto.categoria}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-primary">
+                                {formatPrice(producto.precio * producto.cantidad)}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {formatPrice(producto.precio)} c/u
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    
+                    {/* Resumen del pedido */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-gray-700">Total del pedido:</span>
+                        <span className="text-xl font-bold text-primary">{formatPrice(pedido.total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {pedidoSeleccionado === pedido.id && historial.length > 0 && (
                   <div className="mt-4 bg-gray-50 rounded-lg p-4">

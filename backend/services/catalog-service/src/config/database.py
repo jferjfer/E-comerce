@@ -3,7 +3,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import ConnectionFailure
 
 # Configuración MongoDB Atlas
-MONGODB_URI = "mongodb+srv://Vercel-Admin-catalogo:92HI0xaJVpfpogCL@catalogo.eocsgaj.mongodb.net/?retryWrites=true&w=majority"
+# Usar variable de entorno o valor por defecto para desarrollo local
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://Vercel-Admin-catalogo:92HI0xaJVpfpogCL@catalogo.eocsgaj.mongodb.net/?retryWrites=true&w=majority")
 
 class DatabaseManager:
     client: AsyncIOMotorClient = None
@@ -14,8 +15,11 @@ db_manager = DatabaseManager()
 async def conectar_bd():
     """Conectar a MongoDB Atlas"""
     try:
+        print(f"🌍 Conectando a MongoDB: {MONGODB_URI.split('@')[1] if '@' in MONGODB_URI else 'Local'}")
         db_manager.client = AsyncIOMotorClient(MONGODB_URI)
-        db_manager.database = db_manager.client.catalogo_db
+        
+        # Usar la base de datos por defecto de la URI o 'ecommerce' si no se especifica
+        db_manager.database = db_manager.client.get_default_database('ecommerce')
         
         # Verificar conexión
         await db_manager.client.admin.command('ping')

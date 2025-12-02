@@ -26,7 +26,7 @@ export default function LoginPage() {
         const success = await iniciarSesion(formData.email, formData.password)
         if (success) {
           addNotification('Inicio de sesión exitoso', 'success')
-          navigate('/dashboard')
+          navigate('/')
         } else {
           addNotification('Credenciales incorrectas', 'error')
         }

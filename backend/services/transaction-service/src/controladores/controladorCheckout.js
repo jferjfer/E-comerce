@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const Pedido = require('../modelos/Pedido');
 
 const ControladorCheckout = {
     procesarCheckout: async (req, res) => {
@@ -12,38 +13,53 @@ const ControladorCheckout = {
 
             // Validar que solo clientes puedan realizar compras
             if (usuario.rol !== 'cliente') {
-                return res.status(403).json({ 
+                return res.status(403).json({
                     error: 'Acceso denegado',
-                    mensaje: 'Solo los clientes pueden realizar compras' 
+                    mensaje: 'Solo los clientes pueden realizar compras'
                 });
             }
 
             console.log(`🛒 Procesando checkout para usuario ${usuario.email || 'Anónimo'}`);
             console.log(`💰 Total: ${total}, Método: ${metodoPago}`);
 
-            // Simulación de procesamiento de pago (2 segundos)
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Crear el pedido en la base de datos
+            // El estado inicial será 'Confirmado' ya que asumimos pago exitoso por ahora
+            const nuevoPedido = await Pedido.crear(usuario.id, 'Confirmado', total);
 
-            // Generar ID de orden único
-            const orderId = `ORD-${uuidv4().substring(0, 8).toUpperCase()}`;
-            const fecha = new Date().toISOString();
+            if (!nuevoPedido) {
+                throw new Error('No se pudo crear el pedido en la base de datos');
+            }
 
-            // Aquí se guardaría en base de datos real
-            // await PedidoModel.create({ ... })
+            console.log(`✅ Pedido creado en BD con ID: ${nuevoPedido.id}`);
+
+            // Agregar los productos al pedido
+            const promesasProductos = items.map(item => {
+                return Pedido.agregarProducto(
+                    nuevoPedido.id,
+                    item.id,
+                    item.cantidad,
+                    item.precio
+                );
+            });
+
+            await Promise.all(promesasProductos);
+            console.log(`📦 ${items.length} productos agregados al pedido`);
+
+            // Si se proporcionó un método de pago, podríamos guardarlo en una tabla de pagos futura
+            // Por ahora, el flujo asume que el pago fue procesado (simulado o real en frontend)
 
             const respuesta = {
                 mensaje: 'Pedido procesado exitosamente',
                 orden: {
-                    id: orderId,
-                    fecha: fecha,
-                    total: total,
-                    estado: 'confirmado',
+                    id: nuevoPedido.id,
+                    fecha: nuevoPedido.fecha_creacion,
+                    total: nuevoPedido.total,
+                    estado: nuevoPedido.estado,
                     items_count: items.length,
                     metodo_pago: metodoPago
                 }
             };
 
-            console.log(`✅ Pedido ${orderId} creado exitosamente`);
             res.status(200).json(respuesta);
 
         } catch (error) {
