@@ -10,7 +10,7 @@ export const formatPrice = (price: number): string => {
     currency: 'COP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(price / 100)
+  }).format(price)
 }
 
 export const generateId = (): string => {

@@ -85,6 +85,7 @@ export default function LogisticsCoordinatorDashboard() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Razón</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
@@ -96,6 +97,9 @@ export default function LogisticsCoordinatorDashboard() {
               {devoluciones.map((dev) => (
                 <tr key={dev.id}>
                   <td className="px-6 py-4 text-sm">{dev.id}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <div className="font-mono text-xs">{dev.id_pedido}</div>
+                  </td>
                   <td className="px-6 py-4 text-sm">
                     <div>{dev.nombre_cliente || 'N/A'}</div>
                     <div className="text-gray-500 text-xs">{dev.email_cliente}</div>

@@ -20,6 +20,30 @@ class ControladorUsuario {
     }
   }
 
+  static async obtenerUsuarioPorId(req, res, next) {
+    try {
+      const { id } = req.params;
+      const usuario = await Usuario.buscarPorId(parseInt(id));
+      
+      if (!usuario) {
+        return res.status(404).json({
+          error: 'Usuario no encontrado'
+        });
+      }
+
+      res.json({
+        usuario: {
+          id: usuario.id,
+          nombre: usuario.nombre,
+          email: usuario.email,
+          rol: usuario.rol
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async actualizarTotalCompras(req, res, next) {
     try {
       const { nuevoTotal } = req.body;

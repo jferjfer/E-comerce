@@ -637,11 +637,32 @@ aplicacion.get('/api/devoluciones', autenticacion, async (req, res) => {
 
     const resultado = await pool.query(consulta, params);
 
-    console.log(`✅ ${resultado.rows.length} devoluciones encontradas`);
+    // Obtener nombres de clientes desde Auth Service
+    const axios = require('axios');
+    const devolucionesConNombres = await Promise.all(
+      resultado.rows.map(async (dev) => {
+        try {
+          const response = await axios.get(`http://auth-service:3011/api/usuarios/${dev.usuario_id}`);
+          return {
+            ...dev,
+            nombre_cliente: response.data.usuario?.nombre || 'N/A',
+            email_cliente: response.data.usuario?.email || 'N/A'
+          };
+        } catch (error) {
+          return {
+            ...dev,
+            nombre_cliente: `Usuario ${dev.usuario_id}`,
+            email_cliente: 'N/A'
+          };
+        }
+      })
+    );
+
+    console.log(`✅ ${devolucionesConNombres.length} devoluciones encontradas`);
 
     res.json({
-      devoluciones: resultado.rows,
-      total: resultado.rows.length
+      devoluciones: devolucionesConNombres,
+      total: devolucionesConNombres.length
     });
   } catch (error) {
     console.error('Error listando devoluciones:', error.message);
