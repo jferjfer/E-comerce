@@ -8,12 +8,14 @@ bd = BaseDatos()
 
 async def conectar_bd():
     """Conectar directamente a MongoDB Atlas para producción"""
-    # Conexión directa a MongoDB Atlas
-    mongodb_uri = "mongodb+srv://Vercel-Admin-ecomerce:phva2EOCWSW1cybE@ecomerce.ckxq5b1.mongodb.net/?retryWrites=true&w=majority"
+    import os
+    # Usar variable de entorno o fallback
+    mongodb_uri = os.getenv("MONGODB_URI", "mongodb+srv://Vercel-Admin-catalogo:oTXaV4jaA4E5Qi4C@catalogo.eocsgaj.mongodb.net/?retryWrites=true&w=majority")
     
     bd.cliente = AsyncIOMotorClient(mongodb_uri)
-    bd.bd = bd.cliente["ecomerce"]
-    print("✅ Catalog Service conectado a MongoDB Atlas (Producción)")
+    bd.bd = bd.cliente["catalogo"]
+    print(f"✅ Catalog Service conectado a MongoDB Atlas: {mongodb_uri[:50]}...")
+    print(f"✅ Base de datos: catalogo")
 
 async def cerrar_bd():
     """Cerrar conexión a MongoDB"""

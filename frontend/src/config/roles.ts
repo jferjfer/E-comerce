@@ -237,36 +237,6 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     permissions: ['orders:view', 'products:view', 'cart:manage', 'profile:edit']
   },
 
-  vip_customer: {
-    role: 'vip_customer',
-    name: 'Cliente VIP',
-    description: 'Cliente de máximo valor',
-    level: 10,
-    color: 'bg-gradient-to-r from-yellow-400 to-orange-500',
-    icon: 'fas fa-gem',
-    permissions: ['orders:vip', 'products:exclusive', 'support:priority']
-  },
-
-  premium_customer: {
-    role: 'premium_customer',
-    name: 'Cliente Premium',
-    description: 'Cliente con beneficios mejorados',
-    level: 11,
-    color: 'bg-purple-500',
-    icon: 'fas fa-star',
-    permissions: ['orders:premium', 'products:early_access', 'support:enhanced']
-  },
-
-  regular_customer: {
-    role: 'regular_customer',
-    name: 'Cliente Regular',
-    description: 'Cliente estándar',
-    level: 12,
-    color: 'bg-gray-500',
-    icon: 'fas fa-user',
-    permissions: ['orders:view', 'products:standard']
-  },
-
   guest: {
     role: 'guest',
     name: 'Invitado',

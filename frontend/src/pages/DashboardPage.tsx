@@ -55,6 +55,216 @@ export default function DashboardPage() {
 
   const userRole = ROLE_DEFINITIONS[usuario.rol] || ROLE_DEFINITIONS['cliente']
   const esCliente = usuario.rol === 'cliente'
+  const esMarketingManager = usuario.rol === 'marketing_manager'
+
+  // Dashboard específico para Marketing Manager
+  if (esMarketingManager) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="w-12 h-12 bg-fuchsia-600 rounded-lg flex items-center justify-center">
+                <i className="fas fa-megaphone text-white text-xl"></i>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Dashboard de Marketing</h1>
+                <p className="text-gray-600">Gestión de Campañas y Promociones</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Métricas de Marketing */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Campañas Activas</p>
+                  <p className="text-2xl font-bold text-fuchsia-600">5</p>
+                </div>
+                <i className="fas fa-bullhorn text-fuchsia-500 text-2xl"></i>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Cupones Activos</p>
+                  <p className="text-2xl font-bold text-pink-600">12</p>
+                </div>
+                <i className="fas fa-ticket-alt text-pink-500 text-2xl"></i>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Conversión</p>
+                  <p className="text-2xl font-bold text-green-600">8.5%</p>
+                </div>
+                <i className="fas fa-chart-line text-green-500 text-2xl"></i>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">ROI Marketing</p>
+                  <p className="text-2xl font-bold text-blue-600">3.2x</p>
+                </div>
+                <i className="fas fa-dollar-sign text-blue-500 text-2xl"></i>
+              </div>
+            </div>
+          </div>
+
+          {/* Acciones Rápidas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <i className="fas fa-percentage text-pink-600 mr-2"></i>
+                Promociones
+              </h3>
+              <div className="space-y-3">
+                <button className="w-full bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 transition-colors">
+                  <i className="fas fa-plus mr-2"></i>
+                  Nueva Promoción
+                </button>
+                <button className="w-full border border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <i className="fas fa-list mr-2"></i>
+                  Ver Todas
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <i className="fas fa-ticket-alt text-fuchsia-600 mr-2"></i>
+                Cupones
+              </h3>
+              <div className="space-y-3">
+                <button className="w-full bg-fuchsia-600 text-white py-2 rounded-lg hover:bg-fuchsia-700 transition-colors">
+                  <i className="fas fa-plus mr-2"></i>
+                  Crear Cupón
+                </button>
+                <button className="w-full border border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <i className="fas fa-tags mr-2"></i>
+                  Gestionar Cupones
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <i className="fas fa-chart-bar text-blue-600 mr-2"></i>
+                Analytics
+              </h3>
+              <div className="space-y-3">
+                <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                  <i className="fas fa-chart-line mr-2"></i>
+                  Reportes
+                </button>
+                <button className="w-full border border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <i className="fas fa-download mr-2"></i>
+                  Exportar Datos
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Campañas Activas */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4">Campañas Activas</h3>
+            <div className="space-y-4">
+              <div className="border border-gray-200 rounded-lg p-4 hover:border-fuchsia-300 transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-gray-900">Black Friday 2024</h4>
+                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Activa</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">Descuentos hasta 50% en toda la tienda</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Conversión: <strong className="text-green-600">12.3%</strong></span>
+                  <span className="text-gray-500">Ventas: <strong className="text-blue-600">$45,230</strong></span>
+                  <button className="text-fuchsia-600 hover:text-fuchsia-700">
+                    <i className="fas fa-edit mr-1"></i>Editar
+                  </button>
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-4 hover:border-fuchsia-300 transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-gray-900">Cyber Monday</h4>
+                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Activa</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">Ofertas especiales en tecnología</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Conversión: <strong className="text-green-600">9.8%</strong></span>
+                  <span className="text-gray-500">Ventas: <strong className="text-blue-600">$32,150</strong></span>
+                  <button className="text-fuchsia-600 hover:text-fuchsia-700">
+                    <i className="fas fa-edit mr-1"></i>Editar
+                  </button>
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-4 hover:border-fuchsia-300 transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-gray-900">Navidad 2024</h4>
+                  <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">Programada</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">Regalos perfectos para esta temporada</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Inicio: <strong>15 Dic 2024</strong></span>
+                  <span className="text-gray-500">Fin: <strong>31 Dic 2024</strong></span>
+                  <button className="text-fuchsia-600 hover:text-fuchsia-700">
+                    <i className="fas fa-edit mr-1"></i>Editar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cupones Populares */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-4">Cupones Más Usados</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="border-2 border-dashed border-pink-300 rounded-lg p-4 bg-pink-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono font-bold text-pink-600">BIENVENIDO20</span>
+                  <span className="bg-pink-600 text-white px-2 py-1 rounded text-xs">20%</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">Descuento para nuevos clientes</p>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Usos: <strong>234</strong></span>
+                  <span>Ahorro: <strong>$12,450</strong></span>
+                </div>
+              </div>
+
+              <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 bg-blue-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono font-bold text-blue-600">VERANO2024</span>
+                  <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">15%</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">Promoción de verano</p>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Usos: <strong>189</strong></span>
+                  <span>Ahorro: <strong>$8,920</strong></span>
+                </div>
+              </div>
+
+              <div className="border-2 border-dashed border-green-300 rounded-lg p-4 bg-green-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono font-bold text-green-600">ENVIOGRATIS</span>
+                  <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">FREE</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">Envío gratis en compras +$50</p>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Usos: <strong>456</strong></span>
+                  <span>Ahorro: <strong>$5,680</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Dashboard específico para clientes
   if (esCliente) {

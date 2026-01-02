@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { ROLE_DEFINITIONS } from '@/config/roles';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ROLE_DEFINITIONS, RoleType } from '@/config/roles';
 
 // Importar dashboards implementados
 import CEODashboard from '@/pages/dashboards/CEODashboard';
@@ -37,13 +37,13 @@ const RoleBasedRouter: React.FC = () => {
   }
 
   // Obtener el rol principal (el de mayor jerarquía)
-  const primaryRole = user.roles.reduce((highest, current) => {
+  const primaryRole = user.roles.reduce((highest: RoleType, current: RoleType) => {
     const currentLevel = ROLE_DEFINITIONS[current]?.level || 999;
     const highestLevel = ROLE_DEFINITIONS[highest]?.level || 999;
     return currentLevel < highestLevel ? current : highest;
   });
 
-  const DashboardComponent = ROLE_DASHBOARDS[primaryRole] || RegularCustomerDashboard;
+  const DashboardComponent = ROLE_DASHBOARDS[primaryRole as keyof typeof ROLE_DASHBOARDS] || RegularCustomerDashboard;
 
   return (
     <div className="min-h-screen bg-gray-50">

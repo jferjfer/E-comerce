@@ -2,13 +2,27 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --production
+# Optimizado para producción
 
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm ci --only=production && npm cache clean --force
+
+# Copiar código fuente
 COPY . .
 
-ENV DOCKER_ENV=true
+# Crear usuario no-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S gateway -u 1001
+
+# Cambiar ownership
+RUN chown -R gateway:nodejs /app
+USER gateway
 
 EXPOSE 3000
 
-CMD ["node", "server-axios.js"]
+# Health check removido - usar monitoreo externo
+
+CMD ["node", "server.js"]

@@ -1,57 +1,43 @@
 const pool = require('../config/baseDatos');
 const bcrypt = require('bcryptjs');
 
-// Fallback en memoria cuando no hay BD
-const usuariosMemoria = new Map();
-let contadorId = 1;
+// Función helper para retry
+async function queryConRetry(consulta, params, reintentos = 2) {
+  for (let i = 0; i < reintentos; i++) {
+    try {
+      return await pool.query(consulta, params);
+    } catch (error) {
+      if (i === reintentos - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+}
 
 class Usuario {
   static async crear(datosUsuario) {
     const { nombre, email, contrasena, rol = 'cliente' } = datosUsuario;
     const contrasenaHasheada = await bcrypt.hash(contrasena, 8);
     
-    try {
-      const consulta = `
-        INSERT INTO usuario (nombre, email, contrasena, rol)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, nombre, email, rol, fecha_creacion
-      `;
-      
-      const resultado = await pool.query(consulta, [nombre, email, contrasenaHasheada, rol]);
-      return resultado.rows[0];
-    } catch (error) {
-      console.log('⚠️ BD no disponible, usando memoria:', error.message);
-      
-      // Fallback en memoria
-      const nuevoUsuario = {
-        id: contadorId++,
-        nombre,
-        email,
-        contrasena: contrasenaHasheada,
-        rol,
-        fecha_creacion: new Date().toISOString()
-      };
-      
-      usuariosMemoria.set(email, nuevoUsuario);
-      return nuevoUsuario;
-    }
+    const consulta = `
+      INSERT INTO usuarios (nombre, email, password, rol)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, nombre, email, rol, fecha_creacion
+    `;
+    
+    const resultado = await pool.query(consulta, [nombre, email, contrasenaHasheada, rol]);
+    return resultado.rows[0];
   }
 
   static async buscarPorEmail(email) {
-    try {
-      const consulta = 'SELECT * FROM usuario WHERE email = $1';
-      const resultado = await pool.query(consulta, [email]);
-      return resultado.rows[0];
-    } catch (error) {
-      console.log('⚠️ BD no disponible, buscando en memoria');
-      return usuariosMemoria.get(email);
-    }
+    const consulta = 'SELECT id, nombre, email, password as contrasena, rol FROM usuarios WHERE email = $1';
+    const resultado = await queryConRetry(consulta, [email]);
+    return resultado.rows[0];
   }
 
   static async buscarPorId(id) {
     const consulta = `
       SELECT id, nombre, email, rol, total_compras_historico, fecha_creacion, fecha_actualizacion
-      FROM usuario WHERE id = $1
+      FROM usuarios WHERE id = $1
     `;
     const resultado = await pool.query(consulta, [id]);
     return resultado.rows[0];
@@ -63,7 +49,7 @@ class Usuario {
 
   static async actualizarTotalCompras(idUsuario, nuevoTotal) {
     const consulta = `
-      UPDATE usuario 
+      UPDATE usuarios 
       SET total_compras_historico = $1, fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id = $2
       RETURNING total_compras_historico
@@ -74,7 +60,7 @@ class Usuario {
 
   static async guardarTokenRecuperacion(usuarioId, token, expiracion) {
     const consulta = `
-      UPDATE usuario 
+      UPDATE usuarios 
       SET token_recuperacion = $1, token_expiracion = $2, fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id = $3
     `;
@@ -84,7 +70,7 @@ class Usuario {
   static async buscarPorTokenRecuperacion(token) {
     const consulta = `
       SELECT id, nombre, email, token_expiracion 
-      FROM usuario 
+      FROM usuarios 
       WHERE token_recuperacion = $1
     `;
     const resultado = await pool.query(consulta, [token]);
@@ -93,8 +79,8 @@ class Usuario {
 
   static async actualizarContrasena(usuarioId, nuevaContrasena) {
     const consulta = `
-      UPDATE usuario 
-      SET contrasena = $1, fecha_actualizacion = CURRENT_TIMESTAMP
+      UPDATE usuarios 
+      SET password = $1, fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id = $2
     `;
     await pool.query(consulta, [nuevaContrasena, usuarioId]);
@@ -102,7 +88,7 @@ class Usuario {
 
   static async limpiarTokenRecuperacion(usuarioId) {
     const consulta = `
-      UPDATE usuario 
+      UPDATE usuarios 
       SET token_recuperacion = NULL, token_expiracion = NULL, fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id = $1
     `;

@@ -9,6 +9,7 @@ import CheckoutModal from './components/CheckoutModal'
 import NotificationContainer from './components/Notification'
 import AIAssistant from './components/AIAssistant'
 import RoleGuard from './components/auth/RoleGuard'
+import RoleBasedHome from './components/routing/RoleBasedHome'
 import HomePage from './pages/HomePage'
 import CatalogPage from './pages/CatalogPage'
 import ProfilePage from './pages/ProfilePage'
@@ -22,6 +23,14 @@ import FavoritesPage from './pages/FavoritesPage'
 import PaymentsPage from './pages/PaymentsPage'
 import CustomerDashboard from './pages/CustomerDashboard'
 import ProductManagerDashboard from './pages/admin/ProductManagerDashboard'
+import CreditPage from './pages/CreditPage'
+import CrearProductoPage from './pages/admin/CrearProductoPage'
+
+import StyleAnalysisPage from './pages/StyleAnalysisPage'
+
+import MarketingManagerDashboard from './pages/dashboards/MarketingManagerDashboard'
+import CustomerSuccessDashboard from './pages/dashboards/CustomerSuccessDashboard'
+import LogisticsCoordinatorDashboard from './pages/dashboards/LogisticsCoordinatorDashboard'
 
 function App() {
   const [showCart, setShowCart] = useState(false)
@@ -42,7 +51,7 @@ function App() {
         <Header onCartClick={() => setShowCart(true)} />
         
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<RoleBasedHome />} />
           <Route path="/catalog" element={<CatalogPage />} />
           {/* AUTH ROUTES */}
           <Route path="/login" element={
@@ -69,11 +78,22 @@ function App() {
           <Route path="/payments" element={
             estaAutenticado ? <PaymentsPage /> : <Navigate to="/login" />
           } />
+          <Route path="/credit" element={
+            estaAutenticado ? <CreditPage /> : <Navigate to="/login" />
+          } />
+          <Route path="/style-analysis" element={
+            estaAutenticado ? <StyleAnalysisPage /> : <Navigate to="/login" />
+          } />
           
           {/* PRODUCT MANAGEMENT ROUTES */}
           <Route path="/products" element={
-            <RoleGuard requiredRoles={['product_manager', 'category_manager', 'seller_premium']}>
+            <RoleGuard requiredRoles={['product_manager', 'category_manager', 'seller_premium', 'ceo']}>
               <ProductManagerDashboard />
+            </RoleGuard>
+          } />
+          <Route path="/products/crear" element={
+            <RoleGuard requiredRoles={['product_manager', 'category_manager', 'seller_premium', 'ceo']}>
+              <CrearProductoPage />
             </RoleGuard>
           } />
           
@@ -81,11 +101,26 @@ function App() {
           <Route path="/admin" element={
             <RoleGuard requiredRoles={[
               'ceo', 'cfo', 'cmo', 'operations_director', 'tech_director', 'regional_manager',
-              'brand_manager', 'inventory_manager', 'marketing_manager', 'pricing_analyst', 
+              'brand_manager', 'inventory_manager', 'pricing_analyst', 
               'content_editor', 'visual_merchandiser', 'photographer', 'customer_success', 
               'support_agent', 'logistics_coordinator', 'qa_specialist', 'seller_standard', 'seller_basic'
             ]}>
               <DashboardPage />
+            </RoleGuard>
+          } />
+          <Route path="/marketing" element={
+            <RoleGuard requiredRoles={['marketing_manager', 'cmo', 'ceo']}>
+              <MarketingManagerDashboard />
+            </RoleGuard>
+          } />
+          <Route path="/customer-success" element={
+            <RoleGuard requiredRoles={['customer_success', 'ceo']}>
+              <CustomerSuccessDashboard />
+            </RoleGuard>
+          } />
+          <Route path="/logistics" element={
+            <RoleGuard requiredRoles={['logistics_coordinator', 'ceo']}>
+              <LogisticsCoordinatorDashboard />
             </RoleGuard>
           } />
         </Routes>

@@ -8,7 +8,7 @@ CREATE DATABASE bd_transacciones;
 -- Tabla: Carrito
 CREATE TABLE carrito (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    id_usuario UUID NOT NULL,
+    id_usuario UUID NOT NULL UNIQUE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -60,11 +60,14 @@ CREATE TABLE pago (
 
 -- Tabla: Devolucion
 CREATE TABLE devolucion (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     id_pedido UUID NOT NULL REFERENCES pedido(id) ON DELETE CASCADE,
-    id_usuario UUID NOT NULL,
+    usuario_id INTEGER NOT NULL,
     razon TEXT NOT NULL,
-    estado VARCHAR(50) NOT NULL CHECK (estado IN ('Solicitada', 'Aprobada', 'Rechazada')),
+    estado VARCHAR(50) NOT NULL CHECK (estado IN ('Solicitada', 'Aprobada', 'Rechazada', 'Completada')),
+    comentario_aprobacion TEXT,
+    motivo_rechazo TEXT,
+    comentario_completado TEXT,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -27,6 +27,10 @@ export default function OrdersPage() {
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<string | null>(null)
   const [historial, setHistorial] = useState<any[]>([])
   const [productosDetalle, setProductosDetalle] = useState<Record<string, any>>({})
+  const [mostrarModalDevolucion, setMostrarModalDevolucion] = useState(false)
+  const [pedidoDevolucion, setPedidoDevolucion] = useState<string | null>(null)
+  const [motivoDevolucion, setMotivoDevolucion] = useState('')
+  const [devoluciones, setDevoluciones] = useState<Record<string, any>>({})
   const { token } = useAuthStore()
 
   useEffect(() => {
@@ -43,12 +47,33 @@ export default function OrdersPage() {
         setPedidos(resultado.pedidos)
         // Cargar detalles de productos
         await cargarDetallesProductos(resultado.pedidos)
+        // Cargar devoluciones
+        await cargarDevoluciones(resultado.pedidos)
       }
     } catch (error) {
       console.error('Error cargando pedidos:', error)
     } finally {
       setCargando(false)
     }
+  }
+
+  const cargarDevoluciones = async (pedidosList: Pedido[]) => {
+    if (!token) return
+    const devs: Record<string, any> = {}
+    for (const pedido of pedidosList) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/pedidos/${pedido.id}/devolucion`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          devs[pedido.id] = data.devolucion
+        }
+      } catch (error) {
+        // No hay devolución para este pedido
+      }
+    }
+    setDevoluciones(devs)
   }
 
   const cargarDetallesProductos = async (pedidosList: Pedido[]) => {
@@ -115,6 +140,38 @@ export default function OrdersPage() {
     return iconos[estado] || 'fa-circle'
   }
 
+  const solicitarDevolucion = (pedidoId: string) => {
+    setPedidoDevolucion(pedidoId)
+    setMostrarModalDevolucion(true)
+  }
+
+  const confirmarDevolucion = async () => {
+    if (!token || !pedidoDevolucion || !motivoDevolucion) return
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoDevolucion}/devolucion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ razon: motivoDevolucion })
+      })
+
+      if (response.ok) {
+        alert('✅ Solicitud de devolución enviada exitosamente')
+        setMostrarModalDevolucion(false)
+        setMotivoDevolucion('')
+        cargarPedidos() // Recargar para mostrar la devolución
+      } else {
+        const data = await response.json()
+        alert('❌ ' + (data.error || 'Error al solicitar devolución'))
+      }
+    } catch (error) {
+      alert('❌ Error de conexión')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -174,7 +231,7 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="border-t pt-4 mt-4">
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 flex-wrap">
                     <button
                       onClick={() => setPedidoSeleccionado(pedidoSeleccionado === pedido.id ? null : pedido.id)}
                       className="text-primary hover:text-secondary font-semibold text-sm"
@@ -189,6 +246,21 @@ export default function OrdersPage() {
                       <i className="fas fa-history mr-2"></i>
                       Ver seguimiento
                     </button>
+                    {!devoluciones[pedido.id] && pedido.estado !== 'Cancelado' && (
+                      <button
+                        onClick={() => solicitarDevolucion(pedido.id)}
+                        className="text-orange-600 hover:text-orange-700 font-semibold text-sm"
+                      >
+                        <i className="fas fa-undo mr-2"></i>
+                        Solicitar devolución
+                      </button>
+                    )}
+                    {devoluciones[pedido.id] && (
+                      <span className="text-sm font-semibold text-gray-600">
+                        <i className="fas fa-info-circle mr-2"></i>
+                        Devolución: <span className="text-orange-600">{devoluciones[pedido.id].estado}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -294,6 +366,61 @@ export default function OrdersPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Modal Solicitar Devolución */}
+        {mostrarModalDevolucion && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-bold mb-4">
+                <i className="fas fa-undo mr-2 text-orange-600"></i>
+                Solicitar Devolución
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Por favor, indica el motivo de la devolución:
+              </p>
+              <div className="space-y-3 mb-6">
+                {[
+                  'Producto defectuoso o dañado',
+                  'Talla o color incorrecto',
+                  'No coincide con la descripción',
+                  'Llegó tarde',
+                  'Ya no lo necesito',
+                  'Otro motivo'
+                ].map((motivo) => (
+                  <label key={motivo} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
+                    <input
+                      type="radio"
+                      name="motivo"
+                      value={motivo}
+                      checked={motivoDevolucion === motivo}
+                      onChange={(e) => setMotivoDevolucion(e.target.value)}
+                      className="mr-3"
+                    />
+                    <span className="text-sm">{motivo}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setMostrarModalDevolucion(false)
+                    setMotivoDevolucion('')
+                  }}
+                  className="flex-1 border border-gray-300 py-2 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarDevolucion}
+                  disabled={!motivoDevolucion}
+                  className="flex-1 bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

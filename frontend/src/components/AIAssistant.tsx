@@ -1,30 +1,55 @@
 import { useState, useEffect, useRef } from 'react'
+import { api } from '@/services/api'
+import { useAuthStore } from '@/store/useAuthStore'
+import ProductRecommendation from './ProductRecommendation'
+import type { Producto } from '@/types'
 
 interface Message {
   id: string
   text: string
   isUser: boolean
   timestamp: Date
+  productos?: Producto[]
 }
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Cargar historial del localStorage
+    const saved = localStorage.getItem('ai-chat-history')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        return parsed.map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp)
+        }))
+      } catch {
+        return [{
+          id: '1',
+          text: '¡Hola! Soy María, tu asesora de imagen personal de *Estilo y Moda*. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
+          isUser: false,
+          timestamp: new Date()
+        }]
+      }
+    }
+    return [{
       id: '1',
       text: '¡Hola! Soy María, tu asesora de imagen personal de *Estilo y Moda*. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
       isUser: false,
       timestamp: new Date()
-    }
-  ])
+    }]
+  })
   const [inputText, setInputText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  const { usuario } = useAuthStore()
+
   const quickActions = [
     { text: '👗 Recomendar outfit para una ocasión', action: 'outfit_recommendation' },
     { text: '🎨 Ayudarme a combinar colores', action: 'color_matching' },
-    { text: '💰 Encontrar ofertas en mi talla', action: 'find_deals' }
+    { text: '💰 Mostrarme productos recomendados', action: 'show_recommendations' }
   ]
 
   const scrollToBottom = () => {
@@ -33,6 +58,8 @@ export default function AIAssistant() {
 
   useEffect(() => {
     scrollToBottom()
+    // Guardar historial en localStorage
+    localStorage.setItem('ai-chat-history', JSON.stringify(messages))
   }, [messages])
 
   const handleSendMessage = async (text: string) => {
@@ -49,36 +76,63 @@ export default function AIAssistant() {
     setInputText('')
     setIsTyping(true)
 
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(text)
+    try {
+      // Construir historial para enviar al backend
+      const historial = messages.map(m => ({
+        role: m.isUser ? 'user' : 'assistant',
+        content: m.text
+      }))
+
+      // Llamar al backend AI Service
+      const resultado = await api.chatIA(text.trim(), historial)
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: aiResponse,
+        text: resultado.exito ? resultado.respuesta : 'Lo siento, tengo problemas técnicos. ¿Puedo ayudarte con algo sobre moda?',
         isUser: false,
         timestamp: new Date()
       }
       
       setMessages(prev => [...prev, aiMessage])
+
+      // Si la IA recomienda productos, extraer IDs y mostrarlos
+      if (resultado.exito && resultado.productos_recomendados && resultado.productos_recomendados.length > 0) {
+        await mostrarProductosRecomendados(resultado.productos_recomendados)
+      }
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Lo siento, no puedo conectarme ahora. ¿Puedo ayudarte con algo sobre moda?',
+        isUser: false,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
       setIsTyping(false)
-    }, 1500)
+    }
   }
 
-  const generateAIResponse = (userText: string): string => {
-    const lowerText = userText.toLowerCase()
-    
-    if (lowerText.includes('outfit') || lowerText.includes('vestir')) {
-      return '¡Perfecto! Para recomendarte el outfit ideal, necesito saber: ¿Para qué ocasión es? (trabajo, casual, fiesta, etc.) y ¿cuáles son tus colores favoritos?'
+  const mostrarProductosRecomendados = async (productosIds: string[]) => {
+    try {
+      const { productos } = await api.obtenerProductos()
+      
+      // Filtrar productos que coincidan con los IDs recomendados
+      const recomendados = productos.filter(p => productosIds.includes(p.id))
+      
+      if (recomendados.length > 0) {
+        const recomendacionMessage: Message = {
+          id: (Date.now() + 2).toString(),
+          text: '✨ Aquí están los productos que te recomiendo:',
+          isUser: false,
+          timestamp: new Date(),
+          productos: recomendados
+        }
+        
+        setMessages(prev => [...prev, recomendacionMessage])
+      }
+    } catch (error) {
+      console.error('Error obteniendo productos recomendados:', error)
     }
-    
-    if (lowerText.includes('color') || lowerText.includes('combinar')) {
-      return 'Te ayudo con combinaciones de colores. Los básicos como negro, blanco y gris combinan con todo. Para algo más audaz, prueba: azul marino + beige, verde oliva + crema, o burdeos + gris.'
-    }
-    
-    if (lowerText.includes('oferta') || lowerText.includes('descuento')) {
-      return '¡Genial! Tenemos ofertas increíbles: 50% OFF en vestidos de verano, 30% en camisas casuales y envío gratis en compras sobre $150.000. ¿Te interesa alguna categoría específica?'
-    }
-    
-    return 'Entiendo tu consulta. Como asesora de imagen, puedo ayudarte con recomendaciones personalizadas, combinaciones de colores, ofertas especiales y guías de tallas. ¿Hay algo específico que te interese?'
   }
 
   const handleQuickAction = (action: string, text: string) => {
@@ -127,12 +181,31 @@ export default function AIAssistant() {
                     </div>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setIsOpen(false)}
-                  className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
-                >
-                  <i className="fas fa-times text-white"></i>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      if (confirm('¿Limpiar historial de conversación?')) {
+                        localStorage.removeItem('ai-chat-history')
+                        setMessages([{
+                          id: '1',
+                          text: '¡Hola! Soy María, tu asesora de imagen personal de *Estilo y Moda*. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
+                          isUser: false,
+                          timestamp: new Date()
+                        }])
+                      }
+                    }}
+                    className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
+                    title="Limpiar historial"
+                  >
+                    <i className="fas fa-trash text-white text-sm"></i>
+                  </button>
+                  <button 
+                    onClick={() => setIsOpen(false)}
+                    className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
+                  >
+                    <i className="fas fa-times text-white"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -140,27 +213,41 @@ export default function AIAssistant() {
             <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-purple-50 to-white">
               <div className="space-y-4">
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                      message.isUser 
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-md' 
-                        : 'bg-white shadow-md border border-gray-100 text-gray-800 rounded-bl-md'
-                    }`}>
-                      {!message.isUser && (
-                        <div className="flex items-center mb-2">
-                          <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-2">
-                            <span className="text-white font-semibold text-xs">M</span>
-                          </div>
-                          <span className="text-xs font-semibold text-purple-600">María</span>
-                        </div>
-                      )}
-                      <p className="text-sm leading-relaxed">{message.text}</p>
-                      <p className={`text-xs mt-2 ${
-                        message.isUser ? 'text-white text-opacity-70' : 'text-gray-400'
+                  <div key={message.id}>
+                    <div className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                        message.isUser 
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-md' 
+                          : 'bg-white shadow-md border border-gray-100 text-gray-800 rounded-bl-md'
                       }`}>
-                        {message.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                        {!message.isUser && (
+                          <div className="flex items-center mb-2">
+                            <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-2">
+                              <span className="text-white font-semibold text-xs">M</span>
+                            </div>
+                            <span className="text-xs font-semibold text-purple-600">María</span>
+                          </div>
+                        )}
+                        <p className="text-sm leading-relaxed">{message.text}</p>
+                        <p className={`text-xs mt-2 ${
+                          message.isUser ? 'text-white text-opacity-70' : 'text-gray-400'
+                        }`}>
+                          {message.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
                     </div>
+                    {message.productos && message.productos.length > 0 && (
+                      <div className="mt-3 space-y-2 max-w-[80%]">
+                        {message.productos.map((producto) => (
+                          <ProductRecommendation
+                            key={producto.id}
+                            producto={producto}
+                            razon="Basado en tus preferencias"
+                            puntuacion={0.85 + Math.random() * 0.15}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
                 

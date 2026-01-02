@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { api } from '@/services/api'
+import { Producto } from '@/types'
+import ImageUploader from '@/components/ImageUploader'
 
 export default function ProductManagerDashboard() {
   const { usuario } = useAuthStore()
   const addNotification = useNotificationStore(state => state.addNotification)
-  const [productos, setProductos] = useState([])
+  const [productos, setProductos] = useState<Producto[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
@@ -44,8 +46,8 @@ export default function ProductManagerDashboard() {
 
   const crearProducto = async () => {
     // Validaciones
-    if (!nuevoProducto.nombre || !nuevoProducto.precio || !nuevoProducto.descripcion || !nuevoProducto.imagen) {
-      addNotification('Todos los campos obligatorios deben estar completos', 'error')
+    if (!nuevoProducto.nombre || !nuevoProducto.precio || !nuevoProducto.descripcion) {
+      addNotification('Nombre, precio y descripción son obligatorios', 'error')
       return
     }
     if (tallasSeleccionadas.length === 0) {
@@ -58,34 +60,71 @@ export default function ProductManagerDashboard() {
     }
 
     try {
+      // Crear producto SIN imagen primero
       const producto = {
         nombre: nuevoProducto.nombre,
-        precio: parseFloat(nuevoProducto.precio) * 100, // Convertir a centavos
+        precio: parseFloat(nuevoProducto.precio),
         descripcion: nuevoProducto.descripcion,
-        imagen: nuevoProducto.imagen,
+        imagen: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
         sku: nuevoProducto.sku || `PROD-${Date.now()}`,
         categoria: nuevoProducto.categoria,
         marca: nuevoProducto.marca || 'Estilo y Moda',
         tallas: tallasSeleccionadas,
         colores: coloresSeleccionados,
-        stock_cantidad: parseInt(nuevoProducto.stock_cantidad) || 0,
-        descuento: parseFloat(nuevoProducto.descuento) || 0,
+        stock: parseInt(nuevoProducto.stock_cantidad) || 0,
         material: nuevoProducto.material || 'Algodón',
-        tags: nuevoProducto.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         calificacion: 5,
-        en_stock: true,
-        activo: true,
-        es_eco: false,
-        fecha_creacion: new Date(),
-        fecha_actualizacion: new Date(),
-        compatibilidad: 95
+        en_stock: true
       }
       
-      // Guardar en base de datos
       const resultado = await api.crearProducto(producto)
       
       if (resultado.exito) {
-        // Recargar productos desde BD
+        // Si hay imagen en base64, subirla después
+        if (nuevoProducto.imagen && nuevoProducto.imagen.startsWith('data:')) {
+          try {
+            console.log('📸 Preparando imagen para subir...');
+            
+            // Convertir base64 a File
+            const base64Response = await fetch(nuevoProducto.imagen)
+            const blob = await base64Response.blob()
+            console.log('📦 Blob creado:', blob.type, blob.size, 'bytes');
+            
+            const file = new File([blob], `producto-${resultado.producto.id}.jpg`, { type: 'image/jpeg' })
+            console.log('📄 File creado:', file.name, file.type, file.size, 'bytes');
+            
+            // Subir a Cloudinary
+            const formData = new FormData()
+            formData.append('imagen', file)
+            console.log('📤 FormData preparado, enviando...');
+            
+            const uploadResponse = await fetch(
+              `http://localhost:3000/api/productos/${resultado.producto.id}/imagen`,
+              { method: 'POST', body: formData }
+            )
+            
+            console.log('📥 Respuesta:', uploadResponse.status, uploadResponse.statusText);
+            const uploadData = await uploadResponse.json()
+            console.log('📋 Data:', uploadData);
+            
+            if (uploadData.detail) {
+              console.error('❌ Detalle del error:', uploadData.detail);
+            }
+            
+            if (uploadResponse.ok && uploadData.exito) {
+              addNotification('Producto creado con imagen en Cloudinary', 'success')
+            } else {
+              console.error('❌ Error subiendo imagen:', uploadData)
+              addNotification('Producto creado pero sin imagen', 'warning')
+            }
+          } catch (error) {
+            console.error('❌ Error subiendo imagen:', error)
+            addNotification('Producto creado pero sin imagen', 'warning')
+          }
+        } else {
+          addNotification('Producto creado exitosamente', 'success')
+        }
+        
         await cargarProductos()
         
         // Reset form
@@ -97,8 +136,6 @@ export default function ProductManagerDashboard() {
         })
         setTallasSeleccionadas([])
         setColoresSeleccionados([])
-        
-        addNotification('Producto creado y guardado en la base de datos', 'success')
       } else {
         addNotification(resultado.error || 'Error al crear el producto', 'error')
       }
@@ -301,15 +338,74 @@ export default function ProductManagerDashboard() {
 
               {/* Imagen */}
               <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL de Imagen *</label>
-                <input
-                  type="url"
-                  value={nuevoProducto.imagen}
-                  onChange={(e) => setNuevoProducto(prev => ({ ...prev, imagen: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  required
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Producto *</label>
+                <div className="space-y-3">
+                  {/* Selector de archivo local para Cloudinary */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        
+                        if (file.size > 5 * 1024 * 1024) {
+                          addNotification('Imagen muy grande (máximo 5MB)', 'error')
+                          return
+                        }
+                        
+                        // Preview local
+                        const reader = new FileReader()
+                        reader.onload = (e) => {
+                          setNuevoProducto(prev => ({ ...prev, imagen: e.target?.result as string }))
+                        }
+                        reader.readAsDataURL(file)
+                        
+                        addNotification('Imagen cargada. Se subirá a Cloudinary al crear el producto', 'info')
+                      }}
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-secondary cursor-pointer"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      <i className="fas fa-cloud-upload-alt mr-1"></i>
+                      Sube desde tu computadora (máx 5MB) - Se optimizará con Cloudinary
+                    </p>
+                  </div>
+                  
+                  {/* Preview de imagen */}
+                  {nuevoProducto.imagen && (
+                    <div className="flex items-center space-x-3">
+                      <img 
+                        src={nuevoProducto.imagen} 
+                        alt="Preview" 
+                        className="w-24 h-24 object-cover rounded-lg border-2 border-green-500"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-green-600 font-medium">
+                          <i className="fas fa-check-circle mr-1"></i>
+                          Imagen lista
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setNuevoProducto(prev => ({ ...prev, imagen: '' }))}
+                          className="text-xs text-red-600 hover:text-red-800 mt-1"
+                        >
+                          <i className="fas fa-times mr-1"></i>
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Opción alternativa: URL manual */}
+                  <div className="text-center text-sm text-gray-500">o</div>
+                  <input
+                    type="url"
+                    value={nuevoProducto.imagen.startsWith('data:') ? '' : nuevoProducto.imagen}
+                    onChange={(e) => setNuevoProducto(prev => ({ ...prev, imagen: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    placeholder="O pega una URL de imagen existente"
+                  />
+                </div>
               </div>
 
               {/* Tallas */}
@@ -392,11 +488,7 @@ export default function ProductManagerDashboard() {
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  console.log('🔄 CLICK EN CREAR PRODUCTO');
-                  alert('Botón clickeado - revisa consola');
-                  crearProducto();
-                }}
+                onClick={crearProducto}
                 className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors"
               >
                 Crear Producto

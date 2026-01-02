@@ -10,57 +10,80 @@ const puerto = process.env.PUERTO || 3003;
 
 // Crear tabla pedido_historial si no existe
 async function inicializarBaseDatos() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS pedido_historial (
-        id SERIAL PRIMARY KEY,
-        id_pedido UUID NOT NULL,
-        estado_anterior VARCHAR(50),
-        estado_nuevo VARCHAR(50) NOT NULL,
-        comentario TEXT,
-        fecha_cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_pedido_historial_pedido ON pedido_historial(id_pedido);
-    `);
-    
-    // Crear función para trigger
-    await pool.query(`
-      CREATE OR REPLACE FUNCTION registrar_cambio_estado_pedido()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        IF (TG_OP = 'UPDATE' AND OLD.estado != NEW.estado) THEN
-          INSERT INTO pedido_historial (id_pedido, estado_anterior, estado_nuevo, comentario)
-          VALUES (NEW.id, OLD.estado, NEW.estado, 'Cambio automático de estado');
-        END IF;
-        RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
-    
-    // Crear trigger
-    await pool.query(`
-      DROP TRIGGER IF EXISTS trigger_cambio_estado_pedido ON pedido;
-      CREATE TRIGGER trigger_cambio_estado_pedido
-        AFTER UPDATE ON pedido
-        FOR EACH ROW
-        EXECUTE FUNCTION registrar_cambio_estado_pedido();
-    `);
-    
-    console.log('✅ Tabla pedido_historial y trigger creados');
-  } catch (error) {
-    console.error('⚠️ Error creando tabla pedido_historial:', error.message);
+  let reintentos = 3;
+  
+  while (reintentos > 0) {
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS pedido_historial (
+          id SERIAL PRIMARY KEY,
+          id_pedido UUID NOT NULL,
+          estado_anterior VARCHAR(50),
+          estado_nuevo VARCHAR(50) NOT NULL,
+          comentario TEXT,
+          fecha_cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_pedido_historial_pedido ON pedido_historial(id_pedido);
+      `);
+      
+      // Crear función para trigger
+      await pool.query(`
+        CREATE OR REPLACE FUNCTION registrar_cambio_estado_pedido()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          IF (TG_OP = 'UPDATE' AND OLD.estado != NEW.estado) THEN
+            INSERT INTO pedido_historial (id_pedido, estado_anterior, estado_nuevo, comentario)
+            VALUES (NEW.id, OLD.estado, NEW.estado, 'Cambio automático de estado');
+          END IF;
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      
+      // Crear trigger
+      await pool.query(`
+        DROP TRIGGER IF EXISTS trigger_cambio_estado_pedido ON pedido;
+        CREATE TRIGGER trigger_cambio_estado_pedido
+          AFTER UPDATE ON pedido
+          FOR EACH ROW
+          EXECUTE FUNCTION registrar_cambio_estado_pedido();
+      `);
+      
+      console.log('✅ Tabla pedido_historial y trigger creados');
+      break;
+    } catch (error) {
+      reintentos--;
+      console.error(`⚠️ Error BD (${reintentos} reintentos restantes):`, error.message);
+      if (reintentos > 0) {
+        console.log('🔄 Reintentando en 5 segundos...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } else {
+        console.error('❌ Error crítico: No se pudo conectar a PostgreSQL');
+      }
+    }
   }
 }
 
-inicializarBaseDatos();
+// Inicializar BD con delay para permitir conexión
+setTimeout(inicializarBaseDatos, 2000);
 
 aplicacion.use(helmet());
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:3005',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 aplicacion.use(cors({
-  origin: ['http://localhost:3005', 'http://localhost:3000'],
-  credentials: true
+  origin: ALLOWED_ORIGINS,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 aplicacion.use(express.json({ limit: '10mb' }));
 
@@ -129,8 +152,8 @@ async function guardarCarrito(usuarioId, carrito) {
 
 // Middleware de autenticación JWT
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'mi_secreto_jwt_super_seguro_2024';
-console.log('🔑 Transaction Service usando JWT_SECRET:', JWT_SECRET);
+const JWT_SECRET = process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2';
+console.log('🔑 Transaction Service usando JWT_SECRET:', JWT_SECRET.substring(0, 20) + '...');
 
 const autenticacion = (req, res, next) => {
   try {
@@ -157,7 +180,7 @@ aplicacion.get('/api/carrito', autenticacion, async (req, res) => {
 
     // Obtener carrito y sus productos
     const consultaCarrito = `
-      SELECT c.id, c.id_usuario, c.fecha_creacion, c.fecha_actualizacion,
+      SELECT c.id, c.usuario_id, c.fecha_creacion, c.fecha_actualizacion,
              COALESCE(json_agg(
                json_build_object(
                  'id', cp.id_producto,
@@ -169,8 +192,8 @@ aplicacion.get('/api/carrito', autenticacion, async (req, res) => {
              ) FILTER (WHERE cp.id IS NOT NULL), '[]') as productos
       FROM carrito c
       LEFT JOIN carrito_producto cp ON c.id = cp.id_carrito
-      WHERE c.id_usuario = $1::integer
-      GROUP BY c.id, c.id_usuario, c.fecha_creacion, c.fecha_actualizacion
+      WHERE c.usuario_id = $1
+      GROUP BY c.id, c.usuario_id, c.fecha_creacion, c.fecha_actualizacion
     `;
 
     const resultado = await pool.query(consultaCarrito, [parseInt(usuarioId)]);
@@ -207,9 +230,9 @@ aplicacion.post('/api/carrito', autenticacion, async (req, res) => {
 
     // Crear o obtener carrito
     const consultaCarrito = `
-      INSERT INTO carrito (id_usuario, fecha_actualizacion)
-      VALUES ($1::integer, CURRENT_TIMESTAMP)
-      ON CONFLICT (id_usuario) 
+      INSERT INTO carrito (usuario_id, fecha_actualizacion)
+      VALUES ($1, CURRENT_TIMESTAMP)
+      ON CONFLICT (usuario_id) 
       DO UPDATE SET fecha_actualizacion = CURRENT_TIMESTAMP
       RETURNING id
     `;
@@ -267,7 +290,7 @@ aplicacion.delete('/api/carrito/:productoId', autenticacion, async (req, res) =>
     console.log(`🗑️ Eliminando producto ${productoId} del carrito del usuario ${usuarioId}`);
 
     // Obtener ID del carrito
-    const consultaCarrito = 'SELECT id FROM carrito WHERE id_usuario = $1::integer';
+    const consultaCarrito = 'SELECT id FROM carrito WHERE usuario_id = $1';
     const resultadoCarrito = await pool.query(consultaCarrito, [parseInt(usuarioId)]);
 
     if (resultadoCarrito.rows.length === 0) {
@@ -312,7 +335,7 @@ aplicacion.get('/api/pedidos', autenticacion, async (req, res) => {
         ) as productos
       FROM pedido p
       LEFT JOIN pedido_producto pp ON p.id = pp.id_pedido
-      WHERE p.id_usuario = $1::integer
+      WHERE p.usuario_id = $1
       GROUP BY p.id, p.estado, p.total, p.fecha_creacion, p.fecha_actualizacion
       ORDER BY p.fecha_creacion DESC
     `;
@@ -340,7 +363,7 @@ aplicacion.get('/api/pedidos/:pedidoId/historial', autenticacion, async (req, re
 
     // Verificar que el pedido pertenece al usuario
     const verificacion = await pool.query(
-      'SELECT id FROM pedido WHERE id = $1::uuid AND id_usuario = $2::integer',
+      'SELECT id FROM pedido WHERE id = $1::uuid AND usuario_id = $2',
       [pedidoId, parseInt(usuarioId)]
     );
 
@@ -381,7 +404,7 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
 
     // Verificar que el pedido pertenece al usuario
     const verificacion = await pool.query(
-      'SELECT id, estado FROM pedido WHERE id = $1 AND id_usuario = $2::integer',
+      'SELECT id, estado FROM pedido WHERE id = $1 AND usuario_id = $2',
       [pedidoId, parseInt(usuarioId)]
     );
 
@@ -437,7 +460,7 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
              SUM(cp.cantidad * cp.precio_unitario) as total
       FROM carrito c
       LEFT JOIN carrito_producto cp ON c.id = cp.id_carrito
-      WHERE c.id_usuario = $1::integer
+      WHERE c.usuario_id = $1
       GROUP BY c.id
     `;
 
@@ -452,8 +475,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
 
     // Crear pedido
     const consultaPedido = `
-      INSERT INTO pedido (id_usuario, estado, total)
-      VALUES ($1::integer, 'Creado', $2)
+      INSERT INTO pedido (usuario_id, estado, total)
+      VALUES ($1, 'Creado', $2)
       RETURNING id
     `;
     const resultadoPedido = await pool.query(consultaPedido, [parseInt(usuarioId), carrito.total]);
@@ -506,6 +529,284 @@ aplicacion.get('/salud', (req, res) => {
 // Manejador de errores
 aplicacion.use(manejadorErrores);
 
+// Solicitar devolución
+aplicacion.post('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, res) => {
+  try {
+    const { pedidoId } = req.params;
+    const { razon } = req.body;
+    const usuarioId = req.usuario.id;
+
+    console.log(`🔄 Solicitando devolución para pedido ${pedidoId}`);
+
+    // Verificar que el pedido existe y pertenece al usuario
+    const pedido = await pool.query(
+      'SELECT id, total FROM pedido WHERE id = $1::uuid AND usuario_id = $2',
+      [pedidoId, parseInt(usuarioId)]
+    );
+
+    if (pedido.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    // Verificar si ya existe una devolución
+    const devolucionExistente = await pool.query(
+      'SELECT id FROM devolucion WHERE id_pedido = $1::uuid',
+      [pedidoId]
+    );
+
+    if (devolucionExistente.rows.length > 0) {
+      return res.status(400).json({ error: 'Ya existe una solicitud de devolución para este pedido' });
+    }
+
+    // Crear devolución
+    const resultado = await pool.query(
+      `INSERT INTO devolucion (id_pedido, usuario_id, razon, estado)
+       VALUES ($1::uuid, $2, $3, 'Solicitada')
+       RETURNING id, estado, fecha_creacion`,
+      [pedidoId, usuarioId, razon]
+    );
+
+    console.log(`✅ Devolución creada: ${resultado.rows[0].id}`);
+
+    res.json({
+      mensaje: 'Solicitud de devolución creada exitosamente',
+      devolucion: resultado.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creando devolución:', error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud' });
+  }
+});
+
+// Obtener devolución de un pedido
+aplicacion.get('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, res) => {
+  try {
+    const { pedidoId } = req.params;
+    const usuarioId = req.usuario.id;
+
+    const resultado = await pool.query(
+      `SELECT d.id, d.razon, d.estado, d.fecha_creacion, d.fecha_actualizacion
+       FROM devolucion d
+       WHERE d.id_pedido = $1::uuid AND d.usuario_id = $2`,
+      [pedidoId, usuarioId]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({ error: 'No hay devolución para este pedido' });
+    }
+
+    res.json({ devolucion: resultado.rows[0] });
+  } catch (error) {
+    console.error('Error obteniendo devolución:', error.message);
+    res.status(500).json({ error: 'Error al obtener la devolución' });
+  }
+});
+
+// ============================================
+// ENDPOINTS DE GESTIÓN DE DEVOLUCIONES
+// ============================================
+
+// Listar todas las devoluciones (con filtro por estado)
+aplicacion.get('/api/devoluciones', autenticacion, async (req, res) => {
+  try {
+    const { estado } = req.query;
+
+    console.log(`📋 Listando devoluciones - Estado: ${estado || 'Todas'}`);
+
+    let consulta = `
+      SELECT 
+        d.id,
+        d.id_pedido,
+        d.usuario_id,
+        d.razon,
+        d.estado,
+        d.fecha_creacion,
+        d.fecha_actualizacion,
+        p.total as monto_pedido
+      FROM devolucion d
+      INNER JOIN pedido p ON d.id_pedido = p.id
+    `;
+
+    const params = [];
+    if (estado) {
+      consulta += ' WHERE d.estado = $1';
+      params.push(estado);
+    }
+
+    consulta += ' ORDER BY d.fecha_creacion DESC';
+
+    const resultado = await pool.query(consulta, params);
+
+    console.log(`✅ ${resultado.rows.length} devoluciones encontradas`);
+
+    res.json({
+      devoluciones: resultado.rows,
+      total: resultado.rows.length
+    });
+  } catch (error) {
+    console.error('Error listando devoluciones:', error.message);
+    res.status(500).json({ error: 'Error al listar devoluciones' });
+  }
+});
+
+// Aprobar devolución (Customer Success)
+aplicacion.put('/api/devoluciones/:id/aprobar', autenticacion, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comentario } = req.body;
+    const usuarioRol = req.usuario.rol;
+
+    console.log(`✅ Aprobando devolución ${id} - Rol: ${usuarioRol}`);
+
+    // Verificar rol
+    if (usuarioRol !== 'customer_success' && usuarioRol !== 'ceo') {
+      return res.status(403).json({ error: 'No tienes permisos para aprobar devoluciones' });
+    }
+
+    // Verificar que la devolución existe y está en estado Solicitada
+    const verificacion = await pool.query(
+      'SELECT id, estado FROM devolucion WHERE id = $1::uuid',
+      [id]
+    );
+
+    if (verificacion.rows.length === 0) {
+      return res.status(404).json({ error: 'Devolución no encontrada' });
+    }
+
+    if (verificacion.rows[0].estado !== 'Solicitada') {
+      return res.status(400).json({ error: `No se puede aprobar una devolución en estado ${verificacion.rows[0].estado}` });
+    }
+
+    // Actualizar estado
+    await pool.query(
+      `UPDATE devolucion 
+       SET estado = 'Aprobada', 
+           comentario_aprobacion = $1,
+           fecha_actualizacion = CURRENT_TIMESTAMP 
+       WHERE id = $2::uuid`,
+      [comentario || 'Aprobada por Customer Success', id]
+    );
+
+    console.log(`✅ Devolución ${id} aprobada`);
+
+    res.json({
+      mensaje: 'Devolución aprobada exitosamente',
+      devolucion_id: id,
+      nuevo_estado: 'Aprobada'
+    });
+  } catch (error) {
+    console.error('Error aprobando devolución:', error.message);
+    res.status(500).json({ error: 'Error al aprobar devolución' });
+  }
+});
+
+// Rechazar devolución (Customer Success)
+aplicacion.put('/api/devoluciones/:id/rechazar', autenticacion, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { motivo } = req.body;
+    const usuarioRol = req.usuario.rol;
+
+    console.log(`❌ Rechazando devolución ${id} - Rol: ${usuarioRol}`);
+
+    // Verificar rol
+    if (usuarioRol !== 'customer_success' && usuarioRol !== 'ceo') {
+      return res.status(403).json({ error: 'No tienes permisos para rechazar devoluciones' });
+    }
+
+    if (!motivo) {
+      return res.status(400).json({ error: 'El motivo de rechazo es requerido' });
+    }
+
+    // Verificar que la devolución existe y está en estado Solicitada
+    const verificacion = await pool.query(
+      'SELECT id, estado FROM devolucion WHERE id = $1::uuid',
+      [id]
+    );
+
+    if (verificacion.rows.length === 0) {
+      return res.status(404).json({ error: 'Devolución no encontrada' });
+    }
+
+    if (verificacion.rows[0].estado !== 'Solicitada') {
+      return res.status(400).json({ error: `No se puede rechazar una devolución en estado ${verificacion.rows[0].estado}` });
+    }
+
+    // Actualizar estado
+    await pool.query(
+      `UPDATE devolucion 
+       SET estado = 'Rechazada', 
+           motivo_rechazo = $1,
+           fecha_actualizacion = CURRENT_TIMESTAMP 
+       WHERE id = $2::uuid`,
+      [motivo, id]
+    );
+
+    console.log(`❌ Devolución ${id} rechazada`);
+
+    res.json({
+      mensaje: 'Devolución rechazada',
+      devolucion_id: id,
+      nuevo_estado: 'Rechazada',
+      motivo: motivo
+    });
+  } catch (error) {
+    console.error('Error rechazando devolución:', error.message);
+    res.status(500).json({ error: 'Error al rechazar devolución' });
+  }
+});
+
+// Completar devolución (Logistics Coordinator)
+aplicacion.put('/api/devoluciones/:id/completar', autenticacion, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comentario } = req.body;
+    const usuarioRol = req.usuario.rol;
+
+    console.log(`📦 Completando devolución ${id} - Rol: ${usuarioRol}`);
+
+    // Verificar rol
+    if (usuarioRol !== 'logistics_coordinator' && usuarioRol !== 'ceo') {
+      return res.status(403).json({ error: 'No tienes permisos para completar devoluciones' });
+    }
+
+    // Verificar que la devolución existe y está en estado Aprobada
+    const verificacion = await pool.query(
+      'SELECT id, estado FROM devolucion WHERE id = $1::uuid',
+      [id]
+    );
+
+    if (verificacion.rows.length === 0) {
+      return res.status(404).json({ error: 'Devolución no encontrada' });
+    }
+
+    if (verificacion.rows[0].estado !== 'Aprobada') {
+      return res.status(400).json({ error: `Solo se pueden completar devoluciones aprobadas. Estado actual: ${verificacion.rows[0].estado}` });
+    }
+
+    // Actualizar estado
+    await pool.query(
+      `UPDATE devolucion 
+       SET estado = 'Completada', 
+           comentario_completado = $1,
+           fecha_actualizacion = CURRENT_TIMESTAMP 
+       WHERE id = $2::uuid`,
+      [comentario || 'Completada por Logística', id]
+    );
+
+    console.log(`✅ Devolución ${id} completada`);
+
+    res.json({
+      mensaje: 'Devolución completada exitosamente',
+      devolucion_id: id,
+      nuevo_estado: 'Completada'
+    });
+  } catch (error) {
+    console.error('Error completando devolución:', error.message);
+    res.status(500).json({ error: 'Error al completar devolución' });
+  }
+});
+
 // Endpoint para simular cambio de estado (SOLO DESARROLLO)
 aplicacion.post('/api/pedidos/:pedidoId/simular-cambio', autenticacion, async (req, res) => {
   try {
@@ -514,7 +815,7 @@ aplicacion.post('/api/pedidos/:pedidoId/simular-cambio', autenticacion, async (r
 
     // Verificar que el pedido pertenece al usuario
     const verificacion = await pool.query(
-      'SELECT id, estado FROM pedido WHERE id = $1::uuid AND id_usuario = $2::integer',
+      'SELECT id, estado FROM pedido WHERE id = $1::uuid AND usuario_id = $2',
       [pedidoId, parseInt(usuarioId)]
     );
 
@@ -555,6 +856,10 @@ aplicacion.listen(puerto, () => {
   console.log(`   • GET /api/pedidos`);
   console.log(`   • GET /api/pedidos/:id/historial`);
   console.log(`   • POST /api/pedidos/:id/simular-cambio`);
+  console.log(`   • GET /api/devoluciones`);
+  console.log(`   • PUT /api/devoluciones/:id/aprobar`);
+  console.log(`   • PUT /api/devoluciones/:id/rechazar`);
+  console.log(`   • PUT /api/devoluciones/:id/completar`);
 });
 
 module.exports = aplicacion;

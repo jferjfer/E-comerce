@@ -6,3 +6,5 @@ python-dotenv==1.0.0
 motor==3.3.2
 python-multipart==0.0.6
 httpx==0.25.2
+cloudinary==1.36.0
+Pillow==10.1.0

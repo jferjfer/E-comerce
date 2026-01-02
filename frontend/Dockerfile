@@ -2,23 +2,21 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Limpiar caché npm y configurar
-RUN npm cache clean --force
-RUN npm config set registry https://registry.npmjs.org/
-
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias con limpieza
-RUN rm -rf node_modules package-lock.json
-RUN npm install --no-cache --verbose
+# Instalar dependencias
+RUN npm ci --only=production=false && npm cache clean --force
 
 # Copiar código fuente
 COPY . .
 
-# Verificar instalación
-RUN npm list vite || echo "Vite no encontrado, reinstalando..."
-RUN npm install vite@^5.0.0 --save-dev --force
+# Crear usuario no-root y dar permisos
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S frontenduser -u 1001 && \
+    chown -R frontenduser:nodejs /app
+
+USER frontenduser
 
 EXPOSE 3005
 

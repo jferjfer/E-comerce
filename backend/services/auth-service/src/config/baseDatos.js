@@ -2,10 +2,14 @@ const { Pool } = require('pg');
 
 // Conexión directa a Neon PostgreSQL para producción
 const configuracionBD = {
-  connectionString: 'postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
-  max: 10,
-  connectionTimeoutMillis: 3000,
-  idleTimeoutMillis: 5000,
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_zRdlv7TGEJu3@ep-red-voice-adzfb730-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require',
+  max: 20,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  query_timeout: 5000,
+  statement_timeout: 5000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
   ssl: { rejectUnauthorized: false }
 };
 

@@ -1,16 +1,28 @@
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from typing import Optional, List
 import uvicorn
 import os
 import time
 from datetime import datetime
-from config.database import conectar_bd, desconectar_bd, get_database
+from config.base_datos import conectar_bd, cerrar_bd, obtener_bd
+from config.cloudinary_config import cloudinary
+from servicios.servicio_imagenes import subir_imagen_producto, subir_multiples_imagenes
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await conectar_bd()
+    yield
+    # Shutdown
+    await cerrar_bd()
 
 app = FastAPI(
     title="Servicio de Catálogo v2.0",
     description="API completa para gestión de productos, categorías y tendencias de moda",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 # Middleware CORS
@@ -21,15 +33,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Eventos de inicio y cierre
-@app.on_event("startup")
-async def startup_event():
-    await conectar_bd()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await desconectar_bd()
 
 # Endpoints de productos
 @app.get("/api/productos")
@@ -44,7 +47,7 @@ async def listar_productos(
 ):
     print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar}")
     
-    db = get_database()
+    db = obtener_bd()
     if db is None:
         print("❌ MongoDB no disponible")
         raise HTTPException(status_code=500, detail="Base de datos no disponible")
@@ -92,10 +95,13 @@ async def listar_productos(
         
         print(f"✅ Productos encontrados: {len(productos)} de {total} total")
         
-        # Limpiar _id de MongoDB
-        for producto in productos:
+        # Limpiar _id de MongoDB y asegurar ID único
+        for i, producto in enumerate(productos):
             if "_id" in producto:
                 del producto["_id"]
+            # Asegurar que cada producto tenga un ID único
+            if not producto.get("id"):
+                producto["id"] = f"prod_{i+1}_{int(time.time())}"
         
         return {
             "productos": productos,
@@ -112,7 +118,7 @@ async def listar_productos(
 async def crear_producto(producto: dict):
     print(f"📦 Creando nuevo producto: {producto.get('nombre')}")
     
-    db = get_database()
+    db = obtener_bd()
     if db is None:
         raise HTTPException(status_code=500, detail="Base de datos no disponible")
     
@@ -144,7 +150,7 @@ async def crear_producto(producto: dict):
 async def productos_destacados():
     print("⭐ Obteniendo productos destacados")
     
-    db = get_database()
+    db = obtener_bd()
     if db is None:
         raise HTTPException(status_code=500, detail="Base de datos no disponible")
     
@@ -152,10 +158,13 @@ async def productos_destacados():
         productos_cursor = db.productos.find({"calificacion": {"$gte": 4}}).limit(6)
         productos = await productos_cursor.to_list(length=6)
         
-        # Limpiar _id de MongoDB
-        for producto in productos:
+        # Limpiar _id de MongoDB y asegurar ID único
+        for i, producto in enumerate(productos):
             if "_id" in producto:
                 del producto["_id"]
+            # Asegurar que cada producto tenga un ID único
+            if not producto.get("id"):
+                producto["id"] = f"prod_{i+1}_{int(time.time())}"
                 
         print(f"✅ Productos destacados encontrados: {len(productos)}")
         return {"productos": productos, "total": len(productos)}
@@ -165,7 +174,7 @@ async def productos_destacados():
 
 @app.get("/api/productos/{producto_id}")
 async def obtener_producto(producto_id: str):
-    db = get_database()
+    db = obtener_bd()
     producto = await db.productos.find_one({"id": producto_id})
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -192,7 +201,7 @@ async def listar_categorias():
 async def buscar_productos(q: str = Query(..., description="Término de búsqueda")):
     print(f"🔍 Búsqueda: {q}")
     
-    db = get_database()
+    db = obtener_bd()
     if db is not None:
         try:
             filtro = {
@@ -225,9 +234,103 @@ async def obtener_tendencias():
         ]
     }
 
+# Endpoints de imágenes
+@app.post("/api/productos/{producto_id}/imagen")
+async def subir_imagen(
+    producto_id: str,
+    imagen: UploadFile = File(...)
+):
+    """Sube imagen principal del producto a Cloudinary"""
+    
+    print(f"📸 Subiendo imagen para producto {producto_id}")
+    print(f"   Filename: {imagen.filename}")
+    print(f"   Content-Type: {imagen.content_type}")
+    
+    # Validar tipo de archivo
+    if not imagen.content_type or not imagen.content_type.startswith('image/'):
+        print(f"❌ Tipo de archivo inválido: {imagen.content_type}")
+        raise HTTPException(status_code=400, detail="Solo se permiten imágenes")
+    
+    # Validar tamaño (5MB máximo)
+    contenido = await imagen.read()
+    print(f"   Tamaño: {len(contenido)} bytes")
+    
+    if len(contenido) > 5 * 1024 * 1024:
+        print(f"❌ Imagen muy grande: {len(contenido)} bytes")
+        raise HTTPException(status_code=400, detail="Imagen muy grande (máximo 5MB)")
+    
+    try:
+        print(f"☁️ Subiendo a Cloudinary...")
+        # Subir a Cloudinary
+        url_imagen = await subir_imagen_producto(contenido, producto_id)
+        print(f"✅ Imagen subida: {url_imagen}")
+        
+        # Actualizar producto en MongoDB
+        db = obtener_bd()
+        if db is not None:
+            resultado = await db.productos.update_one(
+                {"id": producto_id},
+                {"$set": {"imagen": url_imagen}}
+            )
+            print(f"✅ Producto actualizado en MongoDB: {resultado.modified_count} documentos")
+        
+        return {
+            "exito": True,
+            "mensaje": "Imagen subida exitosamente",
+            "url": url_imagen
+        }
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/productos/{producto_id}/imagenes-adicionales")
+async def subir_imagenes_adicionales(
+    producto_id: str,
+    imagenes: List[UploadFile] = File(...)
+):
+    """Sube múltiples imágenes adicionales del producto"""
+    
+    if len(imagenes) > 5:
+        raise HTTPException(status_code=400, detail="Máximo 5 imágenes adicionales")
+    
+    try:
+        # Leer todas las imágenes
+        archivos_bytes = []
+        for imagen in imagenes:
+            if not imagen.content_type.startswith('image/'):
+                raise HTTPException(status_code=400, detail=f"Archivo {imagen.filename} no es una imagen")
+            
+            contenido = await imagen.read()
+            if len(contenido) > 5 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail=f"Imagen {imagen.filename} muy grande (máximo 5MB)")
+            
+            archivos_bytes.append(contenido)
+        
+        # Subir a Cloudinary
+        urls = await subir_multiples_imagenes(archivos_bytes, producto_id)
+        
+        # Actualizar producto en MongoDB
+        db = obtener_bd()
+        if db is not None:
+            await db.productos.update_one(
+                {"id": producto_id},
+                {"$set": {"imagenes_adicionales": urls}}
+            )
+        
+        return {
+            "exito": True,
+            "mensaje": f"{len(urls)} imágenes subidas exitosamente",
+            "urls": urls
+        }
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/salud")
 async def verificar_salud():
-    db = get_database()
+    db = obtener_bd()
     productos_total = 0
     
     if db is not None:
@@ -243,7 +346,8 @@ async def verificar_salud():
         "timestamp": datetime.now().isoformat(),
         "productos_total": productos_total,
         "categorias_total": 5,
-        "mongodb_conectado": db is not None
+        "mongodb_conectado": db is not None,
+        "cloudinary_configurado": True
     }
 
 if __name__ == "__main__":

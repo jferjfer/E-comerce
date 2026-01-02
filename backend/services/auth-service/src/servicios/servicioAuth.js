@@ -90,7 +90,7 @@ class ServicioAuth {
       // Generar token de recuperación
       const tokenRecuperacion = jwt.sign(
         { id: usuario.id, tipo: 'recuperacion' },
-        'mi_secreto_jwt_super_seguro_2024',
+        process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2',
         { expiresIn: '1h' }
       );
 
@@ -107,7 +107,7 @@ class ServicioAuth {
   async restablecerContrasena(token, nuevaContrasena) {
     try {
       // Verificar token
-      const decoded = jwt.verify(token, 'mi_secreto_jwt_super_seguro_2024');
+      const decoded = jwt.verify(token, process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2');
       if (decoded.tipo !== 'recuperacion') {
         return { exito: false, error: 'Token inválido' };
       }
@@ -130,9 +130,8 @@ class ServicioAuth {
   }
 
   generarToken(usuario) {
-    // Usar variable de entorno si existe, sino el default
-    const secret = 'mi_secreto_jwt_super_seguro_2024';
-    console.log('🔑 GENERANDO TOKEN CON SECRETO:', secret);
+    const secret = process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2';
+    console.log('🔑 GENERANDO TOKEN CON SECRETO:', secret.substring(0, 20) + '...');
 
     return jwt.sign(
       {
@@ -147,7 +146,7 @@ class ServicioAuth {
 
   async verificarToken(token) {
     try {
-      const secret = 'mi_secreto_jwt_super_seguro_2024';
+      const secret = process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2';
       const decoded = jwt.verify(token, secret);
       return { valido: true, usuario: decoded };
     } catch (error) {

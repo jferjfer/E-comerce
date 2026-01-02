@@ -14,8 +14,8 @@ export default function ProductsManager() {
   const itemsPerPage = 10
   
   const filteredProducts = products.filter(product => {
-    const matchesSearch = (product.nombre || product.name).toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = !selectedCategory || (product.categoria || product.category) === selectedCategory
+    const matchesSearch = product.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = !selectedCategory || product.categoria === selectedCategory
     return matchesSearch && matchesCategory
   })
   
@@ -23,7 +23,7 @@ export default function ProductsManager() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage)
   
-  const categories = [...new Set(products.map(p => p.categoria || p.category))]
+  const categories = [...new Set(products.map(p => p.categoria))]
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,13 +125,13 @@ export default function ProductsManager() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img 
-                          src={product.imagen || product.image} 
-                          alt={product.nombre || product.name}
+                          src={product.imagen} 
+                          alt={product.nombre}
                           className="w-12 h-12 object-cover rounded-lg mr-4"
                         />
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {product.nombre || product.name}
+                            {product.nombre}
                           </div>
                           <div className="text-sm text-gray-500">
                             ID: {product.id}
@@ -141,19 +141,19 @@ export default function ProductsManager() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {product.categoria || product.category}
+                        {product.categoria}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatPrice(product.precio || product.price)}
+                      {formatPrice(product.precio)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.en_stock !== false && product.inStock !== false 
+                        product.en_stock 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {(product.en_stock !== false && product.inStock !== false) ? 'En Stock' : 'Agotado'}
+                        {product.en_stock ? 'En Stock' : 'Agotado'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

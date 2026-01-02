@@ -28,23 +28,23 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
           items.map((item) => (
             <div key={item.id} className="flex items-center space-x-4 p-4 border-b">
               <img 
-                src={item.imagen || item.image} 
+                src={item.imagen} 
                 className="w-16 h-16 object-cover rounded" 
-                alt={item.nombre || item.name}
+                alt={item.nombre}
               />
               <div className="flex-1">
-                <h4 className="font-medium">{item.nombre || item.name}</h4>
-                <p className="text-primary font-bold">{formatPrice(item.precio || item.price)}</p>
+                <h4 className="font-medium">{item.nombre}</h4>
+                <p className="text-primary font-bold">{formatPrice(item.precio)}</p>
                 <div className="flex items-center space-x-2 mt-2">
                   <button
-                    onClick={() => handleQuantityChange(item.id, (item.cantidad || item.quantity) - 1)}
+                    onClick={() => handleQuantityChange(item.id, item.cantidad - 1)}
                     className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
                   >
                     <i className="fas fa-minus text-xs"></i>
                   </button>
-                  <span className="w-8 text-center">{item.cantidad || item.quantity}</span>
+                  <span className="w-8 text-center">{item.cantidad}</span>
                   <button
-                    onClick={() => handleQuantityChange(item.id, (item.cantidad || item.quantity) + 1)}
+                    onClick={() => handleQuantityChange(item.id, item.cantidad + 1)}
                     className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
                   >
                     <i className="fas fa-plus text-xs"></i>

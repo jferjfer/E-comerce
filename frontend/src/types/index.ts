@@ -15,6 +15,8 @@ export interface Producto {
 
 export interface ItemCarrito extends Producto {
   cantidad: number;
+  talla?: string;
+  color?: string;
 }
 
 export interface Usuario {

@@ -31,9 +31,9 @@ export const useTiendaAuth = create<TiendaAuth>()(
               estaAutenticado: true 
             })
             
-            // Sincronizar carrito con backend
+            // Sincronizar carrito en background (no bloquear login)
             const establecerToken = useTiendaCarrito.getState().establecerToken
-            establecerToken(resultado.token)
+            setTimeout(() => establecerToken(resultado.token), 0)
             
             return true
           }

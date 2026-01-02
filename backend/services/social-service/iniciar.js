@@ -14,7 +14,7 @@ exec(`netstat -ano | findstr :${PUERTO}`, (error, stdout) => {
         exec(`taskkill /PID ${pid} /F`, () => {
           setTimeout(() => {
             console.log('✅ Puerto liberado, iniciando servicio...');
-            require('./src/servidor.js');
+            require('./src/servidor-completo.js');
           }, 1000);
         });
         return;
@@ -22,5 +22,5 @@ exec(`netstat -ano | findstr :${PUERTO}`, (error, stdout) => {
     }
   }
   console.log('✅ Puerto libre, iniciando servicio...');
-  require('./src/servidor.js');
+  require('./src/servidor-completo.js');
 });

@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 3004
 
-CMD ["sh", "-c", "node src/servidor.js"]
+CMD ["sh", "-c", "node src/servidor-completo.js"]

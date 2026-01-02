@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import ConnectionFailure
 
 # Configuración MongoDB Atlas
-MONGODB_URI = "mongodb+srv://Vercel-Admin-serviceia:ZHCXKOwgzj4Gq2IV@serviceia.pi2owta.mongodb.net/?retryWrites=true&w=majority"
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://Vercel-Admin-serviceia:JQZMRqti5uyeqluB@serviceia.pi2owta.mongodb.net/?retryWrites=true&w=majority")
 
 class DatabaseManager:
     client: AsyncIOMotorClient = None

@@ -226,13 +226,18 @@ export const api = {
   async procesarCheckout(token: string, datos: any) {
     try {
       console.log('💳 Procesando checkout...');
+      const checkoutData = {
+        metodo_pago: datos.metodoPago || 'tarjeta',
+        direccion_envio: datos.direccion_envio || 'Dirección predeterminada'
+      };
+      
       const response = await fetch(`${API_BASE_URL}/api/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(datos)
+        body: JSON.stringify(checkoutData)
       });
 
       const data = await response.json();
@@ -287,6 +292,124 @@ export const api = {
         pedidos: [],
         total: 0
       };
+    }
+  },
+
+  async crearProducto(producto: any) {
+    try {
+      console.log('📦 Creando producto:', producto.nombre);
+      const response = await fetch(`${API_BASE_URL}/api/productos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(producto)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.exito) {
+        console.log('✅ Producto creado:', data.producto);
+        return {
+          exito: true,
+          producto: data.producto
+        };
+      }
+
+      console.error('❌ Error al crear producto:', data);
+      return {
+        exito: false,
+        error: data.mensaje || 'Error al crear producto'
+      };
+    } catch (error) {
+      console.error('❌ Error de conexión:', error);
+      return {
+        exito: false,
+        error: 'Error de conexión'
+      };
+    }
+  },
+
+  async chatIA(mensaje: string, historial: any[] = []) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje, historial })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return {
+          exito: true,
+          respuesta: data.respuesta,
+          productos_recomendados: data.productos_recomendados || []
+        };
+      }
+
+      return {
+        exito: false,
+        error: 'Error al obtener respuesta',
+        productos_recomendados: []
+      };
+    } catch (error) {
+      console.error('❌ Error en chat IA:', error);
+      return {
+        exito: false,
+        error: 'Error de conexión',
+        productos_recomendados: []
+      };
+    }
+  },
+
+  async obtenerRecomendacionesIA(usuarioId: string, productosVistos: string[] = []) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/recomendaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          usuario_id: usuarioId,
+          productos_vistos: productosVistos,
+          preferencias: {}
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return {
+          exito: true,
+          recomendaciones: data.recomendaciones || []
+        };
+      }
+
+      return { exito: false, recomendaciones: [] };
+    } catch (error) {
+      console.error('❌ Error obteniendo recomendaciones:', error);
+      return { exito: false, recomendaciones: [] };
+    }
+  },
+
+  async analizarEstilo(descripcion: string, categoria?: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/estilos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descripcion, categoria })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return {
+          exito: true,
+          estilos: data.estilos || []
+        };
+      }
+
+      return { exito: false, estilos: [] };
+    } catch (error) {
+      console.error('❌ Error analizando estilo:', error);
+      return { exito: false, estilos: [] };
     }
   }
 };

@@ -140,7 +140,7 @@ export class RoleFilters {
       
       case 'category_manager':
         // Solo métricas de sus categorías
-        const categoryMetrics = {};
+        const categoryMetrics: Record<string, any> = {};
         if (user.categoryIds) {
           user.categoryIds.forEach(categoryId => {
             categoryMetrics[categoryId] = allMetrics.categories?.[categoryId] || {};
@@ -175,18 +175,20 @@ export class RoleFilters {
     const primaryRole = user.roles[0];
     
     // Mapeo de funcionalidades por rol
-    const roleFeatures = {
+    const roleFeatures: Record<string, string[]> = {
       ceo: ['*'], // Acceso total
       cfo: ['financial_reports', 'pricing_approval', 'cost_analysis'],
       cmo: ['marketing_campaigns', 'customer_analytics', 'content_management'],
       regional_manager: ['regional_analytics', 'team_management', 'regional_inventory'],
       category_manager: ['category_products', 'category_analytics', 'pricing_suggestions'],
+      product_manager: ['product_management', 'inventory_view'],
       seller_premium: ['advanced_analytics', 'product_management', 'customer_insights'],
       seller_standard: ['basic_analytics', 'product_updates'],
       seller_basic: ['sales_only'],
       vip_customer: ['exclusive_products', 'priority_support', 'advanced_features'],
       premium_customer: ['early_access', 'enhanced_support'],
-      regular_customer: ['standard_features']
+      regular_customer: ['standard_features'],
+      cliente: ['standard_features']
     };
 
     const allowedFeatures = roleFeatures[primaryRole] || [];

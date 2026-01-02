@@ -1,9 +1,9 @@
 # DEPENDENCIAS PYTHON - ESTILO Y MODA E-COMMERCE
-# Compatible con Python 3.11
+# Compatible con Python 3.11+
 
 # FRAMEWORK WEB
 fastapi==0.104.1
-uvicorn==0.24.0
+uvicorn[standard]==0.24.0
 starlette==0.27.0
 
 # VALIDACION DE DATOS
@@ -15,6 +15,8 @@ typing_extensions==4.8.0
 pymongo==4.6.0
 motor==3.3.2
 dnspython==2.4.2
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
 
 # HTTP Y NETWORKING
 httpx==0.25.2
@@ -52,3 +54,7 @@ cryptography>=42.0.0
 email-validator==2.1.0
 requests==2.31.0
 urllib3==2.1.0
+
+# CLOUDINARY - OPTIMIZACION DE IMAGENES
+cloudinary==1.36.0
+Pillow==10.1.0

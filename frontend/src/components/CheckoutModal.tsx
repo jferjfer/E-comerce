@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { formatPrice } from '@/utils/sanitize'
@@ -16,30 +17,52 @@ interface CheckoutModalProps {
 }
 
 export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
+  const navigate = useNavigate()
   const { items, obtenerPrecioTotal, vaciarCarrito } = useCartStore()
-  const { usuario, token } = useAuthStore()
+  const { usuario, token, estaAutenticado } = useAuthStore()
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedMethod, setSelectedMethod] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   
-  // Verificar que solo clientes puedan acceder al checkout
-  if (usuario?.rol !== 'cliente') {
+  // Verificar autenticación al abrir
+  useEffect(() => {
+    if (isOpen && !estaAutenticado) {
+      setShowLoginPrompt(true)
+    } else {
+      setShowLoginPrompt(false)
+    }
+  }, [isOpen, estaAutenticado])
+  
+  // Mostrar prompt de login si no está autenticado
+  if (showLoginPrompt) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Acceso Restringido" size="md">
+      <Modal isOpen={isOpen} onClose={onClose} title="Iniciar Sesión" size="md">
         <div className="text-center py-8">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-lock text-red-500 text-2xl"></i>
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-user-lock text-primary text-2xl"></i>
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Acceso Denegado</h3>
-          <p className="text-gray-600 mb-6">Solo los clientes pueden realizar compras</p>
-          <button
-            onClick={onClose}
-            className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors"
-          >
-            Entendido
-          </button>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para continuar</h3>
+          <p className="text-gray-600 mb-6">Necesitas una cuenta para completar tu compra</p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => {
+                onClose()
+                navigate('/login')
+              }}
+              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors"
+            >
+              Iniciar Sesión
+            </button>
+            <button
+              onClick={onClose}
+              className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       </Modal>
     )

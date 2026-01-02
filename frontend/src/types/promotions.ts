@@ -20,10 +20,7 @@ export interface Promotion {
     color: string
     bgColor: string
   }
-}
-
-export interface Promotion extends Promotion {
-  createdBy: string
-  createdAt: Date
-  updatedAt: Date
+  createdBy?: string
+  createdAt?: Date
+  updatedAt?: Date
 }

@@ -6,11 +6,14 @@ services:
       dockerfile: Dockerfile
     container_name: auth-service
     environment:
-      PUERTO: 3011
-      JWT_SECRETO: mi_secreto_jwt_super_seguro_2024
-      POSTGRES_URL: postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require
+      PUERTO: ${AUTH_PORT:-3011}
+      JWT_SECRETO: ${JWT_SECRETO}
+      JWT_SECRET: ${JWT_SECRETO}
+      POSTGRES_URL: postgresql://neondb_owner:npg_zRdlv7TGEJu3@ep-red-voice-adzfb730-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+      DATABASE_URL: postgresql://neondb_owner:npg_zRdlv7TGEJu3@ep-red-voice-adzfb730-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
-      - "3011:3011"
+      - "${AUTH_PORT:-3011}:${AUTH_PORT:-3011}"
     networks:
       - estilo-network
     restart: unless-stopped
@@ -22,10 +25,13 @@ services:
       dockerfile: Dockerfile
     container_name: catalog-service
     environment:
-      PUERTO: 3002
-      MONGODB_URI: mongodb+srv://jfvertel:jfvertel123@cluster0.vvagb.mongodb.net/ecommerce?retryWrites=true&w=majority
+      PUERTO: ${CATALOG_PORT:-3002}
+      MONGODB_URI: ${MONGODB_CATALOG_URI}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
     ports:
-      - "3002:3002"
+      - "${CATALOG_PORT:-3002}:${CATALOG_PORT:-3002}"
     networks:
       - estilo-network
     restart: unless-stopped
@@ -37,11 +43,13 @@ services:
       dockerfile: Dockerfile
     container_name: transaction-service
     environment:
-      PUERTO: 3003
-      JWT_SECRETO: mi_secreto_jwt_super_seguro_2024
-      DATABASE_URL: postgresql://neondb_owner:npg_2gVs9CfQRuHn@ep-broad-dew-aeujycvn-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
+      PUERTO: ${TRANSACTION_PORT:-3003}
+      JWT_SECRETO: ${JWT_SECRETO}
+      JWT_SECRET: ${JWT_SECRETO}
+      DATABASE_URL: ${POSTGRES_TRANSACTION_URL}
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
-      - "3003:3003"
+      - "${TRANSACTION_PORT:-3003}:${TRANSACTION_PORT:-3003}"
     networks:
       - estilo-network
     restart: unless-stopped
@@ -54,7 +62,7 @@ services:
     container_name: social-service
     environment:
       PUERTO: 3004
-      MONGODB_URI: mongodb+srv://jfvertel:jfvertel123@cluster0.vvagb.mongodb.net/ecommerce?retryWrites=true&w=majority
+      MONGODB_URI: mongodb+srv://Vercel-Admin-socialservice:fA5shIvwxTGbAt1P@socialservice.78vidp7.mongodb.net/?retryWrites=true&w=majority
     ports:
       - "3004:3004"
     networks:
@@ -69,7 +77,7 @@ services:
     container_name: marketing-service
     environment:
       PUERTO: 3006
-      DATABASE_URL: postgresql://neondb_owner:npg_2gVs9CfQRuHn@ep-broad-dew-aeujycvn-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
+      DATABASE_URL: postgresql://neondb_owner:npg_V6NekxIfwP4E@ep-nameless-dust-ae9ihznv-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
     ports:
       - "3006:3006"
     networks:
@@ -84,7 +92,9 @@ services:
     container_name: ai-service
     environment:
       PUERTO: 3007
-      MONGODB_URI: mongodb+srv://jfvertel:jfvertel123@cluster0.vvagb.mongodb.net/ecommerce?retryWrites=true&w=majority
+      MONGODB_CATALOG_URI: ${MONGODB_CATALOG_URI}
+      MONGODB_SOCIAL_URI: ${MONGODB_SOCIAL_URI}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
     ports:
       - "3007:3007"
     networks:
@@ -98,17 +108,14 @@ services:
       dockerfile: Dockerfile
     container_name: gateway
     environment:
-      PUERTO: 3000
+      PUERTO: ${GATEWAY_PORT:-3000}
       NODE_OPTIONS: "--max-http-header-size=16384"
     ports:
-      - "3000:3000"
+      - "${GATEWAY_PORT:-3000}:${GATEWAY_PORT:-3000}"
     depends_on:
       - auth-service
       - catalog-service
       - transaction-service
-      - social-service
-      - marketing-service
-      - ai-service
     networks:
       - estilo-network
     restart: unless-stopped
@@ -119,10 +126,41 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
+    environment:
+      VITE_API_URL: ${API_BASE_URL:-http://localhost:3000}
     ports:
-      - "3005:3005"
+      - "${FRONTEND_PORT:-3005}:${FRONTEND_PORT:-3005}"
     depends_on:
       - gateway
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Credit Service
+  credit-service:
+    build:
+      context: ./backend/services/credit-service
+      dockerfile: Dockerfile
+    container_name: credit-service
+    environment:
+      PUERTO: ${CREDIT_PORT:-3008}
+      DATABASE_URL: postgresql://neondb_owner:npg_IykA6tTPxhE3@ep-tiny-butterfly-adf8yext-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+    ports:
+      - "${CREDIT_PORT:-3008}:${CREDIT_PORT:-3008}"
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Logistics Service
+  logistics-service:
+    build:
+      context: ./backend/services/logistics-service
+      dockerfile: Dockerfile
+    container_name: logistics-service
+    environment:
+      PUERTO: ${LOGISTICS_PORT:-3009}
+    ports:
+      - "${LOGISTICS_PORT:-3009}:${LOGISTICS_PORT:-3009}"
     networks:
       - estilo-network
     restart: unless-stopped

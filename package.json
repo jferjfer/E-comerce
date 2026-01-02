@@ -12,7 +12,19 @@
     "social": "cd backend/services/social-service && npm run iniciar",
     "marketing": "cd backend/services/marketing-service && npm run iniciar",
     "ai": "cd backend/services/ai-service && python iniciar.py",
-    "frontend": "cd frontend && npm run dev"
+    "credit": "cd backend/services/credit-service && python iniciar.py",
+    "logistics": "cd backend/services/logistics-service && python iniciar.py",
+    "frontend": "cd frontend && npm run dev",
+    "test": "jest",
+    "test:unit": "jest tests/unit --verbose",
+    "test:integration": "jest tests/integration --verbose",
+    "test:e2e": "jest tests/e2e --verbose",
+    "test:all": "./run-tests.sh",
+    "test:coverage": "jest --coverage",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:rebuild": "docker-compose down && docker-compose build --no-cache && docker-compose up -d"
   },
   "dependencies": {
     "axios": "^1.6.2",
@@ -20,11 +32,19 @@
     "mongodb": "^6.3.0",
     "pg": "^8.11.3"
   },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "supertest": "^6.3.3"
+  },
   "keywords": [
     "ecommerce",
     "microservicios",
     "nodejs",
-    "react"
+    "react",
+    "docker",
+    "fastapi",
+    "python"
   ],
   "author": "Jose Fernando Vertel",
   "license": "MIT"

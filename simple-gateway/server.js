@@ -4,15 +4,54 @@ const cors = require('cors');
 const axios = require('axios');
 
 const app = express();
-const port = 3001;
+const port = process.env.PUERTO || 3000;
 
-// CORS
+// CORS - Configuración unificada
+const ALLOWED_ORIGINS = [
+  'http://localhost:3005',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:3005', 'http://localhost:5173'],
-  credentials: true
+  origin: ALLOWED_ORIGINS,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+// Proxy manual para subida de imágenes (ANTES de parsear body)
+const FormData = require('form-data');
+const multer = require('multer');
+const upload = multer();
+
+app.post('/api/productos/:id/imagen', upload.single('imagen'), async (req, res) => {
+  try {
+    const form = new FormData();
+    form.append('imagen', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
+    });
+    
+    const response = await axios.post(
+      `http://catalog-service:3002/api/productos/${req.params.id}/imagen`,
+      form,
+      {
+        headers: form.getHeaders(),
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
+      }
+    );
+    
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Logging detallado
 app.use((req, res, next) => {
@@ -30,33 +69,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// Proxies a microservicios
+// Proxies a microservicios - DOCKER NETWORK
 const services = {
-  '/api/auth': 'http://localhost:3012',
-  '/api/usuarios': 'http://localhost:3012',
-  '/api/productos': 'http://localhost:3013',
-  '/api/categorias': 'http://localhost:3013',
-  '/api/buscar': 'http://localhost:3013',
-  '/api/tendencias': 'http://localhost:3013',
-  '/api/carrito': 'http://localhost:3003',
-  '/api/pedidos': 'http://localhost:3003',
-  '/api/pagos': 'http://localhost:3003',
-  '/api/checkout': 'http://localhost:3003',
-  '/api/resenas': 'http://localhost:3004',
-  '/api/preguntas': 'http://localhost:3004',
-  '/api/listas-deseos': 'http://localhost:3004',
-  '/api/cupones': 'http://localhost:3006',
-  '/api/campanas': 'http://localhost:3006',
-  '/api/fidelizacion': 'http://localhost:3006',
-  '/api/analytics': 'http://localhost:3006',
-  '/api/recomendaciones': 'http://localhost:3007',
-  '/api/perfil': 'http://localhost:3007',
-  '/api/analisis': 'http://localhost:3007',
-  '/api/estilos': 'http://localhost:3007',
-  '/api/credito': 'http://localhost:3008',
-  '/api/inventario': 'http://localhost:3009',
-  '/api/almacenes': 'http://localhost:3009',
-  '/api/entregas': 'http://localhost:3009'
+  '/api/auth': 'http://auth-service:3011',
+  '/api/usuarios': 'http://auth-service:3011',
+  '/api/productos': 'http://catalog-service:3002',
+  '/api/categorias': 'http://catalog-service:3002',
+  '/api/buscar': 'http://catalog-service:3002',
+  '/api/tendencias': 'http://catalog-service:3002',
+  '/api/carrito': 'http://transaction-service:3003',
+  '/api/pedidos': 'http://transaction-service:3003',
+  '/api/devoluciones': 'http://transaction-service:3003',
+  '/api/pagos': 'http://transaction-service:3003',
+  '/api/checkout': 'http://transaction-service:3003',
+  '/api/resenas': 'http://social-service:3004',
+  '/api/preguntas': 'http://social-service:3004',
+  '/api/listas-deseos': 'http://social-service:3004',
+  '/api/cupones': 'http://marketing-service:3006',
+  '/api/campanas': 'http://marketing-service:3006',
+  '/api/fidelizacion': 'http://marketing-service:3006',
+  '/api/analytics': 'http://marketing-service:3006',
+  '/api/recomendaciones': 'http://ai-service:3007',
+  '/api/perfil': 'http://ai-service:3007',
+  '/api/analisis': 'http://ai-service:3007',
+  '/api/estilos': 'http://ai-service:3007',
+  '/api/chat': 'http://ai-service:3007',
+  '/api/credito': 'http://credit-service:3008',
+  '/api/inventario': 'http://logistics-service:3009',
+  '/api/almacenes': 'http://logistics-service:3009',
+  '/api/entregas': 'http://logistics-service:3009'
 };
 
 // Manejo directo optimizado para auth endpoints
@@ -67,13 +108,13 @@ const manejarAuthDirecto = async (req, res, endpoint) => {
   try {
     const respuesta = await axios({
       method: req.method,
-      url: `http://localhost:3012/api/auth/${endpoint}`,
+      url: `http://auth-service:3011/api/auth/${endpoint}`,
       data: req.body,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': req.headers.authorization
       },
-      timeout: 30000
+      timeout: 5000
     });
 
     const duracion = Date.now() - inicio;
@@ -99,24 +140,151 @@ app.post('/api/auth/login', (req, res) => manejarAuthDirecto(req, res, 'login'))
 app.get('/api/auth/verificar', (req, res) => manejarAuthDirecto(req, res, 'verificar'));
 app.post('/api/auth/logout', (req, res) => manejarAuthDirecto(req, res, 'logout'));
 
-// Configurar proxies optimizados
+// Manejo directo de rutas principales de productos
+app.get('/api/productos', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `http://catalog-service:3002${req.url}`,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.post('/api/productos', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: `http://catalog-service:3002${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.get('/api/productos/:id', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `http://catalog-service:3002${req.url}`,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/categorias*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `http://catalog-service:3002${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/carrito*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `http://transaction-service:3003${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/pedidos*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `http://transaction-service:3003${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/checkout*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `http://transaction-service:3003${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/devoluciones*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `http://transaction-service:3003${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/chat*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `http://ai-service:3007${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000  // 30 segundos para IA
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+// Proxy para rutas restantes
 Object.keys(services).forEach(path => {
-  // Saltar /api/auth ya que se maneja directamente arriba
-  if (path === '/api/auth') return;
+  if (['/api/auth', '/api/productos', '/api/categorias', '/api/carrito', '/api/pedidos', '/api/checkout'].includes(path)) return;
 
   app.use(path, createProxyMiddleware({
     target: services[path],
     changeOrigin: true,
-    timeout: 15000,
-    proxyTimeout: 15000,
+    timeout: 10000,
+    proxyTimeout: 10000,
     secure: false,
-    logLevel: 'silent',
-    onError: (err, req, res) => {
-      console.error(`❌ Proxy error ${path}: ${err.message}`);
-      if (!res.headersSent) {
-        res.status(503).json({ error: 'Servicio no disponible' });
-      }
-    }
+    logLevel: 'silent'
   }));
 });
 
