@@ -9,13 +9,22 @@ const port = process.env.PUERTO || 3000;
 // CORS - Configuración unificada
 const ALLOWED_ORIGINS = [
   'http://localhost:3005',
+  'http://149.130.182.9:3005',
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://149.130.182.9:3000',
+  'http://149.130.182.9',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
 app.use(cors({
-  origin: ALLOWED_ORIGINS,
+  origin: function (origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -33,9 +42,9 @@ app.post('/api/productos/:id/imagen', upload.single('imagen'), async (req, res) 
       filename: req.file.originalname,
       contentType: req.file.mimetype
     });
-    
+
     const response = await axios.post(
-      `http://catalog-service:3002/api/productos/${req.params.id}/imagen`,
+      `${CATALOG_URL}/api/productos/${req.params.id}/imagen`,
       form,
       {
         headers: form.getHeaders(),
@@ -43,7 +52,85 @@ app.post('/api/productos/:id/imagen', upload.single('imagen'), async (req, res) 
         maxContentLength: Infinity
       }
     );
-    
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+
+
+// Avatar Virtual 3D - Crear avatar completo
+app.post('/api/avatar/crear', upload.fields([
+  { name: 'foto_cara', maxCount: 1 },
+  { name: 'foto_cuerpo', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const form = new FormData();
+
+    // Agregar fotos
+    if (req.files['foto_cara']) {
+      form.append('foto_cara', req.files['foto_cara'][0].buffer, {
+        filename: req.files['foto_cara'][0].originalname,
+        contentType: req.files['foto_cara'][0].mimetype
+      });
+    }
+
+    if (req.files['foto_cuerpo']) {
+      form.append('foto_cuerpo', req.files['foto_cuerpo'][0].buffer, {
+        filename: req.files['foto_cuerpo'][0].originalname,
+        contentType: req.files['foto_cuerpo'][0].mimetype
+      });
+    }
+
+    // Agregar otros campos
+    form.append('producto_url', req.body.producto_url);
+    form.append('animacion', req.body.animacion || 'catwalk');
+
+    console.log('🎨 Proxy: Creando avatar 3D...');
+
+    const response = await axios.post(
+      `${AI_URL}/api/avatar/crear`,
+      form,
+      {
+        headers: form.getHeaders(),
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        timeout: 180000  // 3 minutos
+      }
+    );
+
+    console.log('✅ Avatar creado exitosamente');
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error('❌ Error creando avatar:', error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+// Avatar Virtual 3D - Demo sin fotos
+app.post('/api/avatar/demo', express.json(), async (req, res) => {
+  try {
+    const response = await axios.post(
+      `${AI_URL}/api/avatar/demo`,
+      new URLSearchParams({ producto_url: req.body.producto_url }),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 30000
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+// Avatar Virtual 3D - Listar animaciones
+app.get('/api/avatar/animaciones', async (req, res) => {
+  try {
+    const response = await axios.get(`${AI_URL}/api/avatar/animaciones`);
     res.status(response.status).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
@@ -57,6 +144,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
   const timestamp = new Date().toLocaleTimeString();
   console.log(`📥 ${req.method} ${req.url} - ${timestamp}`);
+  console.log(`   Origin: ${req.headers.origin || 'No origin'}`);
 
   if (req.body && Object.keys(req.body).length > 0) {
     console.log(`📋 Body:`, JSON.stringify(req.body, null, 2));
@@ -69,35 +157,44 @@ app.use((req, res, next) => {
   next();
 });
 
-// Proxies a microservicios - DOCKER NETWORK
+// URLs de microservicios - usa variables de entorno si existen (Render), sino usa Docker network (local)
+const AUTH_URL      = process.env.AUTH_SERVICE_URL      || 'http://auth-service:3011';
+const CATALOG_URL   = process.env.CATALOG_SERVICE_URL   || 'http://catalog-service:3002';
+const TRANS_URL     = process.env.TRANSACTION_SERVICE_URL || 'http://transaction-service:3003';
+const SOCIAL_URL    = process.env.SOCIAL_SERVICE_URL    || 'http://social-service:3004';
+const MARKETING_URL = process.env.MARKETING_SERVICE_URL || 'http://marketing-service:3006';
+const AI_URL        = process.env.AI_SERVICE_URL        || 'http://ai-service:3007';
+const CREDIT_URL    = process.env.CREDIT_SERVICE_URL    || 'http://credit-service:3008';
+const LOGISTICS_URL = process.env.LOGISTICS_SERVICE_URL || 'http://logistics-service:3009';
+
 const services = {
-  '/api/auth': 'http://auth-service:3011',
-  '/api/usuarios': 'http://auth-service:3011',
-  '/api/productos': 'http://catalog-service:3002',
-  '/api/categorias': 'http://catalog-service:3002',
-  '/api/buscar': 'http://catalog-service:3002',
-  '/api/tendencias': 'http://catalog-service:3002',
-  '/api/carrito': 'http://transaction-service:3003',
-  '/api/pedidos': 'http://transaction-service:3003',
-  '/api/devoluciones': 'http://transaction-service:3003',
-  '/api/pagos': 'http://transaction-service:3003',
-  '/api/checkout': 'http://transaction-service:3003',
-  '/api/resenas': 'http://social-service:3004',
-  '/api/preguntas': 'http://social-service:3004',
-  '/api/listas-deseos': 'http://social-service:3004',
-  '/api/cupones': 'http://marketing-service:3006',
-  '/api/campanas': 'http://marketing-service:3006',
-  '/api/fidelizacion': 'http://marketing-service:3006',
-  '/api/analytics': 'http://marketing-service:3006',
-  '/api/recomendaciones': 'http://ai-service:3007',
-  '/api/perfil': 'http://ai-service:3007',
-  '/api/analisis': 'http://ai-service:3007',
-  '/api/estilos': 'http://ai-service:3007',
-  '/api/chat': 'http://ai-service:3007',
-  '/api/credito': 'http://credit-service:3008',
-  '/api/inventario': 'http://logistics-service:3009',
-  '/api/almacenes': 'http://logistics-service:3009',
-  '/api/entregas': 'http://logistics-service:3009'
+  '/api/auth': AUTH_URL,
+  '/api/usuarios': AUTH_URL,
+  '/api/productos': CATALOG_URL,
+  '/api/categorias': CATALOG_URL,
+  '/api/buscar': CATALOG_URL,
+  '/api/tendencias': CATALOG_URL,
+  '/api/carrito': TRANS_URL,
+  '/api/pedidos': TRANS_URL,
+  '/api/devoluciones': TRANS_URL,
+  '/api/pagos': TRANS_URL,
+  '/api/checkout': TRANS_URL,
+  '/api/resenas': SOCIAL_URL,
+  '/api/preguntas': SOCIAL_URL,
+  '/api/listas-deseos': SOCIAL_URL,
+  '/api/cupones': MARKETING_URL,
+  '/api/campanas': MARKETING_URL,
+  '/api/fidelizacion': MARKETING_URL,
+  '/api/analytics': MARKETING_URL,
+  '/api/recomendaciones': AI_URL,
+  '/api/perfil': AI_URL,
+  '/api/analisis': AI_URL,
+  '/api/estilos': AI_URL,
+  '/api/chat': AI_URL,
+  '/api/credito': CREDIT_URL,
+  '/api/inventario': LOGISTICS_URL,
+  '/api/almacenes': LOGISTICS_URL,
+  '/api/entregas': LOGISTICS_URL
 };
 
 // Manejo directo optimizado para auth endpoints
@@ -108,7 +205,7 @@ const manejarAuthDirecto = async (req, res, endpoint) => {
   try {
     const respuesta = await axios({
       method: req.method,
-      url: `http://auth-service:3011/api/auth/${endpoint}`,
+      url: `${AUTH_URL}/api/auth/${endpoint}`,
       data: req.body,
       headers: {
         'Content-Type': 'application/json',
@@ -139,13 +236,45 @@ app.post('/api/auth/registro', (req, res) => manejarAuthDirecto(req, res, 'regis
 app.post('/api/auth/login', (req, res) => manejarAuthDirecto(req, res, 'login'));
 app.get('/api/auth/verificar', (req, res) => manejarAuthDirecto(req, res, 'verificar'));
 app.post('/api/auth/logout', (req, res) => manejarAuthDirecto(req, res, 'logout'));
+app.post('/api/auth/solicitar-recuperacion', (req, res) => manejarAuthDirecto(req, res, 'solicitar-recuperacion'));
+app.post('/api/auth/restablecer-contrasena', (req, res) => manejarAuthDirecto(req, res, 'restablecer-contrasena'));
+
+// Rutas de usuarios
+app.get('/api/usuarios/perfil', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `${AUTH_URL}/api/usuarios/perfil`,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 5000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.put('/api/usuarios/perfil', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'PUT',
+      url: `${AUTH_URL}/api/usuarios/perfil`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 5000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
 
 // Manejo directo de rutas principales de productos
 app.get('/api/productos', async (req, res) => {
   try {
     const response = await axios({
       method: 'GET',
-      url: `http://catalog-service:3002${req.url}`,
+      url: `${CATALOG_URL}${req.url}`,
       headers: { Authorization: req.headers.authorization },
       timeout: 10000
     });
@@ -159,7 +288,7 @@ app.post('/api/productos', async (req, res) => {
   try {
     const response = await axios({
       method: 'POST',
-      url: `http://catalog-service:3002${req.url}`,
+      url: `${CATALOG_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 10000
@@ -174,7 +303,7 @@ app.get('/api/productos/:id', async (req, res) => {
   try {
     const response = await axios({
       method: 'GET',
-      url: `http://catalog-service:3002${req.url}`,
+      url: `${CATALOG_URL}${req.url}`,
       headers: { Authorization: req.headers.authorization },
       timeout: 10000
     });
@@ -188,7 +317,7 @@ app.all('/api/categorias*', async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `http://catalog-service:3002${req.url}`,
+      url: `${CATALOG_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 10000
@@ -203,7 +332,7 @@ app.all('/api/carrito*', async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `http://transaction-service:3003${req.url}`,
+      url: `${TRANS_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 30000
@@ -218,7 +347,22 @@ app.all('/api/pedidos*', async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `http://transaction-service:3003${req.url}`,
+      url: `${TRANS_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/admin*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${TRANS_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 30000
@@ -233,7 +377,7 @@ app.all('/api/checkout*', async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `http://transaction-service:3003${req.url}`,
+      url: `${TRANS_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 30000
@@ -248,7 +392,7 @@ app.all('/api/devoluciones*', async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `http://transaction-service:3003${req.url}`,
+      url: `${TRANS_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 30000
@@ -263,7 +407,7 @@ app.all('/api/chat*', async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `http://ai-service:3007${req.url}`,
+      url: `${AI_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 30000  // 30 segundos para IA
@@ -273,6 +417,16 @@ app.all('/api/chat*', async (req, res) => {
     res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
   }
 });
+
+// Proxy específico para virtual-tryon (multipart, preservando path)
+app.use('/api/virtual-tryon', createProxyMiddleware({
+  target: AI_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/': '/api/virtual-tryon'
+  },
+  timeout: 180000 // 3 minutos
+}));
 
 // Proxy para rutas restantes
 Object.keys(services).forEach(path => {

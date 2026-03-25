@@ -1,6 +1,23 @@
 import type { Producto, Usuario, ItemCarrito } from '../types';
 
-const API_BASE_URL = 'http://localhost:3000';
+// Detectar automáticamente si estamos en local o producción
+const getApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // Si es localhost o 127.0.0.1, usar localhost
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:3000';
+    }
+    // Si es la IP de Oracle, usar esa IP
+    if (hostname === '149.130.182.9') {
+      return 'http://149.130.182.9:3000';
+    }
+  }
+  // Fallback: usar variable de entorno o Oracle
+  return import.meta.env.VITE_API_URL || 'http://149.130.182.9:3000';
+};
+
+const API_BASE_URL = getApiUrl();
 
 const MICROSERVICES = {
   TRANSACTION: 'http://localhost:3003',
@@ -410,6 +427,48 @@ export const api = {
     } catch (error) {
       console.error('❌ Error analizando estilo:', error);
       return { exito: false, estilos: [] };
+    }
+  },
+
+  async obtenerPerfil(token: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/usuarios/perfil`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { exito: true, datos: data.datos };
+      }
+
+      return { exito: false, error: 'Error al obtener perfil' };
+    } catch (error) {
+      console.error('❌ Error obteniendo perfil:', error);
+      return { exito: false, error: 'Error de conexión' };
+    }
+  },
+
+  async actualizarPerfil(token: string, datos: any) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/usuarios/perfil`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return { exito: true, datos: data.datos };
+      }
+
+      return { exito: false, error: data.error || 'Error al actualizar perfil' };
+    } catch (error) {
+      console.error('❌ Error actualizando perfil:', error);
+      return { exito: false, error: 'Error de conexión' };
     }
   }
 };

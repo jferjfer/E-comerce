@@ -15,8 +15,11 @@ aplicacion.use(helmet());
 
 const ALLOWED_ORIGINS = [
   'http://localhost:3005',
+  'http://149.130.182.9:3005',
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://149.130.182.9:3000',
+  'http://149.130.182.9',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 

@@ -281,72 +281,88 @@ async def obtener_credito_interno(credito_id: str, db: Session = Depends(get_db)
     }
 
 @app.get("/api/credito/interno/usuario/{usuario_id}")
-async def obtener_creditos_usuario(usuario_id: int):
-    creditos = [c for c in creditos_internos.values() if c["usuario_id"] == usuario_id]
-    return {"creditos": creditos, "total": len(creditos)}
+async def obtener_creditos_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    creditos = db.query(CreditoInterno).filter(CreditoInterno.usuario_id == usuario_id).all()
+    resultado = []
+    for c in creditos:
+        resultado.append({
+            "id": c.id,
+            "usuario_id": c.usuario_id,
+            "limite_credito": c.limite_credito,
+            "saldo_usado": c.saldo_usado,
+            "saldo_disponible": c.limite_credito - c.saldo_usado,
+            "estado": c.estado,
+            "cuota_mensual": c.cuota_mensual,
+            "plazo_meses": c.plazo_meses
+        })
+    return {"creditos": resultado, "total": len(resultado)}
 
 @app.post("/api/credito/interno/cargo")
-async def realizar_cargo(cargo: CargoCredito):
-    credito = creditos_internos.get(cargo.credito_id)
-    
+async def realizar_cargo(cargo: CargoCredito, db: Session = Depends(get_db)):
+    credito = db.query(CreditoInterno).filter(CreditoInterno.id == cargo.credito_id).first()
+
     if not credito:
         raise HTTPException(status_code=404, detail="Crédito no encontrado")
-    
-    if credito["saldo_disponible"] < cargo.monto:
+
+    saldo_disponible = credito.limite_credito - credito.saldo_usado
+    if saldo_disponible < cargo.monto:
         raise HTTPException(status_code=400, detail="Saldo insuficiente")
-    
-    credito["saldo_usado"] += cargo.monto
-    credito["saldo_disponible"] -= cargo.monto
-    
+
+    credito.saldo_usado += cargo.monto
+
     transaccion_id = f"TXN-{int(datetime.now().timestamp())}"
-    transacciones[transaccion_id] = {
-        "id": transaccion_id,
-        "credito_id": cargo.credito_id,
-        "tipo": "Cargo",
-        "monto": cargo.monto,
-        "pedido_id": cargo.pedido_id,
-        "fecha": datetime.now().isoformat()
-    }
-    
+    txn = TransaccionCredito(
+        id=transaccion_id,
+        credito_id=cargo.credito_id,
+        tipo="Cargo",
+        monto=cargo.monto,
+        pedido_id=cargo.pedido_id
+    )
+    db.add(txn)
+    db.commit()
+
     return {
         "mensaje": "Cargo realizado exitosamente",
         "transaccion_id": transaccion_id,
-        "saldo_disponible": credito["saldo_disponible"]
+        "saldo_disponible": credito.limite_credito - credito.saldo_usado
     }
 
 @app.post("/api/credito/interno/pago")
-async def realizar_pago(pago: PagoCredito):
-    credito = creditos_internos.get(pago.credito_id)
-    
+async def realizar_pago(pago: PagoCredito, db: Session = Depends(get_db)):
+    credito = db.query(CreditoInterno).filter(CreditoInterno.id == pago.credito_id).first()
+
     if not credito:
         raise HTTPException(status_code=404, detail="Crédito no encontrado")
-    
-    credito["saldo_usado"] -= pago.monto
-    credito["saldo_disponible"] += pago.monto
-    
-    if credito["saldo_usado"] <= 0:
-        credito["estado"] = "Pagado"
-    
+
+    credito.saldo_usado = max(0, credito.saldo_usado - pago.monto)
+    if credito.saldo_usado <= 0:
+        credito.estado = "Pagado"
+
     transaccion_id = f"TXN-{int(datetime.now().timestamp())}"
-    transacciones[transaccion_id] = {
-        "id": transaccion_id,
-        "credito_id": pago.credito_id,
-        "tipo": "Pago",
-        "monto": pago.monto,
-        "fecha": datetime.now().isoformat()
-    }
-    
+    txn = TransaccionCredito(
+        id=transaccion_id,
+        credito_id=pago.credito_id,
+        tipo="Pago",
+        monto=pago.monto
+    )
+    db.add(txn)
+    db.commit()
+
     return {
         "mensaje": "Pago aplicado exitosamente",
         "transaccion_id": transaccion_id,
-        "saldo_disponible": credito["saldo_disponible"],
-        "estado": credito["estado"]
+        "saldo_disponible": credito.limite_credito - credito.saldo_usado,
+        "estado": credito.estado
     }
 
 @app.get("/api/credito/interno/{credito_id}/transacciones")
-async def obtener_transacciones(credito_id: str):
-    txns = [t for t in transacciones.values() if t["credito_id"] == credito_id]
-    return {"transacciones": txns, "total": len(txns)}
+async def obtener_transacciones(credito_id: str, db: Session = Depends(get_db)):
+    txns = db.query(TransaccionCredito).filter(TransaccionCredito.credito_id == credito_id).all()
+    resultado = [{
+        "id": t.id, "credito_id": t.credito_id, "tipo": t.tipo,
+        "monto": t.monto, "pedido_id": t.pedido_id, "fecha": t.fecha_creacion.isoformat()
+    } for t in txns]
+    return {"transacciones": resultado, "total": len(resultado)}
 
 # ============================================
 # INTEGRACIONES EXTERNAS (PREPARADAS)
@@ -469,4 +485,4 @@ if __name__ == "__main__":
     print(f"🚀 Credit Service v2.0 iniciando en puerto {puerto}")
     print(f"📋 ADDI: {'✅ Configurado' if ADDI_API_KEY else '⚠️ Pendiente'}")
     print(f"📋 Sistecredito: {'✅ Configurado' if SISTECREDITO_API_KEY else '⚠️ Pendiente'}")
-    uvicorn.run("main:app", host="0.0.0.0", port=puerto, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=puerto)

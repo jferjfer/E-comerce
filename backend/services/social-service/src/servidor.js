@@ -10,7 +10,23 @@ const puerto = process.env.PUERTO || 3004;
 
 // Middleware de seguridad
 aplicacion.use(helmet());
-aplicacion.use(cors());
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:3005',
+  'http://149.130.182.9:3005',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://149.130.182.9:3000',
+  'http://149.130.182.9',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+aplicacion.use(cors({
+  origin: ALLOWED_ORIGINS,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 aplicacion.use(express.json({ limit: '10mb' }));
 
 // Rutas

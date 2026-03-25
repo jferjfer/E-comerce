@@ -9,9 +9,21 @@ const puerto = process.env.PUERTO || 3006;
 
 // Middleware
 aplicacion.use(helmet());
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:3005',
+  'http://149.130.182.9:3005',
+  'http://localhost:3000',
+  'http://149.130.182.9:3000',
+  'http://149.130.182.9',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 aplicacion.use(cors({
-  origin: ['http://localhost:3005', 'http://localhost:3000'],
-  credentials: true
+  origin: ALLOWED_ORIGINS,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 aplicacion.use(express.json());
 
@@ -242,7 +254,7 @@ aplicacion.get('/api/campanas', async (req, res) => {
   try {
     console.log('📢 Obteniendo campañas de marketing');
     
-    const consulta = 'SELECT * FROM campana_marketing ORDER BY fecha_creacion DESC';
+    const consulta = 'SELECT * FROM campana ORDER BY fecha_creacion DESC';
     const resultado = await pool.query(consulta);
     
     res.json({
@@ -262,7 +274,7 @@ aplicacion.post('/api/campanas', async (req, res) => {
   
   try {
     const consulta = `
-      INSERT INTO campana_marketing (nombre, descripcion, segmento, presupuesto, estado)
+      INSERT INTO campana (nombre, descripcion, tipo, presupuesto, estado)
       VALUES ($1, $2, $3, $4, 'Activa')
       RETURNING *
     `;
@@ -313,7 +325,7 @@ aplicacion.delete('/api/campanas/:id', async (req, res) => {
   const { id } = req.params;
   
   try {
-    const consulta = 'DELETE FROM campana_marketing WHERE id = $1 RETURNING *';
+    const consulta = 'DELETE FROM campana WHERE id = $1 RETURNING *';
     const resultado = await pool.query(consulta, [id]);
     
     if (resultado.rows.length === 0) {

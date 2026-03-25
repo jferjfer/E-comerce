@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # Redis para caché y queue
+  redis:
+    image: redis:7-alpine
+    container_name: estilo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    networks:
+      - estilo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Celery Worker para tareas asíncronas
+  celery-worker:
+    build:
+      context: ./backend/services/ai-service
+      dockerfile: Dockerfile
+    container_name: estilo-celery-worker
+    command: celery -A servicios.celery_tasks worker --loglevel=info --concurrency=2
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      MONGODB_CATALOG_URI: ${MONGODB_CATALOG_URI}
+      MONGODB_SOCIAL_URI: ${MONGODB_SOCIAL_URI}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN}
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN}
+    depends_on:
+      - redis
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Celery Beat para tareas periódicas
+  celery-beat:
+    build:
+      context: ./backend/services/ai-service
+      dockerfile: Dockerfile
+    container_name: estilo-celery-beat
+    command: celery -A servicios.celery_tasks beat --loglevel=info
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      MONGODB_CATALOG_URI: ${MONGODB_CATALOG_URI}
+    depends_on:
+      - redis
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Prometheus para métricas
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: estilo-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Grafana para visualización
+  grafana:
+    image: grafana/grafana:latest
+    container_name: estilo-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Redis Commander (UI para Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: estilo-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  estilo-network:
+    external: true

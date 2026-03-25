@@ -1,9 +1,18 @@
+import { useNavigate } from 'react-router-dom'
+
 interface SuccessStepProps {
   orderId: string | null
   onClose: () => void
 }
 
 export default function SuccessStep({ orderId, onClose }: SuccessStepProps) {
+  const navigate = useNavigate()
+
+  const handleVerPedidos = () => {
+    onClose()
+    navigate('/orders')
+  }
+
   return (
     <div className="text-center py-8 animate-fade-in">
       <div className="relative mb-8">
@@ -57,7 +66,10 @@ export default function SuccessStep({ orderId, onClose }: SuccessStepProps) {
           Continuar Comprando
         </button>
         
-        <button className="w-full border border-gray-300 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium">
+        <button 
+          onClick={handleVerPedidos}
+          className="w-full border border-gray-300 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+        >
           <i className="fas fa-user mr-2"></i>
           Ver mis pedidos
         </button>

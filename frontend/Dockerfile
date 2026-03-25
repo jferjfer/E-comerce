@@ -1,23 +1,30 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
 COPY package*.json ./
+RUN npm install
 
-# Instalar dependencias
-RUN npm ci --only=production=false && npm cache clean --force
-
-# Copiar código fuente
 COPY . .
 
-# Crear usuario no-root y dar permisos
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S frontenduser -u 1001 && \
-    chown -R frontenduser:nodejs /app
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
-USER frontenduser
+RUN npm run build
+
+# Etapa de producción con nginx
+FROM nginx:alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Configuración nginx para React Router
+RUN echo 'server { \
+    listen 3005; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    location / { try_files $uri $uri/ /index.html; } \
+}' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 3005
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3005"]
+CMD ["nginx", "-g", "daemon off;"]

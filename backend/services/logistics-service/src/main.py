@@ -248,4 +248,4 @@ async def obtener_domicilios(usuario_id: int):
 if __name__ == "__main__":
     puerto = int(os.getenv("PUERTO", 3009))
     print(f"🚀 Logistics Service v2.0 iniciando en puerto {puerto}")
-    uvicorn.run("main:app", host="0.0.0.0", port=puerto, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=puerto)

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import ProductCard from '@/components/ProductCard'
 import Modal from '@/components/Modal'
@@ -11,6 +12,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 
 export default function HomePage() {
+  const navigate = useNavigate()
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null)
   const [showProductModal, setShowProductModal] = useState(false)
   const [showAR, setShowAR] = useState(false)
@@ -24,7 +26,7 @@ export default function HomePage() {
     busqueda: '',
     ordenar: 'relevancia'
   })
-  
+
   // Cargar todos los productos del backend
   useEffect(() => {
     const cargarProductos = async () => {
@@ -38,10 +40,10 @@ export default function HomePage() {
         setCargando(false)
       }
     }
-    
+
     cargarProductos()
   }, [])
-  
+
   // Cargar cupones activos
   useEffect(() => {
     const cargarCupones = async () => {
@@ -55,30 +57,30 @@ export default function HomePage() {
     }
     cargarCupones()
   }, [])
-  
+
   // Filtrar productos
   const productosFiltrados = useMemo(() => {
     let filtrados = [...productos]
-    
+
     if (filtros.categoria) {
       filtrados = filtrados.filter(p => p.categoria === filtros.categoria)
     }
-    
+
     if (filtros.precioMin) {
       filtrados = filtrados.filter(p => p.precio >= parseInt(filtros.precioMin))
     }
-    
+
     if (filtros.precioMax) {
       filtrados = filtrados.filter(p => p.precio <= parseInt(filtros.precioMax))
     }
-    
+
     if (filtros.busqueda) {
-      filtrados = filtrados.filter(p => 
+      filtrados = filtrados.filter(p =>
         p.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
         p.descripcion.toLowerCase().includes(filtros.busqueda.toLowerCase())
       )
     }
-    
+
     // Ordenar
     if (filtros.ordenar === 'precio_asc') {
       filtrados.sort((a, b) => a.precio - b.precio)
@@ -89,10 +91,10 @@ export default function HomePage() {
     } else if (filtros.ordenar === 'calificacion') {
       filtrados.sort((a, b) => (b.calificacion || 0) - (a.calificacion || 0))
     }
-    
+
     return filtrados
   }, [productos, filtros])
-  
+
   const limpiarFiltros = () => {
     setFiltros({
       categoria: '',
@@ -102,42 +104,47 @@ export default function HomePage() {
       ordenar: 'relevancia'
     })
   }
-  
+
   const manejarVerDetalles = (producto: Producto) => {
     setProductoSeleccionado(producto)
     setShowProductModal(true)
   }
-  
+
   const cerrarModalProducto = () => {
     setShowProductModal(false)
-    setProductoSeleccionado(null)
+    // NO limpiar productoSeleccionado aquí para que AR modal pueda usarlo
   }
-  
+
+  const cerrarAR = () => {
+    setShowAR(false)
+    setProductoSeleccionado(null) // Limpiar después de cerrar AR
+  }
+
   return (
     <div className="bg-gray-50">
       {/* Hero Section con Carrusel */}
       <section className="relative h-96 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop" 
+          <img
+            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop"
             className="w-full h-full object-cover"
             alt="Hero"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70"></div>
         </div>
-        
+
         <div className="relative z-10 w-full px-4">
           <HeroCarousel />
         </div>
       </section>
-      
+
       {/* Barra de Filtros */}
       <section className="sticky top-16 sm:top-20 z-40 bg-white shadow-md border-b">
         <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-8 xl:px-12 2xl:px-16">
           <div className="flex flex-wrap gap-2 sm:gap-4 items-center py-3 sm:py-4">
             <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">Filtros:</span>
-            
-            <select 
+
+            <select
               value={filtros.categoria}
               onChange={(e) => setFiltros(prev => ({ ...prev, categoria: e.target.value }))}
               className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20"
@@ -149,7 +156,7 @@ export default function HomePage() {
               <option value="Blazers">Blazers</option>
               <option value="Calzado">Calzado</option>
             </select>
-            
+
             <div className="flex gap-1 sm:gap-2 items-center">
               <input
                 type="text"
@@ -159,7 +166,7 @@ export default function HomePage() {
                 className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm w-32 sm:w-40 focus:ring-2 focus:ring-primary/20"
               />
             </div>
-            
+
             <div className="flex gap-1 sm:gap-2 items-center">
               <input
                 type="number"
@@ -177,8 +184,8 @@ export default function HomePage() {
                 className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm w-16 sm:w-24 focus:ring-2 focus:ring-primary/20"
               />
             </div>
-            
-            <select 
+
+            <select
               value={filtros.ordenar}
               onChange={(e) => setFiltros(prev => ({ ...prev, ordenar: e.target.value }))}
               className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20 ml-auto"
@@ -189,14 +196,14 @@ export default function HomePage() {
               <option value="nombre">A-Z</option>
               <option value="calificacion">Mejor</option>
             </select>
-            
-            <button 
+
+            <button
               onClick={limpiarFiltros}
               className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 px-1 sm:px-2"
             >
               Limpiar
             </button>
-            
+
             <span className="text-xs sm:text-sm text-gray-600 font-medium">
               {cargando ? 'Cargando...' : `${productosFiltrados.length}`}
             </span>
@@ -232,7 +239,7 @@ export default function HomePage() {
             <div className="text-center py-12">
               <i className="fas fa-search text-4xl text-gray-400 mb-4"></i>
               <p className="text-gray-600 mb-2">No se encontraron productos</p>
-              <button 
+              <button
                 onClick={limpiarFiltros}
                 className="text-primary hover:text-secondary font-medium"
               >
@@ -242,19 +249,19 @@ export default function HomePage() {
           )}
         </div>
       </section>
-      
+
       {productoSeleccionado && (
-        <Modal 
-          isOpen={showProductModal} 
+        <Modal
+          isOpen={showProductModal}
           onClose={cerrarModalProducto}
           title={productoSeleccionado.nombre}
           size="lg"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <img 
-                src={productoSeleccionado.imagen} 
-                className="w-full h-auto rounded-lg" 
+              <img
+                src={productoSeleccionado.imagen}
+                className="w-full h-auto rounded-lg"
                 alt={productoSeleccionado.nombre}
               />
             </div>
@@ -265,7 +272,7 @@ export default function HomePage() {
                   {formatPrice(productoSeleccionado.precio)}
                 </p>
                 <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                  <button 
+                  <button
                     onClick={() => {
                       const agregarItem = useCartStore.getState().agregarItem
                       const addNotification = useNotificationStore.getState().addNotification
@@ -277,13 +284,28 @@ export default function HomePage() {
                     <i className="fas fa-shopping-cart mr-2"></i>
                     Agregar al Carrito
                   </button>
+                  <button
+                    onClick={() => {
+                      cerrarModalProducto()
+                      navigate('/virtual-tryon', { state: { productUrl: productoSeleccionado.imagen } })
+                    }}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2.5 sm:py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm sm:text-base"
+                  >
+                    <i className="fas fa-user-astronaut mr-2"></i>
+                    Probar en Avatar 3D
+                  </button>
+                  {/* Botón AR original (deshabilitado)
                   <button 
-                    onClick={() => setShowAR(true)}
+                    onClick={() => {
+                      cerrarModalProducto()
+                      setShowAR(true)
+                    }}
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2.5 sm:py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm sm:text-base"
                   >
                     <i className="fas fa-camera mr-2"></i>
                     Probar con Cámara AR
                   </button>
+                  */}
                 </div>
               </div>
               <div className="border-t pt-3 sm:pt-4">
@@ -299,16 +321,14 @@ export default function HomePage() {
           </div>
         </Modal>
       )}
-      
-      {productoSeleccionado && (
-        <ARModal
-          isOpen={showAR}
-          onClose={() => setShowAR(false)}
-          productName={productoSeleccionado.nombre}
-          productImage={productoSeleccionado.imagen}
-        />
-      )}
-      
+
+      <ARModal
+        isOpen={showAR && productoSeleccionado !== null}
+        onClose={cerrarAR}
+        productName={productoSeleccionado?.nombre || ''}
+        productImage={productoSeleccionado?.imagen || ''}
+      />
+
       <Footer />
     </div>
   )

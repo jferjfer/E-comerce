@@ -7,6 +7,9 @@ const router = express.Router();
 // GET /api/usuarios/perfil
 router.get('/perfil', autenticar, ControladorUsuario.obtenerPerfil);
 
+// PUT /api/usuarios/perfil
+router.put('/perfil', autenticar, ControladorUsuario.actualizarPerfil);
+
 // GET /api/usuarios/:id - Obtener usuario por ID (sin autenticación para microservicios)
 router.get('/:id', ControladorUsuario.obtenerUsuarioPorId);
 

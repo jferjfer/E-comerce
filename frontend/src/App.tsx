@@ -27,16 +27,18 @@ import CreditPage from './pages/CreditPage'
 import CrearProductoPage from './pages/admin/CrearProductoPage'
 
 import StyleAnalysisPage from './pages/StyleAnalysisPage'
+import VirtualTryOnPage from './pages/VirtualTryOnPage'
 
 import MarketingManagerDashboard from './pages/dashboards/MarketingManagerDashboard'
 import CustomerSuccessDashboard from './pages/dashboards/CustomerSuccessDashboard'
 import LogisticsCoordinatorDashboard from './pages/dashboards/LogisticsCoordinatorDashboard'
+import CEODashboard from './pages/dashboards/CEODashboard'
 
 function App() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
   const { estaAutenticado } = useAuthStore()
-  
+
   // Activar notificaciones de pedidos
   useOrderNotifications()
 
@@ -49,7 +51,7 @@ function App() {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="bg-gray-50 text-gray-900 font-sans min-h-screen">
         <Header onCartClick={() => setShowCart(true)} />
-        
+
         <Routes>
           <Route path="/" element={<RoleBasedHome />} />
           <Route path="/catalog" element={<CatalogPage />} />
@@ -59,7 +61,7 @@ function App() {
           } />
           <Route path="/recuperar-contrasena" element={<RecoverPasswordPage />} />
           <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
-          
+
           {/* CUSTOMER ROUTES */}
           <Route path="/customer-dashboard" element={
             <RoleGuard requiredRoles={['cliente']}>
@@ -84,7 +86,10 @@ function App() {
           <Route path="/style-analysis" element={
             estaAutenticado ? <StyleAnalysisPage /> : <Navigate to="/login" />
           } />
-          
+          <Route path="/virtual-tryon" element={
+            <VirtualTryOnPage />
+          } />
+
           {/* PRODUCT MANAGEMENT ROUTES */}
           <Route path="/products" element={
             <RoleGuard requiredRoles={['product_manager', 'category_manager', 'seller_premium', 'ceo']}>
@@ -96,16 +101,21 @@ function App() {
               <CrearProductoPage />
             </RoleGuard>
           } />
-          
+
           {/* ADMIN ROUTES */}
           <Route path="/admin" element={
             <RoleGuard requiredRoles={[
               'ceo', 'cfo', 'cmo', 'operations_director', 'tech_director', 'regional_manager',
-              'brand_manager', 'inventory_manager', 'pricing_analyst', 
-              'content_editor', 'visual_merchandiser', 'photographer', 'customer_success', 
+              'brand_manager', 'inventory_manager', 'pricing_analyst',
+              'content_editor', 'visual_merchandiser', 'photographer', 'customer_success',
               'support_agent', 'logistics_coordinator', 'qa_specialist', 'seller_standard', 'seller_basic'
             ]}>
               <DashboardPage />
+            </RoleGuard>
+          } />
+          <Route path="/ceo" element={
+            <RoleGuard requiredRoles={['ceo']}>
+              <CEODashboard />
             </RoleGuard>
           } />
           <Route path="/marketing" element={
@@ -124,18 +134,18 @@ function App() {
             </RoleGuard>
           } />
         </Routes>
-        
-        <CartModal 
+
+        <CartModal
           isOpen={showCart}
           onClose={() => setShowCart(false)}
           onCheckout={handleCheckout}
         />
-        
+
         <CheckoutModal
           isOpen={showCheckout}
           onClose={() => setShowCheckout(false)}
         />
-        
+
         <NotificationContainer />
         <AIAssistant />
       </div>

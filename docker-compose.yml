@@ -9,11 +9,19 @@ services:
       PUERTO: ${AUTH_PORT:-3011}
       JWT_SECRETO: ${JWT_SECRETO}
       JWT_SECRET: ${JWT_SECRETO}
-      POSTGRES_URL: postgresql://neondb_owner:npg_zRdlv7TGEJu3@ep-red-voice-adzfb730-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
-      DATABASE_URL: postgresql://neondb_owner:npg_zRdlv7TGEJu3@ep-red-voice-adzfb730-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+      POSTGRES_URL: ${POSTGRES_AUTH_URL}
+      DATABASE_URL: ${POSTGRES_AUTH_URL}
       NODE_ENV: ${NODE_ENV:-production}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: http://149.130.182.9:3005
     ports:
       - "${AUTH_PORT:-3011}:${AUTH_PORT:-3011}"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - estilo-network
     restart: unless-stopped
@@ -32,6 +40,9 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
     ports:
       - "${CATALOG_PORT:-3002}:${CATALOG_PORT:-3002}"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - estilo-network
     restart: unless-stopped
@@ -48,8 +59,16 @@ services:
       JWT_SECRET: ${JWT_SECRETO}
       DATABASE_URL: ${POSTGRES_TRANSACTION_URL}
       NODE_ENV: ${NODE_ENV:-production}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: http://149.130.182.9:3005
     ports:
       - "${TRANSACTION_PORT:-3003}:${TRANSACTION_PORT:-3003}"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - estilo-network
     restart: unless-stopped
@@ -62,9 +81,12 @@ services:
     container_name: social-service
     environment:
       PUERTO: 3004
-      MONGODB_URI: mongodb+srv://Vercel-Admin-socialservice:fA5shIvwxTGbAt1P@socialservice.78vidp7.mongodb.net/?retryWrites=true&w=majority
+      MONGODB_URI: ${MONGODB_SOCIAL_URI}
     ports:
       - "3004:3004"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - estilo-network
     restart: unless-stopped
@@ -77,9 +99,13 @@ services:
     container_name: marketing-service
     environment:
       PUERTO: 3006
-      DATABASE_URL: postgresql://neondb_owner:npg_V6NekxIfwP4E@ep-nameless-dust-ae9ihznv-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
+      DATABASE_URL: ${POSTGRES_MARKETING_URL}
+      FRONTEND_URL: http://149.130.182.9:3005
     ports:
       - "3006:3006"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - estilo-network
     restart: unless-stopped
@@ -94,9 +120,19 @@ services:
       PUERTO: 3007
       MONGODB_CATALOG_URI: ${MONGODB_CATALOG_URI}
       MONGODB_SOCIAL_URI: ${MONGODB_SOCIAL_URI}
+      MONGODB_AI_URI: ${MONGODB_AI_URI}
       AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN}
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID}
+      GOOGLE_REGION: ${GOOGLE_REGION}
+      REDIS_URL: redis://redis:6379
     ports:
       - "3007:3007"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - estilo-network
     restart: unless-stopped
@@ -109,6 +145,7 @@ services:
     container_name: gateway
     environment:
       PUERTO: ${GATEWAY_PORT:-3000}
+      FRONTEND_URL: http://149.130.182.9:3005
       NODE_OPTIONS: "--max-http-header-size=16384"
     ports:
       - "${GATEWAY_PORT:-3000}:${GATEWAY_PORT:-3000}"
@@ -125,11 +162,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://149.130.182.9:3000
     container_name: frontend
     environment:
-      VITE_API_URL: ${API_BASE_URL:-http://localhost:3000}
+      VITE_API_URL: http://149.130.182.9:3000
     ports:
       - "${FRONTEND_PORT:-3005}:${FRONTEND_PORT:-3005}"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     depends_on:
       - gateway
     networks:
@@ -144,9 +186,12 @@ services:
     container_name: credit-service
     environment:
       PUERTO: ${CREDIT_PORT:-3008}
-      DATABASE_URL: postgresql://neondb_owner:npg_IykA6tTPxhE3@ep-tiny-butterfly-adf8yext-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+      DATABASE_URL: ${POSTGRES_CREDIT_URL}
     ports:
       - "${CREDIT_PORT:-3008}:${CREDIT_PORT:-3008}"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - estilo-network
     restart: unless-stopped
@@ -161,6 +206,19 @@ services:
       PUERTO: ${LOGISTICS_PORT:-3009}
     ports:
       - "${LOGISTICS_PORT:-3009}:${LOGISTICS_PORT:-3009}"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
     networks:
       - estilo-network
     restart: unless-stopped

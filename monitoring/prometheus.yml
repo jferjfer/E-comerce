@@ -1,37 +1,64 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  external_labels:
+    monitor: 'estilo-moda-monitor'
 
-rule_files:
-  - "alert_rules.yml"
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
 
+# Scrape configurations
 scrape_configs:
+  # AI Service
+  - job_name: 'ai-service'
+    static_configs:
+      - targets: ['ai-service:3007']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Gateway
   - job_name: 'gateway'
     static_configs:
       - targets: ['gateway:3000']
     metrics_path: '/metrics'
-    scrape_interval: 5s
+    scrape_interval: 15s
 
+  # Auth Service
   - job_name: 'auth-service'
     static_configs:
       - targets: ['auth-service:3011']
     metrics_path: '/metrics'
-    scrape_interval: 5s
+    scrape_interval: 15s
 
+  # Catalog Service
   - job_name: 'catalog-service'
     static_configs:
       - targets: ['catalog-service:3002']
     metrics_path: '/metrics'
-    scrape_interval: 5s
+    scrape_interval: 15s
 
+  # Transaction Service
   - job_name: 'transaction-service'
     static_configs:
       - targets: ['transaction-service:3003']
     metrics_path: '/metrics'
-    scrape_interval: 5s
+    scrape_interval: 15s
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          - alertmanager:9093
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 15s
+
+  # Celery Exporter (si se configura)
+  - job_name: 'celery'
+    static_configs:
+      - targets: ['celery-worker:5555']
+    scrape_interval: 15s
+
+# Alerting rules
+rule_files:
+  - 'alerts.yml'

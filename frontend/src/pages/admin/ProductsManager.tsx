@@ -1,15 +1,22 @@
-import { useState } from 'react'
-import { productosSimulados } from '@/data/products'
+import { useState, useEffect } from 'react'
+import { api } from '@/services/api'
 import { Producto } from '@/types'
 import { formatPrice } from '@/utils/sanitize'
 import RoleGuard from '@/components/auth/RoleGuard'
 
 export default function ProductsManager() {
-  const [products, setProducts] = useState(productosSimulados)
+  const [products, setProducts] = useState<Producto[]>([])
+  const [cargando, setCargando] = useState(true)
+
+  useEffect(() => {
+    api.obtenerProductos().then(({ productos }) => {
+      setProducts(productos)
+      setCargando(false)
+    }).catch(() => setCargando(false))
+  }, [])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [showCreateModal, setShowCreateModal] = useState(false)
   
   const itemsPerPage = 10
   
@@ -32,17 +39,17 @@ export default function ProductsManager() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Gestión de Productos</h1>
-            <p className="text-gray-600">Administra el catálogo de productos</p>
+            <p className="text-gray-600">Administra el catálogo de productos ({products.length} total)</p>
           </div>
           
           <RoleGuard requiredPermissions={['products:create']}>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors"
+            <a
+              href="/products/crear"
+              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors inline-flex items-center"
             >
               <i className="fas fa-plus mr-2"></i>
               Crear Producto
-            </button>
+            </a>
           </RoleGuard>
         </div>
         
@@ -95,6 +102,11 @@ export default function ProductsManager() {
         
         {/* Tabla de Productos */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          {cargando ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            </div>
+          ) : null}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">

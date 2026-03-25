@@ -4,6 +4,89 @@ const helmet = require('helmet');
 require('dotenv').config();
 const pool = require('./config/baseDatos');
 const manejadorErrores = require('./middleware/manejadorErrores');
+const axios = require('axios');
+const nodemailer = require('nodemailer');
+
+// Transporter de correo (reutiliza config del auth-service via env)
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+
+  const urlPedidos = `${process.env.FRONTEND_URL || 'http://localhost:3005'}/orders`;
+  const formatearPrecio = (v) =>
+    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
+
+  const productosHtml = (pedido.productos || []).map(p => `
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #eee;color:#555">Producto #${p.id}</td>
+      <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;color:#555">${p.cantidad}</td>
+      <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;font-weight:bold;color:#333">${formatearPrecio(p.precio * p.cantidad)}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9">
+      <div style="background:linear-gradient(135deg,#11998e,#38ef7d);padding:40px 30px;text-align:center">
+        <div style="font-size:48px;margin-bottom:10px">✅</div>
+        <h1 style="color:white;margin:0;font-size:26px">¡Pedido Confirmado!</h1>
+        <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:14px">Pedido #${pedido.id}</p>
+      </div>
+      <div style="background:white;padding:40px 30px">
+        <p style="font-size:16px;color:#333">Hola <strong>${nombreUsuario}</strong>,</p>
+        <p style="color:#555;line-height:1.6">Tu pedido ha sido recibido y está siendo procesado. Te notificaremos cuando sea enviado.</p>
+        <div style="background:#f8f8f8;border-radius:8px;padding:20px;margin:24px 0">
+          <p style="margin:0 0 12px;font-weight:bold;color:#333">Resumen del pedido</p>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#eee">
+              <th style="padding:10px;text-align:left;font-size:12px;color:#666">Producto</th>
+              <th style="padding:10px;text-align:center;font-size:12px;color:#666">Cant.</th>
+              <th style="padding:10px;text-align:right;font-size:12px;color:#666">Subtotal</th>
+            </tr></thead>
+            <tbody>${productosHtml}</tbody>
+            <tfoot><tr>
+              <td colspan="2" style="padding:14px 10px;font-weight:bold;color:#333;font-size:16px">Total</td>
+              <td style="padding:14px 10px;text-align:right;font-weight:bold;color:#11998e;font-size:18px">${formatearPrecio(pedido.total)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+        <div style="background:#fff8e1;border-left:4px solid #ffc107;padding:16px;border-radius:4px;margin:20px 0">
+          <p style="margin:0;color:#555;font-size:14px">
+            <strong>Método de pago:</strong> ${pedido.metodo_pago || 'Tarjeta'}<br>
+            <strong>Estado:</strong> Creado — en preparación<br>
+            <strong>Fecha:</strong> ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+        <div style="text-align:center;margin:30px 0">
+          <a href="${urlPedidos}" style="background:linear-gradient(135deg,#11998e,#38ef7d);color:white;padding:14px 32px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;display:inline-block">Ver Mis Pedidos</a>
+        </div>
+      </div>
+      <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
+        <p style="color:#888;font-size:12px;margin:0">Este es un correo automático, no respondas a este mensaje.<br>Estilo y Moda — Tu tienda de confianza</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Estilo y Moda" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `✅ Pedido #${pedido.id} confirmado — Estilo y Moda`,
+      html
+    });
+    console.log(`📧 Correo de confirmación enviado a ${email}`);
+  } catch (err) {
+    console.log(`⚠️ No se pudo enviar correo de confirmación a ${email}:`, err.message);
+  }
+}
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3003;
@@ -17,7 +100,7 @@ async function inicializarBaseDatos() {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS pedido_historial (
           id SERIAL PRIMARY KEY,
-          id_pedido UUID NOT NULL,
+          id_pedido VARCHAR(20) NOT NULL,
           estado_anterior VARCHAR(50),
           estado_nuevo VARCHAR(50) NOT NULL,
           comentario TEXT,
@@ -68,14 +151,17 @@ async function inicializarBaseDatos() {
 }
 
 // Inicializar BD con delay para permitir conexión
-setTimeout(inicializarBaseDatos, 2000);
+// setTimeout(inicializarBaseDatos, 2000); // DESHABILITADO - trigger manual
 
 aplicacion.use(helmet());
 
 const ALLOWED_ORIGINS = [
   'http://localhost:3005',
+  'http://149.130.182.9:3005',
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://149.130.182.9:3000',
+  'http://149.130.182.9',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -119,6 +205,17 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error(`🚨 [${new Date().toISOString()}] Transaction - Unhandled Rejection:`);
   console.error(`   └─ Reason:`, reason);
 });
+
+// Función para generar IDs personalizados
+function generarId(prefijo) {
+  const ahora = new Date();
+  const año = ahora.getFullYear().toString().slice(-2);
+  const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
+  const dia = ahora.getDate().toString().padStart(2, '0');
+  const fecha = `${año}${mes}${dia}`;
+  const secuencial = Math.floor(Math.random() * 99999).toString().padStart(5, '0');
+  return `${prefijo}${fecha}${secuencial}`;
+}
 
 // Funciones de base de datos
 async function obtenerCarrito(usuarioId) {
@@ -228,16 +325,21 @@ aplicacion.post('/api/carrito', autenticacion, async (req, res) => {
 
     console.log(`🛒 Agregando producto ${id_producto} (cantidad: ${cantidad}) al carrito del usuario ${usuarioId}`);
 
-    // Crear o obtener carrito
-    const consultaCarrito = `
-      INSERT INTO carrito (usuario_id, fecha_actualizacion)
-      VALUES ($1, CURRENT_TIMESTAMP)
-      ON CONFLICT (usuario_id) 
-      DO UPDATE SET fecha_actualizacion = CURRENT_TIMESTAMP
-      RETURNING id
-    `;
-    const resultadoCarrito = await pool.query(consultaCarrito, [parseInt(usuarioId)]);
-    const carritoId = resultadoCarrito.rows[0].id;
+    // Crear o obtener carrito con ID personalizado
+    const consultaCarritoExistente = 'SELECT id FROM carrito WHERE usuario_id = $1';
+    const carritoExistente = await pool.query(consultaCarritoExistente, [parseInt(usuarioId)]);
+    
+    let carritoId;
+    if (carritoExistente.rows.length > 0) {
+      carritoId = carritoExistente.rows[0].id;
+      await pool.query('UPDATE carrito SET fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $1', [carritoId]);
+    } else {
+      carritoId = generarId('CA');
+      await pool.query(
+        'INSERT INTO carrito (id, usuario_id, fecha_actualizacion) VALUES ($1, $2, CURRENT_TIMESTAMP)',
+        [carritoId, parseInt(usuarioId)]
+      );
+    }
 
     // Verificar si el producto ya existe en el carrito
     const consultaProductoExistente = `
@@ -363,7 +465,7 @@ aplicacion.get('/api/pedidos/:pedidoId/historial', autenticacion, async (req, re
 
     // Verificar que el pedido pertenece al usuario
     const verificacion = await pool.query(
-      'SELECT id FROM pedido WHERE id = $1::uuid AND usuario_id = $2',
+      'SELECT id FROM pedido WHERE id = $1 AND usuario_id = $2',
       [pedidoId, parseInt(usuarioId)]
     );
 
@@ -378,7 +480,7 @@ aplicacion.get('/api/pedidos/:pedidoId/historial', autenticacion, async (req, re
         comentario,
         fecha_cambio
       FROM pedido_historial
-      WHERE id_pedido = $1::uuid
+      WHERE id_pedido = $1
       ORDER BY fecha_cambio ASC
     `;
 
@@ -398,15 +500,21 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
   try {
     const { pedidoId } = req.params;
     const { estado, comentario } = req.body;
+    const usuarioRol = req.usuario.rol;
     const usuarioId = req.usuario.id;
 
-    console.log(`🔄 Actualizando estado del pedido ${pedidoId} a ${estado}`);
+    const rolesAdmin = ['ceo', 'customer_success', 'logistics_coordinator', 'operations_director', 'support_agent'];
+    const esAdmin = rolesAdmin.includes(usuarioRol);
 
-    // Verificar que el pedido pertenece al usuario
-    const verificacion = await pool.query(
-      'SELECT id, estado FROM pedido WHERE id = $1 AND usuario_id = $2',
-      [pedidoId, parseInt(usuarioId)]
-    );
+    console.log(`🔄 Actualizando estado del pedido ${pedidoId} a ${estado} — Rol: ${usuarioRol}`);
+
+    // Admin puede cambiar cualquier pedido, cliente solo el suyo
+    const condicion = esAdmin
+      ? 'SELECT id, estado FROM pedido WHERE id = $1'
+      : 'SELECT id, estado FROM pedido WHERE id = $1 AND usuario_id = $2';
+    const params = esAdmin ? [pedidoId] : [pedidoId, parseInt(usuarioId)];
+
+    const verificacion = await pool.query(condicion, params);
 
     if (verificacion.rows.length === 0) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -414,13 +522,11 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
 
     const estadoAnterior = verificacion.rows[0].estado;
 
-    // Actualizar estado del pedido
     await pool.query(
       'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
       [estado, pedidoId]
     );
 
-    // Registrar en historial manualmente si se proporciona comentario
     if (comentario) {
       await pool.query(
         'INSERT INTO pedido_historial (id_pedido, estado_anterior, estado_nuevo, comentario) VALUES ($1, $2, $3, $4)',
@@ -473,22 +579,27 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     const carrito = resultadoCarrito.rows[0];
     const carritoId = carrito.id;
 
-    // Crear pedido
-    const consultaPedido = `
-      INSERT INTO pedido (usuario_id, estado, total)
-      VALUES ($1, 'Creado', $2)
-      RETURNING id
-    `;
-    const resultadoPedido = await pool.query(consultaPedido, [parseInt(usuarioId), carrito.total]);
-    const pedidoId = resultadoPedido.rows[0].id;
+    // Crear pedido con ID personalizado
+    const pedidoId = generarId('EM');
+    await pool.query(
+      'INSERT INTO pedido (id, usuario_id, estado, total) VALUES ($1, $2, $3, $4)',
+      [pedidoId, parseInt(usuarioId), 'Creado', carrito.total]
+    );
 
     // Copiar productos del carrito al pedido
     for (const producto of carrito.productos) {
-      await pool.query(`
-        INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal)
-        VALUES ($1, $2, $3, $4, $5)
-      `, [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio]);
+      await pool.query(
+        'INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal) VALUES ($1, $2, $3, $4, $5)',
+        [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio]
+      );
     }
+    
+    // Crear pago con ID personalizado
+    const pagoId = generarId('PG');
+    await pool.query(
+      'INSERT INTO pago (id, id_pedido, tipo_pago, monto, estado, metodo) VALUES ($1, $2, $3, $4, $5, $6)',
+      [pagoId, pedidoId, metodo_pago || 'Tarjeta', carrito.total, 'Aprobado', metodo_pago || 'Tarjeta de Crédito']
+    );
 
     // Limpiar carrito
     await pool.query('DELETE FROM carrito_producto WHERE id_carrito = $1', [carritoId]);
@@ -500,9 +611,24 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       total: carrito.total,
       metodo_pago,
       direccion_envio,
-      estado: 'procesando',
+      estado: 'Creado',
+      pago_id: pagoId,
       fecha_creacion: new Date().toISOString()
     };
+
+    // Enviar correo de confirmación al cliente (sin bloquear la respuesta)
+    try {
+      const resUsuario = await axios.get(
+        `http://auth-service:3011/api/usuarios/${usuarioId}`,
+        { timeout: 3000 }
+      );
+      const { email, nombre } = resUsuario.data.usuario || {};
+      if (email) {
+        enviarConfirmacionCompra(email, nombre || 'Cliente', pedido);
+      }
+    } catch (errCorreo) {
+      console.log('⚠️ No se pudo obtener datos del usuario para correo:', errCorreo.message);
+    }
 
     res.json({
       mensaje: 'Pedido creado exitosamente',
@@ -529,6 +655,69 @@ aplicacion.get('/salud', (req, res) => {
 // Manejador de errores
 aplicacion.use(manejadorErrores);
 
+// Listar TODOS los pedidos (solo roles admin)
+aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
+  try {
+    const usuarioRol = req.usuario.rol;
+    const rolesAdmin = ['ceo', 'customer_success', 'logistics_coordinator', 'operations_director', 'support_agent'];
+
+    if (!rolesAdmin.includes(usuarioRol)) {
+      return res.status(403).json({ error: 'Sin permisos para ver todos los pedidos' });
+    }
+
+    const { estado } = req.query;
+    let consulta = `
+      SELECT
+        p.id, p.usuario_id, p.estado, p.total,
+        p.fecha_creacion, p.fecha_actualizacion,
+        json_agg(
+          json_build_object(
+            'id', pp.id_producto,
+            'cantidad', pp.cantidad,
+            'precio', pp.precio_unitario,
+            'subtotal', pp.subtotal
+          )
+        ) FILTER (WHERE pp.id IS NOT NULL) as productos
+      FROM pedido p
+      LEFT JOIN pedido_producto pp ON p.id = pp.id_pedido
+    `;
+    const params = [];
+    if (estado) {
+      consulta += ' WHERE p.estado = $1';
+      params.push(estado);
+    }
+    consulta += ' GROUP BY p.id, p.usuario_id, p.estado, p.total, p.fecha_creacion, p.fecha_actualizacion ORDER BY p.fecha_creacion DESC';
+
+    const resultado = await pool.query(consulta, params);
+
+    // Enriquecer con datos del cliente desde auth-service
+    const axios = require('axios');
+    const pedidosEnriquecidos = await Promise.all(
+      resultado.rows.map(async (pedido) => {
+        try {
+          const res = await axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 });
+          return {
+            ...pedido,
+            nombre_cliente: res.data.usuario?.nombre || `Usuario ${pedido.usuario_id}`,
+            email_cliente: res.data.usuario?.email || 'N/A'
+          };
+        } catch {
+          return {
+            ...pedido,
+            nombre_cliente: `Usuario ${pedido.usuario_id}`,
+            email_cliente: 'N/A'
+          };
+        }
+      })
+    );
+
+    res.json({ pedidos: pedidosEnriquecidos, total: pedidosEnriquecidos.length });
+  } catch (error) {
+    console.error('Error listando pedidos admin:', error.message);
+    res.status(500).json({ error: 'Error listando pedidos' });
+  }
+});
+
 // Solicitar devolución
 aplicacion.post('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, res) => {
   try {
@@ -540,7 +729,7 @@ aplicacion.post('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, 
 
     // Verificar que el pedido existe y pertenece al usuario
     const pedido = await pool.query(
-      'SELECT id, total FROM pedido WHERE id = $1::uuid AND usuario_id = $2',
+      'SELECT id, total FROM pedido WHERE id = $1 AND usuario_id = $2',
       [pedidoId, parseInt(usuarioId)]
     );
 
@@ -550,7 +739,7 @@ aplicacion.post('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, 
 
     // Verificar si ya existe una devolución
     const devolucionExistente = await pool.query(
-      'SELECT id FROM devolucion WHERE id_pedido = $1::uuid',
+      'SELECT id FROM devolucion WHERE id_pedido = $1',
       [pedidoId]
     );
 
@@ -561,7 +750,7 @@ aplicacion.post('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, 
     // Crear devolución
     const resultado = await pool.query(
       `INSERT INTO devolucion (id_pedido, usuario_id, razon, estado)
-       VALUES ($1::uuid, $2, $3, 'Solicitada')
+       VALUES ($1, $2, $3, 'Solicitada')
        RETURNING id, estado, fecha_creacion`,
       [pedidoId, usuarioId, razon]
     );
@@ -587,7 +776,7 @@ aplicacion.get('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, r
     const resultado = await pool.query(
       `SELECT d.id, d.razon, d.estado, d.fecha_creacion, d.fecha_actualizacion
        FROM devolucion d
-       WHERE d.id_pedido = $1::uuid AND d.usuario_id = $2`,
+       WHERE d.id_pedido = $1 AND d.usuario_id = $2`,
       [pedidoId, usuarioId]
     );
 
@@ -686,7 +875,7 @@ aplicacion.put('/api/devoluciones/:id/aprobar', autenticacion, async (req, res) 
 
     // Verificar que la devolución existe y está en estado Solicitada
     const verificacion = await pool.query(
-      'SELECT id, estado FROM devolucion WHERE id = $1::uuid',
+      'SELECT id, estado FROM devolucion WHERE id = $1',
       [id]
     );
 
@@ -704,7 +893,7 @@ aplicacion.put('/api/devoluciones/:id/aprobar', autenticacion, async (req, res) 
        SET estado = 'Aprobada', 
            comentario_aprobacion = $1,
            fecha_actualizacion = CURRENT_TIMESTAMP 
-       WHERE id = $2::uuid`,
+       WHERE id = $2`,
       [comentario || 'Aprobada por Customer Success', id]
     );
 
@@ -741,7 +930,7 @@ aplicacion.put('/api/devoluciones/:id/rechazar', autenticacion, async (req, res)
 
     // Verificar que la devolución existe y está en estado Solicitada
     const verificacion = await pool.query(
-      'SELECT id, estado FROM devolucion WHERE id = $1::uuid',
+      'SELECT id, estado FROM devolucion WHERE id = $1',
       [id]
     );
 
@@ -759,7 +948,7 @@ aplicacion.put('/api/devoluciones/:id/rechazar', autenticacion, async (req, res)
        SET estado = 'Rechazada', 
            motivo_rechazo = $1,
            fecha_actualizacion = CURRENT_TIMESTAMP 
-       WHERE id = $2::uuid`,
+       WHERE id = $2`,
       [motivo, id]
     );
 
@@ -793,7 +982,7 @@ aplicacion.put('/api/devoluciones/:id/completar', autenticacion, async (req, res
 
     // Verificar que la devolución existe y está en estado Aprobada
     const verificacion = await pool.query(
-      'SELECT id, estado FROM devolucion WHERE id = $1::uuid',
+      'SELECT id, estado FROM devolucion WHERE id = $1',
       [id]
     );
 
@@ -811,7 +1000,7 @@ aplicacion.put('/api/devoluciones/:id/completar', autenticacion, async (req, res
        SET estado = 'Completada', 
            comentario_completado = $1,
            fecha_actualizacion = CURRENT_TIMESTAMP 
-       WHERE id = $2::uuid`,
+       WHERE id = $2`,
       [comentario || 'Completada por Logística', id]
     );
 
@@ -836,7 +1025,7 @@ aplicacion.post('/api/pedidos/:pedidoId/simular-cambio', autenticacion, async (r
 
     // Verificar que el pedido pertenece al usuario
     const verificacion = await pool.query(
-      'SELECT id, estado FROM pedido WHERE id = $1::uuid AND usuario_id = $2',
+      'SELECT id, estado FROM pedido WHERE id = $1 AND usuario_id = $2',
       [pedidoId, parseInt(usuarioId)]
     );
 
@@ -851,7 +1040,7 @@ aplicacion.post('/api/pedidos/:pedidoId/simular-cambio', autenticacion, async (r
 
     // El trigger registrará automáticamente en pedido_historial
     await pool.query(
-      'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2::uuid',
+      'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
       [nuevoEstado, pedidoId]
     );
 

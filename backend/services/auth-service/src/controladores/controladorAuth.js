@@ -105,8 +105,14 @@ class ControladorAuth {
       // Guardar token en base de datos
       await ServicioAuth.guardarTokenRecuperacion(usuario.id, tokenRecuperacion, expiracion);
 
-      // Enviar correo
-      await ServicioCorreo.enviarRecuperacionContrasena(email, tokenRecuperacion, usuario.nombre);
+      // Intentar enviar correo (no fallar si falla)
+      try {
+        await ServicioCorreo.enviarRecuperacionContrasena(email, tokenRecuperacion, usuario.nombre);
+        console.log(`✅ Correo de recuperación enviado a ${email}`);
+      } catch (errorCorreo) {
+        console.log(`⚠️ No se pudo enviar correo a ${email}, pero token guardado`);
+        console.log(`🔑 Token de recuperación: ${tokenRecuperacion}`);
+      }
 
       res.json({ mensaje: 'Si el email existe, recibirás un enlace de recuperación' });
     } catch (error) {

@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 3009
 
-CMD ["python", "src/main.py"]
+CMD ["sh", "-c", "cd /app/src && uvicorn main:app --host 0.0.0.0 --port 3009"]

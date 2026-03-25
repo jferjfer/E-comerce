@@ -15,6 +15,11 @@ export default function RoleBasedHome() {
     return <HomePage />
   }
 
+  // CEO → su propio dashboard ejecutivo
+  if (usuario.rol === 'ceo') {
+    return <Navigate to="/ceo" replace />
+  }
+
   // Product Managers → Dashboard de productos
   if (['product_manager', 'category_manager', 'seller_premium'].includes(usuario.rol)) {
     return <Navigate to="/products" replace />

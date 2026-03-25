@@ -1,22 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { ROLE_DEFINITIONS } from '@/config/roles'
+import { api } from '@/services/api'
 
 export default function ProfilePage() {
-  const { usuario } = useAuthStore()
+  const { usuario, token } = useAuthStore()
   const navigate = useNavigate()
   const addNotification = useNotificationStore(state => state.addNotification)
   
   const [isEditing, setIsEditing] = useState(false)
+  const [cargando, setCargando] = useState(true)
   const [formData, setFormData] = useState({
-    nombre: usuario?.nombre || '',
-    email: usuario?.email || '',
+    nombre: '',
+    email: '',
     telefono: '',
     direccion: '',
     ciudad: ''
   })
+  
+  useEffect(() => {
+    cargarPerfil()
+  }, [])
+  
+  const cargarPerfil = async () => {
+    if (!token) return
+    
+    setCargando(true)
+    const resultado = await api.obtenerPerfil(token)
+    
+    if (resultado.exito && resultado.datos) {
+      setFormData({
+        nombre: resultado.datos.nombre || '',
+        email: resultado.datos.email || '',
+        telefono: resultado.datos.telefono || '',
+        direccion: resultado.datos.direccion || '',
+        ciudad: resultado.datos.ciudad || ''
+      })
+    }
+    setCargando(false)
+  }
   
   const [preferences, setPreferences] = useState({
     style: 'casual',
@@ -28,9 +52,25 @@ export default function ProfilePage() {
   const isCliente = usuario?.rol === 'cliente'
   const roleInfo = usuario?.rol ? ROLE_DEFINITIONS[usuario.rol] : null
   
-  const handleSave = () => {
-    setIsEditing(false)
-    addNotification('Información actualizada exitosamente', 'success')
+  const handleSave = async () => {
+    if (!token) return
+    
+    setCargando(true)
+    const resultado = await api.actualizarPerfil(token, {
+      nombre: formData.nombre,
+      telefono: formData.telefono,
+      direccion: formData.direccion,
+      ciudad: formData.ciudad
+    })
+    
+    if (resultado.exito) {
+      setIsEditing(false)
+      addNotification('Información actualizada exitosamente', 'success')
+      await cargarPerfil()
+    } else {
+      addNotification(resultado.error || 'Error al actualizar', 'error')
+    }
+    setCargando(false)
   }
   
   const handleSavePreferences = () => {
@@ -51,6 +91,11 @@ export default function ProfilePage() {
   
   return (
     <div className="min-h-screen bg-gray-50 py-12">
+      {cargando ? (
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 mb-8">
           <button onClick={handleBack} className="text-primary hover:text-secondary">
@@ -84,7 +129,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
                   <input 
                     type="text" 
-                    value={isEditing ? formData.nombre : usuario?.nombre || ''}
+                    value={formData.nombre}
                     onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
                     readOnly={!isEditing}
                     className={`w-full border border-gray-300 rounded-lg px-3 py-2 ${!isEditing ? 'bg-gray-50' : ''}`}
@@ -94,10 +139,9 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input 
                     type="email" 
-                    value={isEditing ? formData.email : usuario?.email || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    readOnly={!isEditing}
-                    className={`w-full border border-gray-300 rounded-lg px-3 py-2 ${!isEditing ? 'bg-gray-50' : ''}`}
+                    value={formData.email}
+                    readOnly
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50"
                   />
                 </div>
                 {isCliente && (
@@ -293,6 +337,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }

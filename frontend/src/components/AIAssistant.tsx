@@ -27,7 +27,7 @@ export default function AIAssistant() {
       } catch {
         return [{
           id: '1',
-          text: '¡Hola! Soy María, tu asesora de imagen personal de *Estilo y Moda*. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
+          text: '¡Hola! Soy María, tu asesora de imagen personal de Estilo y Moda. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
           isUser: false,
           timestamp: new Date()
         }]
@@ -35,7 +35,7 @@ export default function AIAssistant() {
     }
     return [{
       id: '1',
-      text: '¡Hola! Soy María, tu asesora de imagen personal de *Estilo y Moda*. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
+      text: '¡Hola! Soy María, tu asesora de imagen personal de Estilo y Moda. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
       isUser: false,
       timestamp: new Date()
     }]

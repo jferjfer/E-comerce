@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../modelos/Usuario');
+const crypto = require('crypto');
+const ServicioCorreo = require('./servicioCorreo');
 
 class ServicioAuth {
   async registrarUsuario(datosUsuario) {
@@ -26,6 +28,11 @@ class ServicioAuth {
         rol: 'cliente'
       });
       console.log('✅ Usuario creado exitosamente:', nuevoUsuario.id);
+
+      // Enviar correo de bienvenida (sin bloquear el registro)
+      ServicioCorreo.enviarBienvenida(email, nuevoUsuario.nombre)
+        .then(() => console.log(`📧 Correo de bienvenida enviado a ${email}`))
+        .catch(err => console.log(`⚠️ No se pudo enviar bienvenida a ${email}:`, err.message));
 
       // Generar token
       const token = this.generarToken(nuevoUsuario);
@@ -80,52 +87,41 @@ class ServicioAuth {
     }
   }
 
-  async solicitarRecuperacion(email) {
-    try {
-      const usuario = await Usuario.buscarPorEmail(email);
-      if (!usuario) {
-        return { exito: true }; // Por seguridad, siempre responder exitosamente
-      }
+  async buscarUsuarioPorEmail(email) {
+    return await Usuario.buscarPorEmail(email);
+  }
 
-      // Generar token de recuperación
-      const tokenRecuperacion = jwt.sign(
-        { id: usuario.id, tipo: 'recuperacion' },
-        process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2',
-        { expiresIn: '1h' }
-      );
-
-      // Aquí enviarías el email con el token
-      console.log(`🔑 Token de recuperación para ${email}: ${tokenRecuperacion}`);
-
-      return { exito: true };
-    } catch (error) {
-      console.error('Error en recuperación:', error);
-      return { exito: false, error: 'Error interno del servidor' };
-    }
+  async guardarTokenRecuperacion(usuarioId, token, expiracion) {
+    return await Usuario.guardarTokenRecuperacion(usuarioId, token, expiracion);
   }
 
   async restablecerContrasena(token, nuevaContrasena) {
     try {
-      // Verificar token
-      const decoded = jwt.verify(token, process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2');
-      if (decoded.tipo !== 'recuperacion') {
-        return { exito: false, error: 'Token inválido' };
+      // Buscar usuario por token
+      const usuario = await Usuario.buscarPorTokenRecuperacion(token);
+      if (!usuario) {
+        throw new Error('Token inválido o expirado');
       }
 
-      // Encriptar nueva contraseña
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(nuevaContrasena, saltRounds);
+      // Verificar expiración
+      if (new Date() > new Date(usuario.token_expiracion)) {
+        throw new Error('Token expirado');
+      }
+
+      // Hashear nueva contraseña
+      const bcrypt = require('bcryptjs');
+      const passwordHash = await bcrypt.hash(nuevaContrasena, 10);
 
       // Actualizar contraseña
-      await Usuario.actualizarContrasena(decoded.id, passwordHash);
+      await Usuario.actualizarContrasena(usuario.id, passwordHash);
+
+      // Limpiar token
+      await Usuario.limpiarTokenRecuperacion(usuario.id);
 
       return { exito: true };
     } catch (error) {
       console.error('Error al restablecer contraseña:', error);
-      if (error.name === 'JsonWebTokenError') {
-        return { exito: false, error: 'Token inválido' };
-      }
-      return { exito: false, error: 'Error interno del servidor' };
+      throw error;
     }
   }
 

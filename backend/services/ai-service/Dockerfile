@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 3007
 
-CMD ["sh", "-c", "cd /app && uvicorn src.main:app --host 0.0.0.0 --port 3007"]
+CMD ["sh", "-c", "cd /app/src && uvicorn main:app --host 0.0.0.0 --port 3007"]

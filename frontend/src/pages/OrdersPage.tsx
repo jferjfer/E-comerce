@@ -208,7 +208,7 @@ export default function OrdersPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm text-gray-500">Pedido #{pedido.id.slice(0, 8)}</span>
+                      <span className="text-sm font-mono text-gray-700 font-semibold">#{pedido.id}</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getEstadoColor(pedido.estado)}`}>
                         <i className={`fas ${getEstadoIcono(pedido.estado)} mr-1`}></i>
                         {pedido.estado}

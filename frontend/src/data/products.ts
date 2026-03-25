@@ -60,21 +60,21 @@ export const productosSimulados: Producto[] = [
 
 export const metodosPago: MetodoPago[] = [
   {
-    id: 'contado',
+    id: 'Tarjeta',
     nombre: 'Pago de Contado',
     tipo: 'contado',
     descripcion: 'Tarjeta, PSE, Nequi, Efectivo',
     icono: 'fas fa-credit-card'
   },
   {
-    id: 'interno',
+    id: 'Credito_Interno',
     nombre: 'Crédito StyleHub',
     tipo: 'credito',
     descripcion: 'Financiación hasta 12 meses sin intereses',
     icono: 'fas fa-store'
   },
   {
-    id: 'addi',
+    id: 'Credito_Externo',
     nombre: 'ADDI',
     tipo: 'externo',
     descripcion: 'Préstamo instantáneo hasta $5.000.000',
@@ -83,12 +83,12 @@ export const metodosPago: MetodoPago[] = [
     tasa_interes: 1.5
   },
   {
-    id: 'sistecredito',
-    nombre: 'Sistecredito',
+    id: 'PSE',
+    nombre: 'PSE',
     tipo: 'externo',
-    descripcion: 'Préstamos personales hasta $10.000.000',
+    descripcion: 'Pago seguro en línea',
     icono: 'fas fa-university',
     monto_maximo: 10000000,
-    tasa_interes: 1.2
+    tasa_interes: 0
   }
 ]

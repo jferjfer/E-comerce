@@ -10,6 +10,18 @@ from config.base_datos import conectar_bd, cerrar_bd, obtener_bd
 from config.cloudinary_config import cloudinary
 from servicios.servicio_imagenes import subir_imagen_producto, subir_multiples_imagenes
 
+# Productos hardcodeados como fallback
+PRODUCTOS_FALLBACK = [
+    {"id": "1", "nombre": "Vestido Elegante Negro", "precio": 89900, "categoria": "Vestidos", "descripcion": "Vestido elegante perfecto para ocasiones especiales", "imagen": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400", "calificacion": 5, "en_stock": True, "tallas": ["S", "M", "L"], "colores": ["Negro"]},
+    {"id": "2", "nombre": "Camisa Blanca Clásica", "precio": 45900, "categoria": "Camisas", "descripcion": "Camisa blanca versátil para cualquier ocasión", "imagen": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400", "calificacion": 4.5, "en_stock": True, "tallas": ["S", "M", "L", "XL"], "colores": ["Blanco"]},
+    {"id": "3", "nombre": "Pantalón Jean Azul", "precio": 67900, "categoria": "Pantalones", "descripcion": "Jean clásico de corte moderno", "imagen": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400", "calificacion": 4.8, "en_stock": True, "tallas": ["28", "30", "32", "34"], "colores": ["Azul"]},
+    {"id": "4", "nombre": "Blazer Gris Ejecutivo", "precio": 129900, "categoria": "Blazers", "descripcion": "Blazer profesional de alta calidad", "imagen": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400", "calificacion": 5, "en_stock": True, "tallas": ["S", "M", "L"], "colores": ["Gris"]},
+    {"id": "5", "nombre": "Zapatos Formales Negros", "precio": 89900, "categoria": "Calzado", "descripcion": "Zapatos elegantes para eventos formales", "imagen": "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=400", "calificacion": 4.7, "en_stock": True, "tallas": ["38", "39", "40", "41", "42"], "colores": ["Negro"]},
+    {"id": "6", "nombre": "Vestido Floral Primavera", "precio": 79900, "categoria": "Vestidos", "descripcion": "Vestido fresco con estampado floral", "imagen": "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400", "calificacion": 4.6, "en_stock": True, "tallas": ["S", "M", "L"], "colores": ["Multicolor"]},
+    {"id": "7", "nombre": "Camisa Casual Azul", "precio": 39900, "categoria": "Camisas", "descripcion": "Camisa casual perfecta para el día a día", "imagen": "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400", "calificacion": 4.3, "en_stock": True, "tallas": ["S", "M", "L"], "colores": ["Azul"]},
+    {"id": "8", "nombre": "Pantalón Chino Beige", "precio": 59900, "categoria": "Pantalones", "descripcion": "Pantalón chino cómodo y elegante", "imagen": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400", "calificacion": 4.5, "en_stock": True, "tallas": ["28", "30", "32", "34"], "colores": ["Beige"]},
+]
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -28,7 +40,13 @@ app = FastAPI(
 # Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3005", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3005",
+        "http://149.130.182.9:3005",
+        "http://localhost:3000",
+        "http://149.130.182.9:3000",
+        "http://149.130.182.9"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,10 +66,47 @@ async def listar_productos(
     print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar}")
     
     db = obtener_bd()
-    if db is None:
-        print("❌ MongoDB no disponible")
-        raise HTTPException(status_code=500, detail="Base de datos no disponible")
     
+    # Si no hay BD, usar productos hardcodeados
+    if db is None:
+        print("⚠️ MongoDB no disponible, usando productos hardcodeados")
+        productos = PRODUCTOS_FALLBACK.copy()
+        
+        # Aplicar filtros
+        if categoria:
+            productos = [p for p in productos if p["categoria"].lower() == categoria.lower()]
+        
+        if precio_min is not None:
+            productos = [p for p in productos if p["precio"] >= precio_min]
+        
+        if precio_max is not None:
+            productos = [p for p in productos if p["precio"] <= precio_max]
+        
+        if buscar:
+            productos = [p for p in productos if buscar.lower() in p["nombre"].lower() or buscar.lower() in p["descripcion"].lower()]
+        
+        # Ordenar
+        if ordenar == "precio_asc":
+            productos.sort(key=lambda x: x["precio"])
+        elif ordenar == "precio_desc":
+            productos.sort(key=lambda x: x["precio"], reverse=True)
+        elif ordenar == "nombre":
+            productos.sort(key=lambda x: x["nombre"])
+        elif ordenar == "calificacion":
+            productos.sort(key=lambda x: x.get("calificacion", 0), reverse=True)
+        
+        total = len(productos)
+        print(f"✅ Productos hardcodeados: {total}")
+        
+        return {
+            "productos": productos,
+            "total": total,
+            "pagina": 1,
+            "limite": limite,
+            "total_paginas": 1
+        }
+    
+    # Si hay BD, usar MongoDB
     try:
         filtro = {}
         
@@ -112,7 +167,15 @@ async def listar_productos(
         }
     except Exception as e:
         print(f"❌ Error consultando MongoDB: {e}")
-        raise HTTPException(status_code=500, detail=f"Error consultando productos: {str(e)}")
+        # Fallback a productos hardcodeados
+        print("⚠️ Usando productos hardcodeados como fallback")
+        return {
+            "productos": PRODUCTOS_FALLBACK,
+            "total": len(PRODUCTOS_FALLBACK),
+            "pagina": 1,
+            "limite": limite,
+            "total_paginas": 1
+        }
 
 @app.post("/api/productos")
 async def crear_producto(producto: dict):
@@ -353,9 +416,4 @@ async def verificar_salud():
 if __name__ == "__main__":
     puerto = int(os.getenv("PUERTO", 3002))
     print(f"🚀 Catalog Service v2.0 iniciando en puerto {puerto}")
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=puerto,
-        reload=os.getenv("ENTORNO") == "desarrollo"
-    )
+    uvicorn.run(app, host="0.0.0.0", port=puerto)

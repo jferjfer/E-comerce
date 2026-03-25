@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test AR Button</title>
+</head>
+<body>
+    <h1>Test AR Button</h1>
+    <button id="testBtn" style="padding: 20px; font-size: 18px; background: purple; color: white;">
+        Click para probar AR
+    </button>
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('testBtn').addEventListener('click', function() {
+            console.log('Button clicked!');
+            document.getElementById('result').innerHTML = '<p style="color: green;">✅ El botón funciona!</p>';
+            alert('El botón responde correctamente');
+        });
+    </script>
+</body>
+</html>

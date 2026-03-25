@@ -12,14 +12,22 @@ bd = BaseDatos()
 
 async def conectar_bd():
     """Conectar a MongoDB Atlas para AI Service"""
-    # URL específica para AI Service
-    mongodb_uri = "mongodb+srv://Vercel-Admin-serviceia:ZHCXKOwgzj4Gq2IV@serviceia.pi2owta.mongodb.net/?retryWrites=true&w=majority"
+    mongodb_uri = os.getenv("MONGODB_AI_URI", os.getenv("MONGODB_CATALOG_URI", ""))
     nombre_bd = "ai_db"
-    
-    bd.cliente = AsyncIOMotorClient(mongodb_uri)
-    bd.bd = bd.cliente[nombre_bd]
-    
-    print(f"✅ AI Service conectado a MongoDB Atlas: {nombre_bd}")
+
+    if not mongodb_uri:
+        print("⚠️ No hay URI de MongoDB configurada para AI Service")
+        return
+
+    try:
+        bd.cliente = AsyncIOMotorClient(mongodb_uri, serverSelectionTimeoutMS=10000)
+        await bd.cliente.admin.command('ping')
+        bd.bd = bd.cliente[nombre_bd]
+        print(f"✅ AI Service conectado a MongoDB Atlas: {nombre_bd}")
+    except Exception as e:
+        print(f"⚠️ AI Service no pudo conectar a MongoDB: {e}")
+        bd.cliente = None
+        bd.bd = None
 
 async def cerrar_bd():
     """Cerrar conexión a MongoDB"""

@@ -36,7 +36,7 @@ class Usuario {
 
   static async buscarPorId(id) {
     const consulta = `
-      SELECT id, nombre, email, rol, total_compras_historico, fecha_creacion, fecha_actualizacion
+      SELECT id, nombre, email, rol, telefono, direccion, ciudad, total_compras_historico, fecha_creacion, fecha_actualizacion
       FROM usuarios WHERE id = $1
     `;
     const resultado = await pool.query(consulta, [id]);
