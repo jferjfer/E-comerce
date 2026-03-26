@@ -67,7 +67,7 @@ export default function CEODashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
               <i className="fas fa-crown text-white text-xl"></i>
             </div>
             <div>
@@ -77,7 +77,7 @@ export default function CEODashboard() {
           </div>
           <button
             onClick={cargarTodo}
-            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            className="flex items-center gap-2 bg-gray-100 text-white px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <i className="fas fa-sync-alt"></i>
             Actualizar
@@ -86,7 +86,7 @@ export default function CEODashboard() {
 
         {cargando ? (
           <div className="flex justify-center items-center py-24">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-200"></div>
           </div>
         ) : (
           <>
@@ -116,7 +116,7 @@ export default function CEODashboard() {
               {/* Estado de Microservicios */}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <i className="fas fa-server text-purple-600"></i>
+                  <i className="fas fa-server text-gray-700"></i>
                   Estado de Microservicios
                 </h3>
                 {Object.keys(servicios).length === 0 ? (

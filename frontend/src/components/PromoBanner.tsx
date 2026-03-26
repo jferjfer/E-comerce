@@ -26,7 +26,7 @@ export default function PromoBanner() {
   if (cupones.length === 0 && campanas.length === 0) return null
 
   return (
-    <section className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 py-8 relative overflow-hidden">
+    <section className="bg-gradient-to-r from-pink-500 via-gray-700 to-indigo-500 py-8 relative overflow-hidden">
       {/* Decoración de fondo */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
@@ -97,7 +97,7 @@ export default function PromoBanner() {
 
               <div className="p-6">
                 {/* Icono */}
-                <div className="w-16 h-16 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-16 h-16 bg-gradient-to-br from-pink-100 to-gray-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <i className="fas fa-gift text-3xl text-pink-600"></i>
                 </div>
 
@@ -118,7 +118,7 @@ export default function PromoBanner() {
                       </div>
                       <button
                         onClick={() => copiarCodigo(cupon.codigo)}
-                        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white p-3 rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl"
+                        className="bg-gradient-to-r from-pink-500 to-gray-600 text-white p-3 rounded-lg hover:from-pink-600 hover:to-gray-600 transition-all shadow-lg hover:shadow-xl"
                         title="Copiar código"
                       >
                         <i className="fas fa-copy"></i>
@@ -127,8 +127,8 @@ export default function PromoBanner() {
                   </div>
                   
                   {/* Círculos decorativos de cupón */}
-                  <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"></div>
-                  <div className="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"></div>
+                  <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gradient-to-r from-pink-500 to-gray-600 rounded-full"></div>
+                  <div className="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gradient-to-r from-pink-500 to-gray-600 rounded-full"></div>
                 </div>
 
                 {/* Info adicional */}
@@ -138,7 +138,7 @@ export default function PromoBanner() {
                     Mín: ${cupon.minimo_compra}
                   </span>
                   <span className="flex items-center">
-                    <i className="fas fa-users mr-2 text-purple-500"></i>
+                    <i className="fas fa-users mr-2 text-gray-700"></i>
                     {cupon.usos_actuales}/{cupon.usos_maximos}
                   </span>
                 </div>
@@ -147,7 +147,7 @@ export default function PromoBanner() {
               {/* Barra de progreso de usos */}
               <div className="h-2 bg-gray-200">
                 <div 
-                  className="h-2 bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-500"
+                  className="h-2 bg-gradient-to-r from-pink-500 to-gray-600 transition-all duration-500"
                   style={{ width: `${(cupon.usos_actuales / cupon.usos_maximos) * 100}%` }}
                 ></div>
               </div>

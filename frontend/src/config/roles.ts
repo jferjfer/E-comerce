@@ -7,7 +7,7 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     name: 'CEO/Founder',
     description: 'Control total del sistema',
     level: 1,
-    color: 'bg-purple-600',
+    color: 'bg-gray-100',
     icon: 'fas fa-crown',
     permissions: ['*'] as Permission[]
   },

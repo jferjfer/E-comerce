@@ -17,12 +17,12 @@ module.exports = {
         'serif': ['Playfair Display', 'serif']
       },
       colors: {
-        primary: '#7c3aed',
-        secondary: '#6d28d9',
-        accent: '#a78bfa',
-        sage: '#ede9fe',
+        primary: '#111827',
+        secondary: '#374151',
+        accent: '#6b7280',
+        sage: '#f9fafb',
         rose: '#f43f5e',
-        gold: '#f59e0b'
+        gold: '#d4a853'
       },
       animation: {
         'slide-in': 'slideIn 0.3s ease-out',

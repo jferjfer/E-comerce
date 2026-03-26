@@ -27,9 +27,9 @@ export default function ProductRecommendation({ producto, razon, puntuacion }: P
         </Link>
         <div className="flex-1 min-w-0">
           <Link to={`/catalog?producto=${producto.id}`}>
-            <h4 className="font-semibold text-sm text-gray-900 truncate hover:text-purple-600 transition-colors">{producto.nombre}</h4>
+            <h4 className="font-semibold text-sm text-gray-900 truncate hover:text-gray-700 transition-colors">{producto.nombre}</h4>
           </Link>
-          <p className="text-purple-600 font-bold text-sm mt-1">
+          <p className="text-gray-700 font-bold text-sm mt-1">
             ${(producto.precio / 100).toLocaleString('es-CO')}
           </p>
           {razon && (
@@ -40,11 +40,11 @@ export default function ProductRecommendation({ producto, razon, puntuacion }: P
               <span className="text-xs text-gray-500">Match:</span>
               <div className="flex-1 bg-gray-200 rounded-full h-1.5 max-w-[60px]">
                 <div 
-                  className="bg-purple-500 h-1.5 rounded-full" 
+                  className="bg-gray-100 h-1.5 rounded-full" 
                   style={{ width: `${puntuacion * 100}%` }}
                 />
               </div>
-              <span className="text-xs font-semibold text-purple-600">
+              <span className="text-xs font-semibold text-gray-700">
                 {Math.round(puntuacion * 100)}%
               </span>
             </div>
@@ -52,7 +52,7 @@ export default function ProductRecommendation({ producto, razon, puntuacion }: P
           <div className="flex gap-2 mt-2">
             <Link 
               to={`/catalog?producto=${producto.id}`}
-              className="text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
+              className="text-xs text-gray-700 hover:text-gray-700 font-medium flex items-center gap-1"
             >
               <i className="fas fa-eye"></i>
               Ver detalles
@@ -61,7 +61,7 @@ export default function ProductRecommendation({ producto, razon, puntuacion }: P
         </div>
         <button
           onClick={handleAddToCart}
-          className="self-start bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:from-purple-600 hover:to-pink-600 transition-all"
+          className="self-start bg-gradient-to-r from-gray-800 to-pink-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:from-gray-800 hover:to-pink-600 transition-all"
         >
           <i className="fas fa-cart-plus mr-1"></i>
           Agregar

@@ -18,7 +18,7 @@ const UserManagement = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
-        <button className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center">
+        <button className="px-4 py-2 bg-gray-100 text-white rounded-lg flex items-center">
           <Plus className="w-4 h-4 mr-2" />
           Crear Usuario
         </button>

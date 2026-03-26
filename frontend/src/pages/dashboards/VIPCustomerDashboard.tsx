@@ -11,7 +11,7 @@ const VIPCustomerDashboard = () => {
           <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full text-sm font-medium">
             👑 Cliente VIP
           </span>
-          <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+          <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
             💎 Diamante
           </span>
         </div>
@@ -30,14 +30,14 @@ const VIPCustomerDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+        <Card className="border-2 border-gray-200 bg-gradient-to-br from-gray-800 to-pink-50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Puntos Acumulados</CardTitle>
-            <Star className="h-4 w-4 text-purple-600" />
+            <Star className="h-4 w-4 text-gray-700" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-700">15,847</div>
-            <p className="text-xs text-purple-600">= $158.47 en crédito</p>
+            <div className="text-2xl font-bold text-gray-700">15,847</div>
+            <p className="text-xs text-gray-700">= $158.47 en crédito</p>
           </CardContent>
         </Card>
 
@@ -75,12 +75,12 @@ const VIPCustomerDashboard = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-4 border border-yellow-200 rounded-lg bg-white">
-              <div className="w-full h-32 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg mb-3 flex items-center justify-center">
-                <Crown className="h-8 w-8 text-purple-600" />
+              <div className="w-full h-32 bg-gradient-to-br from-gray-800 to-pink-100 rounded-lg mb-3 flex items-center justify-center">
+                <Crown className="h-8 w-8 text-gray-700" />
               </div>
               <div className="font-medium">Vestido Exclusivo Diamante</div>
               <div className="text-sm text-gray-600">Solo para VIP</div>
-              <div className="text-lg font-bold text-purple-600 mt-2">$299.99</div>
+              <div className="text-lg font-bold text-gray-700 mt-2">$299.99</div>
               <div className="text-xs text-green-600">25% OFF = $224.99</div>
             </div>
             <div className="text-center p-4 border border-yellow-200 rounded-lg bg-white">
@@ -151,16 +151,16 @@ const VIPCustomerDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Gift className="mr-2 h-5 w-5 text-purple-500" />
+              <Gift className="mr-2 h-5 w-5 text-gray-700" />
               Recompensas y Beneficios
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                <div className="font-medium text-purple-800">🎁 Regalo de Cumpleaños</div>
-                <div className="text-sm text-purple-600">Producto gratis hasta $150</div>
-                <div className="text-xs text-purple-500">Próximo: 15 de Marzo</div>
+              <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg">
+                <div className="font-medium text-gray-700">🎁 Regalo de Cumpleaños</div>
+                <div className="text-sm text-gray-700">Producto gratis hasta $150</div>
+                <div className="text-xs text-gray-700">Próximo: 15 de Marzo</div>
               </div>
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="font-medium text-yellow-800">⚡ Early Access</div>
@@ -185,7 +185,7 @@ const VIPCustomerDashboard = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600">$12,847</div>
+              <div className="text-3xl font-bold text-gray-700">$12,847</div>
               <div className="text-sm text-gray-600">Total Gastado</div>
               <div className="text-xs text-gray-500">Este año</div>
             </div>

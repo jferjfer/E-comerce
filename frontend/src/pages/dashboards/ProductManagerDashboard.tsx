@@ -148,7 +148,7 @@ const ProductManagerDashboard = () => {
                   <div className="text-xs text-gray-500">156 ventas • 4.5★</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-purple-600">$12,464</div>
+                  <div className="font-bold text-gray-700">$12,464</div>
                   <div className="text-xs">Revenue</div>
                 </div>
               </div>

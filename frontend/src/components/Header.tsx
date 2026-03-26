@@ -31,13 +31,13 @@ export default function Header({ onCartClick }: HeaderProps) {
   }, [])
 
   return (
-    <header className="bg-white/95 backdrop-blur-md shadow-sm border-b border-purple-100 sticky top-0 z-50">
+    <header className="bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
 
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group min-w-0">
-            <div className="w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0 rounded-xl brand-gradient flex items-center justify-center shadow-md group-hover:shadow-purple-300 transition-shadow">
+            <div className="w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0 rounded-xl brand-gradient flex items-center justify-center shadow-md group-hover:shadow-gray-200 transition-shadow">
               <img src="/logo.png" alt="Estilo y Moda" className="w-5 h-5 sm:w-7 sm:h-7 object-contain" />
             </div>
             <h1 className="text-lg sm:text-3xl font-bold text-primary tracking-wider truncate" style={{ fontFamily: 'Dancing Script, cursive' }}>
@@ -52,7 +52,7 @@ export default function Header({ onCartClick }: HeaderProps) {
           <div className="flex items-center space-x-1 sm:space-x-2">
 
             {/* Favoritos */}
-            <Link to={isAuthenticated ? '/favorites' : '/login'} className="relative p-2 sm:p-2.5 text-gray-500 hover:text-primary hover:bg-purple-50 rounded-xl transition-all">
+            <Link to={isAuthenticated ? '/favorites' : '/login'} className="relative p-2 sm:p-2.5 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-xl transition-all">
               <i className="fas fa-heart text-base sm:text-lg"></i>
               {favorites.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
@@ -62,7 +62,7 @@ export default function Header({ onCartClick }: HeaderProps) {
             </Link>
 
             {/* Carrito */}
-            <button onClick={onCartClick} className="relative p-2 sm:p-2.5 text-gray-500 hover:text-primary hover:bg-purple-50 rounded-xl transition-all">
+            <button onClick={onCartClick} className="relative p-2 sm:p-2.5 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-xl transition-all">
               <i className="fas fa-shopping-bag text-base sm:text-lg"></i>
               {totalItems > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
@@ -76,7 +76,7 @@ export default function Header({ onCartClick }: HeaderProps) {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 pl-1 pr-2 py-1 rounded-xl hover:bg-purple-50 transition-all group"
+                  className="flex items-center space-x-2 pl-1 pr-2 py-1 rounded-xl hover:bg-gray-100 transition-all group"
                 >
                   {/* Avatar con inicial */}
                   <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl ${roleInfo?.color || 'bg-primary'} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow`}>
@@ -92,7 +92,7 @@ export default function Header({ onCartClick }: HeaderProps) {
 
                 {/* Dropdown */}
                 {showUserMenu && (
-                  <div className="absolute right-0 top-14 bg-white rounded-2xl shadow-2xl border border-purple-100 p-2 z-50 min-w-[220px] animate-fadeIn">
+                  <div className="absolute right-0 top-14 bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 z-50 min-w-[220px] animate-fadeIn">
                     {/* Info usuario */}
                     <div className="px-3 py-2 mb-1 border-b border-gray-100">
                       <p className="font-semibold text-gray-900 text-sm">{user?.nombre}</p>
@@ -151,7 +151,7 @@ export default function Header({ onCartClick }: HeaderProps) {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="flex items-center space-x-1.5 bg-primary text-white px-2.5 sm:px-4 py-2 text-xs sm:text-sm rounded-xl hover:bg-secondary transition-all shadow-sm hover:shadow-purple-300 flex-shrink-0">
+              <Link to="/login" className="flex items-center space-x-1.5 bg-primary text-white px-2.5 sm:px-4 py-2 text-xs sm:text-sm rounded-xl hover:bg-secondary transition-all shadow-sm flex-shrink-0">
                 <i className="fas fa-sign-in-alt text-xs"></i>
                 <span className="hidden sm:inline font-medium">Iniciar Sesión</span>
                 <span className="sm:hidden font-medium">Entrar</span>
@@ -169,7 +169,7 @@ function MenuItem({ to, icon, label, onClick }: { to: string; icon: string; labe
     <Link
       to={to}
       onClick={onClick}
-      className="flex items-center space-x-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-primary rounded-xl transition-colors"
+      className="flex items-center space-x-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-xl transition-colors"
     >
       <i className={`fas ${icon} w-4 text-gray-400`}></i>
       <span>{label}</span>

@@ -135,9 +135,9 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Productos en Catálogo</p>
-                  <p className="text-2xl font-bold text-purple-600">{productos.length}</p>
+                  <p className="text-2xl font-bold text-gray-700">{productos.length}</p>
                 </div>
-                <i className="fas fa-users text-purple-500 text-2xl"></i>
+                <i className="fas fa-users text-gray-700 text-2xl"></i>
               </div>
             </div>
           </RoleGuard>
@@ -224,7 +224,7 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-lg font-semibold mb-4">Contenido</h3>
               <div className="space-y-3">
-                <Link to="/products" className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors text-center block">
+                <Link to="/products" className="w-full bg-gray-100 text-white py-2 rounded-lg hover:bg-gray-100 transition-colors text-center block">
                   <i className="fas fa-edit mr-2"></i>
                   Editar Productos
                 </Link>

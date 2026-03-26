@@ -96,7 +96,7 @@ const CMODashboard = () => {
                   <div className="text-xs text-gray-500">Automatización</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-purple-600">ROI: 650%</div>
+                  <div className="font-bold text-gray-700">ROI: 650%</div>
                   <div className="text-xs">$12K gastado</div>
                 </div>
               </div>
@@ -139,11 +139,11 @@ const CMODashboard = () => {
                 <span>Email Marketing</span>
                 <div className="text-right">
                   <div className="font-bold">18.9%</div>
-                  <div className="text-xs text-purple-600">+5.2%</div>
+                  <div className="text-xs text-gray-700">+5.2%</div>
                 </div>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-purple-600 h-2 rounded-full" style={{width: '18.9%'}}></div>
+                <div className="bg-gray-100 h-2 rounded-full" style={{width: '18.9%'}}></div>
               </div>
               
               <div className="flex justify-between items-center">
@@ -169,7 +169,7 @@ const CMODashboard = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">15.2%</div>
+              <div className="text-2xl font-bold text-gray-700">15.2%</div>
               <div className="text-sm text-gray-600">Clientes VIP</div>
               <div className="text-xs text-gray-500">Alto valor</div>
             </div>

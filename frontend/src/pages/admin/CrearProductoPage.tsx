@@ -119,7 +119,7 @@ export default function CrearProductoPage() {
                     required
                     value={formData.nombre}
                     onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400"
                     placeholder="Ej: Vestido Elegante Negro"
                   />
                 </div>
@@ -133,7 +133,7 @@ export default function CrearProductoPage() {
                     required
                     value={formData.precio}
                     onChange={(e) => setFormData(prev => ({ ...prev, precio: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400"
                     placeholder="89900"
                   />
                 </div>
@@ -148,7 +148,7 @@ export default function CrearProductoPage() {
                   rows={4}
                   value={formData.descripcion}
                   onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400"
                   placeholder="Describe el producto..."
                 />
               </div>
@@ -162,7 +162,7 @@ export default function CrearProductoPage() {
                     required
                     value={formData.categoria}
                     onChange={(e) => setFormData(prev => ({ ...prev, categoria: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400"
                   >
                     <option value="">Seleccionar...</option>
                     <option value="Vestidos">Vestidos</option>
@@ -182,7 +182,7 @@ export default function CrearProductoPage() {
                     required
                     value={formData.stock}
                     onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400"
                     placeholder="50"
                   />
                 </div>
@@ -197,7 +197,7 @@ export default function CrearProductoPage() {
                     type="text"
                     value={formData.marca}
                     onChange={(e) => setFormData(prev => ({ ...prev, marca: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400"
                     placeholder="Estilo Premium"
                   />
                 </div>
@@ -210,7 +210,7 @@ export default function CrearProductoPage() {
                     type="text"
                     value={formData.material}
                     onChange={(e) => setFormData(prev => ({ ...prev, material: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400"
                     placeholder="Algodón 100%"
                   />
                 </div>

@@ -194,7 +194,7 @@ export default function CatalogPage() {
                         cerrarModalProducto()
                         navigate('/virtual-tryon', { state: { productUrl: productoSeleccionado.imagen } })
                       }}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-base font-semibold"
+                      className="w-full bg-gradient-to-r from-gray-800 to-pink-500 text-white py-3 rounded-lg hover:from-gray-800 hover:to-pink-600 transition-colors text-base font-semibold"
                     >
                       <i className="fas fa-user-astronaut mr-2"></i>
                       Probar en Avatar 3D
@@ -205,7 +205,7 @@ export default function CatalogPage() {
                         cerrarModalProducto()
                         setMostrarAR(true)
                       }}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-base font-semibold"
+                      className="w-full bg-gradient-to-r from-gray-800 to-pink-500 text-white py-3 rounded-lg hover:from-gray-800 hover:to-pink-600 transition-colors text-base font-semibold"
                     >
                       <i className="fas fa-camera mr-2"></i>
                       Probar con Cámara AR

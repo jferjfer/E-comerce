@@ -146,7 +146,7 @@ export default function HomePage() {
             <select
               value={filtros.categoria}
               onChange={(e) => setFiltros(prev => ({ ...prev, categoria: e.target.value }))}
-              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20 bg-white"
+              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-gray-400/20 bg-white"
             >
               <option value="">Todas</option>
               <option value="Vestidos">Vestidos</option>
@@ -161,7 +161,7 @@ export default function HomePage() {
               placeholder="Buscar..."
               value={filtros.busqueda}
               onChange={(e) => setFiltros(prev => ({ ...prev, busqueda: e.target.value }))}
-              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm w-28 sm:w-40 focus:ring-2 focus:ring-primary/20"
+              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm w-28 sm:w-40 focus:ring-2 focus:ring-gray-400/20"
             />
 
             <div className="flex-shrink-0 flex gap-1 items-center">
@@ -170,7 +170,7 @@ export default function HomePage() {
                 placeholder="Mín"
                 value={filtros.precioMin}
                 onChange={(e) => setFiltros(prev => ({ ...prev, precioMin: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-primary/20"
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-gray-400/20"
               />
               <span className="text-gray-400 text-xs">-</span>
               <input
@@ -178,14 +178,14 @@ export default function HomePage() {
                 placeholder="Máx"
                 value={filtros.precioMax}
                 onChange={(e) => setFiltros(prev => ({ ...prev, precioMax: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-primary/20"
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-gray-400/20"
               />
             </div>
 
             <select
               value={filtros.ordenar}
               onChange={(e) => setFiltros(prev => ({ ...prev, ordenar: e.target.value }))}
-              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20 bg-white"
+              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-gray-400/20 bg-white"
             >
               <option value="relevancia">Relevancia</option>
               <option value="precio_asc">Precio ↑</option>
@@ -196,7 +196,7 @@ export default function HomePage() {
 
             <button
               onClick={limpiarFiltros}
-              className="flex-shrink-0 text-xs text-gray-500 hover:text-primary px-1.5 py-1.5 rounded-lg hover:bg-purple-50 transition-colors"
+              className="flex-shrink-0 text-xs text-gray-500 hover:text-primary px-1.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <i className="fas fa-times mr-1"></i>
               <span className="hidden sm:inline">Limpiar</span>
@@ -287,7 +287,7 @@ export default function HomePage() {
                       cerrarModalProducto()
                       navigate('/virtual-tryon', { state: { productUrl: productoSeleccionado.imagen } })
                     }}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2.5 sm:py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm sm:text-base"
+                    className="w-full bg-gradient-to-r from-gray-800 to-pink-500 text-white py-2.5 sm:py-3 rounded-lg hover:from-gray-800 hover:to-pink-600 transition-colors text-sm sm:text-base"
                   >
                     <i className="fas fa-user-astronaut mr-2"></i>
                     Probar en Avatar 3D
@@ -298,7 +298,7 @@ export default function HomePage() {
                       cerrarModalProducto()
                       setShowAR(true)
                     }}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2.5 sm:py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm sm:text-base"
+                    className="w-full bg-gradient-to-r from-gray-800 to-pink-500 text-white py-2.5 sm:py-3 rounded-lg hover:from-gray-800 hover:to-pink-600 transition-colors text-sm sm:text-base"
                   >
                     <i className="fas fa-camera mr-2"></i>
                     Probar con Cámara AR

@@ -112,7 +112,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
             className={`flex-shrink-0 flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all duration-200 ${
               agregando
                 ? 'bg-emerald-500 text-white scale-95'
-                : 'bg-primary text-white hover:bg-secondary hover:shadow-md hover:shadow-purple-200'
+                : 'bg-primary text-white hover:bg-secondary hover:shadow-md hover:shadow-gray-300'
             }`}
           >
             <i className={`fas ${agregando ? 'fa-check' : 'fa-cart-plus'} text-xs`}></i>

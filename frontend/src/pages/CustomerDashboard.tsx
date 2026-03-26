@@ -97,8 +97,8 @@ export default function CustomerDashboard() {
 
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <i className="fas fa-star text-purple-600 text-xl"></i>
+              <div className="p-3 bg-gray-100 rounded-lg">
+                <i className="fas fa-star text-gray-700 text-xl"></i>
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Puntos</p>
@@ -138,7 +138,7 @@ export default function CustomerDashboard() {
                 to="/profile" 
                 className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <i className="fas fa-user text-2xl text-purple-600 mb-2"></i>
+                <i className="fas fa-user text-2xl text-gray-700 mb-2"></i>
                 <span className="text-sm font-medium">Mi Perfil</span>
               </Link>
             </div>

@@ -304,7 +304,7 @@ export default function MarketingManagerDashboard() {
                     </div>
                     <div>
                       <span className="text-gray-500">CTR:</span>
-                      <p className="font-medium text-purple-600">{campana.metricas?.ctr || 0}%</p>
+                      <p className="font-medium text-gray-700">{campana.metricas?.ctr || 0}%</p>
                     </div>
                   </div>
                 </div>
@@ -572,7 +572,7 @@ export default function MarketingManagerDashboard() {
                     </div>
                     <div className="flex justify-between pt-2 border-t">
                       <span className="text-gray-600">Usos Totales:</span>
-                      <strong className="text-purple-600">{cupones.reduce((sum, c) => sum + (c.usos_actuales || 0), 0)}</strong>
+                      <strong className="text-gray-700">{cupones.reduce((sum, c) => sum + (c.usos_actuales || 0), 0)}</strong>
                     </div>
                   </div>
                 </div>

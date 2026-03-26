@@ -95,12 +95,12 @@ const OperationsDirectorDashboard = () => {
               <div className="flex justify-between items-center">
                 <span>Atención Cliente</span>
                 <div className="text-right">
-                  <div className="font-bold text-purple-600">89.6%</div>
+                  <div className="font-bold text-gray-700">89.6%</div>
                   <div className="text-xs">Satisfacción</div>
                 </div>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-purple-600 h-2 rounded-full" style={{width: '89.6%'}}></div>
+                <div className="bg-gray-100 h-2 rounded-full" style={{width: '89.6%'}}></div>
               </div>
               
               <div className="flex justify-between items-center">
@@ -189,7 +189,7 @@ const OperationsDirectorDashboard = () => {
               <div className="text-xs text-gray-500">Mejora anual</div>
             </div>
             <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">98.7%</div>
+              <div className="text-2xl font-bold text-gray-700">98.7%</div>
               <div className="text-sm text-gray-600">Uptime Sistemas</div>
               <div className="text-xs text-gray-500">Disponibilidad</div>
             </div>

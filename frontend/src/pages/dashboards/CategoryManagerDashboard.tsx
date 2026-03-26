@@ -158,7 +158,7 @@ const CategoryManagerDashboard = () => {
               <div className="text-xs text-gray-500">vs 4.3★ mercado</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">25%</div>
+              <div className="text-2xl font-bold text-gray-700">25%</div>
               <div className="text-sm text-gray-600">Market Share</div>
               <div className="text-xs text-gray-500">Categoría vestidos</div>
             </div>

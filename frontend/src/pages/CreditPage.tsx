@@ -248,9 +248,9 @@ export default function CreditPage() {
                 <p className="text-sm text-gray-600">Cuota Mensual</p>
                 <p className="text-2xl font-bold text-green-600">${creditoAprobado.cuota_mensual.toLocaleString()}</p>
               </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="bg-gray-100 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Plazo</p>
-                <p className="text-2xl font-bold text-purple-600">{creditoAprobado.plazo_meses} meses</p>
+                <p className="text-2xl font-bold text-gray-700">{creditoAprobado.plazo_meses} meses</p>
               </div>
               <div className="bg-orange-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Tasa Mensual</p>
@@ -306,9 +306,9 @@ export default function CreditPage() {
               <p className="text-sm text-gray-600">Antigüedad</p>
               <p className="text-2xl font-bold text-blue-600">{evaluacion?.meses_antiguedad} meses</p>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="bg-gray-100 p-4 rounded-lg">
               <p className="text-sm text-gray-600">Compras Totales</p>
-              <p className="text-2xl font-bold text-purple-600">${evaluacion?.total_compras.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-700">${evaluacion?.total_compras.toLocaleString()}</p>
             </div>
           </div>
         </div>

@@ -151,7 +151,7 @@ const RegionalManagerDashboard = () => {
               <div className="text-xs text-gray-500">vs 15.8% promedio</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">$47.6</div>
+              <div className="text-2xl font-bold text-gray-700">$47.6</div>
               <div className="text-sm text-gray-600">Ticket Promedio</div>
               <div className="text-xs text-gray-500">vs $42.3 nacional</div>
             </div>

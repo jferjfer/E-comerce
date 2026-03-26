@@ -130,7 +130,7 @@ const CFODashboard = () => {
               <div className="text-sm text-gray-600">Margen Objetivo</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">$950K</div>
+              <div className="text-2xl font-bold text-gray-700">$950K</div>
               <div className="text-sm text-gray-600">EBITDA Proyectado</div>
             </div>
           </div>

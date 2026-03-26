@@ -11,7 +11,7 @@
 /* Estilos base */
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #faf9ff;
+  background-color: #fafafa;
 }
 
 /* Scrollbar personalizado */
@@ -19,14 +19,14 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f5f3ff;
+  background: #f5f5f5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #a78bfa;
+  background: #9ca3af;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #7c3aed;
+  background: #374151;
 }
 
 /* Animaciones */
@@ -92,7 +92,7 @@ body {
 }
 
 .brand-gradient {
-  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%);
+  background: linear-gradient(135deg, #111827 0%, #374151 60%, #4b5563 100%);
 }
 
 /* Hover card elegante */
@@ -101,7 +101,7 @@ body {
 }
 .card-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.15);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
 }
 
 /* Badge de rol */

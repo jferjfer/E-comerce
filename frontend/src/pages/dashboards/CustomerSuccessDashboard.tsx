@@ -237,7 +237,7 @@ export default function CustomerSuccessDashboard() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {pedidos.slice((paginaPedidos-1)*POR_PAGINA, paginaPedidos*POR_PAGINA).map((pedido) => (
-                      <tr key={pedido.id} className="hover:bg-purple-50/30 transition-colors">
+                      <tr key={pedido.id} className="hover:bg-gray-100/30 transition-colors">
                         <td className="px-6 py-4">
                           <span className="font-mono text-sm font-semibold text-gray-800">#{pedido.id}</span>
                           <div className="mt-1"><span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">Creado</span></div>
@@ -300,7 +300,7 @@ export default function CustomerSuccessDashboard() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {devoluciones.slice((paginaDevoluciones-1)*POR_PAGINA, paginaDevoluciones*POR_PAGINA).map((dev) => (
-                      <tr key={dev.id} className="hover:bg-purple-50/30 transition-colors">
+                      <tr key={dev.id} className="hover:bg-gray-100/30 transition-colors">
                         <td className="px-6 py-4 text-sm">{dev.id}</td>
                         <td className="px-6 py-4 text-sm font-mono text-xs">{dev.id_pedido}</td>
                         <td className="px-6 py-4 text-sm">

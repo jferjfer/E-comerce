@@ -19,7 +19,7 @@ export default function PromoBadge({ text, type = 'sale', size = 'md', animated 
       sale: 'bg-red-500 text-white',
       new: 'bg-green-500 text-white',
       hot: 'bg-orange-500 text-white',
-      limited: 'bg-purple-500 text-white',
+      limited: 'bg-gray-100 text-white',
       free_shipping: 'bg-blue-500 text-white'
     }
     

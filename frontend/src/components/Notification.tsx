@@ -8,7 +8,7 @@ export default function NotificationContainer() {
       case 'success': return { bar: 'bg-emerald-500', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', icon: 'fas fa-check-circle text-emerald-500' }
       case 'error':   return { bar: 'bg-red-500',     bg: 'bg-red-50 border-red-200',         text: 'text-red-800',     icon: 'fas fa-times-circle text-red-500' }
       case 'warning': return { bar: 'bg-amber-500',   bg: 'bg-amber-50 border-amber-200',     text: 'text-amber-800',   icon: 'fas fa-exclamation-circle text-amber-500' }
-      default:        return { bar: 'bg-primary',     bg: 'bg-purple-50 border-purple-200',   text: 'text-purple-800',  icon: 'fas fa-info-circle text-primary' }
+      default:        return { bar: 'bg-primary',     bg: 'bg-gray-50 border-gray-200',     text: 'text-gray-800',  icon: 'fas fa-info-circle text-gray-600' }
     }
   }
 

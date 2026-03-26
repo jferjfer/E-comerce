@@ -40,10 +40,10 @@ export default function StyleAnalysisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-800 to-pink-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h1 className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-gray-800 to-pink-600 bg-clip-text text-transparent">
             Descubre Tu Estilo
           </h1>
           <p className="text-center text-gray-600 mb-8">Responde 3 preguntas simples</p>
@@ -61,7 +61,7 @@ export default function StyleAnalysisPage() {
                           setRespuestas({...respuestas, ocasion: op})
                           setStep(2)
                         }}
-                        className="p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all"
+                        className="p-4 border-2 border-gray-200 rounded-xl hover:border-gray-200 hover:bg-gray-100 transition-all"
                       >
                         {op}
                       </button>
@@ -85,8 +85,8 @@ export default function StyleAnalysisPage() {
                         }}
                         className={`p-3 border-2 rounded-xl transition-all ${
                           respuestas.colores.includes(color)
-                            ? 'border-purple-500 bg-purple-50'
-                            : 'border-gray-200 hover:border-purple-300'
+                            ? 'border-gray-200 bg-gray-100'
+                            : 'border-gray-200 hover:border-gray-200'
                         }`}
                       >
                         {color}
@@ -96,7 +96,7 @@ export default function StyleAnalysisPage() {
                   <button
                     onClick={() => setStep(3)}
                     disabled={respuestas.colores.length === 0}
-                    className="mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl disabled:opacity-50"
+                    className="mt-6 w-full bg-gradient-to-r from-gray-800 to-pink-500 text-white py-3 rounded-xl disabled:opacity-50"
                   >
                     Continuar
                   </button>
@@ -115,8 +115,8 @@ export default function StyleAnalysisPage() {
                         }}
                         className={`p-4 border-2 rounded-xl transition-all ${
                           respuestas.estilo === op
-                            ? 'border-purple-500 bg-purple-50'
-                            : 'border-gray-200 hover:border-purple-300'
+                            ? 'border-gray-200 bg-gray-100'
+                            : 'border-gray-200 hover:border-gray-200'
                         }`}
                       >
                         {op}
@@ -126,7 +126,7 @@ export default function StyleAnalysisPage() {
                   <button
                     onClick={handleAnalizar}
                     disabled={!respuestas.estilo || loading}
-                    className="mt-6 w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl disabled:opacity-50"
+                    className="mt-6 w-full bg-gradient-to-r from-gray-800 to-pink-500 text-white py-3 rounded-xl disabled:opacity-50"
                   >
                     {loading ? 'Analizando...' : 'Ver Mi Estilo'}
                   </button>
@@ -135,7 +135,7 @@ export default function StyleAnalysisPage() {
             </>
           ) : (
             <div className="text-center">
-              <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mx-auto mb-6 flex items-center justify-center">
+              <div className="w-24 h-24 bg-gradient-to-r from-gray-800 to-pink-500 rounded-full mx-auto mb-6 flex items-center justify-center">
                 <i className="fas fa-star text-white text-4xl"></i>
               </div>
               <h2 className="text-2xl font-bold mb-4">Tu Estilo es: {respuestas.estilo}</h2>
@@ -145,7 +145,7 @@ export default function StyleAnalysisPage() {
               </p>
               <button
                 onClick={() => navigate('/catalog')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 rounded-xl"
+                className="bg-gradient-to-r from-gray-800 to-pink-500 text-white px-8 py-3 rounded-xl"
               >
                 Ver Productos Recomendados
               </button>

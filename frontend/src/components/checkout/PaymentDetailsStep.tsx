@@ -61,7 +61,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
                   onChange={(e) => handleCardChange('number', e.target.value)}
                   placeholder="1234 5678 9012 3456"
                   maxLength={19}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                 />
               </div>
               
@@ -74,7 +74,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
                   value={cardData.name}
                   onChange={(e) => handleCardChange('name', e.target.value.toUpperCase())}
                   placeholder="JUAN PÉREZ"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                 />
               </div>
               
@@ -89,7 +89,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
                     onChange={(e) => handleCardChange('expiry', e.target.value)}
                     placeholder="MM/AA"
                     maxLength={5}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -102,7 +102,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
                     onChange={(e) => handleCardChange('cvv', e.target.value)}
                     placeholder="123"
                     maxLength={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -120,9 +120,9 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
 
       {selectedMethod === 'interno' && (
         <div className="space-y-4">
-          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl p-6">
-            <h4 className="font-bold text-primary mb-3 flex items-center">
-              <i className="fas fa-star mr-2"></i>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+            <h4 className="font-bold text-gray-800 mb-3 flex items-center">
+              <i className="fas fa-star mr-2 text-gold"></i>
               Crédito StyleHub Pre-aprobado
             </h4>
             <p className="text-gray-700 mb-4">Selecciona el plan de cuotas que mejor se adapte a ti:</p>
@@ -130,7 +130,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
             <div className="space-y-3">
               {[3, 6, 12].map(cuotas => (
                 <label key={cuotas} className="flex items-center p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                  <input type="radio" name="cuotas" className="mr-3 w-4 h-4 text-primary focus:ring-primary" />
+                  <input type="radio" name="cuotas" className="mr-3 w-4 h-4 text-primary focus:ring-gray-400" />
                   <div className="flex-1">
                     <span className="font-semibold">{cuotas} cuotas de {formatPrice(Math.ceil(total / cuotas))}</span>
                     {cuotas <= 6 && (

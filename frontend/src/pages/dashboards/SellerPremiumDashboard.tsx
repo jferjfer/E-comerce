@@ -169,7 +169,7 @@ const SellerPremiumDashboard = () => {
               <div className="text-xs text-gray-500">Reportes detallados, métricas</div>
             </div>
             <div className="text-center p-4 border rounded-lg">
-              <Users className="mx-auto h-8 w-8 text-purple-600 mb-2" />
+              <Users className="mx-auto h-8 w-8 text-gray-700 mb-2" />
               <div className="font-medium">Clientes VIP</div>
               <div className="text-xs text-gray-500">Acceso a base premium</div>
             </div>
@@ -200,7 +200,7 @@ const SellerPremiumDashboard = () => {
               <div className="text-xs text-gray-500">Enero 2024</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600">💎</div>
+              <div className="text-3xl font-bold text-gray-700">💎</div>
               <div className="text-sm text-gray-600">Status Premium</div>
               <div className="text-xs text-gray-500">Desde 2023</div>
             </div>

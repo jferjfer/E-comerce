@@ -45,10 +45,10 @@ export default function SuccessStep({ orderId, onClose }: SuccessStepProps) {
           <p className="font-medium text-blue-800">Email enviado</p>
           <p className="text-blue-600">Confirmación en tu correo</p>
         </div>
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <i className="fas fa-truck text-purple-600 text-xl mb-2"></i>
-          <p className="font-medium text-purple-800">Preparando envío</p>
-          <p className="text-purple-600">1-2 días hábiles</p>
+        <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
+          <i className="fas fa-truck text-gray-700 text-xl mb-2"></i>
+          <p className="font-medium text-gray-700">Preparando envío</p>
+          <p className="text-gray-700">1-2 días hábiles</p>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <i className="fas fa-map-marker-alt text-green-600 text-xl mb-2"></i>

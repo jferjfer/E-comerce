@@ -31,7 +31,7 @@ interface Devolucion {
 
 const BADGE: Record<string, string> = {
   Confirmado: 'bg-blue-100 text-blue-800',
-  Enviado: 'bg-purple-100 text-purple-800',
+  Enviado: 'bg-gray-100 text-gray-700',
   Entregado: 'bg-green-100 text-green-800',
   Cancelado: 'bg-red-100 text-red-800',
 }
@@ -161,9 +161,9 @@ export default function LogisticsCoordinatorDashboard() {
             <p className="text-3xl font-bold text-blue-600">{confirmados.length}</p>
             <p className="text-xs text-gray-500 mt-1">pedidos confirmados</p>
           </div>
-          <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-purple-500">
+          <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-gray-200">
             <p className="text-sm text-gray-600">En Tránsito</p>
-            <p className="text-3xl font-bold text-purple-600">{enviados.length}</p>
+            <p className="text-3xl font-bold text-gray-700">{enviados.length}</p>
             <p className="text-xs text-gray-500 mt-1">pedidos enviados</p>
           </div>
           <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500">
@@ -192,11 +192,11 @@ export default function LogisticsCoordinatorDashboard() {
           </button>
           <button
             onClick={() => setTab('enviados')}
-            className={`px-5 py-2 rounded-lg font-medium transition-colors ${tab === 'enviados' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border'}`}
+            className={`px-5 py-2 rounded-lg font-medium transition-colors ${tab === 'enviados' ? 'bg-gray-100 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border'}`}
           >
             <i className="fas fa-shipping-fast mr-2"></i>
             En Tránsito
-            {enviados.length > 0 && <span className="ml-2 bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">{enviados.length}</span>}
+            {enviados.length > 0 && <span className="ml-2 bg-gray-100 text-white text-xs px-2 py-0.5 rounded-full">{enviados.length}</span>}
           </button>
           <button
             onClick={() => setTab('devoluciones')}
@@ -237,7 +237,7 @@ export default function LogisticsCoordinatorDashboard() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {paginados.map((pedido) => (
-                      <tr key={pedido.id} className="hover:bg-purple-50/30 transition-colors">
+                      <tr key={pedido.id} className="hover:bg-gray-100/30 transition-colors">
                         <td className="px-6 py-4">
                           <span className="font-mono text-sm font-semibold text-gray-800">#{pedido.id}</span>
                           <div className="mt-1"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BADGE[pedido.estado] || 'bg-gray-100 text-gray-700'}`}>{pedido.estado}</span></div>
@@ -251,7 +251,7 @@ export default function LogisticsCoordinatorDashboard() {
                         <td className="px-6 py-4 text-sm text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
                         <td className="px-6 py-4">
                           {pedido.estado === 'Confirmado' && (
-                            <button onClick={() => cambiarEstado(pedido.id, 'Enviado', 'Despachado por Logística')} disabled={procesando === pedido.id} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2">
+                            <button onClick={() => cambiarEstado(pedido.id, 'Enviado', 'Despachado por Logística')} disabled={procesando === pedido.id} className="bg-gray-100 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-50 flex items-center gap-2">
                               <i className="fas fa-shipping-fast"></i> Marcar Enviado
                             </button>
                           )}
