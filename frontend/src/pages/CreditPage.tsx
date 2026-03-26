@@ -43,8 +43,8 @@ export default function CreditPage() {
         },
         body: JSON.stringify({
           usuario_id: usuario?.id,
-          fecha_registro: usuario?.fecha_creacion || '2024-04-26T00:00:00',
-          total_compras_historico: usuario?.total_compras_historico || 3500000,
+          fecha_registro: (usuario as any)?.fecha_creacion || '2024-04-26T00:00:00',
+          total_compras_historico: (usuario as any)?.total_compras_historico || 3500000,
           numero_compras: 7
         })
       });

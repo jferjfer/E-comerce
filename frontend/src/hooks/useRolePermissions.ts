@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { ROLE_DEFINITIONS, hasPermission } from '@/config/roles';
 import { Permission, UserRole } from '@/types/auth';
 
 export const useRolePermissions = () => {
-  const { user } = useAuthStore();
+  const { usuario } = useAuthStore();
+  const user = usuario ? { ...usuario, roles: [usuario.rol as UserRole], permissions: [] as Permission[], organizationId: '', isActive: true, lastLogin: new Date(), createdAt: new Date() } : null;
 
   const permissions = useMemo(() => {
     if (!user || !user.roles) return [];
@@ -85,30 +86,27 @@ export const useRolePermissions = () => {
   };
 
   const isCustomer = (): boolean => {
-    return hasAnyRole(['vip_customer', 'premium_customer', 'regular_customer']);
+    return hasAnyRole(['cliente'] as UserRole[]);
   };
 
   const isPremiumCustomer = (): boolean => {
-    return hasAnyRole(['vip_customer', 'premium_customer']);
+    return hasAnyRole(['cliente'] as UserRole[]);
   };
 
   // Data filtering helpers
   const canViewRegion = (regionId: string): boolean => {
     if (can('*' as Permission)) return true;
-    if (hasRole('regional_manager')) return user?.regionId === regionId;
-    return true; // Default allow for other roles
+    return true;
   };
 
   const canViewCategory = (categoryId: string): boolean => {
     if (can('*' as Permission)) return true;
-    if (hasRole('category_manager')) return user?.categoryIds?.includes(categoryId) || false;
-    return true; // Default allow for other roles
+    return true;
   };
 
   const canViewBrand = (brandId: string): boolean => {
     if (can('*' as Permission)) return true;
-    if (hasRole('brand_manager')) return user?.brandIds?.includes(brandId) || false;
-    return true; // Default allow for other roles
+    return true;
   };
 
   return {

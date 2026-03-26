@@ -33,6 +33,9 @@ export default function CustomerSuccessDashboard() {
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState<string | null>(null)
   const [tab, setTab] = useState<'pedidos' | 'devoluciones'>('pedidos')
+  const [paginaPedidos, setPaginaPedidos] = useState(1)
+  const [paginaDevoluciones, setPaginaDevoluciones] = useState(1)
+  const POR_PAGINA = 8
   const { token } = useAuthStore()
   const { addNotification } = useNotificationStore()
   const socket = useSocket()
@@ -212,7 +215,7 @@ export default function CustomerSuccessDashboard() {
           </div>
         ) : tab === 'pedidos' ? (
           /* ── PEDIDOS NUEVOS ── */
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
             {pedidos.length === 0 ? (
               <div className="text-center py-16 text-gray-500">
                 <i className="fas fa-check-circle text-5xl text-green-300 mb-4"></i>
@@ -220,120 +223,113 @@ export default function CustomerSuccessDashboard() {
                 <p className="text-sm mt-1">Todos los pedidos han sido procesados</p>
               </div>
             ) : (
-              <table className="min-w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Productos</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {pedidos.map((pedido) => (
-                    <tr key={pedido.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <span className="font-mono text-sm font-semibold text-gray-800">#{pedido.id}</span>
-                        <div className="mt-1">
-                          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">Creado</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <p className="font-medium text-gray-800">{pedido.nombre_cliente}</p>
-                        <p className="text-gray-500 text-xs">{pedido.email_cliente}</p>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {(pedido.productos || []).length} producto(s)
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold text-green-700">
-                        {formatPrice(pedido.total)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => cambiarEstadoPedido(pedido.id, 'Confirmado', 'Confirmado por Customer Success')}
-                            disabled={procesando === pedido.id}
-                            className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
-                          >
-                            <i className="fas fa-check"></i>
-                            Confirmar
-                          </button>
-                          <button
-                            onClick={() => cambiarEstadoPedido(pedido.id, 'Cancelado', 'Cancelado por Customer Success')}
-                            disabled={procesando === pedido.id}
-                            className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-sm hover:bg-red-200 disabled:opacity-50 flex items-center gap-1"
-                          >
-                            <i className="fas fa-times"></i>
-                            Cancelar
-                          </button>
-                        </div>
-                      </td>
+              <>
+                <table className="min-w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Productos</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {pedidos.slice((paginaPedidos-1)*POR_PAGINA, paginaPedidos*POR_PAGINA).map((pedido) => (
+                      <tr key={pedido.id} className="hover:bg-purple-50/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="font-mono text-sm font-semibold text-gray-800">#{pedido.id}</span>
+                          <div className="mt-1"><span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">Creado</span></div>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <p className="font-medium text-gray-800">{pedido.nombre_cliente}</p>
+                          <p className="text-gray-500 text-xs">{pedido.email_cliente}</p>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{(pedido.productos || []).length} producto(s)</td>
+                        <td className="px-6 py-4 text-sm font-bold text-emerald-700">{formatPrice(pedido.total)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button onClick={() => cambiarEstadoPedido(pedido.id, 'Confirmado', 'Confirmado por Customer Success')} disabled={procesando === pedido.id} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
+                              <i className="fas fa-check"></i> Confirmar
+                            </button>
+                            <button onClick={() => cambiarEstadoPedido(pedido.id, 'Cancelado', 'Cancelado por Customer Success')} disabled={procesando === pedido.id} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-sm hover:bg-red-200 disabled:opacity-50 flex items-center gap-1">
+                              <i className="fas fa-times"></i> Cancelar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {/* Paginación */}
+                {pedidos.length > POR_PAGINA && (
+                  <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50">
+                    <p className="text-xs text-gray-500">Mostrando {Math.min((paginaPedidos-1)*POR_PAGINA+1, pedidos.length)}–{Math.min(paginaPedidos*POR_PAGINA, pedidos.length)} de {pedidos.length}</p>
+                    <div className="flex gap-1">
+                      <button onClick={() => setPaginaPedidos(p => Math.max(1, p-1))} disabled={paginaPedidos === 1} className="px-3 py-1 text-xs rounded-lg border disabled:opacity-40 hover:bg-white"><i className="fas fa-chevron-left"></i></button>
+                      <button onClick={() => setPaginaPedidos(p => Math.min(Math.ceil(pedidos.length/POR_PAGINA), p+1))} disabled={paginaPedidos >= Math.ceil(pedidos.length/POR_PAGINA)} className="px-3 py-1 text-xs rounded-lg border disabled:opacity-40 hover:bg-white"><i className="fas fa-chevron-right"></i></button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : (
           /* ── DEVOLUCIONES ── */
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
             {devoluciones.length === 0 ? (
               <div className="text-center py-16 text-gray-500">
                 <i className="fas fa-check-circle text-5xl text-green-300 mb-4"></i>
                 <p className="text-lg font-medium">No hay devoluciones pendientes</p>
               </div>
             ) : (
-              <table className="min-w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Razón</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {devoluciones.map((dev) => (
-                    <tr key={dev.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm">{dev.id}</td>
-                      <td className="px-6 py-4 text-sm font-mono text-xs">{dev.id_pedido}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <p className="font-medium">{dev.nombre_cliente || 'N/A'}</p>
-                        <p className="text-gray-500 text-xs">{dev.email_cliente}</p>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{dev.razon}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-red-600">{formatPrice(dev.monto_pedido)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{new Date(dev.fecha_creacion).toLocaleDateString('es-CO')}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => aprobarDevolucion(dev.id)}
-                            disabled={procesando === String(dev.id)}
-                            className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
-                          >
-                            Aprobar
-                          </button>
-                          <button
-                            onClick={() => rechazarDevolucion(dev.id)}
-                            disabled={procesando === String(dev.id)}
-                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700 disabled:opacity-50"
-                          >
-                            Rechazar
-                          </button>
-                        </div>
-                      </td>
+              <>
+                <table className="min-w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Razón</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {devoluciones.slice((paginaDevoluciones-1)*POR_PAGINA, paginaDevoluciones*POR_PAGINA).map((dev) => (
+                      <tr key={dev.id} className="hover:bg-purple-50/30 transition-colors">
+                        <td className="px-6 py-4 text-sm">{dev.id}</td>
+                        <td className="px-6 py-4 text-sm font-mono text-xs">{dev.id_pedido}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <p className="font-medium">{dev.nombre_cliente || 'N/A'}</p>
+                          <p className="text-gray-500 text-xs">{dev.email_cliente}</p>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{dev.razon}</td>
+                        <td className="px-6 py-4 text-sm font-bold text-red-600">{formatPrice(dev.monto_pedido)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(dev.fecha_creacion).toLocaleDateString('es-CO')}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button onClick={() => aprobarDevolucion(dev.id)} disabled={procesando === String(dev.id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50">Aprobar</button>
+                            <button onClick={() => rechazarDevolucion(dev.id)} disabled={procesando === String(dev.id)} className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700 disabled:opacity-50">Rechazar</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {devoluciones.length > POR_PAGINA && (
+                  <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50">
+                    <p className="text-xs text-gray-500">Mostrando {Math.min((paginaDevoluciones-1)*POR_PAGINA+1, devoluciones.length)}–{Math.min(paginaDevoluciones*POR_PAGINA, devoluciones.length)} de {devoluciones.length}</p>
+                    <div className="flex gap-1">
+                      <button onClick={() => setPaginaDevoluciones(p => Math.max(1, p-1))} disabled={paginaDevoluciones === 1} className="px-3 py-1 text-xs rounded-lg border disabled:opacity-40 hover:bg-white"><i className="fas fa-chevron-left"></i></button>
+                      <button onClick={() => setPaginaDevoluciones(p => Math.min(Math.ceil(devoluciones.length/POR_PAGINA), p+1))} disabled={paginaDevoluciones >= Math.ceil(devoluciones.length/POR_PAGINA)} className="px-3 py-1 text-xs rounded-lg border disabled:opacity-40 hover:bg-white"><i className="fas fa-chevron-right"></i></button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

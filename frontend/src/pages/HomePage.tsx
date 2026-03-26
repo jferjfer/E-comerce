@@ -139,7 +139,7 @@ export default function HomePage() {
       </section>
 
       {/* Barra de Filtros */}
-      <section className="sticky top-16 sm:top-20 z-40 bg-white shadow-md border-b">
+      <section className="sticky top-16 sm:top-20 z-30 bg-white shadow-md border-b">
         <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-8 xl:px-12 2xl:px-16">
           <div className="flex flex-wrap gap-2 sm:gap-4 items-center py-3 sm:py-4">
             <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">Filtros:</span>

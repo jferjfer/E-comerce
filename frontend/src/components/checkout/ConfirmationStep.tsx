@@ -90,7 +90,7 @@ export default function ConfirmationStep({ selectedMethod, isLoading, onConfirm,
         <button
           onClick={onBack}
           disabled={isLoading}
-          className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+          className="flex-1 py-3.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
         >
           <i className="fas fa-arrow-left mr-2"></i>
           Volver
@@ -98,7 +98,7 @@ export default function ConfirmationStep({ selectedMethod, isLoading, onConfirm,
         <button
           onClick={onConfirm}
           disabled={isLoading}
-          className="flex-1 py-4 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-bold disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+          className="flex-1 py-3.5 bg-primary text-white rounded-xl hover:bg-secondary transition-colors font-bold disabled:opacity-50 shadow-lg"
         >
           {isLoading ? (
             <span className="flex items-center justify-center">

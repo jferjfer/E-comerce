@@ -144,20 +144,20 @@ export default function AIAssistant() {
       {/* Botón Flotante */}
       <div className="fixed bottom-6 right-6 z-50">
         <div className="relative group">
-          <button 
+          <button
             onClick={() => setIsOpen(true)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-16 h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center animate-pulse"
+            className="brand-gradient text-white w-14 h-14 rounded-2xl shadow-xl hover:shadow-purple-400/50 transition-all duration-300 hover:scale-105 flex items-center justify-center"
           >
-            <i className="fas fa-user-circle text-xl"></i>
+            <i className="fas fa-magic text-lg"></i>
           </button>
-          
-          <div className="absolute bottom-20 right-0 bg-black text-white text-sm px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            ✨ Asesor de Imagen
-            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
+
+          <div className="absolute bottom-16 right-0 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            ✨ Asesora de Imagen
+            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
           </div>
-          
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-            <span className="text-xs text-white font-bold">!</span>
+
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
           </div>
         </div>
       </div>

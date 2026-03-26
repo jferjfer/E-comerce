@@ -16,13 +16,23 @@ module.exports = {
         'serif': ['Playfair Display', 'serif']
       },
       colors: {
-        primary: '#1f2937',
-        secondary: '#374151',
-        accent: '#6b7280',
-        sage: '#9ca3af'
+        primary: '#7c3aed',
+        secondary: '#6d28d9',
+        accent: '#a78bfa',
+        sage: '#ede9fe',
+        rose: '#f43f5e',
+        gold: '#f59e0b'
       },
       animation: {
         'slide-in': 'slideIn 0.3s ease-out',
+        'fade-in': 'fadeIn 0.4s ease-out',
+        'step-enter': 'stepEnter 0.35s ease-out',
+      },
+      keyframes: {
+        stepEnter: {
+          '0%': { opacity: '0', transform: 'translateX(20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        }
       },
       maxWidth: {
         '8xl': '88rem',

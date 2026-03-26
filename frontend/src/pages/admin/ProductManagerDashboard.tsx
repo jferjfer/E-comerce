@@ -28,8 +28,8 @@ export default function ProductManagerDashboard() {
     tags: '',
     en_stock: true
   })
-  const [tallasSeleccionadas, setTallasSeleccionadas] = useState([])
-  const [coloresSeleccionados, setColoresSeleccionados] = useState([])
+  const [tallasSeleccionadas, setTallasSeleccionadas] = useState<string[]>([])
+  const [coloresSeleccionados, setColoresSeleccionados] = useState<string[]>([])
 
   useEffect(() => {
     cargarProductos()

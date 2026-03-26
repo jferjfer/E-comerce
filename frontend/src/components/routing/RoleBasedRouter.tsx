@@ -1,8 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { ROLE_DEFINITIONS, RoleType } from '@/config/roles';
+import { ROLE_DEFINITIONS } from '@/config/roles';
 
-// Importar dashboards implementados
 import CEODashboard from '@/pages/dashboards/CEODashboard';
 import CFODashboard from '@/pages/dashboards/CFODashboard';
 import CMODashboard from '@/pages/dashboards/CMODashboard';
@@ -13,10 +12,9 @@ import ProductManagerDashboard from '@/pages/dashboards/ProductManagerDashboard'
 import SellerPremiumDashboard from '@/pages/dashboards/SellerPremiumDashboard';
 import VIPCustomerDashboard from '@/pages/dashboards/VIPCustomerDashboard';
 
-// Dashboards por implementar
-const RegularCustomerDashboard = () => <div className="p-6"><h1 className="text-2xl font-bold">Regular Customer Dashboard - En desarrollo</h1></div>;
+const RegularCustomerDashboard = () => <div className="p-6"><h1 className="text-2xl font-bold">Dashboard - En desarrollo</h1></div>;
 
-const ROLE_DASHBOARDS = {
+const ROLE_DASHBOARDS: Record<string, React.FC> = {
   ceo: CEODashboard,
   cfo: CFODashboard,
   cmo: CMODashboard,
@@ -30,20 +28,13 @@ const ROLE_DASHBOARDS = {
 };
 
 const RoleBasedRouter: React.FC = () => {
-  const { user } = useAuthStore();
-  
-  if (!user || !user.roles || user.roles.length === 0) {
-    return <RegularCustomerDashboard />;
-  }
+  const { usuario: user } = useAuthStore();
 
-  // Obtener el rol principal (el de mayor jerarquía)
-  const primaryRole = user.roles.reduce((highest: RoleType, current: RoleType) => {
-    const currentLevel = ROLE_DEFINITIONS[current]?.level || 999;
-    const highestLevel = ROLE_DEFINITIONS[highest]?.level || 999;
-    return currentLevel < highestLevel ? current : highest;
-  });
+  if (!user) return <RegularCustomerDashboard />;
 
-  const DashboardComponent = ROLE_DASHBOARDS[primaryRole as keyof typeof ROLE_DASHBOARDS] || RegularCustomerDashboard;
+  const primaryRole = user.rol;
+  const DashboardComponent = ROLE_DASHBOARDS[primaryRole] || RegularCustomerDashboard;
+  const roleInfo = ROLE_DEFINITIONS[primaryRole];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -51,18 +42,12 @@ const RoleBasedRouter: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {ROLE_DEFINITIONS[primaryRole]?.name || 'Dashboard'}
-              </h2>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_DEFINITIONS[primaryRole]?.color || 'bg-gray-100'} text-white`}>
-                Nivel {ROLE_DEFINITIONS[primaryRole]?.level || 'N/A'}
+              <h2 className="text-lg font-semibold text-gray-900">{roleInfo?.name || 'Dashboard'}</h2>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${roleInfo?.color || 'bg-gray-100'} text-white`}>
+                Nivel {roleInfo?.level || 'N/A'}
               </span>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">
-                {user.name || user.email}
-              </span>
-            </div>
+            <span className="text-sm text-gray-600">{user.nombre || user.email}</span>
           </div>
         </div>
       </div>

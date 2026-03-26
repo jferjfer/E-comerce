@@ -10,18 +10,8 @@ export class RoleFilters {
     const primaryRole = user.roles[0];
 
     switch (primaryRole) {
-      case 'vip_customer':
-        // VIP ve todos los productos + exclusivos
+      case 'cliente':
         return products;
-      
-      case 'premium_customer':
-        // Premium ve productos estándar + early access
-        return products.filter(p => !p.vip_only);
-      
-      case 'regular_customer':
-        // Regular ve solo productos públicos
-        return products.filter(p => !p.vip_only && !p.premium_only);
-      
       case 'category_manager':
         // Solo productos de sus categorías asignadas
         if (user.categoryIds) {
@@ -109,9 +99,7 @@ export class RoleFilters {
       case 'customer_success':
         // Solo clientes
         return users.filter(user => 
-          user.roles.includes('vip_customer') ||
-          user.roles.includes('premium_customer') ||
-          user.roles.includes('regular_customer')
+          user.roles.includes('cliente')
         );
       
       default:

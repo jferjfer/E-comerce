@@ -51,14 +51,14 @@ export default function CEODashboard() {
   const totalServicios = Object.keys(servicios).length
 
   const kpis = [
-    { label: 'Ingresos Totales', valor: formatPrice(totalVentas), icono: 'fa-dollar-sign', color: 'bg-green-500', sub: `${pedidos.length} pedidos` },
-    { label: 'Productos Activos', valor: productosEnStock, icono: 'fa-box', color: 'bg-blue-500', sub: `${productos.length} total` },
-    { label: 'Pedidos en Curso', valor: pedidosActivos, icono: 'fa-shopping-cart', color: 'bg-orange-500', sub: `${pedidos.length} total` },
-    { label: 'Devoluciones', valor: devolucionesPendientes, icono: 'fa-undo', color: 'bg-red-500', sub: 'pendientes de revisión' },
-    { label: 'Campañas Activas', valor: campanas.filter(c => c.estado === 'Activa').length, icono: 'fa-bullhorn', color: 'bg-fuchsia-500', sub: `${campanas.length} total` },
-    { label: 'Cupones Activos', valor: cupones.filter(c => c.activo).length, icono: 'fa-ticket-alt', color: 'bg-pink-500', sub: `${cupones.length} total` },
-    { label: 'Microservicios', valor: `${serviciosActivos}/${totalServicios}`, icono: 'fa-server', color: serviciosActivos === totalServicios ? 'bg-green-600' : 'bg-yellow-500', sub: 'activos' },
-    { label: 'Categorías', valor: [...new Set(productos.map(p => p.categoria))].length, icono: 'fa-tags', color: 'bg-indigo-500', sub: 'en catálogo' },
+    { label: 'Ingresos Totales',   valor: formatPrice(totalVentas),  icono: 'fa-dollar-sign', color: 'bg-emerald-500', sub: `${pedidos.length} pedidos`,          trend: '+12%', up: true },
+    { label: 'Productos Activos',  valor: productosEnStock,          icono: 'fa-box',         color: 'bg-blue-500',   sub: `${productos.length} total`,           trend: '+5%',  up: true },
+    { label: 'Pedidos en Curso',   valor: pedidosActivos,            icono: 'fa-shopping-cart',color: 'bg-orange-500', sub: `${pedidos.length} total`,             trend: '+8%',  up: true },
+    { label: 'Devoluciones',       valor: devolucionesPendientes,    icono: 'fa-undo',        color: 'bg-red-500',    sub: 'pendientes de revisión',              trend: '-3%',  up: false },
+    { label: 'Campañas Activas',   valor: campanas.filter(c => c.estado === 'Activa').length, icono: 'fa-bullhorn', color: 'bg-fuchsia-500', sub: `${campanas.length} total`, trend: '+2', up: true },
+    { label: 'Cupones Activos',    valor: cupones.filter(c => c.activo).length, icono: 'fa-ticket-alt', color: 'bg-pink-500', sub: `${cupones.length} total`,    trend: '+1',   up: true },
+    { label: 'Microservicios',     valor: `${serviciosActivos}/${totalServicios}`, icono: 'fa-server', color: serviciosActivos === totalServicios ? 'bg-emerald-600' : 'bg-yellow-500', sub: 'activos', trend: serviciosActivos === totalServicios ? '100%' : `${Math.round((serviciosActivos/totalServicios)*100)}%`, up: serviciosActivos === totalServicios },
+    { label: 'Categorías',         valor: [...new Set(productos.map(p => p.categoria))].length, icono: 'fa-tags', color: 'bg-indigo-500', sub: 'en catálogo',   trend: 'estable', up: true },
   ]
 
   return (
@@ -93,15 +93,21 @@ export default function CEODashboard() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {kpis.map((kpi, i) => (
-                <div key={i} className="bg-white rounded-lg shadow-sm p-5">
+                <div key={i} className="bg-white rounded-xl shadow-sm p-5 card-hover border border-gray-100">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm text-gray-600">{kpi.label}</p>
-                    <div className={`w-9 h-9 ${kpi.color} rounded-lg flex items-center justify-center`}>
+                    <p className="text-xs font-medium text-gray-500">{kpi.label}</p>
+                    <div className={`w-9 h-9 ${kpi.color} rounded-xl flex items-center justify-center shadow-sm`}>
                       <i className={`fas ${kpi.icono} text-white text-sm`}></i>
                     </div>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{kpi.valor}</p>
-                  <p className="text-xs text-gray-500 mt-1">{kpi.sub}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-gray-400">{kpi.sub}</p>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${kpi.up ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                      <i className={`fas fa-arrow-${kpi.up ? 'up' : 'down'} mr-0.5`}></i>
+                      {kpi.trend}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

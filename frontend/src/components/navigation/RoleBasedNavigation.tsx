@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 
 const RoleBasedNavigation = () => {
-  const { user } = useAuthStore();
+  const { usuario: user } = useAuthStore();
   
-  if (!user || !user.roles) return null;
+  if (!user) return null;
 
-  const primaryRole = user.roles[0];
+  const primaryRole = user.rol;
   const roleConfig = ROLE_DEFINITIONS[primaryRole];
 
   const getNavigationItems = () => {

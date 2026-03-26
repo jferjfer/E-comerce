@@ -33,7 +33,7 @@ export const useTiendaAuth = create<TiendaAuth>()(
             
             // Sincronizar carrito en background (no bloquear login)
             const establecerToken = useTiendaCarrito.getState().establecerToken
-            setTimeout(() => establecerToken(resultado.token), 0)
+            setTimeout(() => establecerToken(resultado.token!), 0)
             
             return true
           }

@@ -5,9 +5,6 @@ import { useUserStore } from '@/store/useUserStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { formatPrice } from '@/utils/sanitize'
-import ARModal from './ARModal'
-import PromoBadge from './promotions/PromoBadge'
-import PriceDisplay from './promotions/PriceDisplay'
 
 interface PropsTarjetaProducto {
   product: Producto
@@ -15,19 +12,21 @@ interface PropsTarjetaProducto {
 }
 
 export default function ProductCard({ product: producto, onViewDetails }: PropsTarjetaProducto) {
+  const [agregando, setAgregando] = useState(false)
   const agregarItem = useCartStore(state => state.agregarItem)
   const { addToFavorites, removeFromFavorites, isFavorite } = useUserStore()
   const { usuario } = useAuthStore()
   const addNotification = useNotificationStore(state => state.addNotification)
-  
-  const esCliente = usuario?.rol === 'cliente'
-  
-  const manejarAgregarCarrito = () => {
+
+  const manejarAgregarCarrito = async () => {
+    setAgregando(true)
     agregarItem(producto)
     addNotification(`${producto.nombre} agregado al carrito`, 'success')
+    setTimeout(() => setAgregando(false), 600)
   }
-  
-  const manejarToggleFavorito = () => {
+
+  const manejarToggleFavorito = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (isFavorite(producto.id)) {
       removeFromFavorites(producto.id)
       addNotification('Eliminado de favoritos', 'info')
@@ -36,89 +35,88 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
       addNotification('Agregado a favoritos', 'success')
     }
   }
-  
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <i 
-        key={`star-${producto.id}-${i}`} 
-        className={`fas fa-star text-xs ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`}
-      />
+
+  const renderStars = (rating: number) => (
+    Array.from({ length: 5 }, (_, i) => (
+      <i key={i} className={`fas fa-star text-[10px] ${i < Math.round(rating) ? 'text-amber-400' : 'text-gray-200'}`} />
     ))
-  }
-  
+  )
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      {/* Imagen del producto */}
-      <div className="relative">
-        <img 
+    <div className="bg-white rounded-2xl overflow-hidden card-hover border border-gray-100 group">
+      {/* Imagen */}
+      <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '120%' }}>
+        <img
           src={producto.imagen}
           alt={producto.nombre}
-          className="w-full h-40 sm:h-48 md:h-56 object-cover"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
-        
+
+        {/* Overlay acciones */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
+
         {/* Botón favorito */}
-        <button 
+        <button
           onClick={manejarToggleFavorito}
-          className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white/90 backdrop-blur-sm p-1.5 sm:p-2 rounded-full shadow-md hover:bg-white transition-colors"
+          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
+            isFavorite(producto.id)
+              ? 'bg-rose-500 text-white scale-110'
+              : 'bg-white/90 text-gray-400 hover:text-rose-500 hover:scale-110'
+          }`}
         >
-          <i className={`${isFavorite(producto.id) ? 'fas text-red-500' : 'far text-gray-600'} fa-heart text-xs sm:text-sm`}></i>
+          <i className={`${isFavorite(producto.id) ? 'fas' : 'far'} fa-heart text-xs`}></i>
         </button>
-        
-        {/* Badge ECO */}
-        {producto.es_eco && (
-          <span className="absolute top-2 left-2 sm:top-3 sm:left-3 text-[10px] sm:text-xs bg-green-100 text-green-700 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded font-semibold">
-            ECO
-          </span>
-        )}
-      </div>
 
-      {/* Contenido */}
-      <div className="p-2.5 sm:p-3 md:p-4 flex flex-col gap-1.5 sm:gap-2">
-        {/* Categoría y calificación */}
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide font-medium">
-            {producto.categoria}
-          </span>
-          <div className="flex gap-0.5">
-            {renderStars(producto.calificacion)}
-          </div>
-        </div>
-
-        {/* Nombre */}
-        <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800 line-clamp-2">{producto.nombre}</h3>
-
-        {/* Descripción */}
-        <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 hidden sm:block">{producto.descripcion}</p>
-
-        {/* Precio y compatibilidad */}
-        <div className="flex items-baseline justify-between mt-1">
-          <span className="text-base sm:text-lg md:text-xl font-bold text-primary">
-            {formatPrice(producto.precio)}
-          </span>
-          {producto.compatibilidad && (
-            <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1.5 sm:px-2 py-0.5 sm:py-1 rounded font-semibold">
+        {/* Badges */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
+          {producto.es_eco && (
+            <span className="bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+              ECO
+            </span>
+          )}
+          {producto.compatibilidad && producto.compatibilidad >= 90 && (
+            <span className="bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
               {producto.compatibilidad}% IA
             </span>
           )}
         </div>
 
-        {/* Botones de acción */}
-        <div className="flex gap-1.5 sm:gap-2 mt-1 sm:mt-2">
-          <button 
+        {/* Botón ver detalles en hover */}
+        <button
+          onClick={() => onViewDetails(producto)}
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white text-gray-800 text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap border border-gray-100"
+        >
+          <i className="fas fa-eye mr-1.5 text-primary"></i>
+          Ver detalles
+        </button>
+      </div>
+
+      {/* Contenido */}
+      <div className="p-3">
+        {/* Categoría y estrellas */}
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{producto.categoria}</span>
+          <div className="flex gap-0.5">{renderStars(producto.calificacion)}</div>
+        </div>
+
+        {/* Nombre */}
+        <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2">{producto.nombre}</h3>
+
+        {/* Precio y botón */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-base font-bold text-primary">{formatPrice(producto.precio)}</span>
+          <button
             onClick={manejarAgregarCarrito}
-            className="flex-1 flex items-center justify-center gap-1 sm:gap-2 bg-primary text-white py-1.5 sm:py-2 px-2 sm:px-4 rounded hover:bg-secondary transition-colors font-medium text-xs sm:text-sm"
+            disabled={agregando}
+            className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-200 ${
+              agregando
+                ? 'bg-emerald-500 text-white scale-95'
+                : 'bg-primary text-white hover:bg-secondary hover:shadow-md hover:shadow-purple-200'
+            }`}
           >
-            <i className="fas fa-shopping-cart text-xs sm:text-sm"></i>
-            <span className="hidden sm:inline">Agregar</span>
-            <span className="sm:hidden">+</span>
-          </button>
-          <button 
-            onClick={() => onViewDetails(producto)}
-            className="bg-gray-100 text-gray-700 p-1.5 sm:p-2 rounded hover:bg-gray-200 transition-colors"
-            title="Ver detalles"
-          >
-            <i className="fas fa-eye text-xs sm:text-sm"></i>
+            <i className={`fas ${agregando ? 'fa-check' : 'fa-cart-plus'}`}></i>
+            <span>{agregando ? '¡Listo!' : 'Agregar'}</span>
           </button>
         </div>
       </div>
