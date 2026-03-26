@@ -2,9 +2,79 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 const axios = require('axios');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 const port = process.env.PUERTO || 3000;
+
+// Crear servidor HTTP + Socket.IO
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      'http://localhost:3005',
+      'http://149.130.182.9:3005',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://149.130.182.9:3000',
+      'http://149.130.182.9'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Mapa de usuarios conectados: usuarioId -> Set de socketIds
+const usuariosConectados = new Map();
+
+io.on('connection', (socket) => {
+  console.log(`🔌 Socket conectado: ${socket.id}`);
+
+  // Cliente se identifica con su usuarioId
+  socket.on('identificar', (usuarioId) => {
+    if (!usuarioId) return;
+    const id = String(usuarioId);
+    if (!usuariosConectados.has(id)) usuariosConectados.set(id, new Set());
+    usuariosConectados.get(id).add(socket.id);
+    socket.join(`usuario_${id}`);
+    console.log(`👤 Usuario ${id} identificado (socket: ${socket.id})`);
+  });
+
+  // Roles admin se unen a sala general
+  socket.on('unirse_admin', (rol) => {
+    socket.join('admins');
+    console.log(`🔑 Admin [${rol}] unido a sala admins (socket: ${socket.id})`);
+  });
+
+  socket.on('disconnect', () => {
+    usuariosConectados.forEach((sockets, userId) => {
+      sockets.delete(socket.id);
+      if (sockets.size === 0) usuariosConectados.delete(userId);
+    });
+    console.log(`🔌 Socket desconectado: ${socket.id}`);
+  });
+});
+
+// Endpoint interno para que microservicios emitan eventos
+app.post('/interno/emitir', express.json(), (req, res) => {
+  const { evento, datos, usuarioId, sala } = req.body;
+  if (!evento) return res.status(400).json({ error: 'evento requerido' });
+
+  if (usuarioId) {
+    io.to(`usuario_${usuarioId}`).emit(evento, datos);
+    console.log(`📡 Evento [${evento}] emitido a usuario ${usuarioId}`);
+  }
+  if (sala) {
+    io.to(sala).emit(evento, datos);
+    console.log(`📡 Evento [${evento}] emitido a sala ${sala}`);
+  }
+  if (!usuarioId && !sala) {
+    io.emit(evento, datos);
+  }
+
+  res.json({ ok: true });
+});
 
 // CORS - Configuración unificada
 const ALLOWED_ORIGINS = [
@@ -509,7 +579,7 @@ app.get('/', (req, res) => {
   });
 });
 
-const server = app.listen(port, () => {
+const server = httpServer.listen(port, () => {
   console.log(`🚀 Simple Gateway ejecutándose en puerto ${port}`);
   console.log(`📋 ${Object.keys(services).length} rutas configuradas`);
   console.log(`🔗 Estado servicios: http://localhost:${port}/estado-servicios`);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { formatPrice } from '@/utils/sanitize'
+import { useSocket } from '@/hooks/useSocket'
 
 interface Pedido {
   id: string
@@ -34,6 +35,7 @@ export default function CustomerSuccessDashboard() {
   const [tab, setTab] = useState<'pedidos' | 'devoluciones'>('pedidos')
   const { token } = useAuthStore()
   const { addNotification } = useNotificationStore()
+  const socket = useSocket()
 
   const cargarDatos = async () => {
     setCargando(true)
@@ -56,6 +58,17 @@ export default function CustomerSuccessDashboard() {
   }
 
   useEffect(() => { cargarDatos() }, [])
+
+  // Tiempo real: nuevo pedido o cambio de estado
+  useEffect(() => {
+    const recargar = () => cargarDatos()
+    socket.on('pedido_nuevo', recargar)
+    socket.on('pedido_actualizado', recargar)
+    return () => {
+      socket.off('pedido_nuevo', recargar)
+      socket.off('pedido_actualizado', recargar)
+    }
+  }, [socket])
 
   const cambiarEstadoPedido = async (pedidoId: string, nuevoEstado: string, comentario: string) => {
     setProcesando(pedidoId)

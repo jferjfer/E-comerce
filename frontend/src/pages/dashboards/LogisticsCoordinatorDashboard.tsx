@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { formatPrice } from '@/utils/sanitize'
+import { useSocket } from '@/hooks/useSocket'
 
 interface Pedido {
   id: string
@@ -43,6 +44,7 @@ export default function LogisticsCoordinatorDashboard() {
   const [tab, setTab] = useState<'confirmados' | 'enviados' | 'devoluciones'>('confirmados')
   const { token } = useAuthStore()
   const { addNotification } = useNotificationStore()
+  const socket = useSocket()
 
   const cargarDatos = async () => {
     setCargando(true)
@@ -72,6 +74,13 @@ export default function LogisticsCoordinatorDashboard() {
   }
 
   useEffect(() => { cargarDatos() }, [])
+
+  // Tiempo real: pedido confirmado llega a logística
+  useEffect(() => {
+    const recargar = () => cargarDatos()
+    socket.on('pedido_actualizado', recargar)
+    return () => { socket.off('pedido_actualizado', recargar) }
+  }, [socket])
 
   const cambiarEstado = async (pedidoId: string, nuevoEstado: string, comentario: string) => {
     setProcesando(pedidoId)

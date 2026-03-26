@@ -18,6 +18,82 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+const MENSAJES_ESTADO = {
+  Confirmado: {
+    emoji: '✅',
+    titulo: '¡Pedido Confirmado!',
+    mensaje: 'Tu pedido ha sido revisado y confirmado. Estamos preparándolo para enviarlo.',
+    color: '#11998e'
+  },
+  Enviado: {
+    emoji: '🚚',
+    titulo: '¡Tu pedido está en camino!',
+    mensaje: 'Tu pedido ha sido despachado y está en camino hacia ti.',
+    color: '#667eea'
+  },
+  Entregado: {
+    emoji: '🎉',
+    titulo: '¡Pedido Entregado!',
+    mensaje: '¡Tu pedido ha sido entregado exitosamente! Esperamos que disfrutes tu compra.',
+    color: '#38ef7d'
+  },
+  Cancelado: {
+    emoji: '❌',
+    titulo: 'Pedido Cancelado',
+    mensaje: 'Tu pedido ha sido cancelado. Si tienes dudas, contáctanos.',
+    color: '#e74c3c'
+  }
+};
+
+async function enviarNotificacionEstado(email, nombreUsuario, pedidoId, nuevoEstado, total) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+  const info = MENSAJES_ESTADO[nuevoEstado];
+  if (!info) return;
+
+  const urlPedidos = `${process.env.FRONTEND_URL || 'http://localhost:3005'}/orders`;
+  const formatearPrecio = (v) =>
+    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9">
+      <div style="background:${info.color};padding:40px 30px;text-align:center">
+        <div style="font-size:52px;margin-bottom:10px">${info.emoji}</div>
+        <h1 style="color:white;margin:0;font-size:26px">${info.titulo}</h1>
+        <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:14px">Pedido #${pedidoId}</p>
+      </div>
+      <div style="background:white;padding:40px 30px">
+        <p style="font-size:16px;color:#333">Hola <strong>${nombreUsuario}</strong>,</p>
+        <p style="color:#555;line-height:1.6">${info.mensaje}</p>
+        <div style="background:#f8f8f8;border-radius:8px;padding:20px;margin:24px 0;text-align:center">
+          <p style="margin:0;color:#666;font-size:14px">Número de pedido</p>
+          <p style="margin:8px 0;font-size:22px;font-weight:bold;color:#333;font-family:monospace">#${pedidoId}</p>
+          <p style="margin:0;color:#666;font-size:14px">Total</p>
+          <p style="margin:8px 0;font-size:20px;font-weight:bold;color:${info.color}">${formatearPrecio(total)}</p>
+          <p style="margin:8px 0;font-size:14px;color:#888">Estado actual: <strong style="color:${info.color}">${nuevoEstado}</strong></p>
+        </div>
+        <div style="text-align:center;margin:30px 0">
+          <a href="${urlPedidos}" style="background:${info.color};color:white;padding:14px 32px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;display:inline-block">Ver Mis Pedidos</a>
+        </div>
+      </div>
+      <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
+        <p style="color:#888;font-size:12px;margin:0">Este es un correo automático, no respondas a este mensaje.<br>Estilo y Moda — Tu tienda de confianza</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Estilo y Moda" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `${info.emoji} Pedido #${pedidoId} — ${nuevoEstado} | Estilo y Moda`,
+      html
+    });
+    console.log(`📧 Notificación de estado [${nuevoEstado}] enviada a ${email}`);
+  } catch (err) {
+    console.log(`⚠️ No se pudo enviar notificación a ${email}:`, err.message);
+  }
+}
+
 async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
 
@@ -534,6 +610,27 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       );
     }
 
+    // Notificar al cliente por correo y en tiempo real (sin bloquear respuesta)
+    pool.query('SELECT usuario_id, total FROM pedido WHERE id = $1', [pedidoId])
+      .then(async (pedidoData) => {
+        if (!pedidoData.rows.length) return;
+        const { usuario_id, total } = pedidoData.rows[0];
+
+        // Emitir evento WebSocket via gateway
+        axios.post('http://gateway:3000/interno/emitir', {
+          evento: 'pedido_actualizado',
+          usuarioId: usuario_id,
+          sala: 'admins',
+          datos: { pedidoId, estadoAnterior, estado_nuevo: estado, total, usuario_id }
+        }, { timeout: 2000 }).catch(() => {});
+
+        // Enviar correo
+        const resU = await axios.get(`http://auth-service:3011/api/usuarios/${usuario_id}`, { timeout: 2000 });
+        const { email, nombre } = resU.data.usuario || {};
+        if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, estado, total || 0);
+      })
+      .catch(e => console.log(`⚠️ No se pudo notificar cambio de estado:`, e.message));
+
     res.json({
       mensaje: 'Estado actualizado exitosamente',
       pedido_id: pedidoId,
@@ -629,6 +726,13 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     } catch (errCorreo) {
       console.log('⚠️ No se pudo obtener datos del usuario para correo:', errCorreo.message);
     }
+
+    // Notificar a admins en tiempo real que hay un pedido nuevo
+    axios.post('http://gateway:3000/interno/emitir', {
+      evento: 'pedido_nuevo',
+      sala: 'admins',
+      datos: { pedidoId, total: carrito.total, usuario_id: usuarioId, estado: 'Creado' }
+    }, { timeout: 2000 }).catch(() => {});
 
     res.json({
       mensaje: 'Pedido creado exitosamente',

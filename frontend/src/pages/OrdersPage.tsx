@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { api } from '@/services/api'
 import { formatPrice } from '@/utils/sanitize'
 import { Link } from 'react-router-dom'
+import { useSocket } from '@/hooks/useSocket'
 
 interface ProductoPedido {
   id: string
@@ -32,32 +33,9 @@ export default function OrdersPage() {
   const [motivoDevolucion, setMotivoDevolucion] = useState('')
   const [devoluciones, setDevoluciones] = useState<Record<string, any>>({})
   const { token } = useAuthStore()
+  const socket = useSocket()
 
-  useEffect(() => {
-    cargarPedidos()
-  }, [])
-
-  const cargarPedidos = async () => {
-    if (!token) return
-
-    setCargando(true)
-    try {
-      const resultado = await api.obtenerPedidos(token)
-      if (resultado.exito) {
-        setPedidos(resultado.pedidos)
-        // Cargar detalles de productos
-        await cargarDetallesProductos(resultado.pedidos)
-        // Cargar devoluciones
-        await cargarDevoluciones(resultado.pedidos)
-      }
-    } catch (error) {
-      console.error('Error cargando pedidos:', error)
-    } finally {
-      setCargando(false)
-    }
-  }
-
-  const cargarDevoluciones = async (pedidosList: Pedido[]) => {
+  const cargarDevoluciones = useCallback(async (pedidosList: Pedido[]) => {
     if (!token) return
     const devs: Record<string, any> = {}
     for (const pedido of pedidosList) {
@@ -74,19 +52,16 @@ export default function OrdersPage() {
       }
     }
     setDevoluciones(devs)
-  }
+  }, [token])
 
   const cargarDetallesProductos = async (pedidosList: Pedido[]) => {
     const productosIds = new Set<string>()
-    
-    // Recopilar todos los IDs de productos
     pedidosList.forEach(pedido => {
       pedido.productos?.forEach(producto => {
         productosIds.add(producto.id)
       })
     })
 
-    // Cargar detalles de cada producto
     const detalles: Record<string, any> = {}
     for (const productoId of productosIds) {
       try {
@@ -99,13 +74,45 @@ export default function OrdersPage() {
         console.error(`Error cargando producto ${productoId}:`, error)
       }
     }
-    
     setProductosDetalle(detalles)
   }
 
+  const cargarPedidos = useCallback(async () => {
+    if (!token) return
+    setCargando(true)
+    try {
+      const resultado = await api.obtenerPedidos(token)
+      if (resultado.exito) {
+        setPedidos(resultado.pedidos)
+        await cargarDetallesProductos(resultado.pedidos)
+        await cargarDevoluciones(resultado.pedidos)
+      }
+    } catch (error) {
+      console.error('Error cargando pedidos:', error)
+    } finally {
+      setCargando(false)
+    }
+  }, [token, cargarDevoluciones])
+
+  useEffect(() => {
+    cargarPedidos()
+  }, [cargarPedidos])
+
+  useEffect(() => {
+    const onPedidoActualizado = (datos: any) => {
+      setPedidos(prev => prev.map(p =>
+        p.id === datos.pedidoId ? { ...p, estado: datos.estado_nuevo } : p
+      ))
+      if (pedidoSeleccionado === datos.pedidoId) {
+        verHistorial(datos.pedidoId)
+      }
+    }
+    socket.on('pedido_actualizado', onPedidoActualizado)
+    return () => { socket.off('pedido_actualizado', onPedidoActualizado) }
+  }, [socket, pedidoSeleccionado])
+
   const verHistorial = async (pedidoId: string) => {
     if (!token) return
-
     try {
       const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/historial`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -147,7 +154,6 @@ export default function OrdersPage() {
 
   const confirmarDevolucion = async () => {
     if (!token || !pedidoDevolucion || !motivoDevolucion) return
-
     try {
       const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoDevolucion}/devolucion`, {
         method: 'POST',
@@ -157,12 +163,11 @@ export default function OrdersPage() {
         },
         body: JSON.stringify({ razon: motivoDevolucion })
       })
-
       if (response.ok) {
         alert('✅ Solicitud de devolución enviada exitosamente')
         setMostrarModalDevolucion(false)
         setMotivoDevolucion('')
-        cargarPedidos() // Recargar para mostrar la devolución
+        cargarPedidos()
       } else {
         const data = await response.json()
         alert('❌ ' + (data.error || 'Error al solicitar devolución'))
@@ -264,7 +269,6 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* Mostrar productos del pedido */}
                 {pedidoSeleccionado === pedido.id && pedido.productos && pedido.productos.length > 0 && (
                   <div className="mt-4 bg-gray-50 rounded-lg p-4">
                     <h4 className="font-semibold text-gray-800 mb-3">
@@ -278,8 +282,8 @@ export default function OrdersPage() {
                           <div key={index} className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
                             <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                               {detalleProducto?.imagen ? (
-                                <img 
-                                  src={detalleProducto.imagen} 
+                                <img
+                                  src={detalleProducto.imagen}
                                   alt={detalleProducto.nombre}
                                   className="w-full h-full object-cover"
                                 />
@@ -289,7 +293,6 @@ export default function OrdersPage() {
                                 </div>
                               )}
                             </div>
-                            
                             <div className="flex-1">
                               <h5 className="font-semibold text-gray-800">
                                 {detalleProducto?.nombre || `Producto #${producto.id.slice(0, 8)}`}
@@ -311,7 +314,6 @@ export default function OrdersPage() {
                                 )}
                               </div>
                             </div>
-                            
                             <div className="text-right">
                               <p className="text-lg font-bold text-primary">
                                 {formatPrice(producto.precio * producto.cantidad)}
@@ -324,8 +326,6 @@ export default function OrdersPage() {
                         )
                       })}
                     </div>
-                    
-                    {/* Resumen del pedido */}
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="flex justify-between items-center">
                         <span className="font-semibold text-gray-700">Total del pedido:</span>
@@ -369,7 +369,6 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* Modal Solicitar Devolución */}
         {mostrarModalDevolucion && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
