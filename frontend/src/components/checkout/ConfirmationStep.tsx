@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useCartStore } from '@/store/useCartStore'
 import { metodosPago } from '@/data/products'
 import { formatPrice } from '@/utils/sanitize'
@@ -5,110 +6,155 @@ import { formatPrice } from '@/utils/sanitize'
 interface ConfirmationStepProps {
   selectedMethod: string
   isLoading: boolean
-  onConfirm: () => void
+  onConfirm: (plazo?: number) => void
   onBack: () => void
+  limiteCredito?: number
 }
 
-export default function ConfirmationStep({ selectedMethod, isLoading, onConfirm, onBack }: ConfirmationStepProps) {
+export default function ConfirmationStep({
+  selectedMethod,
+  isLoading,
+  onConfirm,
+  onBack,
+  limiteCredito
+}: ConfirmationStepProps) {
   const { items, obtenerPrecioTotal } = useCartStore()
   const method = metodosPago.find(m => m.id === selectedMethod)
   const total = obtenerPrecioTotal()
+  const [plazoSeleccionado, setPlazoSeleccionado] = useState(6)
+
+  const esCredito = selectedMethod === 'credito_interno'
+  const esEfectivo = selectedMethod === 'efectivo'
+
+  const calcularCuota = (plazo: number) => Math.ceil(total / plazo)
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Confirma tu pedido</h3>
-        <p className="text-gray-600">Revisa los detalles antes de finalizar</p>
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900">Confirma tu pedido</h3>
+        <p className="text-sm text-gray-500 mt-0.5">Revisa antes de finalizar</p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
-          <i className="fas fa-shopping-bag text-primary mr-2"></i>
-          Resumen del pedido
-        </h4>
-        
-        <div className="space-y-3 mb-4">
+      {/* Productos */}
+      <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            {items.length} producto(s)
+          </p>
+        </div>
+        <div className="divide-y divide-gray-100">
           {items.map((item) => (
-            <div key={`${item.id}-${item.talla}-${item.color}`} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-              <div className="flex items-center space-x-3">
-                <img src={item.imagen} alt={item.nombre} className="w-12 h-12 object-cover rounded-lg" />
-                <div>
-                  <p className="font-medium text-gray-800">{item.nombre}</p>
-                  <p className="text-sm text-gray-500">
-                    {item.talla} • {item.color} • Cant: {item.cantidad}
-                  </p>
-                </div>
+            <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+              <img src={item.imagen} alt={item.nombre} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">{item.nombre}</p>
+                <p className="text-xs text-gray-500">Cant: {item.cantidad}</p>
               </div>
-              <span className="font-semibold text-gray-800">
+              <span className="text-sm font-semibold text-gray-800 flex-shrink-0">
                 {formatPrice(item.precio * item.cantidad)}
               </span>
             </div>
           ))}
         </div>
-
-        <div className="border-t border-gray-200 pt-4">
-          <div className="flex justify-between items-center text-xl font-bold text-gray-800">
-            <span>Total:</span>
-            <span className="text-primary">{formatPrice(total)}</span>
-          </div>
+        <div className="px-4 py-3 border-t border-gray-200 flex justify-between items-center bg-gray-50">
+          <span className="font-semibold text-gray-700 text-sm">Total</span>
+          <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
         </div>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-        <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-          <i className={`${method?.icono} text-primary mr-2`}></i>
-          Método de pago
-        </h4>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-gray-800">{method?.nombre}</p>
-            <p className="text-sm text-gray-600">{method?.descripcion}</p>
+      {/* Método seleccionado */}
+      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+          <i className={`${method?.icono} text-white text-xs`}></i>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-800">{method?.nombre}</p>
+          <p className="text-xs text-gray-500">{method?.descripcion}</p>
+        </div>
+      </div>
+
+      {/* Selector de cuotas para crédito interno */}
+      {esCredito && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-gray-700">Elige tu plan de cuotas:</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[3, 6, 12].map(plazo => (
+              <button
+                key={plazo}
+                onClick={() => setPlazoSeleccionado(plazo)}
+                className={`p-3 rounded-xl border-2 text-center transition-all ${
+                  plazoSeleccionado === plazo
+                    ? 'border-primary bg-gray-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <p className="text-sm font-bold text-gray-900">{plazo} cuotas</p>
+                <p className="text-xs text-primary font-semibold mt-0.5">
+                  {formatPrice(calcularCuota(plazo))}/mes
+                </p>
+                {plazo <= 6 && (
+                  <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Sin interés</p>
+                )}
+              </button>
+            ))}
           </div>
-          <div className="text-right">
-            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <i className="fas fa-check text-green-600 text-sm"></i>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Total a pagar</span>
+              <span className="font-bold text-gray-900">{formatPrice(total)}</span>
+            </div>
+            <div className="flex justify-between text-sm mt-1">
+              <span className="text-gray-600">Cuota mensual</span>
+              <span className="font-bold text-primary">{formatPrice(calcularCuota(plazoSeleccionado))}</span>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex items-start space-x-3">
-          <i className="fas fa-info-circle text-blue-600 mt-0.5"></i>
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">Información importante:</p>
-            <ul className="space-y-1 text-blue-700">
-              <li>• Recibirás un email de confirmación</li>
-              <li>• El envío se procesará en 1-2 días hábiles</li>
-              <li>• Puedes rastrear tu pedido desde tu cuenta</li>
-            </ul>
-          </div>
+      {/* Aviso efectivo */}
+      {esEfectivo && (
+        <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <i className="fas fa-info-circle text-amber-500 mt-0.5 flex-shrink-0"></i>
+          <p className="text-xs text-amber-800">
+            Se generará un código de pago. Tu pedido quedará <strong>pendiente</strong> hasta confirmar el pago en Efecty o Baloto.
+          </p>
         </div>
-      </div>
+      )}
 
-      <div className="flex space-x-4">
+      {/* Aviso pago en línea */}
+      {selectedMethod === 'pago_en_linea' && (
+        <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <i className="fas fa-info-circle text-blue-500 mt-0.5 flex-shrink-0"></i>
+          <p className="text-xs text-blue-800">
+            Serás redirigido a la pasarela de pagos para completar tu transacción de forma segura.
+          </p>
+        </div>
+      )}
+
+      {/* Botones */}
+      <div className="flex gap-3">
         <button
           onClick={onBack}
           disabled={isLoading}
-          className="flex-1 py-3.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+          className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm disabled:opacity-50"
         >
           <i className="fas fa-arrow-left mr-2"></i>
           Volver
         </button>
         <button
-          onClick={onConfirm}
+          onClick={() => onConfirm(esCredito ? plazoSeleccionado : undefined)}
           disabled={isLoading}
-          className="flex-1 py-3.5 bg-primary text-white rounded-xl hover:bg-secondary transition-colors font-bold disabled:opacity-50 shadow-lg"
+          className="flex-1 py-3 bg-primary text-white rounded-xl hover:bg-secondary transition-colors font-bold text-sm disabled:opacity-50"
         >
           {isLoading ? (
-            <span className="flex items-center justify-center">
-              <i className="fas fa-circle-notch fa-spin mr-2"></i>
+            <span className="flex items-center justify-center gap-2">
+              <i className="fas fa-circle-notch fa-spin text-xs"></i>
               Procesando...
             </span>
           ) : (
             <>
-              <i className="fas fa-lock mr-2"></i>
-              Confirmar Pago
+              <i className="fas fa-lock mr-2 text-xs"></i>
+              {esCredito ? 'Confirmar y financiar' : esEfectivo ? 'Generar código' : 'Confirmar pedido'}
             </>
           )}
         </button>

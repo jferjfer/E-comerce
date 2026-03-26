@@ -1,73 +1,111 @@
 import { metodosPago } from '@/data/products'
+import { formatPrice } from '@/utils/sanitize'
+
+interface EvaluacionCredito {
+  califica: boolean
+  limite_aprobado?: number
+  meses_antiguedad?: number
+}
 
 interface PaymentMethodStepProps {
   selectedMethod: string
   onMethodSelect: (methodId: string) => void
   onNext: () => void
+  evaluacionCredito: EvaluacionCredito | null
+  cargandoCredito: boolean
 }
 
-export default function PaymentMethodStep({ selectedMethod, onMethodSelect, onNext }: PaymentMethodStepProps) {
+export default function PaymentMethodStep({
+  selectedMethod,
+  onMethodSelect,
+  onNext,
+  evaluacionCredito,
+  cargandoCredito
+}: PaymentMethodStepProps) {
+
+  // Filtrar métodos: crédito solo si califica
+  const metodosVisibles = metodosPago.filter(m => {
+    if (m.id === 'credito_interno') return evaluacionCredito?.califica === true
+    return true
+  })
+
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Selecciona tu método de pago</h3>
-        <p className="text-gray-600">Elige la opción que más te convenga</p>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900">¿Cómo quieres pagar?</h3>
+        <p className="text-sm text-gray-500 mt-0.5">Selecciona un método de pago</p>
       </div>
 
-      <div className="grid gap-4">
-        {metodosPago.map((method) => (
-          <div
-            key={method.id}
-            onClick={() => onMethodSelect(method.id)}
-            className={`group border-2 rounded-xl p-6 cursor-pointer transition-all duration-200 ${
-              selectedMethod === method.id
-                ? 'border-primary bg-gray-50 shadow-lg'
-                : 'border-gray-200 hover:border-gray-400 hover:shadow-md'
-            }`}
-          >
-            <div className="flex items-center space-x-4">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${
-                selectedMethod === method.id
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-primary'
+      {/* Métodos de pago */}
+      <div className="space-y-3">
+        {metodosVisibles.map((method) => {
+          const seleccionado = selectedMethod === method.id
+          const esCredito = method.id === 'credito_interno'
+
+          return (
+            <div
+              key={method.id}
+              onClick={() => onMethodSelect(method.id)}
+              className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150 ${
+                seleccionado
+                  ? 'border-primary bg-gray-50'
+                  : 'border-gray-200 hover:border-gray-300 bg-white'
+              }`}
+            >
+              {/* Icono */}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                seleccionado ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'
               }`}>
-                <i className={`${method.icono} text-2xl`}></i>
+                <i className={`${method.icono} text-sm`}></i>
               </div>
-              <div className="flex-1">
-                <h4 className={`text-xl font-bold transition-colors ${
-                  selectedMethod === method.id ? 'text-primary' : 'text-gray-800'
-                }`}>
-                  {method.nombre}
-                </h4>
-                <p className="text-gray-600 mt-1">{method.descripcion}</p>
-                {method.monto_maximo && (
-                  <p className="text-sm text-green-600 mt-2">
-                    <i className="fas fa-check-circle mr-1"></i>
-                    Hasta ${method.monto_maximo.toLocaleString()}
-                  </p>
-                )}
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-gray-900 text-sm">{method.nombre}</p>
+                  {esCredito && evaluacionCredito?.limite_aprobado && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
+                      Hasta {formatPrice(evaluacionCredito.limite_aprobado)}
+                    </span>
+                  )}
+                  {(method.id === 'pago_en_linea' || method.id === 'efectivo') && (
+                    <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                      Próximamente
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{method.descripcion}</p>
               </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                selectedMethod === method.id
-                  ? 'border-primary bg-primary'
-                  : 'border-gray-300'
+
+              {/* Radio */}
+              <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                seleccionado ? 'border-primary bg-primary' : 'border-gray-300'
               }`}>
-                {selectedMethod === method.id && (
-                  <i className="fas fa-check text-white text-xs"></i>
-                )}
+                {seleccionado && <div className="w-2 h-2 bg-white rounded-full" />}
               </div>
             </div>
+          )
+        })}
+
+        {/* Skeleton mientras carga evaluación de crédito */}
+        {cargandoCredito && (
+          <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 bg-gray-50 animate-pulse">
+            <div className="w-10 h-10 rounded-xl bg-gray-200 flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 bg-gray-200 rounded w-1/3" />
+              <div className="h-2 bg-gray-200 rounded w-1/2" />
+            </div>
           </div>
-        ))}
+        )}
       </div>
 
       <button
         onClick={onNext}
         disabled={!selectedMethod}
-        className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
+        className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ${
           selectedMethod
-            ? 'bg-primary text-white hover:bg-secondary shadow-lg hover:shadow-gray-300 transform hover:-translate-y-0.5'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ? 'bg-primary text-white hover:bg-secondary'
+            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
         }`}
       >
         Continuar

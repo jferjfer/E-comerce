@@ -7,7 +7,6 @@ import { api } from '@/services/api'
 import Modal from './Modal'
 import CheckoutSteps from './checkout/CheckoutSteps'
 import PaymentMethodStep from './checkout/PaymentMethodStep'
-import PaymentDetailsStep from './checkout/PaymentDetailsStep'
 import ConfirmationStep from './checkout/ConfirmationStep'
 import SuccessStep from './checkout/SuccessStep'
 
@@ -20,47 +19,62 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const navigate = useNavigate()
   const { items, obtenerPrecioTotal, vaciarCarrito } = useCartStore()
   const { usuario, token, estaAutenticado } = useAuthStore()
+
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedMethod, setSelectedMethod] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
-  
-  // Verificar autenticación al abrir
+  const [plazoCredito, setPlazoCredito] = useState<number | undefined>()
+
+  // Evaluación de crédito
+  const [evaluacionCredito, setEvaluacionCredito] = useState<any>(null)
+  const [cargandoCredito, setCargandoCredito] = useState(false)
+  const [creditoId, setCreditoId] = useState<string | null>(null)
+
+  const total = obtenerPrecioTotal()
+
+  // Al abrir, evaluar crédito silenciosamente si es cliente
   useEffect(() => {
-    if (isOpen && !estaAutenticado) {
-      setShowLoginPrompt(true)
-    } else {
-      setShowLoginPrompt(false)
+    if (isOpen && estaAutenticado && usuario?.rol === 'cliente' && token) {
+      setCargandoCredito(true)
+      api.evaluarCredito(token, usuario)
+        .then(data => setEvaluacionCredito(data))
+        .catch(() => setEvaluacionCredito({ califica: false }))
+        .finally(() => setCargandoCredito(false))
     }
-  }, [isOpen, estaAutenticado])
-  
-  // Mostrar prompt de login si no está autenticado
-  if (showLoginPrompt) {
+  }, [isOpen, estaAutenticado, usuario, token])
+
+  // Reset al cerrar
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentStep(1)
+      setSelectedMethod('')
+      setError(null)
+      setOrderId(null)
+      setPlazoCredito(undefined)
+      setCreditoId(null)
+    }
+  }, [isOpen])
+
+  // Prompt login
+  if (isOpen && !estaAutenticado) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Iniciar Sesión" size="md">
-        <div className="text-center py-8">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-user-lock text-primary text-2xl"></i>
+      <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
+        <div className="text-center py-6 space-y-4">
+          <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+            <i className="fas fa-user-lock text-gray-500 text-xl"></i>
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para continuar</h3>
-          <p className="text-gray-600 mb-6">Necesitas una cuenta para completar tu compra</p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => {
-                onClose()
-                navigate('/login')
-              }}
-              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors"
-            >
-              Iniciar Sesión
-            </button>
-            <button
-              onClick={onClose}
-              className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors"
-            >
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Inicia sesión para continuar</h3>
+            <p className="text-sm text-gray-500 mt-1">Necesitas una cuenta para completar tu compra</p>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50">
               Cancelar
+            </button>
+            <button onClick={() => { onClose(); navigate('/login') }} className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary">
+              Iniciar Sesión
             </button>
           </div>
         </div>
@@ -68,51 +82,56 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     )
   }
 
-  const total = obtenerPrecioTotal()
-
-  const handleMethodSelect = (methodId: string) => {
-    setSelectedMethod(methodId)
-    setError(null)
-  }
-
-  const nextStep = () => {
-    setCurrentStep(prev => Math.min(prev + 1, 4))
-  }
-
-  const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1))
-  }
-
-  const processPayment = async () => {
-    if (!token) {
-      setError('Debes iniciar sesión para continuar')
-      return
-    }
-    
-    if (usuario?.rol !== 'cliente') {
+  const processPayment = async (plazo?: number) => {
+    if (!token || !usuario) return
+    if (usuario.rol !== 'cliente') {
       setError('Solo los clientes pueden realizar compras')
       return
     }
 
     setIsLoading(true)
     setError(null)
+    setPlazoCredito(plazo)
 
     try {
+      // 1. Crear el pedido
       const resultado = await api.procesarCheckout(token, {
-        usuario: usuario,
-        items: items,
-        total: total,
         metodoPago: selectedMethod,
         direccion_envio: 'Dirección predeterminada'
       })
 
-      if (resultado.exito) {
-        setOrderId(resultado.orden.id)
-        setCurrentStep(4)
-        vaciarCarrito()
-      } else {
-        setError(resultado.error || 'Error al procesar el pago')
+      if (!resultado.exito) {
+        setError(resultado.error || 'Error al procesar el pedido')
+        return
       }
+
+      const pedidoId = resultado.orden.id
+
+      // 2. Si es crédito interno: solicitar crédito y hacer cargo
+      if (selectedMethod === 'credito_interno' && plazo) {
+        // Solicitar crédito
+        const solicitud = await api.solicitarCreditoInterno(token, usuario.id, total, plazo)
+
+        if (!solicitud.aprobado) {
+          setError(solicitud.razon || 'No se pudo aprobar el crédito')
+          return
+        }
+
+        // Hacer cargo al crédito
+        const cargo = await api.cargarCredito(token, solicitud.credito_id, pedidoId, total)
+        if (cargo.error) {
+          setError('Error al aplicar el crédito')
+          return
+        }
+
+        setCreditoId(solicitud.credito_id)
+      }
+
+      // 3. Éxito
+      setOrderId(pedidoId)
+      setCurrentStep(3)
+      vaciarCarrito()
+
     } catch (err) {
       setError('Ocurrió un error inesperado. Intenta nuevamente.')
     } finally {
@@ -125,81 +144,75 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setSelectedMethod('')
     setOrderId(null)
     setError(null)
+    setPlazoCredito(undefined)
     onClose()
   }
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <PaymentMethodStep
-            selectedMethod={selectedMethod}
-            onMethodSelect={handleMethodSelect}
-            onNext={nextStep}
-          />
-        )
-      case 2:
-        return (
-          <PaymentDetailsStep
-            selectedMethod={selectedMethod}
-            total={total}
-            onNext={nextStep}
-            onBack={prevStep}
-          />
-        )
-      case 3:
-        return (
-          <ConfirmationStep
-            selectedMethod={selectedMethod}
-            isLoading={isLoading}
-            onConfirm={processPayment}
-            onBack={prevStep}
-          />
-        )
-      case 4:
-        return (
-          <SuccessStep
-            orderId={orderId}
-            onClose={handleClose}
-          />
-        )
-      default:
-        return null
-    }
-  }
-
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={currentStep === 4 ? handleClose : onClose} 
-      title={currentStep === 4 ? '' : 'Checkout'} 
-      size="lg"
+    <Modal
+      isOpen={isOpen}
+      onClose={currentStep === 3 ? handleClose : onClose}
+      title={currentStep === 3 ? '' : 'Finalizar compra'}
+      size="md"
     >
-      <div className="space-y-6">
-        {currentStep < 4 && (
+      <div className="space-y-5">
+
+        {/* Indicador de pasos (solo en pasos 1 y 2) */}
+        {currentStep < 3 && (
           <>
-            <CheckoutSteps currentStep={currentStep} totalSteps={4} />
-            
-            <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-xl p-3 sm:p-4 shadow-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 flex items-center text-sm">
-                  <i className="fas fa-shopping-bag mr-2 text-primary"></i>
-                  {items.length} producto(s)
-                </span>
-                <span className="text-lg sm:text-2xl font-bold text-primary">{formatPrice(total)}</span>
-              </div>
+            <CheckoutSteps currentStep={currentStep} totalSteps={2} />
+
+            {/* Resumen total */}
+            <div className="flex justify-between items-center px-1">
+              <span className="text-sm text-gray-500">
+                <i className="fas fa-shopping-bag mr-1.5"></i>
+                {items.length} producto(s)
+              </span>
+              <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
             </div>
           </>
         )}
 
+        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center animate-shake">
-            <i className="fas fa-exclamation-circle mr-2"></i>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+            <i className="fas fa-exclamation-circle flex-shrink-0"></i>
             {error}
           </div>
         )}
 
-        {renderStepContent()}
+        {/* Paso 1: Método de pago */}
+        {currentStep === 1 && (
+          <PaymentMethodStep
+            selectedMethod={selectedMethod}
+            onMethodSelect={(id) => { setSelectedMethod(id); setError(null) }}
+            onNext={() => setCurrentStep(2)}
+            evaluacionCredito={evaluacionCredito}
+            cargandoCredito={cargandoCredito}
+          />
+        )}
+
+        {/* Paso 2: Confirmación */}
+        {currentStep === 2 && (
+          <ConfirmationStep
+            selectedMethod={selectedMethod}
+            isLoading={isLoading}
+            onConfirm={processPayment}
+            onBack={() => setCurrentStep(1)}
+            limiteCredito={evaluacionCredito?.limite_aprobado}
+          />
+        )}
+
+        {/* Paso 3: Éxito */}
+        {currentStep === 3 && (
+          <SuccessStep
+            orderId={orderId}
+            onClose={handleClose}
+            metodoPago={selectedMethod}
+            cuotaMensual={plazoCredito ? Math.ceil(total / plazoCredito) : undefined}
+            plazo={plazoCredito}
+          />
+        )}
       </div>
     </Modal>
   )

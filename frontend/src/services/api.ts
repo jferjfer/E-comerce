@@ -30,7 +30,7 @@ const MICROSERVICES = {
 const transformarProducto = (productoBackend: any): Producto => ({
   id: productoBackend.id?.toString() || '',
   nombre: productoBackend.nombre || '',
-  precio: Math.round((productoBackend.precio || 0) * 100), // Backend en pesos, frontend en centavos
+  precio: productoBackend.precio || 0,
   imagen: productoBackend.imagen || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
   descripcion: productoBackend.descripcion || 'Producto de calidad',
   categoria: productoBackend.categoria || 'General',
@@ -469,6 +469,87 @@ export const api = {
     } catch (error) {
       console.error('❌ Error actualizando perfil:', error);
       return { exito: false, error: 'Error de conexión' };
+    }
+  },
+
+  // ============================================
+  // SERVICIO DE PAGOS - Preparado para pasarela
+  // ============================================
+
+  async iniciarPago(metodoPago: string, monto: number, pedidoId: string, token: string) {
+    // TODO: Cuando se integre la pasarela (Wompi/PayU/MercadoPago),
+    // este método llamará al endpoint de la pasarela y retornará la URL de redirección
+    // Por ahora simula aprobación para pago_en_linea y efectivo
+    console.log(`💳 Iniciando pago: ${metodoPago} - $${monto} - Pedido: ${pedidoId}`);
+    return {
+      exito: true,
+      estado: metodoPago === 'efectivo' ? 'Pendiente' : 'Aprobado',
+      referencia: `REF-${Date.now()}`,
+      // url_redireccion: null  // Aquí irá la URL de la pasarela
+    };
+  },
+
+  async verificarPago(pagoId: string, token: string) {
+    // TODO: Consultar estado del pago en la pasarela
+    console.log(`🔍 Verificando pago: ${pagoId}`);
+    return { exito: true, estado: 'Aprobado' };
+  },
+
+  // ============================================
+  // CRÉDITO INTERNO
+  // ============================================
+
+  async evaluarCredito(token: string, usuario: any) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/credito/evaluar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          usuario_id: parseInt(usuario.id),
+          fecha_registro: (usuario as any).fecha_creacion || new Date(Date.now() - 365*24*60*60*1000).toISOString(),
+          total_compras_historico: (usuario as any).total_compras_historico || 0,
+          numero_compras: (usuario as any).numero_compras || 0
+        })
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('❌ Error evaluando crédito:', error);
+      return { califica: false, razon: 'Error de conexión' };
+    }
+  },
+
+  async solicitarCreditoInterno(token: string, usuarioId: string, monto: number, plazo: number) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/credito/interno/solicitar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          usuario_id: parseInt(usuarioId),
+          monto_solicitado: monto,
+          plazo_meses: plazo
+        })
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('❌ Error solicitando crédito:', error);
+      return { aprobado: false, error: 'Error de conexión' };
+    }
+  },
+
+  async cargarCredito(token: string, creditoId: string, pedidoId: string, monto: number) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/credito/interno/cargo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ credito_id: creditoId, pedido_id: pedidoId, monto })
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('❌ Error cargando crédito:', error);
+      return { error: 'Error de conexión' };
     }
   }
 };

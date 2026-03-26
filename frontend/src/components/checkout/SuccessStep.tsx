@@ -1,88 +1,91 @@
 import { useNavigate } from 'react-router-dom'
+import { formatPrice } from '@/utils/sanitize'
 
 interface SuccessStepProps {
   orderId: string | null
   onClose: () => void
+  metodoPago?: string
+  cuotaMensual?: number
+  plazo?: number
 }
 
-export default function SuccessStep({ orderId, onClose }: SuccessStepProps) {
+export default function SuccessStep({ orderId, onClose, metodoPago, cuotaMensual, plazo }: SuccessStepProps) {
   const navigate = useNavigate()
-
-  const handleVerPedidos = () => {
-    onClose()
-    navigate('/orders')
-  }
+  const esCredito = metodoPago === 'credito_interno'
+  const esEfectivo = metodoPago === 'efectivo'
 
   return (
-    <div className="text-center py-8 animate-fade-in">
-      <div className="relative mb-8">
-        <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center mx-auto shadow-lg animate-bounce">
-          <i className="fas fa-check text-white text-4xl"></i>
-        </div>
-        <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
-          <i className="fas fa-star text-white text-sm"></i>
-        </div>
+    <div className="text-center py-6 space-y-6">
+      {/* Icono */}
+      <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg ${
+        esEfectivo ? 'bg-amber-500' : 'bg-emerald-500'
+      }`}>
+        <i className={`fas ${esEfectivo ? 'fa-clock' : 'fa-check'} text-white text-3xl`}></i>
       </div>
 
-      <h3 className="text-3xl font-bold text-gray-800 mb-3">¡Pago Exitoso!</h3>
-      <p className="text-lg text-gray-600 mb-6">Tu pedido ha sido procesado correctamente</p>
+      {/* Título */}
+      <div>
+        <h3 className="text-2xl font-bold text-gray-900">
+          {esEfectivo ? '¡Pedido creado!' : '¡Pago exitoso!'}
+        </h3>
+        <p className="text-gray-500 mt-1 text-sm">
+          {esEfectivo
+            ? 'Realiza el pago en Efecty o Baloto para confirmar tu pedido'
+            : 'Tu pedido ha sido procesado correctamente'}
+        </p>
+      </div>
 
+      {/* Número de orden */}
       {orderId && (
-        <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-6 mb-8 inline-block shadow-sm">
-          <div className="flex items-center space-x-3 mb-2">
-            <i className="fas fa-receipt text-primary"></i>
-            <span className="text-sm font-medium text-gray-600">Número de orden</span>
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 inline-block w-full">
+          <p className="text-xs text-gray-500 mb-1">Número de orden</p>
+          <p className="font-mono text-lg font-bold text-primary">#{orderId}</p>
+        </div>
+      )}
+
+      {/* Info crédito */}
+      {esCredito && cuotaMensual && plazo && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left space-y-2">
+          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tu plan de cuotas</p>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Cuota mensual</span>
+            <span className="font-bold text-primary">{formatPrice(cuotaMensual)}</span>
           </div>
-          <div className="font-mono text-2xl font-bold text-primary bg-white px-4 py-2 rounded-lg border">
-            {orderId}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Plazo</span>
+            <span className="font-semibold text-gray-800">{plazo} meses</span>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-sm">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <i className="fas fa-envelope text-blue-600 text-xl mb-2"></i>
-          <p className="font-medium text-blue-800">Email enviado</p>
-          <p className="text-blue-600">Confirmación en tu correo</p>
+      {/* Info efectivo */}
+      {esEfectivo && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left">
+          <p className="text-xs font-semibold text-amber-800 mb-1">
+            <i className="fas fa-exclamation-circle mr-1"></i>
+            Tu pedido está pendiente
+          </p>
+          <p className="text-xs text-amber-700">
+            Tienes 48 horas para realizar el pago. Recibirás el código por email.
+          </p>
         </div>
-        <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
-          <i className="fas fa-truck text-gray-700 text-xl mb-2"></i>
-          <p className="font-medium text-gray-700">Preparando envío</p>
-          <p className="text-gray-700">1-2 días hábiles</p>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <i className="fas fa-map-marker-alt text-green-600 text-xl mb-2"></i>
-          <p className="font-medium text-green-800">Seguimiento</p>
-          <p className="text-green-600">Disponible pronto</p>
-        </div>
-      </div>
+      )}
 
-      <div className="space-y-3">
+      {/* Botones */}
+      <div className="space-y-2">
         <button
-          onClick={onClose}
-          className="w-full bg-primary text-white px-8 py-4 rounded-xl hover:bg-secondary transition-all font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 duration-200"
+          onClick={() => { onClose(); navigate('/orders') }}
+          className="w-full bg-primary text-white py-3 rounded-xl hover:bg-secondary transition-colors font-semibold text-sm"
         >
           <i className="fas fa-shopping-bag mr-2"></i>
-          Continuar Comprando
-        </button>
-        
-        <button 
-          onClick={handleVerPedidos}
-          className="w-full border border-gray-300 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-        >
-          <i className="fas fa-user mr-2"></i>
           Ver mis pedidos
         </button>
-      </div>
-
-      <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <div className="flex items-center justify-center space-x-2 text-yellow-800">
-          <i className="fas fa-gift"></i>
-          <span className="font-medium">¡Gracias por tu compra!</span>
-        </div>
-        <p className="text-sm text-yellow-700 mt-1">
-          Comparte tu experiencia y obtén descuentos en tu próxima compra
-        </p>
+        <button
+          onClick={onClose}
+          className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+        >
+          Seguir comprando
+        </button>
       </div>
     </div>
   )

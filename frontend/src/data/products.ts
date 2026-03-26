@@ -60,35 +60,24 @@ export const productosSimulados: Producto[] = [
 
 export const metodosPago: MetodoPago[] = [
   {
-    id: 'Tarjeta',
-    nombre: 'Pago de Contado',
+    id: 'pago_en_linea',
+    nombre: 'Pago en línea',
     tipo: 'contado',
-    descripcion: 'Tarjeta, PSE, Nequi, Efectivo',
+    descripcion: 'Tarjeta, PSE, Nequi, Daviplata',
     icono: 'fas fa-credit-card'
   },
   {
-    id: 'Credito_Interno',
-    nombre: 'Crédito StyleHub',
+    id: 'efectivo',
+    nombre: 'Efectivo',
+    tipo: 'contado',
+    descripcion: 'Efecty, Baloto — genera un código de pago',
+    icono: 'fas fa-money-bill-wave'
+  },
+  {
+    id: 'credito_interno',
+    nombre: 'Obtenlo a cuotas',
     tipo: 'credito',
-    descripcion: 'Financiación hasta 12 meses sin intereses',
-    icono: 'fas fa-store'
-  },
-  {
-    id: 'Credito_Externo',
-    nombre: 'ADDI',
-    tipo: 'externo',
-    descripcion: 'Préstamo instantáneo hasta $5.000.000',
-    icono: 'fas fa-circle',
-    monto_maximo: 5000000,
-    tasa_interes: 1.5
-  },
-  {
-    id: 'PSE',
-    nombre: 'PSE',
-    tipo: 'externo',
-    descripcion: 'Pago seguro en línea',
-    icono: 'fas fa-university',
-    monto_maximo: 10000000,
-    tasa_interes: 0
+    descripcion: 'Financiación propia — 3, 6 o 12 meses',
+    icono: 'fas fa-layer-group'
   }
 ]

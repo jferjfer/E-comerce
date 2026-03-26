@@ -458,6 +458,21 @@ app.all('/api/checkout*', async (req, res) => {
   }
 });
 
+app.all('/api/credito*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${CREDIT_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 app.all('/api/devoluciones*', async (req, res) => {
   try {
     const response = await axios({
