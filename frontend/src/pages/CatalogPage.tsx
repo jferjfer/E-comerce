@@ -79,7 +79,7 @@ export default function CatalogPage() {
 
   return (
     <div className="py-6 sm:py-8 md:py-12 bg-gray-50 min-h-screen">
-      <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-8 xl:px-12 2xl:px-16">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16">
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 md:mb-8">
           <div className="flex flex-wrap gap-2 sm:gap-4 items-center">

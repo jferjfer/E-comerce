@@ -44,7 +44,7 @@ export default function Modal({ isOpen, onClose, children, title, size = 'md' }:
     sm: 'max-w-sm sm:max-w-md',
     md: 'max-w-md sm:max-w-xl md:max-w-2xl',
     lg: 'max-w-lg sm:max-w-2xl md:max-w-3xl lg:max-w-4xl',
-    xl: 'max-w-xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl'
+    xl: 'max-w-xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-screen-xl'
   }
   
   return createPortal(

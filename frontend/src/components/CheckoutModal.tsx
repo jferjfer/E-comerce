@@ -82,7 +82,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     )
   }
 
-  const processPayment = async (plazo?: number) => {
+  const processPayment = async (plazo?: number, codigoBono?: string) => {
     if (!token || !usuario) return
     if (usuario.rol !== 'cliente') {
       setError('Solo los clientes pueden realizar compras')
@@ -107,18 +107,25 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
-      // 2. Si es crédito interno: solicitar crédito y hacer cargo
+      // 2. Aplicar bono si existe
+      if (codigoBono) {
+        await api.aplicarBono(codigoBono, usuario.id, pedidoId)
+      }
+
+      // 3. Si es crédito interno: solicitar crédito y hacer cargo
       if (selectedMethod === 'credito_interno' && plazo) {
-        // Solicitar crédito
-        const solicitud = await api.solicitarCreditoInterno(token, usuario.id, total, plazo)
+        const montoFinal = codigoBono && evaluacionCredito?.monto_bono
+          ? Math.max(0, total - evaluacionCredito.monto_bono)
+          : total
+
+        const solicitud = await api.solicitarCreditoInterno(token, usuario.id, montoFinal, plazo)
 
         if (!solicitud.aprobado) {
           setError(solicitud.razon || 'No se pudo aprobar el crédito')
           return
         }
 
-        // Hacer cargo al crédito
-        const cargo = await api.cargarCredito(token, solicitud.credito_id, pedidoId, total)
+        const cargo = await api.cargarCredito(token, solicitud.credito_id, pedidoId, montoFinal)
         if (cargo.error) {
           setError('Error al aplicar el crédito')
           return
@@ -127,7 +134,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         setCreditoId(solicitud.credito_id)
       }
 
-      // 3. Éxito
+      // 4. Éxito
       setOrderId(pedidoId)
       setCurrentStep(3)
       vaciarCarrito()
@@ -192,7 +199,6 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           />
         )}
 
-        {/* Paso 2: Confirmación */}
         {currentStep === 2 && (
           <ConfirmationStep
             selectedMethod={selectedMethod}

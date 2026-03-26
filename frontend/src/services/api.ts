@@ -551,6 +551,47 @@ export const api = {
       console.error('❌ Error cargando crédito:', error);
       return { error: 'Error de conexión' };
     }
+  },
+
+  // ============================================
+  // BONOS
+  // ============================================
+
+  async validarBono(codigo: string, usuarioId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bonos/validar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo, usuario_id: parseInt(usuarioId) })
+      });
+      return await response.json();
+    } catch (error) {
+      return { valido: false, razon: 'Error de conexión' };
+    }
+  },
+
+  async aplicarBono(codigo: string, usuarioId: string, pedidoId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bonos/aplicar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo, usuario_id: parseInt(usuarioId), pedido_id: pedidoId })
+      });
+      return await response.json();
+    } catch (error) {
+      return { error: 'Error de conexión' };
+    }
+  },
+
+  async obtenerBonosUsuario(usuarioId: string, token: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bonos/usuario/${usuarioId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return await response.json();
+    } catch (error) {
+      return { bonos: [], total: 0, disponibles: 0 };
+    }
   }
 };
 

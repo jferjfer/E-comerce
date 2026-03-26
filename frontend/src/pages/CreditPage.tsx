@@ -117,7 +117,7 @@ export default function CreditPage() {
   if (evaluacion && !evaluacion.califica) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-screen-xl mx-auto">
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-8">
             <div className="flex items-center">
               <div className="text-yellow-500 text-4xl mr-4">⚠️</div>
@@ -291,7 +291,7 @@ export default function CreditPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-screen-xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center">Solicitar Crédito</h1>
 
         {/* Perfil del Cliente */}

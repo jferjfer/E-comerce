@@ -33,7 +33,7 @@ export default function PromoBanner() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 relative z-10">
+      <div className="max-w-screen-2xl mx-auto px-4 relative z-10">
         {/* Título con animación */}
         <div className="text-center mb-8">
           <div className="inline-block">
