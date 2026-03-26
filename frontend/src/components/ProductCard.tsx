@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Producto } from '@/types'
 import { useCartStore } from '@/store/useCartStore'
 import { useUserStore } from '@/store/useUserStore'
-import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { formatPrice } from '@/utils/sanitize'
 
@@ -15,7 +14,6 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
   const [agregando, setAgregando] = useState(false)
   const agregarItem = useCartStore(state => state.agregarItem)
   const { addToFavorites, removeFromFavorites, isFavorite } = useUserStore()
-  const { usuario } = useAuthStore()
   const addNotification = useNotificationStore(state => state.addNotification)
 
   const manejarAgregarCarrito = async () => {
@@ -36,13 +34,6 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
     }
   }
 
-  const renderStars = (rating: number) => (
-    Array.from({ length: 5 }, (_, i) => (
-      <i key={i} className={`fas fa-star text-[10px] ${i < Math.round(rating) ? 'text-amber-400' : 'text-gray-200'}`} />
-    ))
-  )
-
-  return (
     <div className="bg-white rounded-2xl overflow-hidden card-hover border border-gray-100 group">
       {/* Imagen */}
       <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '120%' }}>
@@ -53,7 +44,6 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
           loading="lazy"
         />
 
-        {/* Overlay acciones */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
 
         {/* Botón favorito */}
@@ -68,20 +58,6 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
           <i className={`${isFavorite(producto.id) ? 'fas' : 'far'} fa-heart text-xs`}></i>
         </button>
 
-        {/* Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
-          {producto.es_eco && (
-            <span className="bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-              ECO
-            </span>
-          )}
-          {producto.compatibilidad && producto.compatibilidad >= 90 && (
-            <span className="bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-              {producto.compatibilidad}% IA
-            </span>
-          )}
-        </div>
-
         {/* Botón ver detalles en hover */}
         <button
           onClick={() => onViewDetails(producto)}
@@ -94,12 +70,6 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
 
       {/* Contenido */}
       <div className="p-3">
-        {/* Categoría y estrellas */}
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{producto.categoria}</span>
-          <div className="flex gap-0.5">{renderStars(producto.calificacion)}</div>
-        </div>
-
         {/* Nombre */}
         <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2">{producto.nombre}</h3>
 
