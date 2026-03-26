@@ -34,6 +34,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
     }
   }
 
+  return (
     <div className="bg-white rounded-2xl overflow-hidden card-hover border border-gray-100 group">
       {/* Imagen */}
       <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '120%' }}>
