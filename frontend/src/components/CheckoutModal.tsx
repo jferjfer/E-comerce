@@ -180,13 +180,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           <>
             <CheckoutSteps currentStep={currentStep} totalSteps={4} />
             
-            <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-xl p-4 shadow-sm">
+            <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-xl p-3 sm:p-4 shadow-sm">
               <div className="flex justify-between items-center">
-                <span className="text-gray-700 flex items-center">
+                <span className="text-gray-700 flex items-center text-sm">
                   <i className="fas fa-shopping-bag mr-2 text-primary"></i>
                   {items.length} producto(s)
                 </span>
-                <span className="text-2xl font-bold text-primary">{formatPrice(total)}</span>
+                <span className="text-lg sm:text-2xl font-bold text-primary">{formatPrice(total)}</span>
               </div>
             </div>
           </>

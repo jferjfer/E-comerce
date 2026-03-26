@@ -209,29 +209,26 @@ export default function OrdersPage() {
         ) : (
           <div className="space-y-4">
             {pedidos.map((pedido) => (
-              <div key={pedido.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm font-mono text-gray-700 font-semibold">#{pedido.id}</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getEstadoColor(pedido.estado)}`}>
+              <div key={pedido.id} className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border border-gray-100">
+                <div className="flex items-start justify-between mb-4 gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-xs font-mono text-gray-600 font-semibold truncate max-w-[140px] sm:max-w-none">#{pedido.id}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${getEstadoColor(pedido.estado)}`}>
                         <i className={`fas ${getEstadoIcono(pedido.estado)} mr-1`}></i>
                         {pedido.estado}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs text-gray-500">
                       {new Date(pedido.fecha_creacion).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
                       })}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-primary">{formatPrice(pedido.total)}</p>
-                    <p className="text-sm text-gray-500">{pedido.productos?.length || 0} producto(s)</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-lg sm:text-2xl font-bold text-primary">{formatPrice(pedido.total)}</p>
+                    <p className="text-xs text-gray-500">{pedido.productos?.length || 0} item(s)</p>
                   </div>
                 </div>
 

@@ -13,7 +13,7 @@ export default function NotificationContainer() {
   }
 
   return (
-    <div className="fixed top-20 right-4 z-[9999] space-y-2 max-w-xs w-full pointer-events-none">
+    <div className="fixed top-20 right-2 sm:right-4 z-[9999] space-y-2 w-[calc(100vw-1rem)] max-w-xs pointer-events-none">
       {notifications.map((n) => {
         const s = getStyles(n.type)
         return (

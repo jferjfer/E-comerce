@@ -36,12 +36,15 @@ export default function Header({ onCartClick }: HeaderProps) {
         <div className="flex justify-between items-center h-16 sm:h-20">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl brand-gradient flex items-center justify-center shadow-md group-hover:shadow-purple-300 transition-shadow">
-              <img src="/logo.png" alt="Estilo y Moda" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
+          <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group min-w-0">
+            <div className="w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0 rounded-xl brand-gradient flex items-center justify-center shadow-md group-hover:shadow-purple-300 transition-shadow">
+              <img src="/logo.png" alt="Estilo y Moda" className="w-5 h-5 sm:w-7 sm:h-7 object-contain" />
             </div>
-            <h1 className="text-xl sm:text-3xl font-bold text-primary tracking-wider" style={{ fontFamily: 'Dancing Script, cursive' }}>
-              <TypewriterText text="Estilo y Moda" speed={150} style={{ fontFamily: 'Dancing Script, cursive' }} />
+            <h1 className="text-lg sm:text-3xl font-bold text-primary tracking-wider truncate" style={{ fontFamily: 'Dancing Script, cursive' }}>
+              <span className="hidden xs:inline">
+                <TypewriterText text="Estilo y Moda" speed={150} style={{ fontFamily: 'Dancing Script, cursive' }} />
+              </span>
+              <span className="xs:hidden">E&amp;M</span>
             </h1>
           </Link>
 
@@ -148,9 +151,10 @@ export default function Header({ onCartClick }: HeaderProps) {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="flex items-center space-x-1.5 bg-primary text-white px-4 py-2 text-sm rounded-xl hover:bg-secondary transition-all shadow-sm hover:shadow-purple-300">
+              <Link to="/login" className="flex items-center space-x-1.5 bg-primary text-white px-2.5 sm:px-4 py-2 text-xs sm:text-sm rounded-xl hover:bg-secondary transition-all shadow-sm hover:shadow-purple-300 flex-shrink-0">
                 <i className="fas fa-sign-in-alt text-xs"></i>
-                <span className="font-medium">Iniciar Sesión</span>
+                <span className="hidden sm:inline font-medium">Iniciar Sesión</span>
+                <span className="sm:hidden font-medium">Entrar</span>
               </Link>
             )}
           </div>

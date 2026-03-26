@@ -104,19 +104,20 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
         <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2">{producto.nombre}</h3>
 
         {/* Precio y botón */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-base font-bold text-primary">{formatPrice(producto.precio)}</span>
+        <div className="flex items-center justify-between gap-1.5 mt-auto">
+          <span className="text-sm sm:text-base font-bold text-primary truncate">{formatPrice(producto.precio)}</span>
           <button
             onClick={manejarAgregarCarrito}
             disabled={agregando}
-            className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-200 ${
+            className={`flex-shrink-0 flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all duration-200 ${
               agregando
                 ? 'bg-emerald-500 text-white scale-95'
                 : 'bg-primary text-white hover:bg-secondary hover:shadow-md hover:shadow-purple-200'
             }`}
           >
-            <i className={`fas ${agregando ? 'fa-check' : 'fa-cart-plus'}`}></i>
-            <span>{agregando ? '¡Listo!' : 'Agregar'}</span>
+            <i className={`fas ${agregando ? 'fa-check' : 'fa-cart-plus'} text-xs`}></i>
+            <span className="hidden sm:inline">{agregando ? '¡Listo!' : 'Agregar'}</span>
+            <span className="sm:hidden">{agregando ? '¡Ok!' : '+'}</span>
           </button>
         </div>
       </div>

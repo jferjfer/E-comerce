@@ -141,13 +141,12 @@ export default function HomePage() {
       {/* Barra de Filtros */}
       <section className="sticky top-16 sm:top-20 z-30 bg-white shadow-md border-b">
         <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-8 xl:px-12 2xl:px-16">
-          <div className="flex flex-wrap gap-2 sm:gap-4 items-center py-3 sm:py-4">
-            <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">Filtros:</span>
-
+          {/* Móvil: fila única con scroll horizontal */}
+          <div className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide sm:flex-wrap sm:py-3 sm:gap-3">
             <select
               value={filtros.categoria}
               onChange={(e) => setFiltros(prev => ({ ...prev, categoria: e.target.value }))}
-              className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20"
+              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20 bg-white"
             >
               <option value="">Todas</option>
               <option value="Vestidos">Vestidos</option>
@@ -157,38 +156,36 @@ export default function HomePage() {
               <option value="Calzado">Calzado</option>
             </select>
 
-            <div className="flex gap-1 sm:gap-2 items-center">
-              <input
-                type="text"
-                placeholder="Buscar..."
-                value={filtros.busqueda}
-                onChange={(e) => setFiltros(prev => ({ ...prev, busqueda: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm w-32 sm:w-40 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={filtros.busqueda}
+              onChange={(e) => setFiltros(prev => ({ ...prev, busqueda: e.target.value }))}
+              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm w-28 sm:w-40 focus:ring-2 focus:ring-primary/20"
+            />
 
-            <div className="flex gap-1 sm:gap-2 items-center">
+            <div className="flex-shrink-0 flex gap-1 items-center">
               <input
                 type="number"
                 placeholder="Mín"
                 value={filtros.precioMin}
                 onChange={(e) => setFiltros(prev => ({ ...prev, precioMin: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm w-16 sm:w-24 focus:ring-2 focus:ring-primary/20"
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-primary/20"
               />
-              <span className="text-gray-500 text-xs sm:text-sm">-</span>
+              <span className="text-gray-400 text-xs">-</span>
               <input
                 type="number"
                 placeholder="Máx"
                 value={filtros.precioMax}
                 onChange={(e) => setFiltros(prev => ({ ...prev, precioMax: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm w-16 sm:w-24 focus:ring-2 focus:ring-primary/20"
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
             <select
               value={filtros.ordenar}
               onChange={(e) => setFiltros(prev => ({ ...prev, ordenar: e.target.value }))}
-              className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20 ml-auto"
+              className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20 bg-white"
             >
               <option value="relevancia">Relevancia</option>
               <option value="precio_asc">Precio ↑</option>
@@ -199,13 +196,14 @@ export default function HomePage() {
 
             <button
               onClick={limpiarFiltros}
-              className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 px-1 sm:px-2"
+              className="flex-shrink-0 text-xs text-gray-500 hover:text-primary px-1.5 py-1.5 rounded-lg hover:bg-purple-50 transition-colors"
             >
-              Limpiar
+              <i className="fas fa-times mr-1"></i>
+              <span className="hidden sm:inline">Limpiar</span>
             </button>
 
-            <span className="text-xs sm:text-sm text-gray-600 font-medium">
-              {cargando ? 'Cargando...' : `${productosFiltrados.length}`}
+            <span className="flex-shrink-0 text-xs text-gray-500 font-medium ml-auto">
+              {cargando ? '...' : `${productosFiltrados.length} items`}
             </span>
           </div>
         </div>
