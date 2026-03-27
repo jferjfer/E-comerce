@@ -10,45 +10,38 @@ interface CartModalProps {
 
 export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProps) {
   const { items, eliminarItem, actualizarCantidad, obtenerPrecioTotal, vaciarCarrito } = useCartStore()
-  
+
   const handleQuantityChange = (productId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      eliminarItem(productId)
-    } else {
-      actualizarCantidad(productId, newQuantity)
-    }
+    if (newQuantity <= 0) eliminarItem(productId)
+    else actualizarCantidad(productId, newQuantity)
   }
-  
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Carrito de Compras" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Carrito" size="md">
       <div className="max-h-96 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="text-center py-10">
-            <i className="fas fa-shopping-bag text-4xl text-gray-200 mb-3"></i>
-            <p className="text-gray-400 text-sm">Tu carrito está vacío</p>
+          <div className="text-center py-12">
+            <i className="fas fa-shopping-bag text-3xl text-gray-700 mb-3"></i>
+            <p className="text-gray-500 text-xs tracking-[3px] uppercase">Tu carrito está vacío</p>
           </div>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="flex items-center gap-3 p-3 sm:p-4 border-b last:border-b-0">
-              <img
-                src={item.imagen}
-                className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0"
-                alt={item.nombre}
-              />
+            <div key={item.id} className="flex items-center gap-3 p-3 border-b border-white/5">
+              <img src={item.imagen} className="w-14 h-14 object-cover flex-shrink-0" alt={item.nombre} />
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-sm text-gray-800 truncate">{item.nombre}</h4>
-                <p className="text-primary font-bold text-sm">{formatPrice(item.precio)}</p>
-                <div className="flex items-center gap-1.5 mt-1.5">
+                <h4 className="text-xs text-gray-300 uppercase tracking-wide truncate">{item.nombre}</h4>
+                <p className="font-bodoni text-gold text-sm mt-0.5">{formatPrice(item.precio)}</p>
+                <div className="flex items-center gap-2 mt-1.5">
                   <button
                     onClick={() => handleQuantityChange(item.id, item.cantidad - 1)}
-                    className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 flex-shrink-0"
+                    className="w-6 h-6 border border-white/10 text-gray-400 hover:border-gold/50 hover:text-gold flex items-center justify-center transition-colors"
                   >
                     <i className="fas fa-minus text-[10px]"></i>
                   </button>
-                  <span className="w-6 text-center text-sm font-medium">{item.cantidad}</span>
+                  <span className="text-xs text-gray-300 w-4 text-center">{item.cantidad}</span>
                   <button
                     onClick={() => handleQuantityChange(item.id, item.cantidad + 1)}
-                    className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 flex-shrink-0"
+                    className="w-6 h-6 border border-white/10 text-gray-400 hover:border-gold/50 hover:text-gold flex items-center justify-center transition-colors"
                   >
                     <i className="fas fa-plus text-[10px]"></i>
                   </button>
@@ -56,31 +49,31 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
               </div>
               <button
                 onClick={() => eliminarItem(item.id)}
-                className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="text-gray-700 hover:text-red-400 transition-colors p-1 flex-shrink-0"
               >
-                <i className="fas fa-trash text-xs"></i>
+                <i className="fas fa-times text-xs"></i>
               </button>
             </div>
           ))
         )}
       </div>
-      
+
       {items.length > 0 && (
-        <div className="border-t pt-4 mt-4">
+        <div className="border-t border-white/5 pt-4 mt-2">
           <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-bold">Total: {formatPrice(obtenerPrecioTotal())}</span>
+            <span className="font-bodoni text-xl text-gold">{formatPrice(obtenerPrecioTotal())}</span>
             <button
               onClick={vaciarCarrito}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-xs text-gray-600 hover:text-gray-400 tracking-[3px] uppercase transition-colors"
             >
-              Limpiar carrito
+              Vaciar
             </button>
           </div>
-          <button 
+          <button
             onClick={onCheckout}
-            className="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition-colors"
+            className="w-full bg-gold text-black py-3 text-xs font-semibold tracking-[4px] uppercase hover:bg-gold-light transition-colors"
           >
-            Proceder al Pago
+            Finalizar compra
           </button>
         </div>
       )}

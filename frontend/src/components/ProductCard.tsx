@@ -35,25 +35,25 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
   }
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden card-hover border border-gray-100 group">
+    <div className="bg-[#111111] rounded-none overflow-hidden group border border-white/5 hover:border-gold/30 transition-all duration-500">
       {/* Imagen */}
-      <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '120%' }}>
+      <div className="relative overflow-hidden bg-[#0a0a0a]" style={{ paddingBottom: '130%' }}>
         <img
           src={producto.imagen}
           alt={producto.nombre}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
           loading="lazy"
         />
 
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
         {/* Botón favorito */}
         <button
           onClick={manejarToggleFavorito}
-          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
+          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
             isFavorite(producto.id)
-              ? 'bg-rose-500 text-white scale-110'
-              : 'bg-white/90 text-gray-400 hover:text-rose-500 hover:scale-110'
+              ? 'bg-rose-500 text-white'
+              : 'bg-black/50 text-gray-400 hover:text-rose-400 backdrop-blur-sm'
           }`}
         >
           <i className={`${isFavorite(producto.id) ? 'fas' : 'far'} fa-heart text-xs`}></i>
@@ -62,33 +62,33 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
         {/* Botón ver detalles en hover */}
         <button
           onClick={() => onViewDetails(producto)}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white text-gray-800 text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap border border-gray-100"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm text-gold text-xs font-prata tracking-[3px] uppercase px-5 py-2 opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap border border-gold/40 hover:bg-gold hover:text-black"
         >
-          <i className="fas fa-eye mr-1.5 text-primary"></i>
-          Ver detalles
+          Ver
         </button>
       </div>
 
       {/* Contenido */}
-      <div className="p-3">
+      <div className="p-3 pb-4">
         {/* Nombre */}
-        <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2">{producto.nombre}</h3>
+        <h3 className="text-xs font-normal text-gray-300 uppercase tracking-[1px] line-clamp-2 leading-relaxed mb-2">
+          {producto.nombre}
+        </h3>
 
         {/* Precio */}
-        <p className="text-base font-bold text-primary mb-2">{formatPrice(producto.precio)}</p>
+        <p className="font-bodoni text-base text-gold">{formatPrice(producto.precio)}</p>
 
-        {/* Botón */}
+        {/* Botón agregar */}
         <button
           onClick={manejarAgregarCarrito}
           disabled={agregando}
-          className={`w-full flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-xl transition-all duration-200 ${
+          className={`w-full mt-3 py-2 text-[10px] font-semibold tracking-[3px] uppercase transition-all duration-300 ${
             agregando
-              ? 'bg-emerald-500 text-white scale-95'
-              : 'bg-primary text-white hover:bg-secondary'
+              ? 'bg-gold text-black'
+              : 'bg-transparent border border-white/20 text-gray-300 hover:border-gold hover:text-gold'
           }`}
         >
-          <i className={`fas ${agregando ? 'fa-check' : 'fa-cart-plus'} text-xs`}></i>
-          <span>{agregando ? '¡Agregado!' : 'Agregar al carrito'}</span>
+          {agregando ? '✓ Agregado' : 'Agregar'}
         </button>
       </div>
     </div>

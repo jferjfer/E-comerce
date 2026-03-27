@@ -51,7 +51,7 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex flex-col items-center mb-6">
@@ -61,8 +61,8 @@ export default function LoginPage() {
             </div>
             <p className="font-bodoni italic text-sm text-gold tracking-[4px] uppercase opacity-80">Wear Your Truth</p>
           </div>
-          <h2 className="text-xl font-bold text-gray-900">{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</h2>
-          <p className="text-gray-500 text-sm mt-1">{isLogin ? 'Accede a tu cuenta' : 'Crea tu cuenta de cliente'}</p>
+          <h2 className="text-xl font-prata text-white tracking-widest">{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</h2>
+          <p className="text-gray-500 text-xs mt-1 tracking-wider">{isLogin ? 'Accede a tu cuenta' : 'Crea tu cuenta de cliente'}</p>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -70,18 +70,18 @@ export default function LoginPage() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Nombre *</label>
                   <input type="text" value={formData.nombre} onChange={(e) => setFormData({...formData, nombre: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Apellido *</label>
                   <input type="text" value={formData.apellido} onChange={(e) => setFormData({...formData, apellido: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" required />
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Documento *</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Tipo Documento *</label>
                   <select value={formData.documento_tipo} onChange={(e) => setFormData({...formData, documento_tipo: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" required>
                     <option value="CC">Cédula de Ciudadanía</option>
                     <option value="CE">Cédula de Extranjería</option>
@@ -90,24 +90,24 @@ export default function LoginPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número Documento *</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Número Documento *</label>
                   <input type="text" value={formData.documento_numero} onChange={(e) => setFormData({...formData, documento_numero: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" required />
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Teléfono</label>
                   <input type="tel" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Nacimiento</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Fecha Nacimiento</label>
                   <input type="date" value={formData.fecha_nacimiento} onChange={(e) => setFormData({...formData, fecha_nacimiento: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Género</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Género</label>
                 <select value={formData.genero} onChange={(e) => setFormData({...formData, genero: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
                   <option value="">Seleccionar</option>
                   <option value="Masculino">Masculino</option>
@@ -119,17 +119,17 @@ export default function LoginPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Dirección</label>
                 <input type="text" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" />
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Ciudad</label>
                   <input type="text" value={formData.ciudad} onChange={(e) => setFormData({...formData, ciudad: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Departamento</label>
                   <select value={formData.departamento} onChange={(e) => setFormData({...formData, departamento: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
                     <option value="">Seleccionar</option>
                     <option value="Antioquia">Antioquia</option>
@@ -158,16 +158,16 @@ export default function LoginPage() {
           )}
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
             <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" placeholder="tu@email.com" required />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Contraseña</label>
             <input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" placeholder="••••••••" required />
           </div>
 
-          <button type="submit" disabled={loading} className="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 font-semibold shadow-sm">
+          <button type="submit" disabled={loading} className="w-full bg-gold text-black py-3 text-xs font-semibold tracking-[4px] uppercase hover:bg-gold-light transition-colors disabled:opacity-50">
             {loading ? (isLogin ? 'Iniciando...' : 'Registrando...') : (isLogin ? 'Iniciar Sesión' : 'Registrarse')}
           </button>
         </form>
@@ -175,14 +175,14 @@ export default function LoginPage() {
         <div className="text-center space-y-2">
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-primary hover:text-secondary transition-colors block w-full"
+            className="text-gold hover:text-gold-light transition-colors block w-full text-xs tracking-widest"
           >
             {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
           </button>
           {isLogin && (
             <a
               href="/recuperar-contrasena"
-              className="text-sm text-gray-600 hover:text-primary transition-colors block"
+              className="text-xs text-gray-500 hover:text-gold transition-colors block tracking-wider"
             >
               ¿Olvidaste tu contraseña?
             </a>
@@ -190,7 +190,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8">
-          <h3 className="text-sm font-medium text-gray-700 mb-4">Usuarios de Prueba:</h3>
+          <h3 className="text-xs text-gray-500 uppercase tracking-widest mb-4">Usuarios de Prueba:</h3>
           <div className="space-y-2">
             {demoUsers.map((user, index) => (
               <div
@@ -205,14 +205,14 @@ export default function LoginPage() {
                     }));
                   }, 0);
                 }}
-                className="p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                className="p-3 bg-white/5 border border-white/10 cursor-pointer hover:border-gold/30 transition-colors"
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm font-medium">{user.role}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                    <p className="text-xs text-gray-300 uppercase tracking-wide">{user.role}</p>
+                    <p className="text-xs text-gray-600">{user.email}</p>
                   </div>
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  <span className="text-xs border border-white/10 text-gray-500 px-2 py-1">
                     Click para usar
                   </span>
                 </div>
