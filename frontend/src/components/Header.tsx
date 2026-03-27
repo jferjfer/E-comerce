@@ -66,7 +66,7 @@ export default function Header({ onCartClick }: HeaderProps) {
 
             {/* Carrito */}
             <button onClick={onCartClick} className="relative p-2 sm:p-2.5 text-gray-300 hover:text-gold hover:bg-white/10 rounded-xl transition-all">
-              <i className="fas fa-shopping-bag text-base sm:text-lg"></i>
+              <i className="fas fa-shopping-cart text-base sm:text-lg"></i>
               {totalItems > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                   {totalItems > 9 ? '9+' : totalItems}
