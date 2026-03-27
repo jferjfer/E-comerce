@@ -10,9 +10,8 @@
 
 /* Estilos base */
 body {
-  font-family: 'Raleway', sans-serif;
-  background-color: #0a0a0a;
-  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  background-color: #fafafa;
 }
 
 /* Scrollbar personalizado */
@@ -93,7 +92,7 @@ body {
 }
 
 .brand-gradient {
-  background: linear-gradient(135deg, #c5a47e 0%, #e2c9af 50%, #a67c52 100%);
+  background: linear-gradient(135deg, #111827 0%, #374151 60%, #4b5563 100%);
 }
 
 /* Hover card elegante */

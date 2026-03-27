@@ -13,12 +13,8 @@ module.exports = {
         '3xl': '1920px'
       },
       fontFamily: {
-        'sans': ['Raleway', 'sans-serif'],
-        'serif': ['Cormorant Garamond', 'serif'],
-        'bodoni': ['Bodoni Moda', 'serif'],
-        'prata': ['Prata', 'serif'],
-        'cormorant': ['Cormorant Garamond', 'serif'],
-        'raleway': ['Raleway', 'sans-serif']
+        'sans': ['Inter', 'sans-serif'],
+        'serif': ['Playfair Display', 'serif']
       },
       colors: {
         primary: '#111827',
@@ -26,9 +22,7 @@ module.exports = {
         accent: '#6b7280',
         sage: '#f9fafb',
         rose: '#f43f5e',
-        gold: '#c5a47e',
-        'gold-light': '#e2c9af',
-        'gold-dark': '#a67c52'
+        gold: '#d4a853'
       },
       animation: {
         'slide-in': 'slideIn 0.3s ease-out',
