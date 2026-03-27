@@ -27,7 +27,7 @@ export default function HeroCarousel() {
 
   if (items.length === 0) return (
     <div className="text-center text-white">
-      <p className="font-bodoni italic text-lg text-gold tracking-[6px] uppercase mb-3">Wear Your Truth</p>
+      <p className="font-cormorant italic text-xl text-gold tracking-[6px] uppercase mb-3">Wear Your Truth</p>
       <h1 className="font-prata text-5xl sm:text-7xl tracking-[15px] uppercase text-white mb-4">EGOS</h1>
       <div className="w-24 h-px bg-gold mx-auto opacity-40"></div>
     </div>

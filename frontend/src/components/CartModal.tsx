@@ -29,8 +29,8 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
             <div key={item.id} className="flex items-center gap-3 p-3 border-b border-white/5">
               <img src={item.imagen} className="w-14 h-14 object-cover flex-shrink-0" alt={item.nombre} />
               <div className="flex-1 min-w-0">
-                <h4 className="text-xs text-gray-300 uppercase tracking-wide truncate">{item.nombre}</h4>
-                <p className="font-bodoni text-gold text-sm mt-0.5">{formatPrice(item.precio)}</p>
+                <h4 className="font-raleway text-xs text-gray-300 uppercase tracking-wide truncate font-light">{item.nombre}</h4>
+                <p className="font-cormorant text-gold text-lg font-light mt-0.5">{formatPrice(item.precio)}</p>
                 <div className="flex items-center gap-2 mt-1.5">
                   <button
                     onClick={() => handleQuantityChange(item.id, item.cantidad - 1)}
@@ -61,7 +61,7 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
       {items.length > 0 && (
         <div className="border-t border-white/5 pt-4 mt-2">
           <div className="flex justify-between items-center mb-4">
-            <span className="font-bodoni text-xl text-gold">{formatPrice(obtenerPrecioTotal())}</span>
+            <span className="font-cormorant text-2xl font-light text-gold">{formatPrice(obtenerPrecioTotal())}</span>
             <button
               onClick={vaciarCarrito}
               className="text-xs text-gray-600 hover:text-gray-400 tracking-[3px] uppercase transition-colors"

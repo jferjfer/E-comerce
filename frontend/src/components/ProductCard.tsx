@@ -62,7 +62,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
         {/* Botón ver detalles en hover */}
         <button
           onClick={() => onViewDetails(producto)}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm text-gold text-xs font-prata tracking-[3px] uppercase px-5 py-2 opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap border border-gold/40 hover:bg-gold hover:text-black"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm text-gold text-[10px] font-raleway font-semibold tracking-[4px] uppercase px-5 py-2 opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap border border-gold/40 hover:bg-gold hover:text-black"
         >
           Ver
         </button>
@@ -71,18 +71,18 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
       {/* Contenido */}
       <div className="p-3 pb-4">
         {/* Nombre */}
-        <h3 className="text-xs font-normal text-gray-300 uppercase tracking-[1px] line-clamp-2 leading-relaxed mb-2">
+        <h3 className="font-cormorant text-base font-light text-gray-200 italic line-clamp-2 leading-snug mb-2">
           {producto.nombre}
         </h3>
 
         {/* Precio */}
-        <p className="font-bodoni text-base text-gold">{formatPrice(producto.precio)}</p>
+        <p className="font-cormorant text-xl font-light text-gold tracking-wide">{formatPrice(producto.precio)}</p>
 
         {/* Botón agregar */}
         <button
           onClick={manejarAgregarCarrito}
           disabled={agregando}
-          className={`w-full mt-3 py-2 text-[10px] font-semibold tracking-[3px] uppercase transition-all duration-300 ${
+          className={`w-full mt-3 py-2 text-[10px] font-raleway font-semibold tracking-[3px] uppercase transition-all duration-300 ${
             agregando
               ? 'bg-gold text-black'
               : 'bg-transparent border border-white/20 text-gray-300 hover:border-gold hover:text-gold'

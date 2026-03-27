@@ -13,10 +13,12 @@ module.exports = {
         '3xl': '1920px'
       },
       fontFamily: {
-        'sans': ['Inter', 'sans-serif'],
-        'serif': ['Playfair Display', 'serif'],
+        'sans': ['Raleway', 'sans-serif'],
+        'serif': ['Cormorant Garamond', 'serif'],
         'bodoni': ['Bodoni Moda', 'serif'],
-        'prata': ['Prata', 'serif']
+        'prata': ['Prata', 'serif'],
+        'cormorant': ['Cormorant Garamond', 'serif'],
+        'raleway': ['Raleway', 'sans-serif']
       },
       colors: {
         primary: '#111827',

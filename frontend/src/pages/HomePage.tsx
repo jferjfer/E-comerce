@@ -144,7 +144,7 @@ export default function HomePage() {
               <span className="hidden sm:inline">Limpiar</span>
             </button>
 
-            <span className="flex-shrink-0 text-xs text-gray-600 ml-auto tracking-widest">
+            <span className="flex-shrink-0 text-xs text-gray-600 ml-auto tracking-widest font-raleway font-light">
               {cargando ? '...' : `${productosFiltrados.length} piezas`}
             </span>
           </div>
@@ -178,8 +178,8 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="text-center py-24">
-              <p className="font-prata text-2xl text-gray-600 tracking-widest mb-4">Sin resultados</p>
-              <button onClick={limpiarFiltros} className="text-xs text-gold tracking-[3px] uppercase hover:text-gold-light transition-colors">
+              <p className="font-cormorant italic text-3xl text-gray-600 tracking-widest mb-4">Sin resultados</p>
+              <button onClick={limpiarFiltros} className="font-raleway text-xs text-gold tracking-[3px] uppercase hover:text-gold-light transition-colors">
                 Limpiar filtros
               </button>
             </div>
@@ -202,12 +202,12 @@ export default function HomePage() {
               </div>
               <div className="p-8 flex flex-col justify-between">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-[3px] mb-2">{productoSeleccionado.categoria}</p>
-                  <h2 className="font-prata text-xl text-white tracking-wide mb-4">{productoSeleccionado.nombre}</h2>
-                  <p className="font-bodoni text-3xl text-gold mb-6">{formatPrice(productoSeleccionado.precio)}</p>
-                  <p className="text-sm text-gray-400 leading-relaxed mb-6">{productoSeleccionado.descripcion}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-[3px] mb-2 font-raleway">{productoSeleccionado.categoria}</p>
+                  <h2 className="font-cormorant text-3xl font-light italic text-white tracking-wide mb-4">{productoSeleccionado.nombre}</h2>
+                  <p className="font-cormorant text-4xl font-light text-gold mb-6">{formatPrice(productoSeleccionado.precio)}</p>
+                  <p className="font-raleway text-sm text-gray-400 leading-relaxed mb-6 font-light">{productoSeleccionado.descripcion}</p>
                   <div className="border-t border-white/5 pt-4 mb-6">
-                    <ul className="text-xs text-gray-500 space-y-1.5 tracking-wide">
+                    <ul className="font-raleway text-xs text-gray-500 space-y-1.5 tracking-wide font-light">
                       <li>Tallas: {productoSeleccionado.tallas?.join(' · ')}</li>
                       <li>Envío gratuito</li>
                       <li>Devolución 30 días</li>
