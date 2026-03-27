@@ -60,7 +60,7 @@ const autenticacion = (req, res, next) => {
   }
   
   // Simulación de usuario autenticado
-  req.usuario = { id: '1', nombre: 'Usuario Demo', email: 'demo@estilomoda.com' };
+  req.usuario = { id: '1', nombre: 'Usuario Demo', email: 'demo@egos.com.co' };
   next();
 };
 

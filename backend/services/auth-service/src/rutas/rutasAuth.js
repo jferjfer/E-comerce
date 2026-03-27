@@ -14,7 +14,7 @@ router.get('/verificar', autenticar, ControladorAuth.verificarToken);
 // Ruta de login simple para pruebas
 router.post('/login-simple', async (req, res) => {
   const { email, password } = req.body;
-  if (email === 'demo@estilomoda.com' && password === 'admin123') {
+  if (email === 'demo@egos.com.co' && password === 'admin123') {
     res.json({
       token: 'demo_token_' + Date.now(),
       usuario: { id: 1, email, nombre: 'Usuario Demo', rol: 'cliente' }

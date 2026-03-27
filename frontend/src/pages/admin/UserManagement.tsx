@@ -7,11 +7,11 @@ const UserManagement = () => {
   const [selectedRole, setSelectedRole] = useState('');
 
   const mockUsers = [
-    { id: '1', name: 'Fernando Vertel', email: 'ceo@estilomoda.com', role: 'ceo', status: 'active' },
-    { id: '2', name: 'Ana García', email: 'ana@estilomoda.com', role: 'cfo', status: 'active' },
-    { id: '3', name: 'Carlos López', email: 'carlos@estilomoda.com', role: 'regional_manager', status: 'active' },
-    { id: '4', name: 'María Rodríguez', email: 'maria@estilomoda.com', role: 'product_manager', status: 'active' },
-    { id: '5', name: 'José Martínez', email: 'jose@estilomoda.com', role: 'seller_premium', status: 'active' }
+    { id: '1', name: 'Fernando Vertel', email: 'ceo@egos.com.co', role: 'ceo', status: 'active' },
+    { id: '2', name: 'Ana García', email: 'ana@egos.com.co', role: 'cfo', status: 'active' },
+    { id: '3', name: 'Carlos López', email: 'carlos@egos.com.co', role: 'regional_manager', status: 'active' },
+    { id: '4', name: 'María Rodríguez', email: 'maria@egos.com.co', role: 'product_manager', status: 'active' },
+    { id: '5', name: 'José Martínez', email: 'jose@egos.com.co', role: 'seller_premium', status: 'active' }
   ];
 
   return (

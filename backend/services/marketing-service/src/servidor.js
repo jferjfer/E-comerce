@@ -167,7 +167,7 @@ const autenticacion = (req, res, next) => {
     return res.status(401).json({ error: 'Token requerido' });
   }
   
-  req.usuario = { id: '1', nombre: 'Usuario Demo', email: 'demo@estilomoda.com' };
+  req.usuario = { id: '1', nombre: 'Usuario Demo', email: 'demo@egos.com.co' };
   next();
 };
 

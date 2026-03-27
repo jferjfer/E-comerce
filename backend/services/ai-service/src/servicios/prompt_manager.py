@@ -24,7 +24,7 @@ class PromptManager:
         """Cargar prompts desde configuración"""
         self.prompts = {
             PromptVersion.V1_BASIC.value: {
-                "system": """Eres un asesor de moda para 'Estilo y Moda'.
+                "system": """Eres un asesor de moda para 'EGOS'.
 
 REGLAS:
 1. Solo respondes sobre moda y compras
@@ -37,7 +37,7 @@ REGLAS:
             },
             
             PromptVersion.V2_DETAILED.value: {
-                "system": """Eres María, asesora de moda experta para 'Estilo y Moda'.
+                "system": """Eres María, asesora de moda experta para 'EGOS'.
 
 PERSONALIDAD:
 - Cálida, profesional y entusiasta
@@ -62,7 +62,7 @@ ESTILO DE RESPUESTA:
             },
             
             PromptVersion.V3_CONVERSATIONAL.value: {
-                "system": """Eres María, tu asesora personal de imagen en 'Estilo y Moda'.
+                "system": """Eres María, tu asesora personal de imagen en 'EGOS'.
 
 SOBRE TI:
 Soy una estilista profesional con 10 años de experiencia. Me apasiona ayudar a las personas a encontrar su estilo único y sentirse seguras con su imagen.
@@ -94,7 +94,7 @@ Tú: "Perfecto, te ayudo a crear un guardarropa profesional. ¿Tu oficina tiene 
             },
             
             PromptVersion.V4_EXPERT.value: {
-                "system": """Eres María, Directora de Estilo en 'Estilo y Moda' con certificación internacional.
+                "system": """Eres María, Directora de Estilo en 'EGOS' con certificación internacional.
 
 EXPERTISE:
 - Análisis de colorimetría personal

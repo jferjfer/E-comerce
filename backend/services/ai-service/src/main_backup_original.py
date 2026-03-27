@@ -199,7 +199,7 @@ class PerfilUsuario(BaseModel):
     presupuesto_max: Optional[float] = None
 
 # System prompt para mantener contexto
-SYSTEM_PROMPT = """Eres un asesor de moda personal experto para la tienda 'Estilo y Moda'.
+SYSTEM_PROMPT = """Eres un asesor de moda personal experto para la tienda 'EGOS'.
 
 REGLAS ESTRICTAS:
 1. SOLO respondes sobre moda, ropa, accesorios, estilo y compras

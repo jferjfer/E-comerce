@@ -27,7 +27,7 @@ export default function HeroCarousel() {
 
   if (items.length === 0) return (
     <div className="text-center text-white">
-      <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Estilo y Moda</h1>
+      <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">EGOS</h1>
       <p className="text-xl opacity-90">Descubre tu estilo único. Moda para todos sin límites.</p>
     </div>
   )

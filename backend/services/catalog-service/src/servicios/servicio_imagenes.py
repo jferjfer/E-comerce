@@ -38,7 +38,7 @@ async def subir_imagen_producto(archivo_bytes: bytes, producto_id: str) -> str:
         # Subir a Cloudinary con transformaciones
         resultado = cloudinary.uploader.upload(
             buffer,
-            folder="estilo-moda/productos",
+            folder="egos/productos",
             public_id=f"{producto_id}_{int(time.time())}",
             resource_type="image",
             transformation=[
@@ -94,7 +94,7 @@ def eliminar_imagen_cloudinary(url: str) -> bool:
     """
     try:
         # Extraer public_id de la URL
-        # Ejemplo: https://res.cloudinary.com/dhwk5p0wn/image/upload/v123/estilo-moda/productos/prod_123.jpg
+        # Ejemplo: https://res.cloudinary.com/dhwk5p0wn/image/upload/v123/egos/productos/prod_123.jpg
         partes = url.split('/')
         public_id = '/'.join(partes[-3:]).replace('.jpg', '').replace('.png', '')
         

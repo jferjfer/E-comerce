@@ -109,8 +109,8 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "🎁 ¡Tienes un bono de $100.000 disponible! — Estilo y Moda"
-        msg["From"] = f'"Estilo y Moda" <{SMTP_USER}>'
+        msg["Subject"] = "🎁 ¡Tienes un bono de $100.000 disponible! — EGOS"
+        msg["From"] = f'"EGOS" <{SMTP_USER}>'
         msg["To"] = email
 
         fecha_str = fecha_vencimiento.strftime("%d de %B de %Y")
@@ -118,7 +118,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9">
           <div style="background:#111827;padding:40px 30px;text-align:center">
             <h1 style="color:white;margin:0;font-size:26px">🎁 ¡Tienes un bono especial!</h1>
-            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0">Estilo y Moda — Premio por tu lealtad</p>
+            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0">EGOS — Premio por tu lealtad</p>
           </div>
           <div style="background:white;padding:40px 30px">
             <p style="font-size:16px;color:#333">Hola <strong>{nombre}</strong>,</p>
@@ -146,7 +146,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
           <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
             <p style="color:#888;font-size:12px;margin:0">
               Este bono es personal e intransferible.<br>
-              Estilo y Moda — Tu tienda de confianza
+              EGOS — Wear Your Truth
             </p>
           </div>
         </div>

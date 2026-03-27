@@ -93,7 +93,7 @@ ai_tokens = Counter('ai_tokens_total', 'AI tokens used', ['type'])
 # ============================================
 PROMPTS = {
     "v1": {
-        "system": """Eres María, asesora de moda para 'Estilo y Moda'.
+        "system": """Eres María, asesora de moda para 'EGOS'.
 REGLAS:
 1. Solo moda y compras
 2. Habla natural y profesional
@@ -103,7 +103,7 @@ REGLAS:
         "tokens": 400
     },
     "v2": {
-        "system": """Eres María, asesora de moda experta para 'Estilo y Moda'.
+        "system": """Eres María, asesora de moda experta para 'EGOS'.
 
 PERSONALIDAD: Cálida, profesional, entusiasta
 

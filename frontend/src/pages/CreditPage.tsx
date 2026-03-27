@@ -398,15 +398,15 @@ export default function CreditPage() {
 
               {opcion.disponible ? (
                 <button
-                  onClick={opcion.proveedor === 'ESTILO_MODA' ? solicitarCredito : undefined}
-                  disabled={loading || opcion.proveedor !== 'ESTILO_MODA'}
+                  onClick={opcion.proveedor === 'EGOS' ? solicitarCredito : undefined}
+                  disabled={loading || opcion.proveedor !== 'EGOS'}
                   className={`w-full py-2 rounded-lg font-semibold ${
-                    opcion.proveedor === 'ESTILO_MODA'
+                    opcion.proveedor === 'EGOS'
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {opcion.proveedor === 'ESTILO_MODA' ? 'Solicitar' : 'Próximamente'}
+                  {opcion.proveedor === 'EGOS' ? 'Solicitar' : 'Próximamente'}
                 </button>
               ) : (
                 <div className="text-center text-sm text-gray-500">

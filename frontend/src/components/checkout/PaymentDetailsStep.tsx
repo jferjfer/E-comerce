@@ -123,7 +123,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
             <h4 className="font-bold text-gray-800 mb-3 flex items-center">
               <i className="fas fa-star mr-2 text-gold"></i>
-              Crédito StyleHub Pre-aprobado
+              Crédito EGOS Pre-aprobado
             </h4>
             <p className="text-gray-700 mb-4">Selecciona el plan de cuotas que mejor se adapte a ti:</p>
             

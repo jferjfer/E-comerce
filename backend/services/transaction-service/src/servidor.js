@@ -76,16 +76,16 @@ async function enviarNotificacionEstado(email, nombreUsuario, pedidoId, nuevoEst
         </div>
       </div>
       <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
-        <p style="color:#888;font-size:12px;margin:0">Este es un correo automático, no respondas a este mensaje.<br>Estilo y Moda — Tu tienda de confianza</p>
+        <p style="color:#888;font-size:12px;margin:0">Este es un correo automático, no respondas a este mensaje.<br>EGOS — Wear Your Truth</p>
       </div>
     </div>
   `;
 
   try {
     await transporter.sendMail({
-      from: `"Estilo y Moda" <${process.env.SMTP_USER}>`,
+      from: `"EGOS" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: `${info.emoji} Pedido #${pedidoId} — ${nuevoEstado} | Estilo y Moda`,
+      subject: `${info.emoji} Pedido #${pedidoId} — ${nuevoEstado} | EGOS`,
       html
     });
     console.log(`📧 Notificación de estado [${nuevoEstado}] enviada a ${email}`);
@@ -146,16 +146,16 @@ async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
         </div>
       </div>
       <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
-        <p style="color:#888;font-size:12px;margin:0">Este es un correo automático, no respondas a este mensaje.<br>Estilo y Moda — Tu tienda de confianza</p>
+        <p style="color:#888;font-size:12px;margin:0">Este es un correo automático, no respondas a este mensaje.<br>EGOS — Wear Your Truth</p>
       </div>
     </div>
   `;
 
   try {
     await transporter.sendMail({
-      from: `"Estilo y Moda" <${process.env.SMTP_USER}>`,
+      from: `"EGOS" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: `✅ Pedido #${pedido.id} confirmado — Estilo y Moda`,
+      subject: `✅ Pedido #${pedido.id} confirmado — EGOS`,
       html
     });
     console.log(`📧 Correo de confirmación enviado a ${email}`);

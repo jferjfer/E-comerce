@@ -599,7 +599,7 @@ app.get('/salud', (req, res) => {
 // Ruta principal
 app.get('/', (req, res) => {
   res.json({
-    mensaje: 'Simple Gateway - Estilo y Moda',
+    mensaje: 'Simple Gateway - EGOS',
     version: '1.0.0',
     servicios_disponibles: Object.keys(services).length,
     documentacion: {

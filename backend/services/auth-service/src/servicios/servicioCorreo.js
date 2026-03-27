@@ -15,7 +15,7 @@ class ServicioCorreo {
 
   async enviarCorreo(opciones) {
     return await this.transporter.sendMail({
-      from: `"Estilo y Moda" <${process.env.SMTP_USER}>`,
+      from: `"EGOS" <${process.env.SMTP_USER}>`,
       ...opciones
     });
   }
@@ -26,7 +26,7 @@ class ServicioCorreo {
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 0;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">¡Bienvenido a Estilo y Moda!</h1>
+          <h1 style="color: white; margin: 0; font-size: 28px;">¡Bienvenido a EGOS!</h1>
           <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0;">Tu tienda de moda favorita</p>
         </div>
         <div style="background: white; padding: 40px 30px;">
@@ -54,7 +54,7 @@ class ServicioCorreo {
         <div style="background: #f0f0f0; padding: 20px 30px; text-align: center;">
           <p style="color: #888; font-size: 12px; margin: 0;">
             Este es un correo automático, no respondas a este mensaje.<br>
-            Estilo y Moda — Tu tienda de confianza
+            EGOS — Wear Your Truth
           </p>
         </div>
       </div>
@@ -62,7 +62,7 @@ class ServicioCorreo {
 
     return await this.enviarCorreo({
       to: email,
-      subject: '¡Bienvenido a Estilo y Moda! 🎉',
+      subject: '¡Bienvenido a EGOS! 🎉',
       html
     });
   }
@@ -144,7 +144,7 @@ class ServicioCorreo {
         <div style="background: #f0f0f0; padding: 20px 30px; text-align: center;">
           <p style="color: #888; font-size: 12px; margin: 0;">
             Este es un correo automático, no respondas a este mensaje.<br>
-            Estilo y Moda — Tu tienda de confianza
+            EGOS — Wear Your Truth
           </p>
         </div>
       </div>
@@ -152,7 +152,7 @@ class ServicioCorreo {
 
     return await this.enviarCorreo({
       to: email,
-      subject: `✅ Pedido #${pedido.id} confirmado — Estilo y Moda`,
+      subject: `✅ Pedido #${pedido.id} confirmado — EGOS`,
       html
     });
   }
@@ -164,7 +164,7 @@ class ServicioCorreo {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 24px;">Recuperación de Contraseña</h1>
-          <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">Estilo y Moda</p>
+          <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">EGOS</p>
         </div>
         <div style="background: white; padding: 40px 30px;">
           <p style="font-size: 16px; color: #333;">Hola <strong>${nombreUsuario}</strong>,</p>
@@ -186,7 +186,7 @@ class ServicioCorreo {
         <div style="background: #f0f0f0; padding: 20px 30px; text-align: center;">
           <p style="color: #888; font-size: 12px; margin: 0;">
             Este es un correo automático, no respondas a este mensaje.<br>
-            Estilo y Moda — Tu tienda de confianza
+            EGOS — Wear Your Truth
           </p>
         </div>
       </div>
@@ -194,7 +194,7 @@ class ServicioCorreo {
 
     return await this.enviarCorreo({
       to: email,
-      subject: 'Recuperación de Contraseña — Estilo y Moda',
+      subject: 'Recuperación de Contraseña — EGOS',
       html
     });
   }

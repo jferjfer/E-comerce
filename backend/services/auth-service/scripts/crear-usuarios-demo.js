@@ -3,41 +3,41 @@ const pool = require('../src/config/baseDatos');
 
 const usuariosDemo = [
   // NIVEL EJECUTIVO
-  { email: 'ceo@estilomoda.com', nombre: 'Fernando Vertel', rol: 'ceo', password: 'admin123' },
-  { email: 'cfo@estilomoda.com', nombre: 'Ana García CFO', rol: 'cfo', password: 'admin123' },
-  { email: 'cmo@estilomoda.com', nombre: 'Carlos López CMO', rol: 'cmo', password: 'admin123' },
+  { email: 'ceo@egos.com.co', nombre: 'Fernando Vertel', rol: 'ceo', password: 'admin123' },
+  { email: 'cfo@egos.com.co', nombre: 'Ana García CFO', rol: 'cfo', password: 'admin123' },
+  { email: 'cmo@egos.com.co', nombre: 'Carlos López CMO', rol: 'cmo', password: 'admin123' },
   
   // NIVEL DIRECTIVO
-  { email: 'operations@estilomoda.com', nombre: 'María Operations', rol: 'operations_director', password: 'admin123' },
-  { email: 'tech@estilomoda.com', nombre: 'José Tech Director', rol: 'tech_director', password: 'admin123' },
-  { email: 'regional@estilomoda.com', nombre: 'Laura Regional Manager', rol: 'regional_manager', password: 'admin123' },
+  { email: 'operations@egos.com.co', nombre: 'María Operations', rol: 'operations_director', password: 'admin123' },
+  { email: 'tech@egos.com.co', nombre: 'José Tech Director', rol: 'tech_director', password: 'admin123' },
+  { email: 'regional@egos.com.co', nombre: 'Laura Regional Manager', rol: 'regional_manager', password: 'admin123' },
   
   // NIVEL GERENCIAL
-  { email: 'category@estilomoda.com', nombre: 'Pedro Category Manager', rol: 'category_manager', password: 'admin123' },
-  { email: 'brand@estilomoda.com', nombre: 'Sofia Brand Manager', rol: 'brand_manager', password: 'admin123' },
-  { email: 'inventory@estilomoda.com', nombre: 'Diego Inventory Manager', rol: 'inventory_manager', password: 'admin123' },
-  { email: 'marketing@estilomoda.com', nombre: 'Carmen Marketing Manager', rol: 'marketing_manager', password: 'admin123' },
+  { email: 'category@egos.com.co', nombre: 'Pedro Category Manager', rol: 'category_manager', password: 'admin123' },
+  { email: 'brand@egos.com.co', nombre: 'Sofia Brand Manager', rol: 'brand_manager', password: 'admin123' },
+  { email: 'inventory@egos.com.co', nombre: 'Diego Inventory Manager', rol: 'inventory_manager', password: 'admin123' },
+  { email: 'marketing@egos.com.co', nombre: 'Carmen Marketing Manager', rol: 'marketing_manager', password: 'admin123' },
   
   // NIVEL OPERATIVO
-  { email: 'product@estilomoda.com', nombre: 'Roberto Product Manager', rol: 'product_manager', password: 'admin123' },
-  { email: 'pricing@estilomoda.com', nombre: 'Elena Pricing Analyst', rol: 'pricing_analyst', password: 'admin123' },
-  { email: 'content@estilomoda.com', nombre: 'Andrea Content Editor', rol: 'content_editor', password: 'admin123' },
-  { email: 'visual@estilomoda.com', nombre: 'Miguel Visual Merchandiser', rol: 'visual_merchandiser', password: 'admin123' },
-  { email: 'photo@estilomoda.com', nombre: 'Lucia Photographer', rol: 'photographer', password: 'admin123' },
-  { email: 'success@estilomoda.com', nombre: 'Patricia Customer Success', rol: 'customer_success', password: 'admin123' },
-  { email: 'support@estilomoda.com', nombre: 'Raul Support Agent', rol: 'support_agent', password: 'admin123' },
-  { email: 'logistics@estilomoda.com', nombre: 'Fernando Logistics', rol: 'logistics_coordinator', password: 'admin123' },
-  { email: 'qa@estilomoda.com', nombre: 'Gabriela QA Specialist', rol: 'qa_specialist', password: 'admin123' },
+  { email: 'product@egos.com.co', nombre: 'Roberto Product Manager', rol: 'product_manager', password: 'admin123' },
+  { email: 'pricing@egos.com.co', nombre: 'Elena Pricing Analyst', rol: 'pricing_analyst', password: 'admin123' },
+  { email: 'content@egos.com.co', nombre: 'Andrea Content Editor', rol: 'content_editor', password: 'admin123' },
+  { email: 'visual@egos.com.co', nombre: 'Miguel Visual Merchandiser', rol: 'visual_merchandiser', password: 'admin123' },
+  { email: 'photo@egos.com.co', nombre: 'Lucia Photographer', rol: 'photographer', password: 'admin123' },
+  { email: 'success@egos.com.co', nombre: 'Patricia Customer Success', rol: 'customer_success', password: 'admin123' },
+  { email: 'support@egos.com.co', nombre: 'Raul Support Agent', rol: 'support_agent', password: 'admin123' },
+  { email: 'logistics@egos.com.co', nombre: 'Fernando Logistics', rol: 'logistics_coordinator', password: 'admin123' },
+  { email: 'qa@egos.com.co', nombre: 'Gabriela QA Specialist', rol: 'qa_specialist', password: 'admin123' },
   
   // VENDEDORES
-  { email: 'seller1@estilomoda.com', nombre: 'Juan Seller Premium', rol: 'seller_premium', password: 'admin123' },
-  { email: 'seller2@estilomoda.com', nombre: 'Isabel Seller Standard', rol: 'seller_standard', password: 'admin123' },
-  { email: 'seller3@estilomoda.com', nombre: 'Manuel Seller Basic', rol: 'seller_basic', password: 'admin123' },
+  { email: 'seller1@egos.com.co', nombre: 'Juan Seller Premium', rol: 'seller_premium', password: 'admin123' },
+  { email: 'seller2@egos.com.co', nombre: 'Isabel Seller Standard', rol: 'seller_standard', password: 'admin123' },
+  { email: 'seller3@egos.com.co', nombre: 'Manuel Seller Basic', rol: 'seller_basic', password: 'admin123' },
   
   // CLIENTES
-  { email: 'vip@estilomoda.com', nombre: 'Isabella Cliente VIP', rol: 'vip_customer', password: 'admin123' },
-  { email: 'premium@estilomoda.com', nombre: 'Alejandro Cliente Premium', rol: 'premium_customer', password: 'admin123' },
-  { email: 'regular@estilomoda.com', nombre: 'Camila Cliente Regular', rol: 'regular_customer', password: 'admin123' }
+  { email: 'vip@egos.com.co', nombre: 'Isabella Cliente VIP', rol: 'vip_customer', password: 'admin123' },
+  { email: 'premium@egos.com.co', nombre: 'Alejandro Cliente Premium', rol: 'premium_customer', password: 'admin123' },
+  { email: 'regular@egos.com.co', nombre: 'Camila Cliente Regular', rol: 'regular_customer', password: 'admin123' }
 ];
 
 async function crearUsuariosDemo() {
@@ -89,13 +89,13 @@ async function crearUsuariosDemo() {
     
     console.log('\n🎉 ¡Usuarios demo creados exitosamente!');
     console.log('\n📋 Usuarios disponibles:');
-    console.log('   • CEO: ceo@estilomoda.com / admin123');
-    console.log('   • CFO: cfo@estilomoda.com / admin123');
-    console.log('   • CMO: cmo@estilomoda.com / admin123');
-    console.log('   • Product Manager: product@estilomoda.com / admin123');
-    console.log('   • Seller Premium: seller1@estilomoda.com / admin123');
-    console.log('   • Cliente VIP: vip@estilomoda.com / admin123');
-    console.log('   • Cliente Regular: regular@estilomoda.com / admin123');
+    console.log('   • CEO: ceo@egos.com.co / admin123');
+    console.log('   • CFO: cfo@egos.com.co / admin123');
+    console.log('   • CMO: cmo@egos.com.co / admin123');
+    console.log('   • Product Manager: product@egos.com.co / admin123');
+    console.log('   • Seller Premium: seller1@egos.com.co / admin123');
+    console.log('   • Cliente VIP: vip@egos.com.co / admin123');
+    console.log('   • Cliente Regular: regular@egos.com.co / admin123');
     console.log('   • ... y 17 usuarios más');
     
   } catch (error) {

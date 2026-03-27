@@ -44,10 +44,10 @@ const crearTablas = async () => {
       INSERT INTO usuario (nombre, email, contrasena, rol) 
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (email) DO NOTHING
-    `, ['Usuario Demo', 'demo@estilomoda.com', contrasenaDemo, 'cliente']);
+    `, ['Usuario Demo', 'demo@egos.com.co', contrasenaDemo, 'cliente']);
 
     console.log('✅ Tablas creadas exitosamente');
-    console.log('👤 Usuario demo: demo@estilomoda.com / admin123');
+    console.log('👤 Usuario demo: demo@egos.com.co / admin123');
     
   } catch (error) {
     console.error('❌ Error creando tablas:', error);

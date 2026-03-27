@@ -47,7 +47,7 @@ export default function LoginPage() {
   }
 
   const demoUsers = [
-    { email: 'demo@estilomoda.com', role: 'Usuario Demo', password: 'admin123' }
+    { email: 'demo@egos.com.co', role: 'Usuario Demo', password: 'admin123' }
   ]
 
   return (
@@ -58,7 +58,7 @@ export default function LoginPage() {
             <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
               <i className="fas fa-shopping-bag text-white text-xl"></i>
             </div>
-            <h1 className="text-3xl font-bold text-primary">Estilo y Moda</h1>
+            <h1 className="text-3xl font-bold text-primary">EGOS</h1>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</h2>
           <p className="text-gray-600">{isLogin ? 'Accede a tu cuenta' : 'Crea tu cuenta de cliente'}</p>
