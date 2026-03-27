@@ -68,19 +68,6 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
           <i className={`${isFavorite(producto.id) ? 'fas' : 'far'} fa-heart text-xs`}></i>
         </button>
 
-        {/* Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
-          {producto.es_eco && (
-            <span className="bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-              ECO
-            </span>
-          )}
-          {producto.compatibilidad && producto.compatibilidad >= 90 && (
-            <span className="bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-              {producto.compatibilidad}% IA
-            </span>
-          )}
-        </div>
 
         {/* Botón ver detalles en hover */}
         <button
