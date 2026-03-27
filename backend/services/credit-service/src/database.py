@@ -7,7 +7,12 @@ import uuid
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://neondb_owner:npg_IykA6tTPxhE3@ep-tiny-butterfly-adf8yext-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require")
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    connect_args={"sslmode": "require", "connect_timeout": 10}
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
