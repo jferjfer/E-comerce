@@ -54,14 +54,15 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <i className="fas fa-shopping-bag text-white text-xl"></i>
+          <div className="flex flex-col items-center mb-6">
+            <div className="flex items-baseline space-x-1 mb-2">
+              <span className="font-bodoni text-5xl bg-gradient-to-br from-gold-light via-gold to-gold-dark bg-clip-text text-transparent" style={{letterSpacing: '-3px'}}>E</span>
+              <span className="font-prata text-2xl text-primary tracking-[10px] uppercase">GOS</span>
             </div>
-            <h1 className="text-3xl font-bold text-primary">Estilo y Moda</h1>
+            <p className="font-bodoni italic text-sm text-gold tracking-[4px] uppercase opacity-80">Wear Your Truth</p>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</h2>
-          <p className="text-gray-600">{isLogin ? 'Accede a tu cuenta' : 'Crea tu cuenta de cliente'}</p>
+          <h2 className="text-xl font-bold text-gray-900">{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</h2>
+          <p className="text-gray-500 text-sm mt-1">{isLogin ? 'Accede a tu cuenta' : 'Crea tu cuenta de cliente'}</p>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>

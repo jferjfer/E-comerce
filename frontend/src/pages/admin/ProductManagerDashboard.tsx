@@ -68,7 +68,7 @@ export default function ProductManagerDashboard() {
         imagen: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
         sku: nuevoProducto.sku || `PROD-${Date.now()}`,
         categoria: nuevoProducto.categoria,
-        marca: nuevoProducto.marca || 'Estilo y Moda',
+        marca: nuevoProducto.marca || 'EGOS',
         tallas: tallasSeleccionadas,
         colores: coloresSeleccionados,
         stock: parseInt(nuevoProducto.stock_cantidad) || 0,
@@ -265,7 +265,7 @@ export default function ProductManagerDashboard() {
                   value={nuevoProducto.marca}
                   onChange={(e) => setNuevoProducto(prev => ({ ...prev, marca: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  placeholder="Estilo y Moda"
+                  placeholder="EGOS"
                 />
               </div>
               

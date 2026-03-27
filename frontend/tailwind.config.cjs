@@ -14,7 +14,9 @@ module.exports = {
       },
       fontFamily: {
         'sans': ['Inter', 'sans-serif'],
-        'serif': ['Playfair Display', 'serif']
+        'serif': ['Playfair Display', 'serif'],
+        'bodoni': ['Bodoni Moda', 'serif'],
+        'prata': ['Prata', 'serif']
       },
       colors: {
         primary: '#111827',
@@ -22,7 +24,9 @@ module.exports = {
         accent: '#6b7280',
         sage: '#f9fafb',
         rose: '#f43f5e',
-        gold: '#d4a853'
+        gold: '#c5a47e',
+        'gold-light': '#e2c9af',
+        'gold-dark': '#a67c52'
       },
       animation: {
         'slide-in': 'slideIn 0.3s ease-out',
