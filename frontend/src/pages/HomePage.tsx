@@ -140,7 +140,7 @@ export default function HomePage() {
 
       {/* Barra de Filtros */}
       <section className="sticky top-16 sm:top-20 z-30 bg-white shadow-md border-b">
-        <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-8 xl:px-12 2xl:px-16">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16">
           {/* Móvil: fila única con scroll horizontal */}
           <div className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide sm:flex-wrap sm:py-3 sm:gap-3">
             <select
@@ -211,7 +211,7 @@ export default function HomePage() {
 
       {/* Grid de Productos */}
       <section className="py-4 sm:py-6 md:py-8 bg-gray-50">
-        <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-8 xl:px-12 2xl:px-16">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16">
           {cargando ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6">
               {Array.from({ length: 8 }).map((_, index) => (
