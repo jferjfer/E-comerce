@@ -713,13 +713,15 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       fecha_creacion: new Date().toISOString()
     };
 
-    // Enviar correo de confirmación al cliente (sin bloquear la respuesta)
+    // Enviar correo de confirmación y generar factura
+    let datosUsuario = { nombre: 'Cliente', email: '' };
     try {
       const resUsuario = await axios.get(
         `http://auth-service:3011/api/usuarios/${usuarioId}`,
         { timeout: 3000 }
       );
       const { email, nombre } = resUsuario.data.usuario || {};
+      datosUsuario = { nombre: nombre || 'Cliente', email: email || '' };
       if (email) {
         enviarConfirmacionCompra(email, nombre || 'Cliente', pedido);
       }
@@ -739,10 +741,10 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       pedido_id: pedidoId,
       usuario_id: usuarioId,
       cliente: {
-        nombre: resUsuario?.data?.usuario?.nombre || 'Cliente',
-        email: resUsuario?.data?.usuario?.email || '',
+        nombre: datosUsuario.nombre,
+        email: datosUsuario.email,
         nit_cc: '222222222222',
-        direccion: metodo_pago || 'Bogotá D.C'
+        direccion: 'Bogotá D.C'
       },
       productos: carrito.productos.map(p => ({
         id: p.id,
