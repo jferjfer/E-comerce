@@ -228,6 +228,8 @@ app.use((req, res, next) => {
 });
 
 // URLs de microservicios - usa variables de entorno si existen (Render), sino usa Docker network (local)
+const FACTURACION_URL = process.env.FACTURACION_SERVICE_URL || 'http://facturacion-service:3010';
+
 const AUTH_URL      = process.env.AUTH_SERVICE_URL      || 'http://auth-service:3011';
 const CATALOG_URL   = process.env.CATALOG_SERVICE_URL   || 'http://catalog-service:3002';
 const TRANS_URL     = process.env.TRANSACTION_SERVICE_URL || 'http://transaction-service:3003';
@@ -466,6 +468,21 @@ app.all('/api/credito*', async (req, res) => {
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/facturas*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${FACTURACION_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
     });
     res.status(response.status).json(response.data);
   } catch (error) {

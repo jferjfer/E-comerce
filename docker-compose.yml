@@ -225,6 +225,38 @@ services:
       - estilo-network
     restart: unless-stopped
 
+  # Facturacion Service
+  facturacion-service:
+    build:
+      context: ./backend/services/facturacion-service
+      dockerfile: Dockerfile
+    container_name: facturacion-service
+    environment:
+      PUERTO: 3010
+      DATABASE_URL: ${POSTGRES_FACTURACION_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: http://149.130.182.9:3005
+      AUTH_SERVICE_URL: http://auth-service:3011
+      TRANSACTION_SERVICE_URL: http://transaction-service:3003
+      DIAN_SOFTWARE_ID: fa326ca7-c1f8-40d3-a6fc-24d7c1040607
+      DIAN_CLAVE_TECNICA: fc8eac422eba16e22ffd8c6f94b3f40a6e38162c
+      DIAN_PIN: "20191"
+      DIAN_TEST_SET_ID: dd3a0db6-ef6a-4bca-b5c4-954831bee339
+      DIAN_PREFIJO: SETG
+      DIAN_RESOLUCION: "18760000001"
+      DIAN_AMBIENTE: "2"
+    ports:
+      - "3010:3010"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
   # Redis
   redis:
     image: redis:7-alpine

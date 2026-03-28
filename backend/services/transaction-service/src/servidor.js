@@ -734,6 +734,28 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       datos: { pedidoId, total: carrito.total, usuario_id: usuarioId, estado: 'Creado' }
     }, { timeout: 2000 }).catch(() => {});
 
+    // Generar factura electrónica en background
+    axios.post('http://facturacion-service:3010/api/facturas/generar', {
+      pedido_id: pedidoId,
+      usuario_id: usuarioId,
+      cliente: {
+        nombre: resUsuario?.data?.usuario?.nombre || 'Cliente',
+        email: resUsuario?.data?.usuario?.email || '',
+        nit_cc: '222222222222',
+        direccion: metodo_pago || 'Bogotá D.C'
+      },
+      productos: carrito.productos.map(p => ({
+        id: p.id,
+        nombre: `Producto ${p.id}`,
+        precio_unitario: p.precio,
+        cantidad: p.cantidad
+      }))
+    }, { timeout: 5000 }).then(() => {
+      console.log(`🧾 Factura electrónica iniciada para pedido ${pedidoId}`);
+    }).catch(e => {
+      console.log(`⚠️ No se pudo iniciar factura: ${e.message}`);
+    });
+
     res.json({
       mensaje: 'Pedido creado exitosamente',
       orden: pedido
