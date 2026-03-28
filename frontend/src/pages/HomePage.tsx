@@ -211,20 +211,18 @@ export default function HomePage() {
 
       {/* Grid de Productos */}
       <section className="py-4 sm:py-6 md:py-8 bg-gray-50">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16">
+        <div className="w-full px-3 sm:px-4 lg:px-6 2xl:px-10">
           {cargando ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md p-3 sm:p-4 animate-pulse">
-                  <div className="bg-gray-300 h-32 sm:h-48 rounded-lg mb-3 sm:mb-4"></div>
-                  <div className="bg-gray-300 h-3 sm:h-4 rounded mb-2"></div>
-                  <div className="bg-gray-300 h-4 sm:h-6 rounded mb-2 w-3/4"></div>
-                  <div className="bg-gray-300 h-6 sm:h-8 rounded"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+              {Array.from({ length: 16 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-sm p-3 animate-pulse">
+                  <div className="bg-gray-200 h-40 sm:h-52 rounded-lg mb-3"></div>
+                  <div className="bg-gray-200 h-3 rounded mb-2"></div>
+                  <div className="bg-gray-200 h-4 rounded mb-2 w-3/4"></div>
+                  <div className="bg-gray-200 h-7 rounded"></div>
                 </div>
               ))}
             </div>
-          ) : productosFiltrados.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6">
               {productosFiltrados.map((producto, index) => (
                 <ProductCard
                   key={producto.id || `producto-${index}`}
