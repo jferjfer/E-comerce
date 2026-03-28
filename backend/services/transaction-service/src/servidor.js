@@ -359,7 +359,7 @@ aplicacion.get('/api/carrito', autenticacion, async (req, res) => {
                  'id', cp.id_producto,
                  'cantidad', cp.cantidad,
                  'precio', cp.precio_unitario,
-                 'nombre', 'Producto ' || cp.id_producto,
+                 'nombre', COALESCE(cp.nombre_producto, 'Producto ' || cp.id_producto),
                  'imagen', 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop'
                )
              ) FILTER (WHERE cp.id IS NOT NULL), '[]') as productos
@@ -424,7 +424,17 @@ aplicacion.post('/api/carrito', autenticacion, async (req, res) => {
     `;
     const productoExistente = await pool.query(consultaProductoExistente, [carritoId, id_producto]);
 
-    const precio = Math.floor(Math.random() * 10000) + 2000; // Precio simulado
+    // Obtener precio y nombre real desde catalog-service
+    let precio = 0;
+    let nombreProducto = `Producto ${id_producto}`;
+    try {
+      const resProd = await axios.get(`http://catalog-service:3002/api/productos/${id_producto}`, { timeout: 5000 });
+      const prod = resProd.data?.producto || resProd.data;
+      precio = prod?.precio || 0;
+      nombreProducto = prod?.nombre || nombreProducto;
+    } catch (e) {
+      console.log(`⚠️ No se pudo obtener precio del producto ${id_producto}:`, e.message);
+    }
 
     if (productoExistente.rows.length > 0) {
       // Actualizar cantidad
@@ -436,9 +446,9 @@ aplicacion.post('/api/carrito', autenticacion, async (req, res) => {
     } else {
       // Insertar nuevo producto
       await pool.query(`
-        INSERT INTO carrito_producto (id_carrito, id_producto, cantidad, precio_unitario)
-        VALUES ($1, $2, $3, $4)
-      `, [carritoId, id_producto, cantidad, precio]);
+        INSERT INTO carrito_producto (id_carrito, id_producto, cantidad, precio_unitario, nombre_producto)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [carritoId, id_producto, cantidad, precio, nombreProducto]);
     }
 
     // Contar total de items
@@ -686,8 +696,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     // Copiar productos del carrito al pedido
     for (const producto of carrito.productos) {
       await pool.query(
-        'INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal) VALUES ($1, $2, $3, $4, $5)',
-        [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio]
+        'INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal, nombre_producto) VALUES ($1, $2, $3, $4, $5, $6)',
+        [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio, producto.nombre || `Producto ${producto.id}`]
       );
     }
     
@@ -743,12 +753,12 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       cliente: {
         nombre: datosUsuario.nombre,
         email: datosUsuario.email,
-        nit_cc: '222222222222',
-        direccion: 'Bogotá D.C'
+        nit_cc: datosUsuario.documento_numero || datosUsuario.nit_cc || '222222222222',
+        direccion: datosUsuario.direccion || datosUsuario.ciudad || 'Bogotá D.C'
       },
       productos: carrito.productos.map(p => ({
         id: p.id,
-        nombre: `Producto ${p.id}`,
+        nombre: p.nombre || `Producto ${p.id}`,
         precio_unitario: p.precio,
         cantidad: p.cantidad
       }))

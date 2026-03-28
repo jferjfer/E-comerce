@@ -3,7 +3,7 @@ from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
 import smtplib
 import base64
@@ -26,7 +26,13 @@ SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3005")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:3011")
-TRANSACTION_SERVICE_URL = os.getenv("TRANSACTION_SERVICE_URL", "http://transaction-service:3003")
+CATALOG_SERVICE_URL = os.getenv("CATALOG_SERVICE_URL", "http://catalog-service:3002")
+
+# Zona horaria Colombia UTC-5
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
+
+def ahora_colombia():
+    return datetime.now(COLOMBIA_TZ).replace(tzinfo=None)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -161,14 +167,37 @@ async def procesar_factura_background(
 
         # Obtener número secuencial
         numero = obtener_siguiente_numero(db)
-        fecha = datetime.now()
+        fecha = ahora_colombia()  # Hora Colombia UTC-5
 
-        # Generar XML
+        # Enriquecer productos con nombres y precios reales desde catalog-service
+        productos_enriquecidos = []
+        async with httpx.AsyncClient(timeout=10) as client:
+            for p in productos_data:
+                nombre = p.get('nombre', '')
+                precio = p.get('precio_unitario', 0)
+                # Si el nombre es generico o precio es 0, consultar catalog
+                if not nombre or nombre.startswith('Producto ') or precio == 0:
+                    try:
+                        res = await client.get(f"{CATALOG_SERVICE_URL}/api/productos/{p['id']}")
+                        if res.status_code == 200:
+                            prod = res.json().get('producto', {})
+                            nombre = prod.get('nombre', nombre)
+                            precio = prod.get('precio', precio)
+                    except Exception as e:
+                        print(f"⚠️ No se pudo obtener producto {p['id']}: {e}")
+                productos_enriquecidos.append({
+                    'id': p['id'],
+                    'nombre': nombre or f"Producto {p['id']}",
+                    'precio_unitario': float(precio),
+                    'cantidad': p.get('cantidad', 1)
+                })
+
+        # Generar XML con productos enriquecidos
         xml_string, cufe, numero_completo, qr_text, subtotal, iva, total = generar_xml_factura(
             numero=numero,
             pedido_id=pedido_id,
             cliente=cliente_data,
-            productos=productos_data,
+            productos=productos_enriquecidos,
             fecha=fecha
         )
 
@@ -206,13 +235,13 @@ async def procesar_factura_background(
 
         print(f"📤 DIAN: {resultado_dian['estado']} - {resultado_dian['mensaje']}")
 
-        # Generar PDF
+        # Generar PDF con productos enriquecidos
         pdf_bytes = generar_pdf_factura(
             numero_completo=numero_completo,
             cufe=cufe,
             pedido_id=pedido_id,
             cliente=cliente_data,
-            productos=productos_data,
+            productos=productos_enriquecidos,
             subtotal=subtotal,
             iva=iva,
             total=total,
