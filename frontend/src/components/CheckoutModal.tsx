@@ -97,7 +97,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       // 1. Crear el pedido
       const resultado = await api.procesarCheckout(token, {
         metodoPago: selectedMethod,
-        direccion_envio: 'Dirección predeterminada'
+        direccion_envio: 'Dirección predeterminada',
+        items: items.map(item => ({
+          id: item.id,
+          nombre: item.nombre,
+          precio: item.precio,
+          cantidad: item.cantidad
+        }))
       })
 
       if (!resultado.exito) {

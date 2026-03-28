@@ -244,10 +244,11 @@ export const api = {
     try {
       console.log('💳 Procesando checkout...');
       const checkoutData = {
-        metodo_pago: datos.metodoPago || 'tarjeta',
-        direccion_envio: datos.direccion_envio || 'Dirección predeterminada'
+        metodo_pago: datos.metodoPago || 'pago_en_linea',
+        direccion_envio: datos.direccion_envio || 'Dirección predeterminada',
+        items: datos.items || []  // Enviar items con cantidades reales del frontend
       };
-      
+
       const response = await fetch(`${API_BASE_URL}/api/checkout`, {
         method: 'POST',
         headers: {
@@ -261,23 +262,14 @@ export const api = {
 
       if (response.ok) {
         console.log('✅ Checkout procesado exitosamente');
-        return {
-          exito: true,
-          orden: data.orden
-        };
+        return { exito: true, orden: data.orden };
       } else {
         console.error('❌ Error en checkout:', data.error);
-        return {
-          exito: false,
-          error: data.error || 'Error al procesar el pago'
-        };
+        return { exito: false, error: data.error || 'Error al procesar el pago' };
       }
     } catch (error) {
       console.error('❌ Error de conexión en checkout:', error);
-      return {
-        exito: false,
-        error: 'Error de conexión con el servidor'
-      };
+      return { exito: false, error: 'Error de conexión con el servidor' };
     }
   },
 

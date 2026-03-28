@@ -656,34 +656,50 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
 aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
-    const { metodo_pago, direccion_envio } = req.body;
+    const { metodo_pago, direccion_envio, items: itemsFrontend } = req.body;
 
     console.log(`💳 Procesando checkout para usuario ${usuarioId}`);
 
-    // Obtener carrito y productos
-    const consultaCarrito = `
-      SELECT c.id, 
-             json_agg(
-               json_build_object(
-                 'id', cp.id_producto,
-                 'cantidad', cp.cantidad,
-                 'precio', cp.precio_unitario
-               )
-             ) as productos,
-             SUM(cp.cantidad * cp.precio_unitario) as total
-      FROM carrito c
-      LEFT JOIN carrito_producto cp ON c.id = cp.id_carrito
-      WHERE c.usuario_id = $1
-      GROUP BY c.id
-    `;
+    let carrito;
 
-    const resultadoCarrito = await pool.query(consultaCarrito, [parseInt(usuarioId)]);
+    // Si el frontend envía items con cantidades reales, usarlos directamente
+    if (itemsFrontend && itemsFrontend.length > 0) {
+      const total = itemsFrontend.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
+      carrito = {
+        id: null,
+        productos: itemsFrontend.map(p => ({
+          id: p.id,
+          cantidad: p.cantidad,
+          precio: p.precio,
+          nombre: p.nombre || `Producto ${p.id}`
+        })),
+        total
+      };
+    } else {
+      // Fallback: obtener carrito del backend
+      const consultaCarrito = `
+        SELECT c.id,
+               json_agg(
+                 json_build_object(
+                   'id', cp.id_producto,
+                   'cantidad', cp.cantidad,
+                   'precio', cp.precio_unitario,
+                   'nombre', COALESCE(cp.nombre_producto, 'Producto ' || cp.id_producto)
+                 )
+               ) as productos,
+               SUM(cp.cantidad * cp.precio_unitario) as total
+        FROM carrito c
+        LEFT JOIN carrito_producto cp ON c.id = cp.id_carrito
+        WHERE c.usuario_id = $1
+        GROUP BY c.id
+      `;
+      const resultadoCarrito = await pool.query(consultaCarrito, [parseInt(usuarioId)]);
 
-    if (resultadoCarrito.rows.length === 0 || !resultadoCarrito.rows[0].productos[0].id) {
-      return res.status(400).json({ error: 'El carrito está vacío' });
+      if (resultadoCarrito.rows.length === 0 || !resultadoCarrito.rows[0].productos[0]?.id) {
+        return res.status(400).json({ error: 'El carrito está vacío' });
+      }
+      carrito = resultadoCarrito.rows[0];
     }
-
-    const carrito = resultadoCarrito.rows[0];
     const carritoId = carrito.id;
 
     // Crear pedido con ID personalizado
@@ -708,8 +724,15 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       [pagoId, pedidoId, metodo_pago || 'Tarjeta', carrito.total, 'Aprobado', metodo_pago || 'Tarjeta de Crédito']
     );
 
-    // Limpiar carrito
-    await pool.query('DELETE FROM carrito_producto WHERE id_carrito = $1', [carritoId]);
+    // Limpiar carrito del backend
+    try {
+      const carritoRow = await pool.query('SELECT id FROM carrito WHERE usuario_id = $1', [parseInt(usuarioId)]);
+      if (carritoRow.rows.length > 0) {
+        await pool.query('DELETE FROM carrito_producto WHERE id_carrito = $1', [carritoRow.rows[0].id]);
+      }
+    } catch (e) {
+      console.log('⚠️ No se pudo limpiar carrito backend:', e.message);
+    }
 
     const pedido = {
       id: pedidoId,
