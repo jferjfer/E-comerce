@@ -8,33 +8,42 @@ class ServicioAuth {
   async registrarUsuario(datosUsuario) {
     try {
       console.log('📝 Iniciando registro de usuario:', datosUsuario.email);
-      const { email, password, nombre, apellido } = datosUsuario;
+      const {
+        email, password, nombre, apellido,
+        documento_tipo, documento_numero, telefono,
+        fecha_nacimiento, genero, direccion, ciudad,
+        departamento, acepta_terminos, acepta_datos, acepta_marketing
+      } = datosUsuario;
 
-      // Verificar si el usuario ya existe
-      console.log('🔍 Verificando si el usuario existe:', email);
       const usuarioExistente = await Usuario.buscarPorEmail(email);
       if (usuarioExistente) {
         console.log('❌ Usuario ya existe:', email);
         return { exito: false, error: 'El usuario ya existe' };
       }
-      console.log('✅ Usuario no existe, procediendo con registro');
 
-      // Crear usuario (el modelo ya hashea la contraseña)
-      console.log('📝 Creando usuario en base de datos...');
       const nuevoUsuario = await Usuario.crear({
         email,
         contrasena: password,
         nombre: nombre + (apellido ? ` ${apellido}` : ''),
-        rol: 'cliente'
+        rol: 'cliente',
+        documento_tipo,
+        documento_numero,
+        telefono,
+        fecha_nacimiento,
+        genero,
+        direccion,
+        ciudad,
+        departamento,
+        acepta_terminos,
+        acepta_datos,
+        acepta_marketing
       });
       console.log('✅ Usuario creado exitosamente:', nuevoUsuario.id);
 
-      // Enviar correo de bienvenida (sin bloquear el registro)
       ServicioCorreo.enviarBienvenida(email, nuevoUsuario.nombre)
         .then(() => console.log(`📧 Correo de bienvenida enviado a ${email}`))
         .catch(err => console.log(`⚠️ No se pudo enviar bienvenida a ${email}:`, err.message));
 
-      // Generar token
       const token = this.generarToken(nuevoUsuario);
 
       return {
@@ -44,7 +53,6 @@ class ServicioAuth {
           id: nuevoUsuario.id,
           email: nuevoUsuario.email,
           nombre: nuevoUsuario.nombre,
-          apellido: nuevoUsuario.apellido,
           rol: nuevoUsuario.rol
         }
       };

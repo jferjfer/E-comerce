@@ -15,16 +15,33 @@ async function queryConRetry(consulta, params, reintentos = 2) {
 
 class Usuario {
   static async crear(datosUsuario) {
-    const { nombre, email, contrasena, rol = 'cliente' } = datosUsuario;
+    const {
+      nombre, email, contrasena, rol = 'cliente',
+      documento_tipo, documento_numero, telefono,
+      fecha_nacimiento, genero, direccion, ciudad,
+      departamento, acepta_terminos, acepta_datos, acepta_marketing
+    } = datosUsuario;
+
     const contrasenaHasheada = await bcrypt.hash(contrasena, 8);
-    
+
     const consulta = `
-      INSERT INTO usuarios (nombre, email, password, rol)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO usuarios (
+        nombre, email, password, rol,
+        documento_tipo, documento_numero, telefono,
+        fecha_nacimiento, genero, direccion, ciudad,
+        departamento, acepta_terminos, acepta_datos, acepta_marketing
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING id, nombre, email, rol, fecha_creacion
     `;
-    
-    const resultado = await pool.query(consulta, [nombre, email, contrasenaHasheada, rol]);
+
+    const resultado = await pool.query(consulta, [
+      nombre, email, contrasenaHasheada, rol,
+      documento_tipo || null, documento_numero || null, telefono || null,
+      fecha_nacimiento || null, genero || null, direccion || null, ciudad || null,
+      departamento || null,
+      acepta_terminos || false, acepta_datos || false, acepta_marketing || false
+    ]);
     return resultado.rows[0];
   }
 
@@ -48,14 +65,15 @@ class Usuario {
     return await bcrypt.compare(contrasenaTexto, contrasenaHasheada);
   }
 
-  static async actualizarTotalCompras(idUsuario, nuevoTotal) {
+  static async actualizarTotalCompras(idUsuario, montoAgregar) {
     const consulta = `
       UPDATE usuarios 
-      SET total_compras_historico = $1, fecha_actualizacion = CURRENT_TIMESTAMP
+      SET total_compras_historico = total_compras_historico + $1,
+          fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id = $2
       RETURNING total_compras_historico
     `;
-    const resultado = await pool.query(consulta, [nuevoTotal, idUsuario]);
+    const resultado = await pool.query(consulta, [montoAgregar, idUsuario]);
     return resultado.rows[0];
   }
 

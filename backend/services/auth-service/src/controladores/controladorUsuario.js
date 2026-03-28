@@ -79,10 +79,10 @@ class ControladorUsuario {
   static async actualizarTotalCompras(req, res, next) {
     try {
       const { nuevoTotal } = req.body;
-      
+
       if (typeof nuevoTotal !== 'number' || nuevoTotal < 0) {
         return res.status(400).json({
-          error: 'El total debe ser un número positivo'
+          error: 'El monto debe ser un número positivo'
         });
       }
 
@@ -90,7 +90,7 @@ class ControladorUsuario {
 
       res.json({
         mensaje: 'Total de compras actualizado exitosamente',
-        datos: resultado
+        total_compras_historico: resultado.total_compras_historico
       });
     } catch (error) {
       next(error);

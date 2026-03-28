@@ -746,6 +746,18 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       datos: { pedidoId, total: carrito.total, usuario_id: usuarioId, estado: 'Creado' }
     }, { timeout: 2000 }).catch(() => {});
 
+    // Actualizar total_compras_historico del usuario
+    axios.put(`http://auth-service:3011/api/usuarios/total-compras`, {
+      nuevoTotal: parseFloat(carrito.total)
+    }, {
+      headers: { Authorization: req.headers.authorization },
+      timeout: 3000
+    }).then(() => {
+      console.log(`💰 Total compras actualizado para usuario ${usuarioId}: +${carrito.total}`);
+    }).catch(e => {
+      console.log(`⚠️ No se pudo actualizar total compras: ${e.message}`);
+    });
+
     // Generar factura electrónica en background
     axios.post('http://facturacion-service:3010/api/facturas/generar', {
       pedido_id: pedidoId,
