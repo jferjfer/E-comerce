@@ -24,7 +24,8 @@ class ServicioAuth {
       const nuevoUsuario = await Usuario.crear({
         email,
         contrasena: password,
-        nombre: nombre + (apellido ? ` ${apellido}` : ''),
+        nombre,
+        apellido: apellido || null,
         rol: 'cliente',
         documento_tipo,
         documento_numero,
@@ -40,7 +41,7 @@ class ServicioAuth {
       });
       console.log('✅ Usuario creado exitosamente:', nuevoUsuario.id);
 
-      ServicioCorreo.enviarBienvenida(email, nuevoUsuario.nombre)
+      ServicioCorreo.enviarBienvenida(email, `${nombre}${apellido ? ' ' + apellido : ''}`)
         .then(() => console.log(`📧 Correo de bienvenida enviado a ${email}`))
         .catch(err => console.log(`⚠️ No se pudo enviar bienvenida a ${email}:`, err.message));
 
@@ -53,6 +54,7 @@ class ServicioAuth {
           id: nuevoUsuario.id,
           email: nuevoUsuario.email,
           nombre: nuevoUsuario.nombre,
+          apellido: nuevoUsuario.apellido,
           rol: nuevoUsuario.rol
         }
       };

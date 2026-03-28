@@ -16,7 +16,7 @@ async function queryConRetry(consulta, params, reintentos = 2) {
 class Usuario {
   static async crear(datosUsuario) {
     const {
-      nombre, email, contrasena, rol = 'cliente',
+      nombre, apellido, email, contrasena, rol = 'cliente',
       documento_tipo, documento_numero, telefono,
       fecha_nacimiento, genero, direccion, ciudad,
       departamento, acepta_terminos, acepta_datos, acepta_marketing
@@ -26,17 +26,17 @@ class Usuario {
 
     const consulta = `
       INSERT INTO usuarios (
-        nombre, email, password, rol,
+        nombre, apellido, email, password, rol,
         documento_tipo, documento_numero, telefono,
         fecha_nacimiento, genero, direccion, ciudad,
         departamento, acepta_terminos, acepta_datos, acepta_marketing
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-      RETURNING id, nombre, email, rol, fecha_creacion
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      RETURNING id, nombre, apellido, email, rol, fecha_creacion
     `;
 
     const resultado = await pool.query(consulta, [
-      nombre, email, contrasenaHasheada, rol,
+      nombre, apellido || null, email, contrasenaHasheada, rol,
       documento_tipo || null, documento_numero || null, telefono || null,
       fecha_nacimiento || null, genero || null, direccion || null, ciudad || null,
       departamento || null,
@@ -53,7 +53,8 @@ class Usuario {
 
   static async buscarPorId(id) {
     const consulta = `
-      SELECT id, nombre, email, rol, telefono, direccion, ciudad, total_compras_historico, fecha_creacion, fecha_actualizacion,
+      SELECT id, nombre, apellido, email, rol, telefono, direccion, ciudad,
+             total_compras_historico, fecha_creacion, fecha_actualizacion,
              documento_tipo, documento_numero
       FROM usuarios WHERE id = $1
     `;
