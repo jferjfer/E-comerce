@@ -35,7 +35,7 @@ export default function Header({ onCartClick }: HeaderProps) {
         <div className="flex justify-between items-center h-16 sm:h-20">
 
           {/* Logo EGOS */}
-          <Link to="/" className="flex flex-col items-start leading-none group min-w-0">
+          <Link to="/" className="flex flex-col items-center leading-none group flex-shrink-0">
             <span className="font-bodoni text-2xl sm:text-3xl font-normal bg-gradient-to-br from-gold-light via-gold to-gold-dark bg-clip-text text-transparent" style={{letterSpacing: '-2px'}}>
               E
             </span>
