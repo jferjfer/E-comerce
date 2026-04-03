@@ -4,9 +4,46 @@ const cors = require('cors');
 const axios = require('axios');
 const http = require('http');
 const { Server } = require('socket.io');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const port = process.env.PUERTO || 3000;
+
+// Seguridad con helmet
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false
+}));
+
+// Rate limiting general — 200 requests por minuto por IP
+const limiterGeneral = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  message: { error: 'Demasiadas solicitudes, intenta en un minuto' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiting estricto para auth — 10 intentos por minuto
+const limiterAuth = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: 'Demasiados intentos de autenticación, intenta en un minuto' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiting para checkout — 20 por minuto
+const limiterCheckout = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { error: 'Demasiadas solicitudes de pago, intenta en un minuto' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use(limiterGeneral);
 
 // Crear servidor HTTP + Socket.IO
 const httpServer = http.createServer(app);
@@ -314,14 +351,14 @@ const manejarAuthDirecto = async (req, res, endpoint) => {
   }
 };
 
-// Rutas auth optimizadas
-app.post('/api/auth/register', (req, res) => manejarAuthDirecto(req, res, 'register'));
-app.post('/api/auth/registro', (req, res) => manejarAuthDirecto(req, res, 'registro'));
-app.post('/api/auth/login', (req, res) => manejarAuthDirecto(req, res, 'login'));
+// Rutas auth optimizadas con rate limiting estricto
+app.post('/api/auth/register', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'register'));
+app.post('/api/auth/registro', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'registro'));
+app.post('/api/auth/login', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'login'));
 app.get('/api/auth/verificar', (req, res) => manejarAuthDirecto(req, res, 'verificar'));
 app.post('/api/auth/logout', (req, res) => manejarAuthDirecto(req, res, 'logout'));
-app.post('/api/auth/solicitar-recuperacion', (req, res) => manejarAuthDirecto(req, res, 'solicitar-recuperacion'));
-app.post('/api/auth/restablecer-contrasena', (req, res) => manejarAuthDirecto(req, res, 'restablecer-contrasena'));
+app.post('/api/auth/solicitar-recuperacion', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'solicitar-recuperacion'));
+app.post('/api/auth/restablecer-contrasena', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'restablecer-contrasena'));
 
 // Rutas de usuarios
 app.get('/api/usuarios/perfil', async (req, res) => {
@@ -457,7 +494,7 @@ app.all('/api/admin*', async (req, res) => {
   }
 });
 
-app.all('/api/checkout*', async (req, res) => {
+app.all('/api/checkout*', limiterCheckout, async (req, res) => {
   try {
     const response = await axios({
       method: req.method,

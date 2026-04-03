@@ -40,6 +40,16 @@ spec:
             name: gateway-service
             port:
               number: 80
+  - host: monitor.egoscolombia.com.co
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana-service
+            port:
+              number: 80
 ---
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
@@ -51,3 +61,4 @@ spec:
   - egoscolombia.com.co
   - www.egoscolombia.com.co
   - api.egoscolombia.com.co
+  - monitor.egoscolombia.com.co
