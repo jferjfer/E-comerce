@@ -524,6 +524,156 @@ app.all('/api/devoluciones*', async (req, res) => {
   }
 });
 
+app.all('/api/campanas*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${MARKETING_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/cupones*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${MARKETING_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/fidelizacion*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${MARKETING_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/analytics*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${MARKETING_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/resenas*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${SOCIAL_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/listas-deseos*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${SOCIAL_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/inventario*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${LOGISTICS_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/almacenes*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${LOGISTICS_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/entregas*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${LOGISTICS_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/recomendaciones*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${AI_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 app.all('/api/chat*', async (req, res) => {
   try {
     const response = await axios({
