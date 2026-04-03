@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { api } from '@/services/api'
+import { getDepartamentos, getMunicipios } from '@/data/colombia'
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [formData, setFormData] = useState({
     email: '', password: '', confirmar_password: '', nombre: '', apellido: '',
     documento_tipo: 'CC', documento_numero: '', telefono: '',
-    fecha_nacimiento: '', genero: '', direccion: '', ciudad: '', departamento: '',
+    fecha_nacimiento: '', genero: '', direccion: '', barrio: '', ciudad: '', departamento: '',
     acepta_terminos: false, acepta_datos: false, acepta_marketing: false
   })
   const [errores, setErrores] = useState<Record<string, string>>({})
@@ -164,19 +165,28 @@ export default function LoginPage() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-                  <input type="text" value={formData.ciudad} onChange={(e) => setFormData({...formData, ciudad: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" />
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
-                  <select value={formData.departamento} onChange={(e) => setFormData({...formData, departamento: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
-                    <option value="">Seleccionar</option>
-                    <option value="Antioquia">Antioquia</option>
-                    <option value="Bogotá">Bogotá D.C.</option>
-                    <option value="Valle del Cauca">Valle del Cauca</option>
-                    <option value="Cundinamarca">Cundinamarca</option>
+                  <select value={formData.departamento} onChange={(e) => setFormData({...formData, departamento: e.target.value, ciudad: ''})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    <option value="">Seleccionar departamento</option>
+                    {getDepartamentos().map(dep => (
+                      <option key={dep} value={dep}>{dep}</option>
+                    ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Municipio</label>
+                  <select value={formData.ciudad} onChange={(e) => setFormData({...formData, ciudad: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" disabled={!formData.departamento}>
+                    <option value="">{formData.departamento ? 'Seleccionar municipio' : 'Primero selecciona departamento'}</option>
+                    {getMunicipios(formData.departamento).map(mun => (
+                      <option key={mun} value={mun}>{mun}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Barrio</label>
+                <input type="text" value={formData.barrio} onChange={(e) => setFormData({...formData, barrio: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" placeholder="Escribe tu barrio" />
               </div>
               
               <div className="space-y-2">
