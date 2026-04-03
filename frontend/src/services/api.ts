@@ -143,6 +143,13 @@ export const api = {
       console.log('📋 Respuesta del servidor:', { status: response.status, data });
 
       if (response.ok && (response.status === 200 || response.status === 201)) {
+        // Verificar que el registro fue realmente exitoso
+        if (data.exito === false || (data.datos && data.datos.exito === false)) {
+          return {
+            exito: false,
+            error: data.error || data.datos?.error || 'Error en el registro'
+          };
+        }
         console.log('✅ Registro exitoso');
         return {
           exito: true,

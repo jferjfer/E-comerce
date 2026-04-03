@@ -36,7 +36,7 @@ export default function LoginPage() {
           addNotification('Registro exitoso. Ahora puedes iniciar sesión', 'success')
           setIsLogin(true)
         } else {
-          addNotification('Error en el registro', 'error')
+          addNotification(response.error || 'Error en el registro', 'error')
         }
       }
     } catch (error) {

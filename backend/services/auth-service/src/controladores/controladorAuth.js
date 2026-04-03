@@ -21,6 +21,14 @@ class ControladorAuth {
       // Registrar usuario
       const resultado = await ServicioAuth.registrarUsuario(value);
 
+      // Verificar si el registro fue exitoso
+      if (!resultado.exito) {
+        return res.status(400).json({
+          exito: false,
+          error: resultado.error || 'Error al registrar usuario'
+        });
+      }
+
       res.status(201).json({
         exito: true,
         mensaje: 'Usuario registrado exitosamente',
