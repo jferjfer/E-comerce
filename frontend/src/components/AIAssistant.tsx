@@ -46,8 +46,7 @@ export default function AIAssistant() {
 
   const { usuario } = useAuthStore()
 
-  // Solo mostrar para rol cliente
-  if (!usuario || usuario.rol !== 'cliente') return null
+  const esCliente = usuario?.rol === 'cliente'
 
   const quickActions = [
     { text: '👗 Recomendar outfit para una ocasión', action: 'outfit_recommendation' },
@@ -142,7 +141,7 @@ export default function AIAssistant() {
     handleSendMessage(text.replace(/[👗🎨💰📏🔄]/g, '').trim())
   }
 
-  return (
+  return esCliente ? (
     <>
       {/* Botón Flotante */}
       <div className="fixed bottom-6 right-6 z-50">
@@ -318,5 +317,5 @@ export default function AIAssistant() {
         </div>
       )}
     </>
-  )
+  ) : null
 }
