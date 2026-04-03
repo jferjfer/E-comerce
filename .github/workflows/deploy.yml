@@ -1,0 +1,188 @@
+name: CI/CD — Deploy a GKE
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_ID: crypto-topic-492202-q9
+  REGION: us-central1
+  REGISTRY: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry
+  CLUSTER: autopilot-cluster-1
+  NAMESPACE: egos
+
+jobs:
+  build-and-deploy:
+    name: Build, Push y Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Autenticar en Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/611253309597/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions-sa@crypto-topic-492202-q9.iam.gserviceaccount.com
+
+      - name: Configurar gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configurar Docker para Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Detectar servicios modificados
+        id: cambios
+        run: |
+          git fetch origin main --depth=2
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          echo "Archivos modificados: $CHANGED"
+
+          check() { echo "$CHANGED" | grep -q "^$1" && echo "true" || echo "false"; }
+
+          echo "auth=$(check 'backend/services/auth-service')"           >> $GITHUB_OUTPUT
+          echo "catalog=$(check 'backend/services/catalog-service')"     >> $GITHUB_OUTPUT
+          echo "transaction=$(check 'backend/services/transaction-service')" >> $GITHUB_OUTPUT
+          echo "social=$(check 'backend/services/social-service')"       >> $GITHUB_OUTPUT
+          echo "marketing=$(check 'backend/services/marketing-service')" >> $GITHUB_OUTPUT
+          echo "ai=$(check 'backend/services/ai-service')"               >> $GITHUB_OUTPUT
+          echo "credit=$(check 'backend/services/credit-service')"       >> $GITHUB_OUTPUT
+          echo "logistics=$(check 'backend/services/logistics-service')" >> $GITHUB_OUTPUT
+          echo "facturacion=$(check 'backend/services/facturacion-service')" >> $GITHUB_OUTPUT
+          echo "gateway=$(check 'simple-gateway')"                       >> $GITHUB_OUTPUT
+          echo "frontend=$(check 'frontend')"                            >> $GITHUB_OUTPUT
+
+      - name: Build y Push auth-service
+        if: steps.cambios.outputs.auth == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/auth-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/auth-service:latest \
+                       ./backend/services/auth-service
+          docker push ${{ env.REGISTRY }}/auth-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/auth-service:latest
+
+      - name: Build y Push catalog-service
+        if: steps.cambios.outputs.catalog == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/catalog-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/catalog-service:latest \
+                       ./backend/services/catalog-service
+          docker push ${{ env.REGISTRY }}/catalog-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/catalog-service:latest
+
+      - name: Build y Push transaction-service
+        if: steps.cambios.outputs.transaction == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/transaction-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/transaction-service:latest \
+                       ./backend/services/transaction-service
+          docker push ${{ env.REGISTRY }}/transaction-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/transaction-service:latest
+
+      - name: Build y Push social-service
+        if: steps.cambios.outputs.social == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/social-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/social-service:latest \
+                       ./backend/services/social-service
+          docker push ${{ env.REGISTRY }}/social-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/social-service:latest
+
+      - name: Build y Push marketing-service
+        if: steps.cambios.outputs.marketing == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/marketing-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/marketing-service:latest \
+                       ./backend/services/marketing-service
+          docker push ${{ env.REGISTRY }}/marketing-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/marketing-service:latest
+
+      - name: Build y Push ai-service
+        if: steps.cambios.outputs.ai == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/ai-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/ai-service:latest \
+                       ./backend/services/ai-service
+          docker push ${{ env.REGISTRY }}/ai-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/ai-service:latest
+
+      - name: Build y Push credit-service
+        if: steps.cambios.outputs.credit == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/credit-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/credit-service:latest \
+                       ./backend/services/credit-service
+          docker push ${{ env.REGISTRY }}/credit-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/credit-service:latest
+
+      - name: Build y Push logistics-service
+        if: steps.cambios.outputs.logistics == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/logistics-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/logistics-service:latest \
+                       ./backend/services/logistics-service
+          docker push ${{ env.REGISTRY }}/logistics-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/logistics-service:latest
+
+      - name: Build y Push facturacion-service
+        if: steps.cambios.outputs.facturacion == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/facturacion-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/facturacion-service:latest \
+                       ./backend/services/facturacion-service
+          docker push ${{ env.REGISTRY }}/facturacion-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/facturacion-service:latest
+
+      - name: Build y Push gateway
+        if: steps.cambios.outputs.gateway == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/gateway:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/gateway:latest \
+                       ./simple-gateway
+          docker push ${{ env.REGISTRY }}/gateway:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/gateway:latest
+
+      - name: Build y Push frontend
+        if: steps.cambios.outputs.frontend == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/frontend:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/frontend:latest \
+                       --build-arg VITE_API_URL=http://34.123.67.97 \
+                       ./frontend
+          docker push ${{ env.REGISTRY }}/frontend:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/frontend:latest
+
+      - name: Conectar al cluster GKE
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.CLUSTER }}
+          location: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Deploy servicios modificados
+        run: |
+          deploy() {
+            echo "🚀 Desplegando $1..."
+            kubectl set image deployment/$1 $1=${{ env.REGISTRY }}/$1:${{ github.sha }} -n ${{ env.NAMESPACE }}
+            kubectl rollout status deployment/$1 -n ${{ env.NAMESPACE }} --timeout=120s
+          }
+
+          [ "${{ steps.cambios.outputs.auth }}" == "true" ]        && deploy auth-service
+          [ "${{ steps.cambios.outputs.catalog }}" == "true" ]     && deploy catalog-service
+          [ "${{ steps.cambios.outputs.transaction }}" == "true" ] && deploy transaction-service
+          [ "${{ steps.cambios.outputs.social }}" == "true" ]      && deploy social-service
+          [ "${{ steps.cambios.outputs.marketing }}" == "true" ]   && deploy marketing-service
+          [ "${{ steps.cambios.outputs.ai }}" == "true" ]          && deploy ai-service
+          [ "${{ steps.cambios.outputs.credit }}" == "true" ]      && deploy credit-service
+          [ "${{ steps.cambios.outputs.logistics }}" == "true" ]   && deploy logistics-service
+          [ "${{ steps.cambios.outputs.facturacion }}" == "true" ] && deploy facturacion-service
+          [ "${{ steps.cambios.outputs.gateway }}" == "true" ]     && deploy gateway
+          [ "${{ steps.cambios.outputs.frontend }}" == "true" ]    && deploy frontend
+          echo "✅ Deploy completado"
+
+      - name: Verificar estado del cluster
+        run: kubectl get pods -n ${{ env.NAMESPACE }}
