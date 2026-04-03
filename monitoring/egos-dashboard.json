@@ -1,0 +1,193 @@
+{
+  "title": "EGOS - Monitor Completo",
+  "uid": "egos-monitor-v1",
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "🤖 Requests IA Total",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": "prometheus",
+      "targets": [{
+        "expr": "sum(ai_requests_total)",
+        "legendFormat": "Total requests"
+      }],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "✅ Requests Exitosos vs ❌ Errores",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": "prometheus",
+      "targets": [
+        {
+          "expr": "sum(ai_requests_total{status='success'})",
+          "legendFormat": "Exitosos"
+        },
+        {
+          "expr": "sum(ai_requests_total{status='error'})",
+          "legendFormat": "Errores"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "⚡ Cache Hits vs Misses",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": "prometheus",
+      "targets": [
+        {
+          "expr": "sum(cache_hits_total)",
+          "legendFormat": "Cache Hits"
+        },
+        {
+          "expr": "sum(cache_misses_total)",
+          "legendFormat": "Cache Misses"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "🪙 Tokens IA Usados",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": "prometheus",
+      "targets": [{
+        "expr": "sum(ai_tokens_total)",
+        "legendFormat": "Tokens"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "📈 Requests por Segundo (últimos 5 min)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "datasource": "prometheus",
+      "targets": [{
+        "expr": "rate(ai_requests_total[5m])",
+        "legendFormat": "{{endpoint}} - {{status}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "⏱️ Tiempo de Respuesta IA (segundos)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "datasource": "prometheus",
+      "targets": [{
+        "expr": "rate(ai_request_duration_seconds_sum[5m]) / rate(ai_request_duration_seconds_count[5m])",
+        "legendFormat": "{{endpoint}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "📊 Distribución de Requests por Endpoint",
+      "type": "piechart",
+      "gridPos": { "x": 0, "y": 12, "w": 8, "h": 8 },
+      "datasource": "prometheus",
+      "targets": [{
+        "expr": "sum by (endpoint) (ai_requests_total)",
+        "legendFormat": "{{endpoint}}"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "🎯 Tasa de Éxito IA (%)",
+      "type": "gauge",
+      "gridPos": { "x": 8, "y": 12, "w": 8, "h": 8 },
+      "datasource": "prometheus",
+      "targets": [{
+        "expr": "sum(ai_requests_total{status='success'}) / sum(ai_requests_total) * 100",
+        "legendFormat": "Tasa de éxito"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "green", "value": 95 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "💾 Cache Hit Rate (%)",
+      "type": "gauge",
+      "gridPos": { "x": 16, "y": 12, "w": 8, "h": 8 },
+      "datasource": "prometheus",
+      "targets": [{
+        "expr": "sum(cache_hits_total) / (sum(cache_hits_total) + sum(cache_misses_total)) * 100",
+        "legendFormat": "Cache Hit Rate"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "green", "value": 80 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

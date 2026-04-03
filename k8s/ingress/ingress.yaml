@@ -8,6 +8,7 @@ metadata:
     kubernetes.io/ingress.global-static-ip-name: "egos-ip"
     networking.gke.io/managed-certificates: "egos-ssl"
     kubernetes.io/ingress.allow-http: "true"
+    cloud.google.com/backend-config: '{"default": "egos-backend-config"}'
 spec:
   rules:
   - host: egoscolombia.com.co

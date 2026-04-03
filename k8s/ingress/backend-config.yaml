@@ -1,0 +1,11 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: egos-backend-config
+  namespace: egos
+spec:
+  healthCheck:
+    checkIntervalSec: 15
+    port: 3000
+    type: HTTP
+    requestPath: /api/health
