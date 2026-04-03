@@ -80,6 +80,7 @@ const esquemaRegistro = Joi.object({
 
   genero: Joi.string().allow('').optional(),
   direccion: Joi.string().allow('').optional(),
+  barrio: Joi.string().allow('').optional(),
   ciudad: Joi.string().allow('').optional(),
   departamento: Joi.string().allow('').optional(),
 

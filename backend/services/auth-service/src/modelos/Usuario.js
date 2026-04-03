@@ -18,7 +18,7 @@ class Usuario {
     const {
       nombre, apellido, email, contrasena, rol = 'cliente',
       documento_tipo, documento_numero, telefono,
-      fecha_nacimiento, genero, direccion, ciudad,
+      fecha_nacimiento, genero, direccion, barrio, ciudad,
       departamento, acepta_terminos, acepta_datos, acepta_marketing
     } = datosUsuario;
 
@@ -28,17 +28,17 @@ class Usuario {
       INSERT INTO usuarios (
         nombre, apellido, email, password, rol,
         documento_tipo, documento_numero, telefono,
-        fecha_nacimiento, genero, direccion, ciudad,
+        fecha_nacimiento, genero, direccion, barrio, ciudad,
         departamento, acepta_terminos, acepta_datos, acepta_marketing
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
       RETURNING id, nombre, apellido, email, rol, fecha_creacion
     `;
 
     const resultado = await pool.query(consulta, [
       nombre, apellido || null, email, contrasenaHasheada, rol,
       documento_tipo || null, documento_numero || null, telefono || null,
-      fecha_nacimiento || null, genero || null, direccion || null, ciudad || null,
+      fecha_nacimiento || null, genero || null, direccion || null, barrio || null, ciudad || null,
       departamento || null,
       acepta_terminos || false, acepta_datos || false, acepta_marketing || false
     ]);
