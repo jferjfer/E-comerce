@@ -143,10 +143,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-client = OpenAI(
-    api_key=os.getenv('AI_GATEWAY_API_KEY'),
-    base_url='https://api.deepseek.com'
-)
+# Cliente IA - lazy init para no crashear si la key no está configurada
+_ai_client = None
+
+def get_ai_client():
+    global _ai_client
+    if _ai_client is None:
+        api_key = os.getenv('AI_GATEWAY_API_KEY', 'placeholder-no-configurado')
+        _ai_client = OpenAI(api_key=api_key, base_url='https://api.deepseek.com')
+    return _ai_client
 
 mongo_client_catalogo = None
 mongo_client_social = None
@@ -297,7 +302,7 @@ CATEGORÍAS: {', '.join(contexto['categorias'])}"""
         mensajes.append({'role': 'user', 'content': request.mensaje})
         
         response = deepseek_breaker.call(
-            client.chat.completions.create,
+            get_ai_client().chat.completions.create,
             model='deepseek-chat',
             messages=mensajes,
             temperature=prompt_config['temp'],
