@@ -46,6 +46,9 @@ export default function AIAssistant() {
 
   const { usuario } = useAuthStore()
 
+  // Solo mostrar para rol cliente
+  if (!usuario || usuario.rol !== 'cliente') return null
+
   const quickActions = [
     { text: '👗 Recomendar outfit para una ocasión', action: 'outfit_recommendation' },
     { text: '🎨 Ayudarme a combinar colores', action: 'color_matching' },
