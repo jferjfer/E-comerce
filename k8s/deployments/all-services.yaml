@@ -1,0 +1,627 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+      - name: auth-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/auth-service:latest
+        ports:
+        - containerPort: 3011
+        env:
+        - name: PUERTO
+          value: "3011"
+        - name: NODE_ENV
+          value: "production"
+        - name: FRONTEND_URL
+          value: "http://frontend-service"
+        - name: JWT_SECRETO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: POSTGRES_AUTH_URL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: egos
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 3011
+    targetPort: 3011
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-service
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+    spec:
+      containers:
+      - name: catalog-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/catalog-service:latest
+        ports:
+        - containerPort: 3002
+        env:
+        - name: PUERTO
+          value: "3002"
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: MONGODB_CATALOG_URI
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  namespace: egos
+spec:
+  selector:
+    app: catalog-service
+  ports:
+  - port: 3002
+    targetPort: 3002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transaction-service
+  template:
+    metadata:
+      labels:
+        app: transaction-service
+    spec:
+      containers:
+      - name: transaction-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/transaction-service:latest
+        ports:
+        - containerPort: 3003
+        env:
+        - name: PUERTO
+          value: "3003"
+        - name: NODE_ENV
+          value: "production"
+        - name: FRONTEND_URL
+          value: "http://frontend-service"
+        - name: JWT_SECRETO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: POSTGRES_TRANSACTION_URL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-service
+  namespace: egos
+spec:
+  selector:
+    app: transaction-service
+  ports:
+  - port: 3003
+    targetPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: social-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: social-service
+  template:
+    metadata:
+      labels:
+        app: social-service
+    spec:
+      containers:
+      - name: social-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/social-service:latest
+        ports:
+        - containerPort: 3004
+        env:
+        - name: PUERTO
+          value: "3004"
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: MONGODB_SOCIAL_URI
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: social-service
+  namespace: egos
+spec:
+  selector:
+    app: social-service
+  ports:
+  - port: 3004
+    targetPort: 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketing-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marketing-service
+  template:
+    metadata:
+      labels:
+        app: marketing-service
+    spec:
+      containers:
+      - name: marketing-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/marketing-service:latest
+        ports:
+        - containerPort: 3006
+        env:
+        - name: PUERTO
+          value: "3006"
+        - name: FRONTEND_URL
+          value: "http://frontend-service"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: POSTGRES_MARKETING_URL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketing-service
+  namespace: egos
+spec:
+  selector:
+    app: marketing-service
+  ports:
+  - port: 3006
+    targetPort: 3006
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+      - name: ai-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/ai-service:latest
+        ports:
+        - containerPort: 3007
+        env:
+        - name: PUERTO
+          value: "3007"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: MONGODB_CATALOG_URI
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: MONGODB_CATALOG_URI
+        - name: MONGODB_SOCIAL_URI
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: MONGODB_SOCIAL_URI
+        - name: MONGODB_AI_URI
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: MONGODB_AI_URI
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: egos
+spec:
+  selector:
+    app: ai-service
+  ports:
+  - port: 3007
+    targetPort: 3007
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: credit-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: credit-service
+  template:
+    metadata:
+      labels:
+        app: credit-service
+    spec:
+      containers:
+      - name: credit-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/credit-service:latest
+        ports:
+        - containerPort: 3008
+        env:
+        - name: PUERTO
+          value: "3008"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: POSTGRES_CREDIT_URL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: credit-service
+  namespace: egos
+spec:
+  selector:
+    app: credit-service
+  ports:
+  - port: 3008
+    targetPort: 3008
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logistics-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logistics-service
+  template:
+    metadata:
+      labels:
+        app: logistics-service
+    spec:
+      containers:
+      - name: logistics-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/logistics-service:latest
+        ports:
+        - containerPort: 3009
+        env:
+        - name: PUERTO
+          value: "3009"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logistics-service
+  namespace: egos
+spec:
+  selector:
+    app: logistics-service
+  ports:
+  - port: 3009
+    targetPort: 3009
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: facturacion-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: facturacion-service
+  template:
+    metadata:
+      labels:
+        app: facturacion-service
+    spec:
+      containers:
+      - name: facturacion-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/facturacion-service:latest
+        ports:
+        - containerPort: 3010
+        env:
+        - name: PUERTO
+          value: "3010"
+        - name: FRONTEND_URL
+          value: "http://frontend-service"
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3011"
+        - name: TRANSACTION_SERVICE_URL
+          value: "http://transaction-service:3003"
+        - name: DIAN_SOFTWARE_ID
+          value: "fa326ca7-c1f8-40d3-a6fc-24d7c1040607"
+        - name: DIAN_CLAVE_TECNICA
+          value: "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"
+        - name: DIAN_PIN
+          value: "20191"
+        - name: DIAN_AMBIENTE
+          value: "2"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: POSTGRES_FACTURACION_URL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: facturacion-service
+  namespace: egos
+spec:
+  selector:
+    app: facturacion-service
+  ports:
+  - port: 3010
+    targetPort: 3010
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: egos
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/gateway:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PUERTO
+          value: "3000"
+        - name: FRONTEND_URL
+          value: "http://frontend-service"
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3011"
+        - name: CATALOG_SERVICE_URL
+          value: "http://catalog-service:3002"
+        - name: TRANSACTION_SERVICE_URL
+          value: "http://transaction-service:3003"
+        - name: SOCIAL_SERVICE_URL
+          value: "http://social-service:3004"
+        - name: MARKETING_SERVICE_URL
+          value: "http://marketing-service:3006"
+        - name: AI_SERVICE_URL
+          value: "http://ai-service:3007"
+        - name: CREDIT_SERVICE_URL
+          value: "http://credit-service:3008"
+        - name: LOGISTICS_SERVICE_URL
+          value: "http://logistics-service:3009"
+        - name: FACTURACION_SERVICE_URL
+          value: "http://facturacion-service:3010"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: egos
+spec:
+  selector:
+    app: gateway
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/frontend:latest
+        ports:
+        - containerPort: 3005
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: egos
+spec:
+  selector:
+    app: frontend
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3005
