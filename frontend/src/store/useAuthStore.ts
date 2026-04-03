@@ -8,6 +8,7 @@ interface TiendaAuth {
   usuario: Usuario | null
   token: string | null
   estaAutenticado: boolean
+  errorLogin: string | null
   iniciarSesion: (email: string, contrasena: string) => Promise<boolean>
   cerrarSesion: () => void
   registrar: (datos: any) => Promise<boolean>
@@ -19,6 +20,7 @@ export const useTiendaAuth = create<TiendaAuth>()(
       usuario: null,
       token: null,
       estaAutenticado: false,
+      errorLogin: null,
 
       iniciarSesion: async (email: string, contrasena: string) => {
         try {
@@ -28,19 +30,18 @@ export const useTiendaAuth = create<TiendaAuth>()(
             set({ 
               usuario: resultado.usuario, 
               token: resultado.token,
-              estaAutenticado: true 
+              estaAutenticado: true,
+              errorLogin: null
             })
-            
-            // Sincronizar carrito en background (no bloquear login)
             const establecerToken = useTiendaCarrito.getState().establecerToken
             setTimeout(() => establecerToken(resultado.token!), 0)
-            
             return true
           }
           
+          set({ errorLogin: resultado.error || 'Error al iniciar sesión' })
           return false
         } catch (error) {
-          console.error('Error al iniciar sesión:', error)
+          set({ errorLogin: 'Error de conexión. Verifica tu internet e intenta de nuevo.' })
           return false
         }
       },

@@ -18,7 +18,7 @@ class ServicioAuth {
       const usuarioExistente = await Usuario.buscarPorEmail(email);
       if (usuarioExistente) {
         console.log('❌ Usuario ya existe:', email);
-        return { exito: false, error: 'El usuario ya existe' };
+        return { exito: false, error: 'Ya existe una cuenta con ese correo electrónico. ¿Quieres iniciar sesión?' };
       }
 
       const nuevoUsuario = await Usuario.crear({
@@ -60,25 +60,22 @@ class ServicioAuth {
       };
     } catch (error) {
       console.error('Error en registro:', error);
-      return { exito: false, error: 'Error interno del servidor' };
+      return { exito: false, error: 'Ocurrió un error al crear tu cuenta. Intenta de nuevo.' };
     }
   }
 
   async iniciarSesion(email, password) {
     try {
-      // Buscar en base de datos
       const usuario = await Usuario.buscarPorEmail(email);
       if (!usuario) {
-        return { exito: false, error: 'Credenciales inválidas' };
+        return { exito: false, error: 'No encontramos una cuenta con ese correo. ¿Quieres registrarte?' };
       }
 
-      // Verificar contraseña
       const passwordValida = await bcrypt.compare(password, usuario.contrasena);
       if (!passwordValida) {
-        return { exito: false, error: 'Credenciales inválidas' };
+        return { exito: false, error: 'La contraseña es incorrecta. ¿Olvidaste tu contraseña?' };
       }
 
-      // Generar token
       const token = this.generarToken(usuario);
 
       return {
@@ -93,7 +90,7 @@ class ServicioAuth {
       };
     } catch (error) {
       console.error('Error en login:', error);
-      return { exito: false, error: 'Error interno del servidor' };
+      return { exito: false, error: 'Error de conexión. Intenta de nuevo en unos segundos.' };
     }
   }
 

@@ -14,7 +14,7 @@ export default function LoginPage() {
   })
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-  const { iniciarSesion } = useAuthStore()
+  const { iniciarSesion, errorLogin } = useAuthStore()
   const { addNotification } = useNotificationStore()
   const navigate = useNavigate()
 
@@ -62,22 +62,22 @@ export default function LoginPage() {
       if (isLogin) {
         const success = await iniciarSesion(formData.email, formData.password)
         if (success) {
-          addNotification('Inicio de sesión exitoso', 'success')
+          addNotification('¡Bienvenido de nuevo! Sesión iniciada correctamente', 'success')
           navigate('/')
         } else {
-          addNotification('Credenciales incorrectas', 'error')
+          addNotification(errorLogin || 'No se pudo iniciar sesión', 'error')
         }
       } else {
         const response = await api.registrar(formData)
         if (response.exito) {
-          addNotification('Registro exitoso. Ahora puedes iniciar sesión', 'success')
+          addNotification('¡Cuenta creada exitosamente! Bienvenido a EGOS', 'success')
           setIsLogin(true)
         } else {
-          addNotification(response.error || 'Error en el registro', 'error')
+          addNotification(response.error || 'No se pudo crear la cuenta', 'error')
         }
       }
     } catch (error) {
-      addNotification(isLogin ? 'Error al iniciar sesión' : 'Error en el registro', 'error')
+      addNotification('Error de conexión. Verifica tu internet e intenta de nuevo.', 'error')
     } finally {
       setLoading(false)
     }
