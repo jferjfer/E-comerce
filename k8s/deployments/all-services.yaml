@@ -24,7 +24,27 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: FRONTEND_URL
-          value: "http://frontend-service"
+          value: "http://34.173.145.178"
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_HOST
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_PORT
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_USER
+        - name: SMTP_PASS
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_PASS
         - name: JWT_SECRETO
           valueFrom:
             secretKeyRef:
@@ -134,7 +154,27 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: FRONTEND_URL
-          value: "http://frontend-service"
+          value: "http://34.173.145.178"
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_HOST
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_PORT
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_USER_VENTAS
+        - name: SMTP_PASS
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SMTP_PASS_VENTAS
         - name: JWT_SECRETO
           valueFrom:
             secretKeyRef:

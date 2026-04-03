@@ -19,14 +19,14 @@ export default function Footer() {
   return (
     <footer className="bg-black text-white py-10 border-t border-gold/20">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-6 md:gap-8">
 
-          {/* Marca EGOS */}
+          {/* Marca EGOS — ocupa las 2 columnas en móvil */}
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
-              <div className="flex items-baseline space-x-1 mb-1">
+              <div className="flex flex-col items-start leading-none mb-1">
                 <span className="font-bodoni text-3xl bg-gradient-to-br from-gold-light via-gold to-gold-dark bg-clip-text text-transparent" style={{letterSpacing: '-2px'}}>E</span>
-                <span className="font-prata text-base text-white tracking-[8px] uppercase">GOS</span>
+                <span className="font-prata text-base text-white tracking-[8px] uppercase -mt-1">GOS</span>
               </div>
               <p className="font-bodoni italic text-xs text-gold opacity-70 tracking-[3px] uppercase">Wear Your Truth</p>
             </div>
