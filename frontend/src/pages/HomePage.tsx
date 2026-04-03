@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
@@ -48,7 +49,7 @@ export default function HomePage() {
   useEffect(() => {
     const cargarCupones = async () => {
       try {
-        const res = await fetch('http://localhost:3006/api/cupones')
+        const res = await fetch(API_URL + '/api/cupones')
         const data = await res.json()
         setCupones(data.cupones?.filter((c: any) => c.activo) || [])
       } catch (error) {

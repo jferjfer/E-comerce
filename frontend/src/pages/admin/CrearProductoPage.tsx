@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -49,7 +50,7 @@ export default function CrearProductoPage() {
     e.preventDefault()
     
     try {
-      const response = await fetch('http://localhost:3000/api/productos', {
+      const response = await fetch(API_URL + '/api/productos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

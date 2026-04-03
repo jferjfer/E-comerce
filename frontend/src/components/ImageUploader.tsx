@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState } from 'react'
 import { useNotificationStore } from '@/store/useNotificationStore'
 
@@ -44,7 +45,7 @@ export default function ImageUploader({
       formData.append('imagen', file)
       
       const response = await fetch(
-        `http://localhost:3000/api/productos/${productoId}/imagen`,
+        `${API_URL}/api/productos/${productoId}/imagen`,
         {
           method: 'POST',
           body: formData

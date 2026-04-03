@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -24,10 +25,10 @@ export default function CEODashboard() {
       const [resProductos, resPedidos, resCampanas, resCupones, resDevoluciones, resServicios] = await Promise.allSettled([
         api.obtenerProductos(),
         token ? api.obtenerPedidos(token) : Promise.resolve({ pedidos: [] }),
-        fetch('http://localhost:3000/api/campanas').then(r => r.json()),
-        fetch('http://localhost:3000/api/cupones').then(r => r.json()),
-        fetch('http://localhost:3000/api/devoluciones', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-        fetch('http://localhost:3000/estado-servicios').then(r => r.json())
+        fetch(API_URL + '/api/campanas').then(r => r.json()),
+        fetch(API_URL + '/api/cupones').then(r => r.json()),
+        fetch(API_URL + '/api/devoluciones', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch(API_URL + '/estado-servicios').then(r => r.json())
       ])
 
       if (resProductos.status === 'fulfilled') setProductos(resProductos.value.productos || [])

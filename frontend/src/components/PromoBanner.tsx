@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 import { useNotificationStore } from '@/store/useNotificationStore'
 
@@ -7,12 +8,12 @@ export default function PromoBanner() {
   const { addNotification } = useNotificationStore()
 
   useEffect(() => {
-    fetch('http://localhost:3006/api/cupones')
+    fetch(API_URL + '/api/cupones')
       .then(res => res.json())
       .then(data => setCupones(data.cupones?.filter((c: any) => c.activo).slice(0, 2) || []))
       .catch(() => {})
     
-    fetch('http://localhost:3006/api/campanas')
+    fetch(API_URL + '/api/campanas')
       .then(res => res.json())
       .then(data => setCampanas(data.campanas?.filter((c: any) => c.activa).slice(0, 1) || []))
       .catch(() => {})

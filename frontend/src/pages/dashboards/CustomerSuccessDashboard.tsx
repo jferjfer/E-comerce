@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
@@ -44,10 +45,10 @@ export default function CustomerSuccessDashboard() {
     setCargando(true)
     try {
       const [resPedidos, resDevoluciones] = await Promise.all([
-        fetch('http://localhost:3000/api/admin/pedidos?estado=Creado', {
+        fetch(API_URL + '/api/admin/pedidos?estado=Creado', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
-        fetch('http://localhost:3000/api/devoluciones?estado=Solicitada', {
+        fetch(API_URL + '/api/devoluciones?estado=Solicitada', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json())
       ])
@@ -76,7 +77,7 @@ export default function CustomerSuccessDashboard() {
   const cambiarEstadoPedido = async (pedidoId: string, nuevoEstado: string, comentario: string) => {
     setProcesando(pedidoId)
     try {
-      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/estado`, {
+      const response = await fetch(`${API_URL}/api/pedidos/${pedidoId}/estado`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ estado: nuevoEstado, comentario })
@@ -99,7 +100,7 @@ export default function CustomerSuccessDashboard() {
     if (!confirm('¿Aprobar esta devolución?')) return
     setProcesando(String(id))
     try {
-      const response = await fetch(`http://localhost:3000/api/devoluciones/${id}/aprobar`, {
+      const response = await fetch(`${API_URL}/api/devoluciones/${id}/aprobar`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ comentario: 'Aprobada por Customer Success' })
@@ -122,7 +123,7 @@ export default function CustomerSuccessDashboard() {
     if (!motivo) return
     setProcesando(String(id))
     try {
-      const response = await fetch(`http://localhost:3000/api/devoluciones/${id}/rechazar`, {
+      const response = await fetch(`${API_URL}/api/devoluciones/${id}/rechazar`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ motivo })

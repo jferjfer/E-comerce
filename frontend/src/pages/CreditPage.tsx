@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
@@ -35,7 +36,7 @@ export default function CreditPage() {
   const evaluarCliente = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/credito/evaluar', {
+      const res = await fetch(API_URL + '/api/credito/evaluar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,8 +62,8 @@ export default function CreditPage() {
     setLoading(true);
     try {
       const url = evaluacion?.califica 
-        ? `http://localhost:3000/api/credito/comparar/${monto}/${plazo}?usuario_id=${usuario?.id}`
-        : `http://localhost:3000/api/credito/comparar/${monto}/${plazo}`;
+        ? `${API_URL}/api/credito/comparar/${monto}/${plazo}?usuario_id=${usuario?.id}`
+        : `${API_URL}/api/credito/comparar/${monto}/${plazo}`;
       const res = await fetch(url);
       const data = await res.json();
       setOpciones(data.opciones);
@@ -76,7 +77,7 @@ export default function CreditPage() {
   const solicitarCredito = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/credito/interno/solicitar', {
+      const res = await fetch(API_URL + '/api/credito/interno/solicitar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

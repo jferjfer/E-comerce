@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -14,7 +15,7 @@ const RecoverPasswordPage = () => {
 
     try {
       const base = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? 'http://localhost:3000'
+        ? API_URL
         : (import.meta.env.VITE_API_URL || 'http://149.130.182.9:3000');
       const respuesta = await fetch(`${base}/api/auth/solicitar-recuperacion`, {
         method: 'POST',

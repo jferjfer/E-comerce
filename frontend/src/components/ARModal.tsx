@@ -1,10 +1,11 @@
+import { API_URL } from '@/config/api';
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNotificationStore } from '@/store/useNotificationStore'
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === '149.130.182.9' 
   ? 'http://149.130.182.9:3000' 
-  : 'http://localhost:3000'
+  : API_URL
 
 interface ARModalProps {
   isOpen: boolean

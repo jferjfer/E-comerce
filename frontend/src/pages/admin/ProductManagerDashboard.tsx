@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -99,7 +100,7 @@ export default function ProductManagerDashboard() {
             console.log('📤 FormData preparado, enviando...');
             
             const uploadResponse = await fetch(
-              `http://localhost:3000/api/productos/${resultado.producto.id}/imagen`,
+              `${API_URL}/api/productos/${resultado.producto.id}/imagen`,
               { method: 'POST', body: formData }
             )
             

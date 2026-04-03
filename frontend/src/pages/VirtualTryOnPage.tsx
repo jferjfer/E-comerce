@@ -1,9 +1,9 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import VirtualAvatar3D from '@/components/VirtualAvatar3D'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 interface AvatarData {
     avatar_url: string

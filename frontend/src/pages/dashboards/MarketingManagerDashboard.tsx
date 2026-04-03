@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
@@ -32,11 +33,11 @@ export default function MarketingManagerDashboard() {
 
   const cargarDatos = async () => {
     try {
-      const resCupones = await fetch('http://localhost:3006/api/cupones')
+      const resCupones = await fetch(API_URL + '/api/cupones')
       const dataCupones = await resCupones.json()
       setCupones(dataCupones.cupones || [])
       
-      const resCampanas = await fetch('http://localhost:3006/api/campanas')
+      const resCampanas = await fetch(API_URL + '/api/campanas')
       const dataCampanas = await resCampanas.json()
       setCampanas(dataCampanas.campanas || [])
     } catch (error) {
@@ -70,7 +71,7 @@ export default function MarketingManagerDashboard() {
       return
     }
     
-    fetch('http://localhost:3006/api/campanas', {
+    fetch(API_URL + '/api/campanas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(nuevaCampana)
@@ -96,7 +97,7 @@ export default function MarketingManagerDashboard() {
     
     const nuevoEstado = campana.estado === 'Activa' ? 'Pausada' : 'Activa'
     
-    fetch(`http://localhost:3006/api/campanas/${id}`, {
+    fetch(`${API_URL}/api/campanas/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: nuevoEstado })
@@ -111,7 +112,7 @@ export default function MarketingManagerDashboard() {
   const eliminarCampana = (id: number) => {
     if (!confirm('¿Eliminar esta campaña?')) return
     
-    fetch(`http://localhost:3006/api/campanas/${id}`, { method: 'DELETE' })
+    fetch(`${API_URL}/api/campanas/${id}`, { method: 'DELETE' })
     .then(() => {
       setCampanas(campanas.filter(c => c.id !== id))
       addNotification('Campaña eliminada', 'success')

@@ -1,29 +1,11 @@
+import { API_URL as API_BASE_URL } from '../config/api';
 import type { Producto, Usuario, ItemCarrito } from '../types';
 
-// Detectar automáticamente si estamos en local o producción
-const getApiUrl = () => {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    // Si es localhost o 127.0.0.1, usar localhost
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3000';
-    }
-    // Si es la IP de Oracle, usar esa IP
-    if (hostname === '149.130.182.9') {
-      return 'http://149.130.182.9:3000';
-    }
-  }
-  // Fallback: usar variable de entorno o Oracle
-  return import.meta.env.VITE_API_URL || 'http://149.130.182.9:3000';
-};
-
-const API_BASE_URL = getApiUrl();
-
 const MICROSERVICES = {
-  TRANSACTION: 'http://localhost:3003',
-  SOCIAL: 'http://localhost:3004',
-  MARKETING: 'http://localhost:3006',
-  AI: 'http://localhost:3007'
+  TRANSACTION: API_BASE_URL,
+  SOCIAL: API_BASE_URL,
+  MARKETING: API_BASE_URL,
+  AI: API_BASE_URL
 };
 
 // Función para transformar producto del backend al frontend (armonizada)

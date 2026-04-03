@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 
 export default function HeroCarousel() {
@@ -7,7 +8,7 @@ export default function HeroCarousel() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const res = await fetch('http://localhost:3006/api/campanas')
+        const res = await fetch(API_URL + '/api/campanas')
         const campanas = (await res.json()).campanas?.filter((c: any) => c.estado === 'Activa') || []
         setItems(campanas)
       } catch (e) {}

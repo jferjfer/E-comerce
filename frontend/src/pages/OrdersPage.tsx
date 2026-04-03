@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { api } from '@/services/api'
@@ -40,7 +41,7 @@ export default function OrdersPage() {
     const devs: Record<string, any> = {}
     for (const pedido of pedidosList) {
       try {
-        const response = await fetch(`http://localhost:3000/api/pedidos/${pedido.id}/devolucion`, {
+        const response = await fetch(`${API_URL}/api/pedidos/${pedido.id}/devolucion`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         if (response.ok) {
@@ -65,7 +66,7 @@ export default function OrdersPage() {
     const detalles: Record<string, any> = {}
     for (const productoId of productosIds) {
       try {
-        const response = await fetch(`http://localhost:3000/api/productos/${productoId}`)
+        const response = await fetch(`${API_URL}/api/productos/${productoId}`)
         if (response.ok) {
           const data = await response.json()
           detalles[productoId] = data.producto
@@ -114,7 +115,7 @@ export default function OrdersPage() {
   const verHistorial = async (pedidoId: string) => {
     if (!token) return
     try {
-      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/historial`, {
+      const response = await fetch(`${API_URL}/api/pedidos/${pedidoId}/historial`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
@@ -155,7 +156,7 @@ export default function OrdersPage() {
   const confirmarDevolucion = async () => {
     if (!token || !pedidoDevolucion || !motivoDevolucion) return
     try {
-      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoDevolucion}/devolucion`, {
+      const response = await fetch(`${API_URL}/api/pedidos/${pedidoDevolucion}/devolucion`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

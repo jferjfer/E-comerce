@@ -2,10 +2,9 @@ import { useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const SOCKET_URL = typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? 'http://localhost:3000'
-  : (import.meta.env.VITE_API_URL || 'http://149.130.182.9:3000')
+import { API_URL } from '@/config/api'
+
+const SOCKET_URL = API_URL
 
 // Singleton — una sola conexión para toda la app
 let socketInstance: Socket | null = null

@@ -1,3 +1,4 @@
+import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
@@ -53,13 +54,13 @@ export default function LogisticsCoordinatorDashboard() {
     try {
       // Cargar pedidos confirmados Y enviados en paralelo
       const [resConfirmados, resEnviados, resDevoluciones] = await Promise.all([
-        fetch('http://localhost:3000/api/admin/pedidos?estado=Confirmado', {
+        fetch(API_URL + '/api/admin/pedidos?estado=Confirmado', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
-        fetch('http://localhost:3000/api/admin/pedidos?estado=Enviado', {
+        fetch(API_URL + '/api/admin/pedidos?estado=Enviado', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
-        fetch('http://localhost:3000/api/devoluciones?estado=Aprobada', {
+        fetch(API_URL + '/api/devoluciones?estado=Aprobada', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json())
       ])
@@ -87,7 +88,7 @@ export default function LogisticsCoordinatorDashboard() {
   const cambiarEstado = async (pedidoId: string, nuevoEstado: string, comentario: string) => {
     setProcesando(pedidoId)
     try {
-      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/estado`, {
+      const response = await fetch(`${API_URL}/api/pedidos/${pedidoId}/estado`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ estado: nuevoEstado, comentario })
@@ -110,7 +111,7 @@ export default function LogisticsCoordinatorDashboard() {
     if (!confirm('¿Marcar esta devolución como completada?')) return
     setProcesando(String(id))
     try {
-      const response = await fetch(`http://localhost:3000/api/devoluciones/${id}/completar`, {
+      const response = await fetch(`${API_URL}/api/devoluciones/${id}/completar`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ comentario: 'Producto recibido y procesado por Logística' })
