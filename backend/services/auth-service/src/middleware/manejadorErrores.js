@@ -3,9 +3,11 @@ const manejadorErrores = (error, req, res, next) => {
 
   // Error de validación de Joi
   if (error.isJoi) {
+    const mensajes = error.details.map(d => d.message);
     return res.status(400).json({
-      error: 'Datos inválidos',
-      detalles: error.details.map(detalle => detalle.message)
+      exito: false,
+      error: mensajes[0],
+      detalles: mensajes
     });
   }
 

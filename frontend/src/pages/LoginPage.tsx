@@ -7,18 +7,55 @@ import { api } from '@/services/api'
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [formData, setFormData] = useState({
-    email: '', password: '', nombre: '', apellido: '',
+    email: '', password: '', confirmar_password: '', nombre: '', apellido: '',
     documento_tipo: 'CC', documento_numero: '', telefono: '',
     fecha_nacimiento: '', genero: '', direccion: '', ciudad: '', departamento: '',
     acepta_terminos: false, acepta_datos: false, acepta_marketing: false
   })
+  const [errores, setErrores] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const { iniciarSesion } = useAuthStore()
   const { addNotification } = useNotificationStore()
   const navigate = useNavigate()
 
+  const validarFormulario = (): boolean => {
+    const nuevosErrores: Record<string, string> = {}
+
+    if (!isLogin) {
+      if (!formData.nombre || formData.nombre.length < 2)
+        nuevosErrores.nombre = 'El nombre debe tener al menos 2 caracteres'
+      if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.nombre))
+        nuevosErrores.nombre = 'El nombre solo puede contener letras'
+      if (formData.documento_numero && !/^[0-9]{5,12}$/.test(formData.documento_numero))
+        nuevosErrores.documento_numero = 'El documento debe tener entre 5 y 12 dígitos'
+      if (formData.telefono && !/^[0-9+\s\-]{7,15}$/.test(formData.telefono))
+        nuevosErrores.telefono = 'El teléfono debe tener entre 7 y 15 dígitos'
+      if (formData.fecha_nacimiento) {
+        const fecha = new Date(formData.fecha_nacimiento)
+        const hoy = new Date()
+        const edad = hoy.getFullYear() - fecha.getFullYear()
+        if (fecha > hoy) nuevosErrores.fecha_nacimiento = 'La fecha no puede ser futura'
+        else if (edad < 18) nuevosErrores.fecha_nacimiento = 'Debes ser mayor de 18 años'
+      }
+      if (formData.password.length < 8)
+        nuevosErrores.password = 'La contraseña debe tener al menos 8 caracteres'
+      else if (!/(?=.*[A-Z])/.test(formData.password))
+        nuevosErrores.password = 'La contraseña debe tener al menos una mayúscula'
+      else if (!/(?=.*[0-9])/.test(formData.password))
+        nuevosErrores.password = 'La contraseña debe tener al menos un número'
+      else if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(formData.password))
+        nuevosErrores.password = 'La contraseña debe tener al menos un carácter especial'
+      if (formData.password !== formData.confirmar_password)
+        nuevosErrores.confirmar_password = 'Las contraseñas no coinciden'
+    }
+
+    setErrores(nuevosErrores)
+    return Object.keys(nuevosErrores).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validarFormulario()) return
     setLoading(true)
 
     try {
@@ -90,18 +127,21 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Número Documento *</label>
-                  <input type="text" value={formData.documento_numero} onChange={(e) => setFormData({...formData, documento_numero: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" required />
+                  <input type="text" value={formData.documento_numero} onChange={(e) => setFormData({...formData, documento_numero: e.target.value})} className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 ${errores.documento_numero ? 'border-red-500' : 'border-gray-300'}`} placeholder="5 a 12 dígitos" required />
+                  {errores.documento_numero && <p className="text-red-500 text-xs mt-1">{errores.documento_numero}</p>}
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                  <input type="tel" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" />
+                  <input type="tel" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 ${errores.telefono ? 'border-red-500' : 'border-gray-300'}`} placeholder="7 a 15 dígitos" />
+                  {errores.telefono && <p className="text-red-500 text-xs mt-1">{errores.telefono}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Nacimiento</label>
-                  <input type="date" value={formData.fecha_nacimiento} onChange={(e) => setFormData({...formData, fecha_nacimiento: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" />
+                  <input type="date" value={formData.fecha_nacimiento} onChange={(e) => setFormData({...formData, fecha_nacimiento: e.target.value})} className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 ${errores.fecha_nacimiento ? 'border-red-500' : 'border-gray-300'}`} />
+                  {errores.fecha_nacimiento && <p className="text-red-500 text-xs mt-1">{errores.fecha_nacimiento}</p>}
                 </div>
               </div>
               
@@ -163,8 +203,17 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
-            <input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary" placeholder="••••••••" required />
+            <input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-primary ${errores.password ? 'border-red-500' : 'border-gray-300'}`} placeholder="Mín. 8 caracteres, mayúscula, número y especial" required />
+            {errores.password && <p className="text-red-500 text-xs mt-1">{errores.password}</p>}
           </div>
+
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirmar Contraseña</label>
+              <input type="password" value={formData.confirmar_password} onChange={(e) => setFormData({...formData, confirmar_password: e.target.value})} className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 ${errores.confirmar_password ? 'border-red-500' : 'border-gray-300'}`} placeholder="Repite tu contraseña" required={!isLogin} />
+              {errores.confirmar_password && <p className="text-red-500 text-xs mt-1">{errores.confirmar_password}</p>}
+            </div>
+          )}
 
           <button type="submit" disabled={loading} className="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 font-semibold shadow-sm">
             {loading ? (isLogin ? 'Iniciando...' : 'Registrando...') : (isLogin ? 'Iniciar Sesión' : 'Registrarse')}

@@ -1,24 +1,107 @@
 const Joi = require('joi');
 
 const esquemaRegistro = Joi.object({
-  nombre: Joi.string().min(2).max(255).required(),
-  apellido: Joi.string().optional(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  contrasena: Joi.string().min(6).optional(),
-  documento_tipo: Joi.string().allow('').optional(),
-  documento_numero: Joi.string().allow('').optional(),
-  telefono: Joi.string().allow('').optional(),
-  fecha_nacimiento: Joi.string().allow('').optional(),
+  nombre: Joi.string()
+    .min(2).max(100)
+    .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/)
+    .required()
+    .messages({
+      'string.min': 'El nombre debe tener al menos 2 caracteres',
+      'string.pattern.base': 'El nombre solo puede contener letras',
+      'any.required': 'El nombre es requerido'
+    }),
+
+  apellido: Joi.string()
+    .min(2).max(100)
+    .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/)
+    .optional()
+    .messages({
+      'string.min': 'El apellido debe tener al menos 2 caracteres',
+      'string.pattern.base': 'El apellido solo puede contener letras'
+    }),
+
+  email: Joi.string().email().required()
+    .messages({
+      'string.email': 'Debe ser un email válido',
+      'any.required': 'El email es requerido'
+    }),
+
+  password: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/)
+    .required()
+    .messages({
+      'string.min': 'La contraseña debe tener al menos 8 caracteres',
+      'string.pattern.base': 'La contraseña debe tener al menos una mayúscula, un número y un carácter especial',
+      'any.required': 'La contraseña es requerida'
+    }),
+
+  confirmar_password: Joi.string().optional(),
+  contrasena: Joi.string().min(8).optional(),
+
+  documento_tipo: Joi.string()
+    .valid('CC', 'CE', 'TI', 'PP', 'NIT')
+    .optional(),
+
+  documento_numero: Joi.string()
+    .pattern(/^[0-9]{5,12}$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'El documento debe tener entre 5 y 12 dígitos numéricos'
+    }),
+
+  telefono: Joi.string()
+    .pattern(/^[0-9+\s\-]{7,15}$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'El teléfono debe tener entre 7 y 15 dígitos'
+    }),
+
+  fecha_nacimiento: Joi.string()
+    .optional()
+    .custom((value, helpers) => {
+      if (!value) return value;
+      const fecha = new Date(value);
+      const hoy = new Date();
+      const edad = hoy.getFullYear() - fecha.getFullYear();
+      const cumpleEsteAno = new Date(hoy.getFullYear(), fecha.getMonth(), fecha.getDate());
+      const edadReal = hoy >= cumpleEsteAno ? edad : edad - 1;
+      if (edadReal < 18) {
+        return helpers.error('any.invalid');
+      }
+      if (fecha > hoy) {
+        return helpers.error('any.invalid');
+      }
+      return value;
+    })
+    .messages({
+      'any.invalid': 'Debes ser mayor de 18 años y la fecha no puede ser futura'
+    }),
+
   genero: Joi.string().allow('').optional(),
   direccion: Joi.string().allow('').optional(),
   ciudad: Joi.string().allow('').optional(),
   departamento: Joi.string().allow('').optional(),
-  acepta_terminos: Joi.boolean().optional(),
-  acepta_datos: Joi.boolean().optional(),
+
+  acepta_terminos: Joi.boolean()
+    .valid(true)
+    .required()
+    .messages({
+      'any.only': 'Debes aceptar los términos y condiciones',
+      'any.required': 'Debes aceptar los términos y condiciones'
+    }),
+
+  acepta_datos: Joi.boolean()
+    .valid(true)
+    .required()
+    .messages({
+      'any.only': 'Debes autorizar el tratamiento de datos personales',
+      'any.required': 'Debes autorizar el tratamiento de datos personales'
+    }),
+
   acepta_marketing: Joi.boolean().optional(),
   rol: Joi.string().valid('cliente', 'invitado').default('cliente')
-}).options({ allowUnknown: true, abortEarly: true, stripUnknown: true });
+}).options({ allowUnknown: true, abortEarly: false, stripUnknown: true });
 
 const esquemaInicioSesion = Joi.object({
   email: Joi.string()
