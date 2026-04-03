@@ -6,7 +6,7 @@ const getApiUrl = () => {
       return 'http://localhost:3000';
     }
   }
-  return import.meta.env.VITE_API_URL || 'http://34.123.67.97';
+  return import.meta.env.VITE_API_URL || 'https://api.egoscolombia.com.co';
 };
 
 export const API_URL = getApiUrl();

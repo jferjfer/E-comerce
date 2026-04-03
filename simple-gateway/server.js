@@ -20,7 +20,11 @@ const io = new Server(httpServer, {
       'http://149.130.182.9:3000',
       'http://149.130.182.9',
       'http://34.173.145.178',
-      'http://34.123.67.97'
+      'http://34.123.67.97',
+      'https://egoscolombia.com.co',
+      'https://www.egoscolombia.com.co',
+      'http://egoscolombia.com.co',
+      'http://www.egoscolombia.com.co'
     ],
     methods: ['GET', 'POST'],
     credentials: true
@@ -88,6 +92,10 @@ const ALLOWED_ORIGINS = [
   'http://149.130.182.9',
   'http://34.173.145.178',
   'http://34.123.67.97',
+  'https://egoscolombia.com.co',
+  'https://www.egoscolombia.com.co',
+  'http://egoscolombia.com.co',
+  'http://www.egoscolombia.com.co',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
