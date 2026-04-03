@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /ceo
+Disallow: /marketing
+Disallow: /logistics
+Disallow: /customer-success
+Disallow: /products/crear
+
+Sitemap: https://egoscolombia.com.co/sitemap.xml
