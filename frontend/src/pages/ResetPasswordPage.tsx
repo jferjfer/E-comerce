@@ -39,10 +39,7 @@ const ResetPasswordPage = () => {
     }
 
     try {
-      const base = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? API_URL
-        : (import.meta.env.VITE_API_URL || 'http://149.130.182.9:3000');
-      const respuesta = await fetch(`${base}/api/auth/restablecer-contrasena`, {
+      const respuesta = await fetch(`${API_URL}/api/auth/restablecer-contrasena`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
