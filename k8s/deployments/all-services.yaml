@@ -308,6 +308,11 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: MONGODB_AI_URI
+        - name: AI_GATEWAY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: AI_GATEWAY_API_KEY
         resources:
           requests:
             cpu: "200m"

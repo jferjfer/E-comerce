@@ -340,6 +340,21 @@ CATEGORÍAS: {', '.join(contexto['categorias'])}"""
     except Exception as e:
         request_count.labels(endpoint='chat', status='error').inc()
         print(f"❌ Error: {e}")
+        error_msg = str(e)
+        if '402' in error_msg or 'Insufficient Balance' in error_msg:
+            return {
+                "respuesta": "En este momento el asistente de IA no está disponible. ¡Pero puedes explorar nuestro catálogo y contactarnos directamente! ✨",
+                "productos_recomendados": [],
+                "en_contexto": False,
+                "version": "4.0.0"
+            }
+        if '401' in error_msg or 'Authentication' in error_msg:
+            return {
+                "respuesta": "El asistente de IA está en mantenimiento. ¡Vuelve pronto! 🛍️",
+                "productos_recomendados": [],
+                "en_contexto": False,
+                "version": "4.0.0"
+            }
         raise
 
 @app.post("/api/recomendaciones/personalizada")
