@@ -82,12 +82,12 @@ def generar_pdf_factura(
     # ENCABEZADO
     # ══════════════════════════════════════════
     col_empresa = [
-        # Logo EGOS: E grande dorada encima de EGOS
-        Paragraph("<font color='#c5a47e' size=32><b>E</b></font>",
-                  estilo('logo_e', fontSize=32, fontName='Helvetica-Bold', textColor=DORADO, leading=34)),
-        Paragraph("<font size=18><b>EGOS</b></font>",
-                  estilo('logo_egos', fontSize=18, fontName='Helvetica-Bold', textColor=NEGRO, leading=20, spaceBefore=-4)),
-        Paragraph("WEAR YOUR TRUTH", estilo('t2', fontSize=7, textColor=DORADO, leading=10)),
+        Paragraph("<font color='#c5a47e'><b>E</b></font>",
+                  estilo('logo_e', fontSize=32, fontName='Helvetica-Bold', textColor=DORADO, leading=34, alignment=TA_CENTER)),
+        Paragraph("<b>EGOS</b>",
+                  estilo('logo_egos', fontSize=18, fontName='Helvetica-Bold', textColor=NEGRO, leading=20, alignment=TA_CENTER)),
+        Paragraph("WEAR YOUR TRUTH",
+                  estilo('t2', fontSize=7, textColor=DORADO, leading=10, alignment=TA_CENTER)),
         Spacer(1, 6),
         Paragraph("<b>Vertel &amp; Catillo S.A.S</b>", estilo('e1', fontSize=8, leading=11)),
         Paragraph("NIT: 900.205.170-8  DV: 8", estilo('e2', fontSize=7, textColor=GRIS_TEXTO, leading=10)),

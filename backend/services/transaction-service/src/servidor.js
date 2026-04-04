@@ -823,8 +823,14 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
         `http://auth-service:3011/api/usuarios/${usuarioId}`,
         { timeout: 3000 }
       );
-      const { email, nombre } = resUsuario.data.usuario || {};
-      datosUsuario = { nombre: nombre || 'Cliente', email: email || '' };
+      const { email, nombre, documento_tipo, documento_numero, direccion, ciudad } = resUsuario.data.usuario || {};
+      datosUsuario = {
+        nombre: nombre || 'Cliente',
+        email: email || '',
+        documento_tipo: documento_tipo || 'CC',
+        documento_numero: documento_numero || '',
+        direccion: direccion || ciudad || 'Bogotá D.C'
+      };
       if (email) {
         enviarConfirmacionCompra(email, nombre || 'Cliente', pedido);
       }
