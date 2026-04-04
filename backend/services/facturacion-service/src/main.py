@@ -87,14 +87,20 @@ def obtener_siguiente_numero(db: Session) -> int:
     return contador.ultimo_numero
 
 def enviar_email_factura(email: str, nombre: str, numero: str, pdf_bytes: bytes, pedido_id: str):
-    if not SMTP_USER or not SMTP_PASS:
+    smtp_user = os.getenv("SMTP_USER", "")
+    smtp_pass = os.getenv("SMTP_PASS", "")
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT") or 587)
+    frontend_url = os.getenv("FRONTEND_URL", "https://egoscolombia.com.co")
+
+    if not smtp_user or not smtp_pass:
         print(f"⚠️ SMTP no configurado, no se envió factura a {email}")
         return
 
     try:
         msg = MIMEMultipart()
         msg["Subject"] = f"🧾 Tu factura electrónica EGOS - {numero}"
-        msg["From"] = f'"EGOS" <{SMTP_USER}>'
+        msg["From"] = f'"EGOS" <{smtp_user}>'
         msg["To"] = email
 
         html = f"""
@@ -117,7 +123,7 @@ def enviar_email_factura(email: str, nombre: str, numero: str, pdf_bytes: bytes,
               </p>
             </div>
             <div style="text-align:center;margin:30px 0">
-              <a href="{FRONTEND_URL}/orders" style="background:#111827;color:#c5a47e;padding:14px 32px;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;letter-spacing:2px;display:inline-block">
+              <a href="{frontend_url}/orders" style="background:#111827;color:#c5a47e;padding:14px 32px;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;letter-spacing:2px;display:inline-block">
                 VER MIS PEDIDOS
               </a>
             </div>
@@ -140,10 +146,10 @@ def enviar_email_factura(email: str, nombre: str, numero: str, pdf_bytes: bytes,
         pdf_part.add_header("Content-Disposition", f'attachment; filename="{numero}.pdf"')
         msg.attach(pdf_part)
 
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
             server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, email, msg.as_string())
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, email, msg.as_string())
 
         print(f"📧 Factura {numero} enviada a {email}")
     except Exception as e:
@@ -378,8 +384,32 @@ async def descargar_pdf(factura_id: str, db: Session = Depends(get_db)):
     if not factura:
         raise HTTPException(status_code=404, detail="Factura no encontrada")
 
-    # Regenerar PDF
-    productos = []  # En producción obtener del pedido
+    # Obtener productos reales del pedido desde transaction-service
+    productos = []
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await client.get(
+                f"http://transaction-service:3003/api/admin/pedidos",
+                params={"pedido_id": factura.pedido_id}
+            )
+            # Intentar obtener productos del XML guardado
+            pass
+    except:
+        pass
+
+    # Si no hay productos, usar los del XML de la factura
+    if not productos and factura.xml_enviado:
+        import re
+        nombres = re.findall(r'<cbc:Description>([^<]+)</cbc:Description>', factura.xml_enviado)
+        precios = re.findall(r'<cbc:PriceAmount[^>]*>([^<]+)</cbc:PriceAmount>', factura.xml_enviado)
+        cantidades = re.findall(r'<cbc:InvoicedQuantity[^>]*>([^<]+)</cbc:InvoicedQuantity>', factura.xml_enviado)
+        for i, nombre in enumerate(nombres):
+            productos.append({
+                'nombre': nombre,
+                'precio_unitario': float(precios[i]) if i < len(precios) else 0,
+                'cantidad': int(float(cantidades[i])) if i < len(cantidades) else 1
+            })
+
     pdf_bytes = generar_pdf_factura(
         numero_completo=factura.numero_completo,
         cufe=factura.cufe or "",
@@ -438,6 +468,20 @@ async def reenviar_factura(factura_id: str, background_tasks: BackgroundTasks, d
     if not factura:
         raise HTTPException(status_code=404, detail="Factura no encontrada")
 
+    # Extraer productos del XML guardado
+    productos = []
+    if factura.xml_enviado:
+        import re
+        nombres = re.findall(r'<cbc:Description>([^<]+)</cbc:Description>', factura.xml_enviado)
+        precios = re.findall(r'<cbc:PriceAmount[^>]*>([^<]+)</cbc:PriceAmount>', factura.xml_enviado)
+        cantidades = re.findall(r'<cbc:InvoicedQuantity[^>]*>([^<]+)</cbc:InvoicedQuantity>', factura.xml_enviado)
+        for i, nombre in enumerate(nombres):
+            productos.append({
+                'nombre': nombre,
+                'precio_unitario': float(precios[i]) if i < len(precios) else 0,
+                'cantidad': int(float(cantidades[i])) if i < len(cantidades) else 1
+            })
+
     pdf_bytes = generar_pdf_factura(
         numero_completo=factura.numero_completo,
         cufe=factura.cufe or "",
@@ -448,7 +492,7 @@ async def reenviar_factura(factura_id: str, background_tasks: BackgroundTasks, d
             "nit_cc": factura.cliente_nit_cc,
             "direccion": factura.cliente_direccion
         },
-        productos=[],
+        productos=productos,
         subtotal=factura.subtotal,
         iva=factura.iva,
         total=factura.total,
