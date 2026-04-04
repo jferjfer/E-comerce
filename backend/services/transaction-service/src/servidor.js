@@ -97,65 +97,135 @@ async function enviarNotificacionEstado(email, nombreUsuario, pedidoId, nuevoEst
 async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
 
-  const urlPedidos = `${process.env.FRONTEND_URL || 'http://localhost:3005'}/orders`;
+  const urlPedidos = `${process.env.FRONTEND_URL || 'https://egoscolombia.com.co'}/orders`;
   const formatearPrecio = (v) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
 
+  const nombreCorto = nombreUsuario.split(' ')[0];
+
   const productosHtml = (pedido.productos || []).map(p => `
     <tr>
-      <td style="padding:10px;border-bottom:1px solid #eee;color:#555">Producto #${p.id}</td>
-      <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;color:#555">${p.cantidad}</td>
-      <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;font-weight:bold;color:#333">${formatearPrecio(p.precio * p.cantidad)}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #f0ebe4;color:#374151;font-size:14px">
+        <strong>${p.nombre || 'Producto EGOS'}</strong>
+      </td>
+      <td style="padding:12px 16px;border-bottom:1px solid #f0ebe4;text-align:center;color:#6b7280;font-size:14px">${p.cantidad}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #f0ebe4;text-align:right;font-weight:bold;color:#111827;font-size:14px">${formatearPrecio(p.precio * p.cantidad)}</td>
     </tr>
   `).join('');
 
+  const metodoPagoTexto = {
+    'pago_en_linea': 'Pago en línea',
+    'credito': 'Crédito EGOS',
+    'efectivo': 'Efectivo',
+    'tarjeta': 'Tarjeta'
+  }[pedido.metodo_pago] || pedido.metodo_pago || 'Pago en línea';
+
   const html = `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9">
-      <div style="background:linear-gradient(135deg,#11998e,#38ef7d);padding:40px 30px;text-align:center">
-        <div style="font-size:48px;margin-bottom:10px">✅</div>
-        <h1 style="color:white;margin:0;font-size:26px">¡Pedido Confirmado!</h1>
-        <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:14px">Pedido #${pedido.id}</p>
-      </div>
-      <div style="background:white;padding:40px 30px">
-        <p style="font-size:16px;color:#333">Hola <strong>${nombreUsuario}</strong>,</p>
-        <p style="color:#555;line-height:1.6">Tu pedido ha sido recibido y está siendo procesado. Te notificaremos cuando sea enviado.</p>
-        <div style="background:#f8f8f8;border-radius:8px;padding:20px;margin:24px 0">
-          <p style="margin:0 0 12px;font-weight:bold;color:#333">Resumen del pedido</p>
-          <table style="width:100%;border-collapse:collapse">
-            <thead><tr style="background:#eee">
-              <th style="padding:10px;text-align:left;font-size:12px;color:#666">Producto</th>
-              <th style="padding:10px;text-align:center;font-size:12px;color:#666">Cant.</th>
-              <th style="padding:10px;text-align:right;font-size:12px;color:#666">Subtotal</th>
-            </tr></thead>
-            <tbody>${productosHtml}</tbody>
-            <tfoot><tr>
-              <td colspan="2" style="padding:14px 10px;font-weight:bold;color:#333;font-size:16px">Total</td>
-              <td style="padding:14px 10px;text-align:right;font-weight:bold;color:#11998e;font-size:18px">${formatearPrecio(pedido.total)}</td>
-            </tr></tfoot>
-          </table>
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0;padding:0;background:#f5f0eb;font-family:'Helvetica Neue',Arial,sans-serif">
+      <div style="max-width:600px;margin:0 auto;background:#ffffff">
+
+        <!-- HEADER -->
+        <div style="background:#111827;padding:36px 40px;text-align:center">
+          <div style="margin-bottom:4px">
+            <span style="font-size:36px;font-weight:900;color:#c5a47e;letter-spacing:-2px">E</span>
+          </div>
+          <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:10px;text-transform:uppercase">EGOS</div>
+          <div style="font-size:10px;color:#c5a47e;letter-spacing:4px;margin-top:2px;text-transform:uppercase">Wear Your Truth</div>
         </div>
-        <div style="background:#fff8e1;border-left:4px solid #ffc107;padding:16px;border-radius:4px;margin:20px 0">
-          <p style="margin:0;color:#555;font-size:14px">
-            <strong>Método de pago:</strong> ${pedido.metodo_pago || 'Tarjeta'}<br>
-            <strong>Estado:</strong> Creado — en preparación<br>
-            <strong>Fecha:</strong> ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+        <!-- BANNER CONFIRMACION -->
+        <div style="background:linear-gradient(135deg,#c5a47e,#a67c52);padding:32px 40px;text-align:center">
+          <div style="font-size:40px;margin-bottom:8px">&#10003;</div>
+          <h1 style="color:#111827;margin:0;font-size:24px;font-weight:800;letter-spacing:-0.5px">¡Tu pedido está confirmado!</h1>
+          <p style="color:#111827;margin:8px 0 0;font-size:13px;opacity:0.8">Pedido <strong>#${pedido.id}</strong></p>
+        </div>
+
+        <!-- CUERPO -->
+        <div style="padding:40px">
+
+          <p style="font-size:17px;color:#111827;margin:0 0 8px">Hola <strong>${nombreCorto}</strong> 👋</p>
+          <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0 0 28px">
+            Gracias por confiar en <strong>EGOS</strong>. Tu pedido fue recibido y ya está en manos de nuestro equipo.
+            Pronto te notificaremos cuando esté en camino hacia ti.
           </p>
+
+          <!-- RESUMEN PEDIDO -->
+          <div style="background:#faf8f5;border-radius:12px;overflow:hidden;margin-bottom:28px;border:1px solid #f0ebe4">
+            <div style="background:#111827;padding:14px 20px">
+              <p style="margin:0;font-size:12px;font-weight:700;color:#c5a47e;letter-spacing:2px;text-transform:uppercase">Resumen de tu pedido</p>
+            </div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead>
+                <tr style="background:#f5f0eb">
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px">Producto</th>
+                  <th style="padding:10px 16px;text-align:center;font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px">Cant.</th>
+                  <th style="padding:10px 16px;text-align:right;font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>${productosHtml}</tbody>
+              <tfoot>
+                <tr style="background:#111827">
+                  <td colspan="2" style="padding:16px;font-weight:700;color:#c5a47e;font-size:15px">Total pagado</td>
+                  <td style="padding:16px;text-align:right;font-weight:800;color:#c5a47e;font-size:18px">${formatearPrecio(pedido.total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- DETALLES -->
+          <div style="display:flex;gap:12px;margin-bottom:28px">
+            <div style="flex:1;background:#faf8f5;border-radius:10px;padding:16px;border:1px solid #f0ebe4">
+              <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">Método de pago</p>
+              <p style="margin:0;font-size:14px;font-weight:600;color:#111827">${metodoPagoTexto}</p>
+            </div>
+            <div style="flex:1;background:#faf8f5;border-radius:10px;padding:16px;border:1px solid #f0ebe4">
+              <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">Estado</p>
+              <p style="margin:0;font-size:14px;font-weight:600;color:#059669">✓ Confirmado</p>
+            </div>
+            <div style="flex:1;background:#faf8f5;border-radius:10px;padding:16px;border:1px solid #f0ebe4">
+              <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">Fecha</p>
+              <p style="margin:0;font-size:14px;font-weight:600;color:#111827">${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+            </div>
+          </div>
+
+          <!-- MENSAJE EMOCIONAL -->
+          <div style="background:linear-gradient(135deg,#111827,#1f2937);border-radius:12px;padding:24px;margin-bottom:28px;text-align:center">
+            <p style="margin:0 0 8px;font-size:15px;color:#c5a47e;font-weight:600">✨ Cada prenda cuenta una historia</p>
+            <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6">
+              En EGOS creemos que la moda es una forma de expresión. Esperamos que lo que elegiste
+              refleje exactamente quién eres.
+            </p>
+          </div>
+
+          <!-- CTA -->
+          <div style="text-align:center">
+            <a href="${urlPedidos}" style="display:inline-block;background:#c5a47e;color:#111827;padding:16px 40px;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:1px">
+              Ver mis pedidos
+            </a>
+          </div>
+
         </div>
-        <div style="text-align:center;margin:30px 0">
-          <a href="${urlPedidos}" style="background:linear-gradient(135deg,#11998e,#38ef7d);color:white;padding:14px 32px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;display:inline-block">Ver Mis Pedidos</a>
+
+        <!-- FOOTER -->
+        <div style="background:#111827;padding:28px 40px;text-align:center">
+          <p style="margin:0 0 8px;font-size:11px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">EGOS — Wear Your Truth</p>
+          <p style="margin:0;font-size:11px;color:#6b7280">hola@egos.com.co · egoscolombia.com.co</p>
+          <p style="margin:8px 0 0;font-size:10px;color:#4b5563">Este es un correo automático, por favor no respondas a este mensaje.</p>
         </div>
+
       </div>
-      <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
-        <p style="color:#888;font-size:12px;margin:0">Este es un correo automático, no respondas a este mensaje.<br>EGOS — Wear Your Truth</p>
-      </div>
-    </div>
+    </body>
+    </html>
   `;
 
   try {
     await transporter.sendMail({
       from: `"EGOS" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: `✅ Pedido #${pedido.id} confirmado — EGOS`,
+      subject: `✨ ¡Tu pedido #${pedido.id} está confirmado! — EGOS`,
       html
     });
     console.log(`📧 Correo de confirmación enviado a ${email}`);
@@ -789,6 +859,7 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
         nombre: datosUsuario.nombre,
         email: datosUsuario.email,
         nit_cc: datosUsuario.documento_numero || datosUsuario.nit_cc || '222222222222',
+        tipo_documento: datosUsuario.documento_tipo || 'CC',
         direccion: datosUsuario.direccion || datosUsuario.ciudad || 'Bogotá D.C'
       },
       productos: carrito.productos.map(p => ({

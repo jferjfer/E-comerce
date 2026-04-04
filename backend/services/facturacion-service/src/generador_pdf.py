@@ -82,8 +82,12 @@ def generar_pdf_factura(
     # ENCABEZADO
     # ══════════════════════════════════════════
     col_empresa = [
-        Paragraph("EGOS", estilo('t1', fontSize=26, fontName='Helvetica-Bold', textColor=NEGRO, leading=28)),
-        Paragraph("WEAR YOUR TRUTH", estilo('t2', fontSize=7, textColor=DORADO, letterSpacing=4, leading=10)),
+        # Logo EGOS: E grande dorada encima de EGOS
+        Paragraph("<font color='#c5a47e' size=32><b>E</b></font>",
+                  estilo('logo_e', fontSize=32, fontName='Helvetica-Bold', textColor=DORADO, leading=34)),
+        Paragraph("<font size=18><b>EGOS</b></font>",
+                  estilo('logo_egos', fontSize=18, fontName='Helvetica-Bold', textColor=NEGRO, leading=20, spaceBefore=-4)),
+        Paragraph("WEAR YOUR TRUTH", estilo('t2', fontSize=7, textColor=DORADO, leading=10)),
         Spacer(1, 6),
         Paragraph("<b>Vertel &amp; Catillo S.A.S</b>", estilo('e1', fontSize=8, leading=11)),
         Paragraph("NIT: 900.205.170-8  DV: 8", estilo('e2', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
