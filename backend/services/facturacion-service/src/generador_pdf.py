@@ -83,11 +83,11 @@ def generar_pdf_factura(
     # ══════════════════════════════════════════
     col_empresa = [
         Paragraph("<font color='#c5a47e'><b>E</b></font>",
-                  estilo('logo_e', fontSize=32, fontName='Helvetica-Bold', textColor=DORADO, leading=34, alignment=TA_CENTER)),
+                  estilo('logo_e', fontSize=32, fontName='Helvetica-Bold', textColor=DORADO, leading=34, alignment=TA_LEFT)),
         Paragraph("<b>EGOS</b>",
-                  estilo('logo_egos', fontSize=18, fontName='Helvetica-Bold', textColor=NEGRO, leading=20, alignment=TA_CENTER)),
+                  estilo('logo_egos', fontSize=18, fontName='Helvetica-Bold', textColor=NEGRO, leading=20, alignment=TA_LEFT)),
         Paragraph("WEAR YOUR TRUTH",
-                  estilo('t2', fontSize=7, textColor=DORADO, leading=10, alignment=TA_CENTER)),
+                  estilo('t2', fontSize=7, textColor=DORADO, leading=10, alignment=TA_LEFT)),
         Spacer(1, 6),
         Paragraph("<b>Vertel &amp; Catillo S.A.S</b>", estilo('e1', fontSize=8, leading=11)),
         Paragraph("NIT: 900.205.170-8  DV: 8", estilo('e2', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
