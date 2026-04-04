@@ -864,7 +864,7 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       cliente: {
         nombre: datosUsuario.nombre,
         email: datosUsuario.email,
-        nit_cc: datosUsuario.documento_numero || datosUsuario.nit_cc || '222222222222',
+        nit_cc: datosUsuario.documento_numero || 'Consumidor Final',
         tipo_documento: datosUsuario.documento_tipo || 'CC',
         direccion: datosUsuario.direccion || datosUsuario.ciudad || 'Bogotá D.C'
       },

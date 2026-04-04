@@ -35,8 +35,14 @@ class ControladorUsuario {
         usuario: {
           id: usuario.id,
           nombre: usuario.nombre,
+          apellido: usuario.apellido,
           email: usuario.email,
-          rol: usuario.rol
+          rol: usuario.rol,
+          telefono: usuario.telefono,
+          documento_tipo: usuario.documento_tipo || 'CC',
+          documento_numero: usuario.documento_numero || '',
+          direccion: usuario.direccion || '',
+          ciudad: usuario.ciudad || ''
         }
       });
     } catch (error) {
