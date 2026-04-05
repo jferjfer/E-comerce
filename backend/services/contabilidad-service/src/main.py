@@ -21,7 +21,8 @@ from database import (
 )
 from motor_contable import (
     registrar_venta, registrar_pago, registrar_devolucion,
-    registrar_credito_interno, calcular_iva_bimestre, calcular_anticipo_simple
+    registrar_credito_interno, calcular_iva_bimestre,
+    calcular_anticipo_simple, registrar_compra
 )
 
 EMPRESA = {
@@ -84,7 +85,21 @@ class EventoCredito(BaseModel):
 class AsientoManual(BaseModel):
     descripcion: str
     referencia: Optional[str] = None
-    movimientos: List[dict]  # [{codigo, debito, credito}]
+    movimientos: List[dict]
+
+
+class RegistrarCompra(BaseModel):
+    proveedor_nombre: str
+    descripcion: str
+    subtotal: float
+    tipo_compra: str = "Mercancia"  # Mercancia, Servicio, Publicidad, Transporte, Arriendo, Servicios_publicos, Papeleria, Otro
+    iva: float = 0
+    forma_pago: str = "Contado"  # Contado, Credito
+    proveedor_nit: Optional[str] = None
+    numero_factura: Optional[str] = None
+    tipo_factura: str = "Talonario"  # Talonario, Electronica
+    plazo_dias: int = 0
+    fecha: Optional[str] = None
 
 
 # ============================================
@@ -661,6 +676,125 @@ async def dashboard(db: Session = Depends(get_db)):
             }
         },
         "ventas_historico": ventas_historico
+    }
+
+
+# ============================================
+# ENDPOINTS — COMPRAS Y GASTOS
+# ============================================
+
+@app.post("/api/contabilidad/compras")
+async def registrar_compra_endpoint(compra: RegistrarCompra, db: Session = Depends(get_db)):
+    """Registra una compra a proveedor con asiento contable automático"""
+    try:
+        fecha = datetime.fromisoformat(compra.fecha) if compra.fecha else datetime.now()
+        asiento = registrar_compra(
+            db=db,
+            proveedor_nombre=compra.proveedor_nombre,
+            descripcion=compra.descripcion,
+            subtotal=compra.subtotal,
+            tipo_compra=compra.tipo_compra,
+            iva=compra.iva,
+            forma_pago=compra.forma_pago,
+            proveedor_nit=compra.proveedor_nit,
+            numero_factura=compra.numero_factura,
+            tipo_factura=compra.tipo_factura,
+            plazo_dias=compra.plazo_dias,
+            fecha=fecha
+        )
+        return {
+            "mensaje": "Compra registrada exitosamente",
+            "asiento_id": asiento.id,
+            "numero_asiento": asiento.numero,
+            "total": compra.subtotal + compra.iva
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/contabilidad/compras")
+async def listar_compras(
+    periodo: Optional[str] = Query(None),
+    tipo: Optional[str] = Query(None),
+    forma_pago: Optional[str] = Query(None),
+    pagina: int = Query(1),
+    limite: int = Query(50),
+    db: Session = Depends(get_db)
+):
+    """Lista todas las compras registradas"""
+    from database import Compra
+    query = db.query(Compra)
+    if periodo:
+        query = query.filter(Compra.periodo == periodo)
+    if tipo:
+        query = query.filter(Compra.tipo_compra == tipo)
+    if forma_pago:
+        query = query.filter(Compra.forma_pago == forma_pago)
+
+    total = query.count()
+    compras = query.order_by(Compra.fecha.desc()).offset((pagina-1)*limite).limit(limite).all()
+
+    return {
+        "compras": [{
+            "id": c.id,
+            "numero": c.numero,
+            "fecha": c.fecha.isoformat(),
+            "proveedor": c.proveedor_nombre,
+            "nit": c.proveedor_nit,
+            "tipo_factura": c.tipo_factura,
+            "numero_factura": c.numero_factura,
+            "tipo_compra": c.tipo_compra,
+            "descripcion": c.descripcion,
+            "subtotal": c.subtotal,
+            "iva": c.iva,
+            "total": c.total,
+            "forma_pago": c.forma_pago,
+            "plazo_dias": c.plazo_dias,
+            "estado": c.estado,
+            "periodo": c.periodo
+        } for c in compras],
+        "total": total,
+        "pagina": pagina,
+        "total_paginas": (total + limite - 1) // limite
+    }
+
+
+@app.get("/api/contabilidad/compras/resumen")
+async def resumen_compras(
+    periodo: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Resumen de compras por tipo"""
+    from database import Compra
+    if not periodo:
+        periodo = datetime.now().strftime("%Y-%m")
+
+    compras = db.query(Compra).filter(Compra.periodo == periodo).all()
+
+    por_tipo = {}
+    total_iva_descontable = 0
+    total_compras = 0
+    pendientes = 0
+
+    for c in compras:
+        if c.tipo_compra not in por_tipo:
+            por_tipo[c.tipo_compra] = {"cantidad": 0, "subtotal": 0, "iva": 0, "total": 0}
+        por_tipo[c.tipo_compra]["cantidad"] += 1
+        por_tipo[c.tipo_compra]["subtotal"] += c.subtotal
+        por_tipo[c.tipo_compra]["iva"] += c.iva
+        por_tipo[c.tipo_compra]["total"] += c.total
+        total_iva_descontable += c.iva
+        total_compras += c.total
+        if c.estado == "Pendiente":
+            pendientes += c.total
+
+    return {
+        "periodo": periodo,
+        "total_compras": round(total_compras, 2),
+        "total_iva_descontable": round(total_iva_descontable, 2),
+        "cuentas_por_pagar": round(pendientes, 2),
+        "por_tipo": por_tipo,
+        "cantidad_total": len(compras)
     }
 
 

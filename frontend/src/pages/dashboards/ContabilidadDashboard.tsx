@@ -35,6 +35,19 @@ export default function ContabilidadDashboard() {
   const [simpleData, setSimpleData] = useState<any>(null)
   const [periodo, setPeriodo] = useState(new Date().toISOString().slice(0, 7))
 
+  // Estado formulario compra
+  const [showFormCompra, setShowFormCompra] = useState(false)
+  const [compras, setCompras] = useState<any[]>([])
+  const [resumenCompras, setResumenCompras] = useState<any>(null)
+  const [formCompra, setFormCompra] = useState({
+    proveedor_nombre: '', proveedor_nit: '', descripcion: '',
+    subtotal: '', iva: '0', tipo_compra: 'Mercancia',
+    forma_pago: 'Contado', tipo_factura: 'Talonario',
+    numero_factura: '', plazo_dias: '0'
+  })
+  const [guardandoCompra, setGuardandoCompra] = useState(false)
+  const [mensajeCompra, setMensajeCompra] = useState<{tipo: string, texto: string} | null>(null)
+
   const anio = new Date().getFullYear()
   const bimestre = Math.ceil(new Date().getMonth() / 2) + (new Date().getMonth() % 2 === 0 ? 0 : 0)
   const bimestreActual = Math.floor(new Date().getMonth() / 2) + 1
@@ -50,6 +63,7 @@ export default function ContabilidadDashboard() {
     if (tab === 'resultados') cargarResultados()
     if (tab === 'iva') cargarIVA()
     if (tab === 'simple') cargarSIMPLE()
+    if (tab === 'compras') cargarCompras()
   }, [tab, periodo])
 
   const cargarDashboard = async () => {
@@ -96,6 +110,52 @@ export default function ContabilidadDashboard() {
     setSimpleData(await res.json())
   }
 
+  const cargarCompras = async () => {
+    const [r1, r2] = await Promise.all([
+      fetch(`${API_URL}/api/contabilidad/compras?periodo=${periodo}&limite=100`),
+      fetch(`${API_URL}/api/contabilidad/compras/resumen?periodo=${periodo}`)
+    ])
+    const d1 = await r1.json()
+    const d2 = await r2.json()
+    setCompras(d1.compras || [])
+    setResumenCompras(d2)
+  }
+
+  const guardarCompra = async () => {
+    if (!formCompra.proveedor_nombre || !formCompra.descripcion || !formCompra.subtotal) {
+      setMensajeCompra({ tipo: 'error', texto: 'Proveedor, descripción y subtotal son obligatorios' })
+      return
+    }
+    setGuardandoCompra(true)
+    setMensajeCompra(null)
+    try {
+      const res = await fetch(`${API_URL}/api/contabilidad/compras`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formCompra,
+          subtotal: parseFloat(formCompra.subtotal),
+          iva: parseFloat(formCompra.iva || '0'),
+          plazo_dias: parseInt(formCompra.plazo_dias || '0')
+        })
+      })
+      const d = await res.json()
+      if (res.ok) {
+        setMensajeCompra({ tipo: 'success', texto: `✅ Compra registrada — Asiento #${d.numero_asiento}` })
+        setFormCompra({ proveedor_nombre: '', proveedor_nit: '', descripcion: '', subtotal: '', iva: '0', tipo_compra: 'Mercancia', forma_pago: 'Contado', tipo_factura: 'Talonario', numero_factura: '', plazo_dias: '0' })
+        setShowFormCompra(false)
+        cargarCompras()
+        cargarDashboard()
+      } else {
+        setMensajeCompra({ tipo: 'error', texto: d.detail || 'Error registrando compra' })
+      }
+    } catch (e) {
+      setMensajeCompra({ tipo: 'error', texto: 'Error de conexión' })
+    } finally {
+      setGuardandoCompra(false)
+    }
+  }
+
   const variacionColor = (v: number) => v >= 0 ? 'text-emerald-600' : 'text-red-500'
   const variacionIcon = (v: number) => v >= 0 ? '↑' : '↓'
 
@@ -103,6 +163,7 @@ export default function ContabilidadDashboard() {
 
   const TABS = [
     { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'compras', label: '🛒 Compras' },
     { id: 'diario', label: '📖 Libro Diario' },
     { id: 'mayor', label: '📋 Libro Mayor' },
     { id: 'balance', label: '⚖️ Balance' },
@@ -264,6 +325,195 @@ export default function ContabilidadDashboard() {
               <p className="text-sm text-gray-600">
                 📝 <strong>{data.resumen.total_asientos_mes}</strong> asientos contables registrados este mes automáticamente
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── COMPRAS ── */}
+        {tab === 'compras' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input type="month" value={periodo} onChange={e => { setPeriodo(e.target.value); }}
+                  className="border rounded-lg px-3 py-2 text-sm" />
+                <span className="text-sm text-gray-500">{compras.length} compras</span>
+              </div>
+              <button onClick={() => setShowFormCompra(true)}
+                className="bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700">
+                + Registrar Compra
+              </button>
+            </div>
+
+            {/* Mensaje */}
+            {mensajeCompra && (
+              <div className={`p-3 rounded-lg text-sm ${mensajeCompra.tipo === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                {mensajeCompra.texto}
+              </div>
+            )}
+
+            {/* Resumen */}
+            {resumenCompras && (
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Total Compras', valor: formatPrice(resumenCompras.total_compras || 0), icon: '💰' },
+                  { label: 'IVA Descontable', valor: formatPrice(resumenCompras.total_iva_descontable || 0), icon: '🧾' },
+                  { label: 'Cuentas por Pagar', valor: formatPrice(resumenCompras.cuentas_por_pagar || 0), icon: '⏳' },
+                ].map((k, i) => (
+                  <div key={i} className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-xs text-gray-500">{k.label}</p>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{k.valor}</p>
+                    <span className="text-xl">{k.icon}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Formulario */}
+            {showFormCompra && (
+              <div className="bg-white rounded-xl shadow-sm border p-5 space-y-4">
+                <h3 className="font-bold text-gray-800">Registrar Compra / Gasto</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Proveedor *</label>
+                    <input value={formCompra.proveedor_nombre} onChange={e => setFormCompra({...formCompra, proveedor_nombre: e.target.value})}
+                      placeholder="Nombre del proveedor" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">NIT / CC Proveedor</label>
+                    <input value={formCompra.proveedor_nit} onChange={e => setFormCompra({...formCompra, proveedor_nit: e.target.value})}
+                      placeholder="Opcional" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-gray-500 mb-1 block">Descripción *</label>
+                    <input value={formCompra.descripcion} onChange={e => setFormCompra({...formCompra, descripcion: e.target.value})}
+                      placeholder="Qué se compró" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Tipo de Compra *</label>
+                    <select value={formCompra.tipo_compra} onChange={e => setFormCompra({...formCompra, tipo_compra: e.target.value})}
+                      className="w-full border rounded-lg px-3 py-2 text-sm">
+                      <option value="Mercancia">Mercancía (Inventario)</option>
+                      <option value="Servicio">Servicio Tecnología</option>
+                      <option value="Publicidad">Publicidad y Marketing</option>
+                      <option value="Transporte">Transporte y Fletes</option>
+                      <option value="Arriendo">Arriendo</option>
+                      <option value="Servicios_publicos">Servicios Públicos</option>
+                      <option value="Papeleria">Papelería</option>
+                      <option value="Otro">Otro Gasto</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Tipo Factura</label>
+                    <select value={formCompra.tipo_factura} onChange={e => setFormCompra({...formCompra, tipo_factura: e.target.value})}
+                      className="w-full border rounded-lg px-3 py-2 text-sm">
+                      <option value="Talonario">Talonario (Papel)</option>
+                      <option value="Electronica">Electrónica</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Número Factura</label>
+                    <input value={formCompra.numero_factura} onChange={e => setFormCompra({...formCompra, numero_factura: e.target.value})}
+                      placeholder="Ej: 001-2024" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Subtotal (sin IVA) *</label>
+                    <input type="number" value={formCompra.subtotal} onChange={e => setFormCompra({...formCompra, subtotal: e.target.value})}
+                      placeholder="0" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">IVA (0 si no cobra)</label>
+                    <input type="number" value={formCompra.iva} onChange={e => setFormCompra({...formCompra, iva: e.target.value})}
+                      placeholder="0" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Forma de Pago</label>
+                    <select value={formCompra.forma_pago} onChange={e => setFormCompra({...formCompra, forma_pago: e.target.value})}
+                      className="w-full border rounded-lg px-3 py-2 text-sm">
+                      <option value="Contado">Contado</option>
+                      <option value="Credito">Crédito</option>
+                    </select>
+                  </div>
+                  {formCompra.forma_pago === 'Credito' && (
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Plazo (días)</label>
+                      <input type="number" value={formCompra.plazo_dias} onChange={e => setFormCompra({...formCompra, plazo_dias: e.target.value})}
+                        placeholder="30" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Preview asiento */}
+                {formCompra.subtotal && (
+                  <div className="bg-gray-50 rounded-lg p-3 text-xs">
+                    <p className="font-semibold text-gray-700 mb-2">Vista previa del asiento:</p>
+                    <div className="space-y-1 font-mono">
+                      <p className="text-emerald-700">DB {formCompra.tipo_compra === 'Mercancia' ? '143505 Inventario prendas' : '5xxxxx Gasto'} ${parseFloat(formCompra.subtotal || '0').toLocaleString('es-CO')}</p>
+                      {parseFloat(formCompra.iva || '0') > 0 && <p className="text-emerald-700">DB 240810 IVA descontable ${parseFloat(formCompra.iva).toLocaleString('es-CO')}</p>}
+                      <p className="text-blue-700">CR {formCompra.forma_pago === 'Contado' ? '111010 Banco' : '220505 Proveedores'} ${(parseFloat(formCompra.subtotal || '0') + parseFloat(formCompra.iva || '0')).toLocaleString('es-CO')}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button onClick={guardarCompra} disabled={guardandoCompra}
+                    className="bg-gray-900 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700 disabled:opacity-50">
+                    {guardandoCompra ? 'Guardando...' : 'Registrar Compra'}
+                  </button>
+                  <button onClick={() => { setShowFormCompra(false); setMensajeCompra(null) }}
+                    className="border border-gray-300 text-gray-600 px-5 py-2 rounded-xl text-sm hover:bg-gray-50">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Lista compras */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-900 text-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left">#</th>
+                    <th className="px-4 py-3 text-left">Proveedor</th>
+                    <th className="px-4 py-3 text-left">Tipo</th>
+                    <th className="px-4 py-3 text-left">Factura</th>
+                    <th className="px-4 py-3 text-right">Subtotal</th>
+                    <th className="px-4 py-3 text-right">IVA</th>
+                    <th className="px-4 py-3 text-right">Total</th>
+                    <th className="px-4 py-3 text-center">Pago</th>
+                    <th className="px-4 py-3 text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compras.map((c, i) => (
+                    <tr key={i} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-2 font-mono text-xs text-gray-500">{c.numero}</td>
+                      <td className="px-4 py-2">
+                        <p className="font-medium text-gray-800">{c.proveedor}</p>
+                        {c.nit && <p className="text-xs text-gray-400">NIT: {c.nit}</p>}
+                      </td>
+                      <td className="px-4 py-2 text-xs">{c.tipo_compra}</td>
+                      <td className="px-4 py-2 text-xs">
+                        <span className={`px-2 py-0.5 rounded-full ${c.tipo_factura === 'Talonario' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {c.tipo_factura}
+                        </span>
+                        {c.numero_factura && <p className="text-gray-400 mt-0.5">{c.numero_factura}</p>}
+                      </td>
+                      <td className="px-4 py-2 text-right">{formatPrice(c.subtotal)}</td>
+                      <td className="px-4 py-2 text-right text-xs">{c.iva > 0 ? formatPrice(c.iva) : '-'}</td>
+                      <td className="px-4 py-2 text-right font-bold">{formatPrice(c.total)}</td>
+                      <td className="px-4 py-2 text-center text-xs">{c.forma_pago}</td>
+                      <td className="px-4 py-2 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${c.estado === 'Pagada' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                          {c.estado}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {compras.length === 0 && (
+                    <tr><td colSpan={9} className="text-center py-8 text-gray-400">No hay compras registradas para este período</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

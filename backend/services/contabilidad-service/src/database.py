@@ -168,7 +168,38 @@ class AnticipoPSIMPLE(Base):
     fecha_vencimiento = Column(DateTime, nullable=True)
 
 
-class ContadorAsiento(Base):
+class Compra(Base):
+    """Registro de compras a proveedores"""
+    __tablename__ = "compra"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    numero = Column(Integer, nullable=False)
+    fecha = Column(DateTime, nullable=False, default=datetime.now)
+    proveedor_nombre = Column(String(200), nullable=False)
+    proveedor_nit = Column(String(20), nullable=True)
+    tipo_factura = Column(String(20), default="Talonario")  # Talonario, Electronica
+    numero_factura = Column(String(50), nullable=True)
+    tipo_compra = Column(String(20), nullable=False)  # Mercancia, Servicio, Gasto
+    descripcion = Column(Text, nullable=False)
+    subtotal = Column(Float, nullable=False)
+    iva = Column(Float, default=0)  # 0 si no cobra IVA
+    total = Column(Float, nullable=False)
+    forma_pago = Column(String(20), default="Contado")  # Contado, Credito
+    plazo_dias = Column(Integer, default=0)  # si es crédito
+    estado = Column(String(20), default="Pagada")  # Pagada, Pendiente
+    asiento_id = Column(String, nullable=True)
+    periodo = Column(String(7), nullable=False)
+    fecha_creacion = Column(DateTime, default=datetime.now)
+
+
+class ContadorCompra(Base):
+    """Consecutivo de compras"""
+    __tablename__ = "contador_compra"
+    id = Column(Integer, primary_key=True, default=1)
+    ultimo_numero = Column(Integer, default=0)
+
+
+
     """Consecutivo de asientos"""
     __tablename__ = "contador_asiento"
     id = Column(Integer, primary_key=True, default=1)
@@ -190,8 +221,13 @@ def init_db():
         if not db.query(ContadorAsiento).first():
             db.add(ContadorAsiento(id=1, ultimo_numero=0))
             db.commit()
+        if not db.query(ContadorCompra).first():
+            db.add(ContadorCompra(id=1, ultimo_numero=0))
+            db.commit()
         if db.query(CuentaPUC).count() == 0:
             _poblar_puc(db)
+        else:
+            _agregar_cuentas_faltantes(db)
         db.close()
         init_transaction_db()
         print("✅ Contabilidad: tablas y PUC inicializados")
@@ -291,3 +327,34 @@ def _poblar_puc(db):
         ))
     db.commit()
     print(f"✅ PUC poblado con {len(cuentas)} cuentas")
+
+
+def _agregar_cuentas_faltantes(db):
+    """Agrega cuentas PUC nuevas si no existen (para actualizaciones)"""
+    cuentas_nuevas = [
+        # Proveedores (Pasivo)
+        ("22", "PROVEEDORES", "Pasivo", "Credito", 2, "2"),
+        ("2205", "Proveedores nacionales", "Pasivo", "Credito", 3, "22"),
+        ("220505", "Proveedores prendas de vestir", "Pasivo", "Credito", 4, "2205"),
+        ("220510", "Proveedores servicios", "Pasivo", "Credito", 4, "2205"),
+        # IVA descontable (Activo)
+        ("2408", "Impuesto sobre las ventas por pagar", "Pasivo", "Credito", 3, "24"),
+        ("240810", "IVA descontable compras", "Activo", "Debito", 4, "2408"),
+        # Gastos adicionales
+        ("513540", "Publicidad y marketing", "Gasto", "Debito", 4, "5135"),
+        ("513545", "Transporte y fletes", "Gasto", "Debito", 4, "5135"),
+        ("513550", "Arrendamientos", "Gasto", "Debito", 4, "5135"),
+        ("513555", "Servicios públicos", "Gasto", "Debito", 4, "5135"),
+        ("513560", "Papelería y útiles", "Gasto", "Debito", 4, "5135"),
+    ]
+    agregadas = 0
+    for codigo, nombre, tipo, naturaleza, nivel, padre in cuentas_nuevas:
+        if not db.query(CuentaPUC).filter(CuentaPUC.codigo == codigo).first():
+            db.add(CuentaPUC(
+                codigo=codigo, nombre=nombre, tipo=tipo,
+                naturaleza=naturaleza, nivel=nivel, codigo_padre=padre
+            ))
+            agregadas += 1
+    if agregadas > 0:
+        db.commit()
+        print(f"✅ {agregadas} cuentas PUC nuevas agregadas")

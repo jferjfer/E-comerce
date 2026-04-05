@@ -259,6 +259,152 @@ def registrar_credito_interno(db: Session, credito_id: str, monto: float,
     return asiento
 
 
+def registrar_compra(
+    db: Session,
+    proveedor_nombre: str,
+    descripcion: str,
+    subtotal: float,
+    tipo_compra: str = "Mercancia",
+    iva: float = 0,
+    forma_pago: str = "Contado",
+    proveedor_nit: str = None,
+    numero_factura: str = None,
+    tipo_factura: str = "Talonario",
+    plazo_dias: int = 0,
+    fecha: datetime = None
+) -> AsientoContable:
+    """
+    Registra asiento contable de compra a proveedor.
+
+    Contado + Mercancia:
+      DB 143505 Inventario prendas       (subtotal)
+      DB 240810 IVA descontable          (iva, si aplica)
+         CR 111010 Banco                 (total)
+
+    Credito + Mercancia:
+      DB 143505 Inventario prendas       (subtotal)
+      DB 240810 IVA descontable          (iva, si aplica)
+         CR 220505 Proveedores           (total)
+
+    Contado + Servicio/Gasto:
+      DB 5xxxxx Cuenta de gasto          (subtotal)
+      DB 240810 IVA descontable          (iva, si aplica)
+         CR 111010 Banco                 (total)
+
+    Credito + Servicio/Gasto:
+      DB 5xxxxx Cuenta de gasto          (subtotal)
+      DB 240810 IVA descontable          (iva, si aplica)
+         CR 220510 Proveedores servicios (total)
+    """
+    from database import Compra, ContadorCompra
+
+    if fecha is None:
+        fecha = datetime.now()
+
+    total = round(subtotal + iva, 2)
+    periodo = fecha.strftime("%Y-%m")
+
+    # Determinar cuenta de débito según tipo
+    CUENTAS_GASTO = {
+        "Mercancia":   ("143505", "Prendas de vestir", "Activo", "Debito"),
+        "Servicio":    ("513530", "Servicios de tecnología", "Gasto", "Debito"),
+        "Publicidad":  ("513540", "Publicidad y marketing", "Gasto", "Debito"),
+        "Transporte":  ("513545", "Transporte y fletes", "Gasto", "Debito"),
+        "Arriendo":    ("513550", "Arrendamientos", "Gasto", "Debito"),
+        "Servicios_publicos": ("513555", "Servicios públicos", "Gasto", "Debito"),
+        "Papeleria":   ("513560", "Papelería y útiles", "Gasto", "Debito"),
+        "Otro":        ("519595", "Otros gastos administrativos", "Gasto", "Debito"),
+    }
+    cod_debito, nom_debito, tipo_debito, nat_debito = CUENTAS_GASTO.get(
+        tipo_compra, CUENTAS_GASTO["Otro"]
+    )
+
+    # Cuenta crédito según forma de pago y tipo
+    if forma_pago == "Contado":
+        cod_credito, nom_credito = "111010", "Cuenta de ahorros"
+        tipo_credito, nat_credito = "Activo", "Debito"
+    else:
+        if tipo_compra == "Mercancia":
+            cod_credito, nom_credito = "220505", "Proveedores prendas de vestir"
+        else:
+            cod_credito, nom_credito = "220510", "Proveedores servicios"
+        tipo_credito, nat_credito = "Pasivo", "Credito"
+
+    # Número consecutivo asiento
+    numero = _siguiente_numero(db)
+
+    # Número consecutivo compra
+    contador_c = db.query(ContadorCompra).filter(ContadorCompra.id == 1).with_for_update().first()
+    if not contador_c:
+        contador_c = ContadorCompra(id=1, ultimo_numero=0)
+        db.add(contador_c)
+    contador_c.ultimo_numero += 1
+    num_compra = contador_c.ultimo_numero
+
+    asiento = AsientoContable(
+        numero=numero, fecha=fecha, tipo="Compra",
+        descripcion=f"Compra {tipo_compra} — {proveedor_nombre} — {descripcion}",
+        referencia=numero_factura or f"COMP-{num_compra:04d}",
+        total_debito=total, total_credito=total, periodo=periodo
+    )
+    db.add(asiento)
+    db.flush()
+
+    movimientos = [
+        MovimientoContable(
+            asiento_id=asiento.id, codigo_cuenta=cod_debito,
+            nombre_cuenta=nom_debito, debito=subtotal, credito=0,
+            descripcion=descripcion
+        ),
+        MovimientoContable(
+            asiento_id=asiento.id, codigo_cuenta=cod_credito,
+            nombre_cuenta=nom_credito, debito=0, credito=total
+        ),
+    ]
+
+    if iva > 0:
+        movimientos.insert(1, MovimientoContable(
+            asiento_id=asiento.id, codigo_cuenta="240810",
+            nombre_cuenta="IVA descontable compras",
+            debito=iva, credito=0,
+            descripcion="IVA descontable"
+        ))
+
+    for m in movimientos:
+        db.add(m)
+
+    # Actualizar saldos
+    _actualizar_saldo(db, cod_debito, nom_debito, tipo_debito, nat_debito, periodo, subtotal, 0)
+    if iva > 0:
+        _actualizar_saldo(db, "240810", "IVA descontable compras", "Activo", "Debito", periodo, iva, 0)
+    _actualizar_saldo(db, cod_credito, nom_credito, tipo_credito, nat_credito, periodo, 0, total)
+
+    # Guardar registro de compra
+    compra = Compra(
+        numero=num_compra,
+        fecha=fecha,
+        proveedor_nombre=proveedor_nombre,
+        proveedor_nit=proveedor_nit,
+        tipo_factura=tipo_factura,
+        numero_factura=numero_factura,
+        tipo_compra=tipo_compra,
+        descripcion=descripcion,
+        subtotal=subtotal,
+        iva=iva,
+        total=total,
+        forma_pago=forma_pago,
+        plazo_dias=plazo_dias,
+        estado="Pagada" if forma_pago == "Contado" else "Pendiente",
+        asiento_id=asiento.id,
+        periodo=periodo
+    )
+    db.add(compra)
+    db.commit()
+
+    print(f"✅ Compra #{num_compra} — {proveedor_nombre} ${total:,.0f} ({forma_pago})")
+    return asiento
+
+
 def calcular_iva_bimestre(db: Session, anio: int, bimestre: int) -> dict:
     """Calcula IVA a pagar para un bimestre"""
     meses = {

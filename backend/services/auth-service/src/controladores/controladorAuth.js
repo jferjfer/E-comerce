@@ -56,6 +56,13 @@ class ControladorAuth {
       // Iniciar sesión
       const resultado = await ServicioAuth.iniciarSesion(value.email, contrasena);
 
+      if (!resultado.exito) {
+        return res.status(401).json({
+          exito: false,
+          error: resultado.error || 'Credenciales inválidas'
+        });
+      }
+
       res.json({
         exito: true,
         mensaje: 'Sesión iniciada exitosamente',
