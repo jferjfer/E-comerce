@@ -251,6 +251,7 @@ services:
     environment:
       PUERTO: 3012
       DATABASE_URL: ${POSTGRES_CONTABILIDAD_URL}
+      TRANSACTION_DB_URL: ${POSTGRES_TRANSACTION_URL}
     ports:
       - "3012:3012"
     dns:

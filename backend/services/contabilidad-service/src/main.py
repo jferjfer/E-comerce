@@ -16,7 +16,8 @@ import os
 
 from database import (
     get_db, init_db, AsientoContable, MovimientoContable,
-    SaldoCuenta, CuentaPUC, DeclaracionIVA, AnticipoPSIMPLE
+    SaldoCuenta, CuentaPUC, DeclaracionIVA, AnticipoPSIMPLE,
+    get_transaction_db, TransactionSession
 )
 from motor_contable import (
     registrar_venta, registrar_pago, registrar_devolucion,
@@ -401,7 +402,150 @@ async def anticipo_simple(anio: int, bimestre: int, db: Session = Depends(get_db
 
 @app.get("/api/contabilidad/dashboard")
 async def dashboard(db: Session = Depends(get_db)):
-    """Dashboard contable — resumen ejecutivo"""
+    """Dashboard contable — lee de BD transacciones en tiempo real"""
+    ahora = datetime.now()
+    periodo_actual = ahora.strftime("%Y-%m")
+    periodo_anterior = (ahora.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+    anio = ahora.year
+    bimestre_actual = ((ahora.month - 1) // 2) + 1
+
+    # Leer pedidos directamente de BD transacciones
+    ventas_mes = 0
+    ventas_mes_anterior = 0
+    devoluciones_mes = 0
+    total_pedidos = 0
+    ventas_historico = []
+
+    if TransactionSession:
+        try:
+            tdb = TransactionSession()
+
+            # Ventas mes actual
+            res = tdb.execute(__import__('sqlalchemy').text("""
+                SELECT COALESCE(SUM(total), 0)
+                FROM pedido
+                WHERE TO_CHAR(fecha_creacion, 'YYYY-MM') = :periodo
+                AND estado != 'Cancelado'
+            """), {"periodo": periodo_actual})
+            ventas_mes = float(res.scalar() or 0)
+
+            # Ventas mes anterior
+            res = tdb.execute(__import__('sqlalchemy').text("""
+                SELECT COALESCE(SUM(total), 0)
+                FROM pedido
+                WHERE TO_CHAR(fecha_creacion, 'YYYY-MM') = :periodo
+                AND estado != 'Cancelado'
+            """), {"periodo": periodo_anterior})
+            ventas_mes_anterior = float(res.scalar() or 0)
+
+            # Total pedidos
+            res = tdb.execute(__import__('sqlalchemy').text("SELECT COUNT(*) FROM pedido"))
+            total_pedidos = int(res.scalar() or 0)
+
+            # Devoluciones mes actual
+            res = tdb.execute(__import__('sqlalchemy').text("""
+                SELECT COALESCE(SUM(p.total), 0)
+                FROM devolucion d
+                JOIN pedido p ON d.id_pedido = p.id
+                WHERE TO_CHAR(d.fecha_creacion, 'YYYY-MM') = :periodo
+                AND d.estado IN ('Aprobada', 'Completada')
+            """), {"periodo": periodo_actual})
+            devoluciones_mes = float(res.scalar() or 0)
+
+            # Ventas últimos 6 meses
+            for i in range(5, -1, -1):
+                mes = (ahora.replace(day=1) - timedelta(days=i * 30))
+                p = mes.strftime("%Y-%m")
+                res = tdb.execute(__import__('sqlalchemy').text("""
+                    SELECT COALESCE(SUM(total), 0)
+                    FROM pedido
+                    WHERE TO_CHAR(fecha_creacion, 'YYYY-MM') = :periodo
+                    AND estado != 'Cancelado'
+                """), {"periodo": p})
+                v = float(res.scalar() or 0)
+                ventas_historico.append({"periodo": p, "ventas": round(v, 2)})
+
+            tdb.close()
+        except Exception as e:
+            print(f"⚠️ Error leyendo BD transacciones: {e}")
+    else:
+        # Fallback: leer de saldos contables
+        ventas_mes = float(db.query(func.sum(SaldoCuenta.total_creditos)).filter(
+            SaldoCuenta.codigo_cuenta == "413505",
+            SaldoCuenta.periodo == periodo_actual
+        ).scalar() or 0)
+        for i in range(5, -1, -1):
+            mes = (ahora.replace(day=1) - timedelta(days=i * 30))
+            p = mes.strftime("%Y-%m")
+            v = float(db.query(func.sum(SaldoCuenta.total_creditos)).filter(
+                SaldoCuenta.codigo_cuenta == "413505",
+                SaldoCuenta.periodo == p
+            ).scalar() or 0)
+            ventas_historico.append({"periodo": p, "ventas": round(v, 2)})
+
+    # IVA y SIMPLE calculados sobre ventas reales
+    base_mes = round(ventas_mes / 1.19, 2)
+    iva_mes = round(ventas_mes - base_mes, 2)
+
+    base_bimestre = 0
+    iva_bimestre_valor = 0
+    if TransactionSession:
+        try:
+            tdb = TransactionSession()
+            meses_bimestre = {
+                1: ["01", "02"], 2: ["03", "04"], 3: ["05", "06"],
+                4: ["07", "08"], 5: ["09", "10"], 6: ["11", "12"]
+            }
+            for mes in meses_bimestre.get(bimestre_actual, []):
+                periodo_b = f"{anio}-{mes}"
+                res = tdb.execute(__import__('sqlalchemy').text("""
+                    SELECT COALESCE(SUM(total), 0) FROM pedido
+                    WHERE TO_CHAR(fecha_creacion, 'YYYY-MM') = :periodo
+                    AND estado != 'Cancelado'
+                """), {"periodo": periodo_b})
+                base_bimestre += float(res.scalar() or 0)
+            tdb.close()
+            iva_bimestre_valor = round(base_bimestre - round(base_bimestre / 1.19, 2), 2)
+        except Exception as e:
+            print(f"⚠️ Error calculando IVA bimestre: {e}")
+
+    total_asientos = db.query(func.count(AsientoContable.id)).filter(
+        AsientoContable.periodo == periodo_actual
+    ).scalar() or 0
+
+    variacion_ventas = 0
+    if ventas_mes_anterior > 0:
+        variacion_ventas = round(((ventas_mes - ventas_mes_anterior) / ventas_mes_anterior) * 100, 1)
+
+    return {
+        "empresa": EMPRESA,
+        "periodo_actual": periodo_actual,
+        "resumen": {
+            "ventas_mes": round(ventas_mes, 2),
+            "ventas_mes_anterior": round(ventas_mes_anterior, 2),
+            "variacion_ventas": variacion_ventas,
+            "devoluciones_mes": round(devoluciones_mes, 2),
+            "ventas_netas": round(ventas_mes - devoluciones_mes, 2),
+            "iva_por_pagar": round(iva_mes, 2),
+            "cuentas_por_cobrar": round(ventas_mes, 2),
+            "efectivo_disponible": round(ventas_mes - devoluciones_mes, 2),
+            "total_asientos_mes": total_asientos,
+            "total_pedidos": total_pedidos
+        },
+        "obligaciones_fiscales": {
+            "iva_bimestre": {
+                "bimestre": bimestre_actual,
+                "iva_a_pagar": iva_bimestre_valor,
+                "base_gravable": round(base_bimestre / 1.19, 2) if base_bimestre > 0 else 0
+            },
+            "anticipo_simple": {
+                "bimestre": bimestre_actual,
+                "valor": round(base_bimestre * 0.011, 2),
+                "ingresos_brutos": round(base_bimestre, 2)
+            }
+        },
+        "ventas_historico": ventas_historico
+    }
     ahora = datetime.now()
     periodo_actual = ahora.strftime("%Y-%m")
     periodo_anterior = (ahora.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")

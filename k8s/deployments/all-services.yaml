@@ -574,6 +574,11 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: POSTGRES_CONTABILIDAD_URL
+        - name: TRANSACTION_DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: POSTGRES_TRANSACTION_URL
         resources:
           requests:
             cpu: "100m"

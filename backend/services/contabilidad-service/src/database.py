@@ -11,6 +11,7 @@ import uuid
 import enum
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
+TRANSACTION_DB_URL = os.getenv("TRANSACTION_DB_URL", "")
 
 engine = create_engine(
     DATABASE_URL,
@@ -18,6 +19,33 @@ engine = create_engine(
     pool_recycle=300,
     connect_args={"sslmode": "require", "connect_timeout": 10}
 )
+
+# Motor separado para leer BD de transacciones
+transaction_engine = None
+TransactionSession = None
+
+def init_transaction_db():
+    global transaction_engine, TransactionSession
+    if TRANSACTION_DB_URL:
+        try:
+            transaction_engine = create_engine(
+                TRANSACTION_DB_URL,
+                pool_pre_ping=True,
+                pool_recycle=300,
+                connect_args={"sslmode": "require", "connect_timeout": 10}
+            )
+            TransactionSession = sessionmaker(autocommit=False, autoflush=False, bind=transaction_engine)
+            print("✅ Contabilidad conectada a BD Transacciones")
+        except Exception as e:
+            print(f"⚠️ No se pudo conectar a BD Transacciones: {e}")
+
+def get_transaction_db():
+    if TransactionSession:
+        db = TransactionSession()
+        try:
+            yield db
+        finally:
+            db.close()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -159,17 +187,13 @@ def init_db():
     try:
         Base.metadata.create_all(bind=engine)
         db = SessionLocal()
-
-        # Inicializar contador
         if not db.query(ContadorAsiento).first():
             db.add(ContadorAsiento(id=1, ultimo_numero=0))
             db.commit()
-
-        # Poblar PUC si está vacío
         if db.query(CuentaPUC).count() == 0:
             _poblar_puc(db)
-
         db.close()
+        init_transaction_db()
         print("✅ Contabilidad: tablas y PUC inicializados")
     except Exception as e:
         print(f"⚠️ Error inicializando contabilidad: {e}")
