@@ -40,6 +40,11 @@ export default function RoleBasedHome() {
     return <Navigate to="/logistics" replace />
   }
 
+  // Contador → Dashboard Contabilidad
+  if (usuario.rol === 'contador') {
+    return <Navigate to="/contabilidad" replace />
+  }
+
   // Todos los demás roles administrativos → Dashboard admin
   return <Navigate to="/admin" replace />
 }
