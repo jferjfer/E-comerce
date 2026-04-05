@@ -26,7 +26,7 @@ interface DashboardData {
 export default function ContabilidadDashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [cargando, setCargando] = useState(true)
-  const [tab, setTab] = useState<'dashboard' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple'>('dashboard')
+  const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple'>('dashboard')
   const [libroDiario, setLibroDiario] = useState<any[]>([])
   const [libroMayor, setLibroMayor] = useState<any[]>([])
   const [balance, setBalance] = useState<any>(null)
