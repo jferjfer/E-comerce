@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="EGOS Contabilidad Service",
     description="Contabilidad automática — VERTEL & CATILLO S.A.S",
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan
 )
 
