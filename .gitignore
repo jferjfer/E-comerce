@@ -59,6 +59,8 @@ coverage/
 *.pem
 certificado.crt
 Constancia de Emision Certificado Digital.pdf
+RUTACTUALIZADO.pdf
+*.pdf
 resultados_set_pruebas.json
 
 # Google Cloud Credentials
