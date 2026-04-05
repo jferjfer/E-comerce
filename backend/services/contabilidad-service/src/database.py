@@ -205,14 +205,6 @@ class ContadorCompra(Base):
     id = Column(Integer, primary_key=True, default=1)
     ultimo_numero = Column(Integer, default=0)
 
-
-
-    """Consecutivo de asientos"""
-    __tablename__ = "contador_asiento"
-    id = Column(Integer, primary_key=True, default=1)
-    ultimo_numero = Column(Integer, default=0)
-
-
 def get_db():
     db = SessionLocal()
     try:
