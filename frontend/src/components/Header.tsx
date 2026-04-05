@@ -115,7 +115,10 @@ export default function Header({ onCartClick }: HeaderProps) {
                         <MenuItem to="/admin" icon="fa-tachometer-alt" label="Dashboard Admin" onClick={() => setShowUserMenu(false)} />
                       )}
                       {user?.rol === 'ceo' && (
-                        <MenuItem to="/ceo" icon="fa-crown" label="Dashboard CEO" onClick={() => setShowUserMenu(false)} />
+                        <>
+                          <MenuItem to="/ceo" icon="fa-crown" label="Dashboard CEO" onClick={() => setShowUserMenu(false)} />
+                          <MenuItem to="/contabilidad" icon="fa-calculator" label="Contabilidad" onClick={() => setShowUserMenu(false)} />
+                        </>
                       )}
                       {user?.rol === 'marketing_manager' && (
                         <MenuItem to="/marketing" icon="fa-megaphone" label="Dashboard Marketing" onClick={() => setShowUserMenu(false)} />
@@ -125,6 +128,9 @@ export default function Header({ onCartClick }: HeaderProps) {
                       )}
                       {user?.rol === 'logistics_coordinator' && (
                         <MenuItem to="/logistics" icon="fa-truck" label="Dashboard Logística" onClick={() => setShowUserMenu(false)} />
+                      )}
+                      {user?.rol === 'contador' && (
+                        <MenuItem to="/contabilidad" icon="fa-calculator" label="Contabilidad" onClick={() => setShowUserMenu(false)} />
                       )}
                       {user?.rol === 'cliente' && (
                         <>

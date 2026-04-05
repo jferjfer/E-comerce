@@ -549,6 +549,54 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: contabilidad-service
+  namespace: egos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: contabilidad-service
+  template:
+    metadata:
+      labels:
+        app: contabilidad-service
+    spec:
+      containers:
+      - name: contabilidad-service
+        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/contabilidad-service:latest
+        ports:
+        - containerPort: 3012
+        env:
+        - name: PUERTO
+          value: "3012"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: POSTGRES_CONTABILIDAD_URL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: contabilidad-service
+  namespace: egos
+spec:
+  selector:
+    app: contabilidad-service
+  ports:
+  - port: 3012
+    targetPort: 3012
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: redis
   namespace: egos
 spec:

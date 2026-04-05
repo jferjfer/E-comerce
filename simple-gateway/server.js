@@ -277,6 +277,7 @@ app.use((req, res, next) => {
 });
 
 // URLs de microservicios - usa variables de entorno si existen (Render), sino usa Docker network (local)
+const CONTABILIDAD_URL = process.env.CONTABILIDAD_SERVICE_URL || 'http://contabilidad-service:3012';
 const FACTURACION_URL = process.env.FACTURACION_SERVICE_URL || 'http://facturacion-service:3010';
 
 const AUTH_URL      = process.env.AUTH_SERVICE_URL      || 'http://auth-service:3011';
@@ -289,6 +290,7 @@ const CREDIT_URL    = process.env.CREDIT_SERVICE_URL    || 'http://credit-servic
 const LOGISTICS_URL = process.env.LOGISTICS_SERVICE_URL || 'http://logistics-service:3009';
 
 const services = {
+  '/api/contabilidad': CONTABILIDAD_URL,
   '/api/auth': AUTH_URL,
   '/api/usuarios': AUTH_URL,
   '/api/productos': CATALOG_URL,
@@ -514,6 +516,21 @@ app.all('/api/credito*', async (req, res) => {
     const response = await axios({
       method: req.method,
       url: `${CREDIT_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/contabilidad*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${CONTABILIDAD_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 10000

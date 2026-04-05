@@ -838,6 +838,19 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       console.log('⚠️ No se pudo obtener datos del usuario para correo:', errCorreo.message);
     }
 
+    // Registrar asiento contable automático
+    axios.post('http://contabilidad-service:3012/api/contabilidad/eventos/venta', {
+      pedido_id: pedidoId,
+      total: carrito.total,
+      usuario_id: usuarioId,
+      metodo_pago: metodo_pago || 'pago_en_linea',
+      fecha: new Date().toISOString()
+    }, { timeout: 3000 }).then(() => {
+      console.log(`📊 Asiento contable registrado para pedido ${pedidoId}`);
+    }).catch(e => {
+      console.log(`⚠️ No se pudo registrar asiento contable: ${e.message}`);
+    });
+
     // Notificar a admins en tiempo real que hay un pedido nuevo
     axios.post('http://gateway:3000/interno/emitir', {
       evento: 'pedido_nuevo',
@@ -1006,6 +1019,18 @@ aplicacion.post('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, 
     );
 
     console.log(`✅ Devolución creada: ${resultado.rows[0].id}`);
+
+    // Registrar asiento contable de devolución
+    const pedidoData = await pool.query('SELECT total FROM pedido WHERE id = $1', [pedidoId]);
+    if (pedidoData.rows.length > 0) {
+      axios.post('http://contabilidad-service:3012/api/contabilidad/eventos/devolucion', {
+        pedido_id: pedidoId,
+        total: pedidoData.rows[0].total,
+        fecha: new Date().toISOString()
+      }, { timeout: 3000 }).catch(e => {
+        console.log(`⚠️ No se pudo registrar asiento devolución: ${e.message}`);
+      });
+    }
 
     res.json({
       mensaje: 'Solicitud de devolución creada exitosamente',

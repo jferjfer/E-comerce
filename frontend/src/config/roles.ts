@@ -237,6 +237,16 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     permissions: ['orders:view', 'products:view', 'cart:manage', 'profile:edit']
   },
 
+  contador: {
+    role: 'contador',
+    name: 'Contador',
+    description: 'Acceso completo a contabilidad y reportes fiscales',
+    level: 4,
+    color: 'bg-green-700',
+    icon: 'fas fa-calculator',
+    permissions: ['analytics:sales', 'analytics:profit', 'contabilidad:view', 'contabilidad:reportes']
+  },
+
   guest: {
     role: 'guest',
     name: 'Invitado',

@@ -1,5 +1,5 @@
 export type UserRole = 
-  | 'ceo' | 'cfo' | 'cmo' | 'cliente'
+  | 'ceo' | 'cfo' | 'cmo' | 'cliente' | 'contador'
   | 'operations_director' | 'tech_director' | 'regional_manager'
   | 'category_manager' | 'brand_manager' | 'inventory_manager' | 'marketing_manager'
   | 'product_manager' | 'pricing_analyst' | 'content_editor' | 'visual_merchandiser'

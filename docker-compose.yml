@@ -242,6 +242,24 @@ services:
       - estilo-network
     restart: unless-stopped
 
+  # Contabilidad Service
+  contabilidad-service:
+    build:
+      context: ./backend/services/contabilidad-service
+      dockerfile: Dockerfile
+    container_name: contabilidad-service
+    environment:
+      PUERTO: 3012
+      DATABASE_URL: ${POSTGRES_CONTABILIDAD_URL}
+    ports:
+      - "3012:3012"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - estilo-network
+    restart: unless-stopped
+
   # Redis
   redis:
     image: redis:7-alpine

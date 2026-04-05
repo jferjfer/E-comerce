@@ -52,6 +52,7 @@ jobs:
           echo "ai=$(check 'backend/services/ai-service')"               >> $GITHUB_OUTPUT
           echo "credit=$(check 'backend/services/credit-service')"       >> $GITHUB_OUTPUT
           echo "logistics=$(check 'backend/services/logistics-service')" >> $GITHUB_OUTPUT
+          echo "contabilidad=$(check 'backend/services/contabilidad-service')" >> $GITHUB_OUTPUT
           echo "facturacion=$(check 'backend/services/facturacion-service')" >> $GITHUB_OUTPUT
           echo "gateway=$(check 'simple-gateway')"                       >> $GITHUB_OUTPUT
           echo "frontend=$(check 'frontend')"                            >> $GITHUB_OUTPUT
@@ -128,6 +129,15 @@ jobs:
           docker push ${{ env.REGISTRY }}/logistics-service:${{ github.sha }}
           docker push ${{ env.REGISTRY }}/logistics-service:latest
 
+      - name: Build y Push contabilidad-service
+        if: steps.cambios.outputs.contabilidad == 'true'
+        run: |
+          docker build -t ${{ env.REGISTRY }}/contabilidad-service:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/contabilidad-service:latest \
+                       ./backend/services/contabilidad-service
+          docker push ${{ env.REGISTRY }}/contabilidad-service:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/contabilidad-service:latest
+
       - name: Build y Push facturacion-service
         if: steps.cambios.outputs.facturacion == 'true'
         run: |
@@ -179,6 +189,7 @@ jobs:
           [ "${{ steps.cambios.outputs.ai }}" == "true" ]          && deploy ai-service
           [ "${{ steps.cambios.outputs.credit }}" == "true" ]      && deploy credit-service
           [ "${{ steps.cambios.outputs.logistics }}" == "true" ]   && deploy logistics-service
+          [ "${{ steps.cambios.outputs.contabilidad }}" == "true" ] && deploy contabilidad-service
           [ "${{ steps.cambios.outputs.facturacion }}" == "true" ] && deploy facturacion-service
           [ "${{ steps.cambios.outputs.gateway }}" == "true" ]     && deploy gateway
           [ "${{ steps.cambios.outputs.frontend }}" == "true" ]    && deploy frontend
