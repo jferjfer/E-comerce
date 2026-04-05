@@ -168,6 +168,13 @@ class AnticipoPSIMPLE(Base):
     fecha_vencimiento = Column(DateTime, nullable=True)
 
 
+class ContadorAsiento(Base):
+    """Consecutivo de asientos"""
+    __tablename__ = "contador_asiento"
+    id = Column(Integer, primary_key=True, default=1)
+    ultimo_numero = Column(Integer, default=0)
+
+
 class Compra(Base):
     """Registro de compras a proveedores"""
     __tablename__ = "compra"
