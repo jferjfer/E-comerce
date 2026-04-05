@@ -38,6 +38,8 @@ EMPRESA = {
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    from database import init_transaction_db
+    init_transaction_db()
     print("✅ Contabilidad Service v1.0 iniciado")
     yield
 
