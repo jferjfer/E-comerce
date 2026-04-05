@@ -10,6 +10,12 @@ const autenticar = (req, res, next) => {
 
     const JWT_SECRETO = process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2';
     const decoded = jwt.verify(token, JWT_SECRETO);
+
+    // Verificar que el usuario esté activo
+    if (decoded.activo === false) {
+      return res.status(401).json({ error: 'Usuario desactivado. Contacta a RRHH.' });
+    }
+
     req.usuario = decoded;
     next();
   } catch (error) {

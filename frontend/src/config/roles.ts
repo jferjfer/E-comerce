@@ -247,6 +247,16 @@ export const ROLE_DEFINITIONS: Record<string, RoleDefinition> = {
     permissions: ['analytics:sales', 'analytics:profit', 'contabilidad:view', 'contabilidad:reportes']
   },
 
+  rrhh: {
+    role: 'rrhh',
+    name: 'Recursos Humanos',
+    description: 'Gestión de empleados y usuarios internos',
+    level: 3,
+    color: 'bg-purple-600',
+    icon: 'fas fa-users-cog',
+    permissions: ['users:manage', 'users:view', 'users:edit']
+  },
+
   guest: {
     role: 'guest',
     name: 'Invitado',

@@ -45,6 +45,11 @@ export default function RoleBasedHome() {
     return <Navigate to="/contabilidad" replace />
   }
 
+  // RRHH → Dashboard Recursos Humanos
+  if (usuario.rol === 'rrhh') {
+    return <Navigate to="/rrhh" replace />
+  }
+
   // Todos los demás roles administrativos → Dashboard admin
   return <Navigate to="/admin" replace />
 }

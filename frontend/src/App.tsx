@@ -29,6 +29,7 @@ import CrearProductoPage from './pages/admin/CrearProductoPage'
 import StyleAnalysisPage from './pages/StyleAnalysisPage'
 import VirtualTryOnPage from './pages/VirtualTryOnPage'
 
+import RRHHDashboard from './pages/dashboards/RRHHDashboard'
 import ContabilidadDashboard from './pages/dashboards/ContabilidadDashboard'
 
 import MarketingManagerDashboard from './pages/dashboards/MarketingManagerDashboard'
@@ -128,6 +129,11 @@ function App() {
           <Route path="/customer-success" element={
             <RoleGuard requiredRoles={['customer_success', 'ceo']}>
               <CustomerSuccessDashboard />
+            </RoleGuard>
+          } />
+          <Route path="/rrhh" element={
+            <RoleGuard requiredRoles={['rrhh', 'ceo']}>
+              <RRHHDashboard />
             </RoleGuard>
           } />
           <Route path="/contabilidad" element={

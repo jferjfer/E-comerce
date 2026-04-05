@@ -157,6 +157,60 @@ class ServicioCorreo {
     });
   }
 
+  async enviarCredencialesEmpleado(email, nombre, rol, password) {
+    const urlTienda = process.env.FRONTEND_URL || 'http://localhost:3005';
+
+    const rolesNombres = {
+      rrhh: 'Recursos Humanos', contador: 'Contador', ceo: 'CEO',
+      customer_success: 'Customer Success', logistics_coordinator: 'Coordinador Logístico',
+      marketing_manager: 'Gerente de Marketing', product_manager: 'Gestor de Productos',
+      support_agent: 'Agente de Soporte', seller_premium: 'Vendedor Premium'
+    };
+    const rolNombre = rolesNombres[rol] || rol;
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9">
+        <div style="background:#111827;padding:40px 30px;text-align:center">
+          <h1 style="color:#c5a47e;margin:0;font-size:28px;letter-spacing:8px">EGOS</h1>
+          <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:12px">Wear Your Truth</p>
+        </div>
+        <div style="background:white;padding:40px 30px">
+          <p style="font-size:16px;color:#333">Hola <strong>${nombre}</strong>,</p>
+          <p style="color:#555;line-height:1.6">
+            Has sido registrado en el sistema EGOS como <strong>${rolNombre}</strong>.
+            A continuación encontrarás tus credenciales de acceso:
+          </p>
+          <div style="background:#f8f8f8;border-radius:8px;padding:24px;margin:24px 0;border-left:4px solid #c5a47e">
+            <p style="margin:0 0 8px;color:#666;font-size:13px">Email de acceso:</p>
+            <p style="margin:0 0 16px;font-size:16px;font-weight:bold;color:#111">${email}</p>
+            <p style="margin:0 0 8px;color:#666;font-size:13px">Contraseña temporal:</p>
+            <p style="margin:0;font-size:20px;font-weight:bold;color:#c5a47e;font-family:monospace;letter-spacing:3px">${password}</p>
+          </div>
+          <p style="color:#e74c3c;font-size:13px">
+            ⚠️ Por seguridad, cambia tu contraseña en tu primer inicio de sesión.
+          </p>
+          <div style="text-align:center;margin:30px 0">
+            <a href="${urlTienda}/login" style="background:#111827;color:#c5a47e;padding:14px 32px;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;letter-spacing:2px;display:inline-block">
+              INICIAR SESIÓN
+            </a>
+          </div>
+        </div>
+        <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
+          <p style="color:#888;font-size:12px;margin:0">
+            Este es un correo automático, no respondas a este mensaje.<br>
+            EGOS — Wear Your Truth
+          </p>
+        </div>
+      </div>
+    `;
+
+    return await this.enviarCorreo({
+      to: email,
+      subject: `👤 Bienvenido al equipo EGOS — Tus credenciales de acceso`,
+      html
+    });
+  }
+
   async enviarRecuperacionContrasena(email, token, nombreUsuario) {
     const enlaceRecuperacion = `${process.env.FRONTEND_URL || 'http://localhost:3005'}/restablecer-contrasena?token=${token}`;
 
