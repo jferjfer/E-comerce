@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 
 // Configuración PostgreSQL Neon
 const configuracionBD = {
-  connectionString: 'postgresql://neondb_owner:npg_2gVs9CfQRuHn@ep-broad-dew-aeujycvn-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require',
+  connectionString: process.env.DATABASE_URL,
   max: 20,
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,

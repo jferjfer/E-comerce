@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import uuid
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://neondb_owner:npg_IykA6tTPxhE3@ep-tiny-butterfly-adf8yext-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 engine = create_engine(
     DATABASE_URL,

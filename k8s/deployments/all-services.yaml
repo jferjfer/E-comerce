@@ -514,7 +514,7 @@ spec:
               name: egos-secrets
               key: SMTP_PASS_VENTAS
         - name: DIAN_SOFTWARE_ID
-          value: "fa326ca7-c1f8-40d3-a6fc-24d7c1040607"
+          value: "b7249493-84cf-430c-be82-64c830a2158c"
         - name: DIAN_CLAVE_TECNICA
           value: "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"
         - name: DIAN_PIN

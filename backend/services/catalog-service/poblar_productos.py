@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Configuración MongoDB Atlas
-MONGODB_URI = "mongodb+srv://Vercel-Admin-catalogo:92HI0xaJVpfpogCL@catalogo.eocsgaj.mongodb.net/?retryWrites=true&w=majority"
+MONGODB_URI = os.environ.get("MONGODB_CATALOG_URI", "")
 DATABASE_NAME = "catalogo_db"
 
 # 20 productos de moda

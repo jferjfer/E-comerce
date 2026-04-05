@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
 // Configuración MongoDB Atlas
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Vercel-Admin-socialservice:fA5shIvwxTGbAt1P@socialservice.78vidp7.mongodb.net/?retryWrites=true&w=majority";
+const MONGODB_URI = process.env.MONGODB_URI;
 
 class DatabaseManager {
   constructor() {

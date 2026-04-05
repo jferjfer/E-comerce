@@ -17,6 +17,7 @@ import httpx
 
 from database import get_db, init_db, Factura, ContadorFactura
 from generador_xml import generar_xml_factura
+from firmador_xml import firmar_xml
 from cliente_dian import enviar_factura_dian
 from generador_pdf import generar_pdf_factura
 
@@ -230,8 +231,13 @@ async def procesar_factura_background(
 
         print(f"✅ Factura {numero_completo} creada en BD")
 
-        # Enviar a DIAN
-        resultado_dian = enviar_factura_dian(xml_string, numero_completo)
+        # Enviar a DIAN (firmar primero)
+        try:
+            xml_firmado = firmar_xml(xml_string)
+            resultado_dian = enviar_factura_dian(xml_firmado, numero_completo)
+        except Exception as e:
+            print(f"⚠️ Error firmando XML, enviando sin firma: {e}")
+            resultado_dian = enviar_factura_dian(xml_string, numero_completo)
 
         factura.estado = resultado_dian["estado"]
         factura.mensaje_dian = resultado_dian["mensaje"]

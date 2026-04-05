@@ -35,13 +35,13 @@ if [ ! -f ".env" ]; then
 JWT_SECRETO=estilo_moda_jwt_secreto_produccion_2024_seguro_v2
 JWT_SECRET=estilo_moda_jwt_secreto_produccion_2024_seguro_v2
 
-POSTGRES_AUTH_URL=postgresql://neondb_owner:npg_zRdlv7TGEJu3@ep-red-voice-adzfb730-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
-POSTGRES_TRANSACTION_URL=postgresql://neondb_owner:npg_2gVs9CfQRuHn@ep-broad-dew-aeujycvn-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
-DATABASE_URL=postgresql://neondb_owner:npg_zRdlv7TGEJu3@ep-red-voice-adzfb730-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+POSTGRES_AUTH_URL=<POSTGRES_CONNECTION_STRING>
+POSTGRES_TRANSACTION_URL=<POSTGRES_CONNECTION_STRING>
+DATABASE_URL=<POSTGRES_CONNECTION_STRING>
 
-MONGODB_CATALOG_URI=mongodb+srv://Vercel-Admin-catalogo:oTXaV4jaA4E5Qi4C@catalogo.eocsgaj.mongodb.net/?retryWrites=true&w=majority
-MONGODB_SOCIAL_URI=mongodb+srv://Vercel-Admin-socialservice:fA5shIvwxTGbAt1P@socialservice.78vidp7.mongodb.net/?retryWrites=true&w=majority
-MONGODB_AI_URI=mongodb+srv://jfvertel:jfvertel123@cluster0.vvagb.mongodb.net/ecommerce?retryWrites=true&w=majority
+MONGODB_CATALOG_URI=<MONGODB_CONNECTION_STRING>
+MONGODB_SOCIAL_URI=<MONGODB_CONNECTION_STRING>
+MONGODB_AI_URI=<MONGODB_CONNECTION_STRING>
 
 CLOUDINARY_CLOUD_NAME=dhwk5p0wn
 CLOUDINARY_API_KEY=436986674926171

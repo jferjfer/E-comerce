@@ -2,7 +2,7 @@ const { Client } = require('pg');
 
 const crearTablas = async () => {
   const client = new Client({
-    connectionString: 'postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require'
+    connectionString: process.env.POSTGRES_AUTH_URL
   });
 
   try {

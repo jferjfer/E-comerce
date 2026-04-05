@@ -15,8 +15,8 @@ DIAN_WSDL_PRUEBAS = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?ws
 DIAN_WSDL_PRODUCCION = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
 
 AMBIENTE = os.getenv("DIAN_AMBIENTE", "2")  # 2=Pruebas, 1=Producción
-TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "dd3a0db6-ef6a-4bca-b5c4-954831bee339")
-SOFTWARE_ID = os.getenv("DIAN_SOFTWARE_ID", "fa326ca7-c1f8-40d3-a6fc-24d7c1040607")
+TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "c5f5fbef-6621-420b-b986-857b2f1588d5")
+SOFTWARE_ID = os.getenv("DIAN_SOFTWARE_ID", "b7249493-84cf-430c-be82-64c830a2158c")
 NIT_EMISOR = "900205170"
 
 def get_wsdl_url():

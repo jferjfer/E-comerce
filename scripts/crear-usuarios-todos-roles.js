@@ -4,12 +4,12 @@ const bcrypt = require('bcrypt');
 
 // Configuración PostgreSQL (usando la misma del auth-service)
 const pgConfig = {
-  connectionString: 'postgresql://neondb_owner:npg_8xkCIyHBo3Mn@ep-misty-cell-af9o0x82.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
+  connectionString: process.env.POSTGRES_AUTH_URL,
   ssl: { rejectUnauthorized: false }
 };
 
 // Configuración MongoDB (usando la misma del catalog-service)
-const mongoUri = 'mongodb+srv://Vercel-Admin-catalogo:92HI0xaJVpfpogCL@catalogo.eocsgaj.mongodb.net/?retryWrites=true&w=majority';
+const mongoUri = process.env.MONGODB_CATALOG_URI;
 
 // Usuarios PostgreSQL (Auth, Transaction, Credit, Logistics, Marketing)
 const usuariosPostgreSQL = [

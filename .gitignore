@@ -51,6 +51,15 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+
+# Certificados y documentos sensibles
+*.p12
+*.pfx
+*.pem
+certificado.crt
+Constancia de Emision Certificado Digital.pdf
+resultados_set_pruebas.json
 
 # Google Cloud Credentials
 google-credentials.json

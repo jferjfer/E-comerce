@@ -11,7 +11,7 @@ async def conectar_bd():
     global client, database
     
     # URL de MongoDB Atlas para Catalog Service
-    mongodb_url = os.getenv("MONGODB_URL", "mongodb+srv://Vercel-Admin-ecomerce:phva2EOCWSW1cybE@ecomerce.ckxq5b1.mongodb.net/?retryWrites=true&w=majority")
+    mongodb_url = os.getenv("MONGODB_URL", "")
     database_name = os.getenv("DATABASE_NAME", "ecomerce")
     
     try:
