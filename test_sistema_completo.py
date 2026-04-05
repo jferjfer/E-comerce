@@ -288,3 +288,28 @@ if fallidos:
         print(f"    ❌ {n}: {d}")
 
 print()
+
+# Limpiar datos de prueba
+print("\n🧹 Limpiando datos de prueba...")
+try:
+    import psycopg2
+    conn = psycopg2.connect('postgresql://neondb_owner:npg_2gVs9CfQRuHn@ep-broad-dew-aeujycvn-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require')
+    cur = conn.cursor()
+    for t in ['pedido_historial','pedido_producto','pago','devolucion','carrito_producto','carrito','pedido']:
+        cur.execute(f'DELETE FROM {t}')
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    conn2 = psycopg2.connect('postgresql://neondb_owner:npg_9ovUBm4cIphq@ep-twilight-bird-an8gc1c3-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require')
+    cur2 = conn2.cursor()
+    for t in ['movimiento_contable','asiento_contable','saldo_cuenta','compra']:
+        cur2.execute(f'DELETE FROM {t}')
+    cur2.execute('UPDATE contador_asiento SET ultimo_numero = 0 WHERE id = 1')
+    cur2.execute('UPDATE contador_compra SET ultimo_numero = 0 WHERE id = 1')
+    conn2.commit()
+    cur2.close()
+    conn2.close()
+    print("  ✅ Datos de prueba eliminados — sistema listo para producción")
+except Exception as e:
+    print(f"  ⚠️ No se pudo limpiar: {e}")
