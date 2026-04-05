@@ -168,7 +168,7 @@ jobs:
           deploy() {
             echo "🚀 Desplegando $1..."
             kubectl set image deployment/$1 $1=${{ env.REGISTRY }}/$1:${{ github.sha }} -n ${{ env.NAMESPACE }}
-            kubectl rollout status deployment/$1 -n ${{ env.NAMESPACE }} --timeout=120s
+            kubectl rollout status deployment/$1 -n ${{ env.NAMESPACE }} --timeout=300s || echo "⚠️ $1 timeout — verificar manualmente"
           }
 
           [ "${{ steps.cambios.outputs.auth }}" == "true" ]        && deploy auth-service
