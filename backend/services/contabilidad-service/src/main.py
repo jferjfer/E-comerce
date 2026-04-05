@@ -237,7 +237,7 @@ async def libro_mayor(
 
 @app.get("/api/contabilidad/balance-general")
 async def balance_general(
-    periodo: Optional[str] = Query(None, description="YYYY-MM, si no se pone usa el mes actual"),
+    periodo: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Balance General — Activos, Pasivos y Patrimonio"""
@@ -249,6 +249,7 @@ async def balance_general(
     activos = {}
     pasivos = {}
     patrimonio = {}
+    utilidad_ejercicio = 0
 
     for s in saldos:
         item = {
@@ -262,10 +263,23 @@ async def balance_general(
             pasivos[s.codigo_cuenta] = item
         elif s.tipo_cuenta == "Patrimonio" and s.saldo_final != 0:
             patrimonio[s.codigo_cuenta] = item
+        elif s.tipo_cuenta == "Ingreso" and s.saldo_final != 0:
+            utilidad_ejercicio += s.saldo_final
+        elif s.tipo_cuenta in ("Gasto", "Costo") and s.saldo_final != 0:
+            utilidad_ejercicio -= s.saldo_final
+
+    # Agregar utilidad del ejercicio al patrimonio
+    if utilidad_ejercicio != 0:
+        patrimonio["3605"] = {
+            "codigo": "3605",
+            "cuenta": "Utilidad del ejercicio",
+            "saldo": round(utilidad_ejercicio, 2)
+        }
 
     total_activos = sum(v["saldo"] for v in activos.values())
     total_pasivos = sum(v["saldo"] for v in pasivos.values())
     total_patrimonio = sum(v["saldo"] for v in patrimonio.values())
+    diferencia = abs(total_activos - (total_pasivos + total_patrimonio))
 
     return {
         "empresa": EMPRESA["razon_social"],
@@ -286,7 +300,7 @@ async def balance_general(
         "ecuacion": {
             "activos": round(total_activos, 2),
             "pasivos_mas_patrimonio": round(total_pasivos + total_patrimonio, 2),
-            "cuadra": abs(total_activos - (total_pasivos + total_patrimonio)) < 1
+            "cuadra": diferencia < 1
         }
     }
 
