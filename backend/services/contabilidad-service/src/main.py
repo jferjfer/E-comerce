@@ -418,9 +418,12 @@ async def dashboard(db: Session = Depends(get_db)):
     total_pedidos = 0
     ventas_historico = []
 
-    if TransactionSession:
+    from database import transaction_engine
+    if transaction_engine:
         try:
-            tdb = TransactionSession()
+            from sqlalchemy.orm import sessionmaker as sm
+            TSession = sm(autocommit=False, autoflush=False, bind=transaction_engine)
+            tdb = TSession()
 
             # Ventas mes actual
             res = tdb.execute(__import__('sqlalchemy').text("""
@@ -491,9 +494,11 @@ async def dashboard(db: Session = Depends(get_db)):
 
     base_bimestre = 0
     iva_bimestre_valor = 0
-    if TransactionSession:
+    if transaction_engine:
         try:
-            tdb = TransactionSession()
+            from sqlalchemy.orm import sessionmaker as sm2
+            TSession2 = sm2(autocommit=False, autoflush=False, bind=transaction_engine)
+            tdb = TSession2()
             meses_bimestre = {
                 1: ["01", "02"], 2: ["03", "04"], 3: ["05", "06"],
                 4: ["07", "08"], 5: ["09", "10"], 6: ["11", "12"]
