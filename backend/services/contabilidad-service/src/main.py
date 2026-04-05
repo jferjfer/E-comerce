@@ -459,8 +459,12 @@ async def dashboard(db: Session = Depends(get_db)):
 
             # Ventas últimos 6 meses
             for i in range(5, -1, -1):
-                mes = (ahora.replace(day=1) - timedelta(days=i * 30))
-                p = mes.strftime("%Y-%m")
+                year = ahora.year
+                month = ahora.month - i
+                if month <= 0:
+                    month += 12
+                    year -= 1
+                p = f"{year}-{month:02d}"
                 res = tdb.execute(__import__('sqlalchemy').text("""
                     SELECT COALESCE(SUM(total), 0)
                     FROM pedido
