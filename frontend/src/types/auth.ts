@@ -31,6 +31,7 @@ export type Permission =
   | 'operations:manage'
   | 'cart:manage' | 'profile:edit'
   | 'support:priority' | 'support:enhanced'
+  | 'contabilidad:view' | 'contabilidad:reportes'
 
 export interface User {
   id: string
