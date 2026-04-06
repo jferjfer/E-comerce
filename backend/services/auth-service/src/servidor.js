@@ -9,6 +9,7 @@ const manejadorErrores = require('./middleware/manejadorErrores');
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3012;
+// v2.1.0 — RRHH + verificacion activo
 
 // Middleware de seguridad
 aplicacion.use(helmet());
