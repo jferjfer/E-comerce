@@ -392,6 +392,22 @@ app.put('/api/usuarios/perfil', async (req, res) => {
   }
 });
 
+// Rutas RRHH
+app.all('/api/usuarios/rrhh*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${AUTH_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 // Manejo directo de rutas principales de productos
 app.get('/api/productos', async (req, res) => {
   try {
