@@ -46,7 +46,7 @@ class Usuario {
   }
 
   static async buscarPorEmail(email) {
-    const consulta = 'SELECT id, nombre, email, password as contrasena, rol FROM usuarios WHERE email = $1';
+    const consulta = 'SELECT id, nombre, email, password as contrasena, rol, activo FROM usuarios WHERE email = $1';
     const resultado = await queryConRetry(consulta, [email]);
     return resultado.rows[0];
   }
