@@ -71,6 +71,11 @@ class ServicioAuth {
         return { exito: false, error: 'No encontramos una cuenta con ese correo. ¿Quieres registrarte?' };
       }
 
+      // Verificar si el usuario está activo
+      if (usuario.activo === false) {
+        return { exito: false, error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.' };
+      }
+
       const passwordValida = await bcrypt.compare(password, usuario.contrasena);
       if (!passwordValida) {
         return { exito: false, error: 'La contraseña es incorrecta. ¿Olvidaste tu contraseña?' };
@@ -140,7 +145,8 @@ class ServicioAuth {
       {
         id: usuario.id,
         email: usuario.email,
-        rol: usuario.rol
+        rol: usuario.rol,
+        activo: usuario.activo !== false
       },
       secret,
       { expiresIn: '24h' }
