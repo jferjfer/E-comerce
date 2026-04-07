@@ -282,7 +282,7 @@ spec:
         - name: PUERTO
           value: "3006"
         - name: FRONTEND_URL
-          value: "http://frontend-service"
+          value: "https://egoscolombia.com.co"
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
