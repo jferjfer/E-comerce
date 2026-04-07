@@ -1,0 +1,172 @@
+/**
+ * ePayco Widget Component
+ * 
+ * Carga el script de ePayco y abre el widget de pago embebido.
+ * Cuando ePayco esté configurado, este componente reemplaza la simulación actual.
+ * 
+ * Documentación: https://docs.epayco.co/tools/checkout
+ */
+
+import { useEffect, useRef, useState } from 'react'
+import { API_URL } from '@/config/api'
+
+interface EpaycoWidgetProps {
+  pedidoId: string
+  total: number
+  token: string
+  onExito: () => void
+  onError: (mensaje: string) => void
+  onCancelado: () => void
+}
+
+declare global {
+  interface Window {
+    ePayco?: {
+      checkout: {
+        configure: (config: any) => { open: (data: any) => void }
+      }
+    }
+  }
+}
+
+export default function EpaycoWidget({ pedidoId, total, token, onExito, onError, onCancelado }: EpaycoWidgetProps) {
+  const [cargando, setCargando] = useState(false)
+  const [scriptCargado, setScriptCargado] = useState(false)
+  const handlerRef = useRef<any>(null)
+
+  // Cargar script de ePayco
+  useEffect(() => {
+    if (document.getElementById('epayco-script')) {
+      setScriptCargado(true)
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = 'epayco-script'
+    script.src = 'https://checkout.epayco.co/checkout.js'
+    script.async = true
+    script.onload = () => setScriptCargado(true)
+    script.onerror = () => onError('No se pudo cargar la pasarela de pagos')
+    document.head.appendChild(script)
+
+    return () => {
+      // No eliminar el script al desmontar para evitar recarga
+    }
+  }, [])
+
+  // Escuchar respuesta de ePayco via postMessage
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://checkout.epayco.co') return
+
+      const { data } = event
+      if (!data) return
+
+      console.log('📩 Respuesta ePayco:', data)
+
+      if (data.x_response === 'Aceptada' || data.x_response_code_transaction === '1') {
+        onExito()
+      } else if (data.x_response === 'Cancelada') {
+        onCancelado()
+      } else if (data.x_response === 'Rechazada' || data.x_response === 'Fallida') {
+        onError(`Pago ${data.x_response.toLowerCase()}: ${data.x_response_reason_text || 'Intenta de nuevo'}`)
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [onExito, onError, onCancelado])
+
+  const abrirWidget = async () => {
+    if (!scriptCargado || !window.ePayco) {
+      onError('La pasarela de pagos no está disponible. Intenta de nuevo.')
+      return
+    }
+
+    setCargando(true)
+
+    try {
+      // Obtener datos del widget desde el backend
+      const res = await fetch(`${API_URL}/api/pagos/epayco/widget`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ pedido_id: pedidoId })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        onError(data.mensaje || data.error || 'Error iniciando pago')
+        return
+      }
+
+      const { datos_widget } = data
+
+      // Configurar y abrir el widget de ePayco
+      const handler = window.ePayco.checkout.configure({
+        key: datos_widget.public_key,
+        test: datos_widget.test
+      })
+
+      handlerRef.current = handler
+
+      handler.open({
+        // Datos del pago
+        name:         datos_widget.name,
+        description:  datos_widget.description,
+        invoice:      datos_widget.invoice,
+        currency:     datos_widget.currency,
+        amount:       datos_widget.amount,
+        tax_base:     datos_widget.tax_base,
+        tax:          datos_widget.tax,
+        country:      datos_widget.country,
+        lang:         datos_widget.lang,
+
+        // URLs
+        response:     datos_widget.response,
+        confirmation: datos_widget.confirmation,
+
+        // Cliente
+        name_billing:        datos_widget.name_billing,
+        address_billing:     datos_widget.address_billing,
+        type_doc_billing:    datos_widget.type_doc_billing,
+        mobilephone_billing: datos_widget.mobilephone_billing,
+        number_doc_billing:  datos_widget.number_doc_billing,
+        email_billing:       datos_widget.email_billing,
+
+        // Extra
+        extra1: datos_widget.extra1,
+        extra2: datos_widget.extra2,
+        extra3: datos_widget.extra3,
+      })
+
+    } catch (e) {
+      onError('Error de conexión con la pasarela de pagos')
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={abrirWidget}
+      disabled={cargando || !scriptCargado}
+      className="w-full py-3.5 rounded-xl font-bold text-sm bg-primary text-white hover:bg-secondary transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+    >
+      {cargando ? (
+        <>
+          <i className="fas fa-circle-notch fa-spin text-xs"></i>
+          Cargando pasarela...
+        </>
+      ) : (
+        <>
+          <i className="fas fa-lock text-xs"></i>
+          Pagar con ePayco
+        </>
+      )}
+    </button>
+  )
+}

@@ -6,6 +6,7 @@ const pool = require('./config/baseDatos');
 const manejadorErrores = require('./middleware/manejadorErrores');
 const axios = require('axios');
 const nodemailer = require('nodemailer');
+const epayco = require('./epayco');
 
 // Transporter de correo (reutiliza config del auth-service via env)
 const transporter = nodemailer.createTransport({
@@ -1329,6 +1330,180 @@ aplicacion.post('/api/pedidos/:pedidoId/simular-cambio', autenticacion, async (r
   } catch (error) {
     console.error('Error simulando cambio:', error.message);
     res.status(500).json({ error: 'Error simulando cambio' });
+  }
+});
+
+// ============================================
+// ENDPOINTS EPAYCO
+// ============================================
+
+// Verificar si ePayco está configurado
+aplicacion.get('/api/pagos/epayco/estado', (req, res) => {
+  res.json({
+    configurado: epayco.estaConfigurado(),
+    test: epayco.EPAYCO_CONFIG.test,
+    mensaje: epayco.estaConfigurado()
+      ? 'ePayco configurado y listo'
+      : 'ePayco pendiente de configuración — agrega EPAYCO_P_CUST_ID, EPAYCO_P_KEY y EPAYCO_PRIVATE_KEY'
+  });
+});
+
+// Obtener datos del widget para un pedido
+aplicacion.post('/api/pagos/epayco/widget', autenticacion, async (req, res) => {
+  try {
+    const { pedido_id } = req.body;
+    const usuarioId = req.usuario.id;
+
+    if (!epayco.estaConfigurado()) {
+      return res.status(503).json({
+        error: 'Pasarela de pagos no configurada',
+        mensaje: 'ePayco aún no está activado. Usa crédito interno o efectivo por ahora.'
+      });
+    }
+
+    // Obtener pedido
+    const pedidoResult = await pool.query(
+      'SELECT * FROM pedido WHERE id = $1 AND usuario_id = $2',
+      [pedido_id, parseInt(usuarioId)]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    const pedido = pedidoResult.rows[0];
+
+    // Obtener productos del pedido
+    const productosResult = await pool.query(
+      'SELECT * FROM pedido_producto WHERE id_pedido = $1',
+      [pedido_id]
+    );
+    pedido.productos = productosResult.rows;
+
+    // Obtener datos del cliente
+    let cliente = { nombre: 'Cliente', email: '', documento_tipo: 'CC', documento_numero: '', telefono: '', direccion: '' };
+    try {
+      const resUsuario = await axios.get(`http://auth-service:3011/api/usuarios/${usuarioId}`, { timeout: 3000 });
+      const u = resUsuario.data.usuario || {};
+      cliente = {
+        nombre: `${u.nombre || ''} ${u.apellido || ''}`.trim(),
+        email: u.email || '',
+        documento_tipo: u.documento_tipo || 'CC',
+        documento_numero: u.documento_numero || '',
+        telefono: u.telefono || '',
+        direccion: u.direccion || u.ciudad || 'Bogotá D.C.'
+      };
+    } catch (e) {
+      console.log('⚠️ No se pudo obtener datos del cliente para ePayco:', e.message);
+    }
+
+    const datosWidget = epayco.generarDatosWidget(pedido, cliente);
+
+    console.log(`💳 Widget ePayco generado para pedido ${pedido_id}`);
+
+    res.json({
+      datos_widget: datosWidget,
+      pedido_id: pedido_id,
+      total: pedido.total
+    });
+  } catch (error) {
+    console.error('Error generando widget ePayco:', error.message);
+    res.status(500).json({ error: 'Error generando datos de pago' });
+  }
+});
+
+// Webhook de confirmación — ePayco llama este endpoint cuando el pago es procesado
+aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
+  try {
+    const datos = req.body;
+    console.log('📥 Webhook ePayco recibido:', JSON.stringify(datos, null, 2));
+
+    // Verificar firma de seguridad
+    if (!epayco.verificarFirmaWebhook(datos)) {
+      console.error('❌ Firma ePayco inválida — posible fraude');
+      return res.status(400).json({ error: 'Firma inválida' });
+    }
+
+    const { x_extra1: pedidoId, x_response_code_transaction: codigoRespuesta, x_ref_payco: refPayco, x_amount: monto } = datos;
+
+    if (!pedidoId) {
+      return res.status(400).json({ error: 'Pedido ID no encontrado en webhook' });
+    }
+
+    const { estado, descripcion, exitoso } = epayco.interpretarEstado(codigoRespuesta);
+
+    console.log(`💳 ePayco — Pedido ${pedidoId}: ${descripcion} (código: ${codigoRespuesta})`);
+
+    // Actualizar estado del pedido
+    const pedidoActual = await pool.query('SELECT id, estado, usuario_id, total FROM pedido WHERE id = $1', [pedidoId]);
+
+    if (pedidoActual.rows.length === 0) {
+      console.error(`❌ Pedido ${pedidoId} no encontrado en webhook ePayco`);
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    const pedido = pedidoActual.rows[0];
+
+    // Actualizar estado del pedido
+    await pool.query(
+      'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
+      [estado, pedidoId]
+    );
+
+    // Registrar en historial
+    await pool.query(
+      'INSERT INTO pedido_historial (id_pedido, estado_anterior, estado_nuevo, comentario) VALUES ($1, $2, $3, $4)',
+      [pedidoId, pedido.estado, estado, `ePayco: ${descripcion} — Ref: ${refPayco}`]
+    );
+
+    // Actualizar estado del pago
+    await pool.query(
+      `UPDATE pago SET estado = $1, referencia_transaccion = $2 WHERE id_pedido = $3`,
+      [exitoso ? 'Aprobado' : 'Rechazado', refPayco, pedidoId]
+    );
+
+    if (exitoso) {
+      // Notificar al cliente por WebSocket
+      axios.post('http://gateway:3000/interno/emitir', {
+        evento: 'pedido_actualizado',
+        usuarioId: pedido.usuario_id,
+        sala: 'admins',
+        datos: { pedidoId, estado_nuevo: estado, total: pedido.total, usuario_id: pedido.usuario_id }
+      }, { timeout: 2000 }).catch(() => {});
+
+      // Actualizar total de compras del usuario
+      axios.put('http://auth-service:3011/api/usuarios/total-compras', {
+        nuevoTotal: parseFloat(pedido.total)
+      }, {
+        headers: { Authorization: `Bearer ${process.env.INTERNAL_TOKEN || ''}` },
+        timeout: 3000
+      }).catch(e => console.log('⚠️ No se pudo actualizar total compras:', e.message));
+
+      console.log(`✅ Pago ePayco confirmado para pedido ${pedidoId}`);
+    } else {
+      console.log(`❌ Pago ePayco no exitoso para pedido ${pedidoId}: ${descripcion}`);
+    }
+
+    res.json({ ok: true, estado, pedido_id: pedidoId });
+  } catch (error) {
+    console.error('Error procesando webhook ePayco:', error.message);
+    res.status(500).json({ error: 'Error procesando confirmación' });
+  }
+});
+
+// Consultar estado de un pago por referencia ePayco
+aplicacion.get('/api/pagos/epayco/consultar/:refPayco', autenticacion, async (req, res) => {
+  try {
+    const { refPayco } = req.params;
+
+    if (!epayco.estaConfigurado()) {
+      return res.status(503).json({ error: 'ePayco no configurado' });
+    }
+
+    const resultado = await epayco.consultarPago(refPayco);
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ error: 'Error consultando pago' });
   }
 });
 

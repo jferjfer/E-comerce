@@ -29,6 +29,7 @@ import CrearProductoPage from './pages/admin/CrearProductoPage'
 import StyleAnalysisPage from './pages/StyleAnalysisPage'
 import VirtualTryOnPage from './pages/VirtualTryOnPage'
 
+import EpaycoRespuestaPage from './pages/EpaycoRespuestaPage'
 import RRHHDashboard from './pages/dashboards/RRHHDashboard'
 import ContabilidadDashboard from './pages/dashboards/ContabilidadDashboard'
 
@@ -131,6 +132,7 @@ function App() {
               <CustomerSuccessDashboard />
             </RoleGuard>
           } />
+          <Route path="/pago/respuesta" element={<EpaycoRespuestaPage />} />
           <Route path="/rrhh" element={
             <RoleGuard requiredRoles={['rrhh', 'ceo']}>
               <RRHHDashboard />

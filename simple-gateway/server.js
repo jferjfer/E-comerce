@@ -512,6 +512,21 @@ app.all('/api/admin*', async (req, res) => {
   }
 });
 
+app.all('/api/pagos*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${TRANS_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 app.all('/api/checkout*', limiterCheckout, async (req, res) => {
   try {
     const response = await axios({

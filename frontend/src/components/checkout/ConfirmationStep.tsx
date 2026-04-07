@@ -189,9 +189,9 @@ export default function ConfirmationStep({
       {/* Aviso pago en línea */}
       {selectedMethod === 'pago_en_linea' && (
         <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-          <i className="fas fa-info-circle text-blue-500 mt-0.5 flex-shrink-0"></i>
+          <i className="fas fa-shield-alt text-blue-500 mt-0.5 flex-shrink-0"></i>
           <p className="text-xs text-blue-800">
-            Serás redirigido a la pasarela de pagos para completar tu transacción de forma segura.
+            Pago seguro procesado por <strong>ePayco</strong>. Acepta tarjetas, PSE, Nequi, Daviplata, Efecty y más.
           </p>
         </div>
       )}

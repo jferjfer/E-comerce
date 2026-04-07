@@ -9,6 +9,7 @@ import CheckoutSteps from './checkout/CheckoutSteps'
 import PaymentMethodStep from './checkout/PaymentMethodStep'
 import ConfirmationStep from './checkout/ConfirmationStep'
 import SuccessStep from './checkout/SuccessStep'
+import EpaycoWidget from './checkout/EpaycoWidget'
 
 interface CheckoutModalProps {
   isOpen: boolean
@@ -31,10 +32,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [evaluacionCredito, setEvaluacionCredito] = useState<any>(null)
   const [cargandoCredito, setCargandoCredito] = useState(false)
   const [creditoId, setCreditoId] = useState<string | null>(null)
+  const [epaycoActivo, setEpaycoActivo] = useState(false)
+  const [pedidoParaEpayco, setPedidoParaEpayco] = useState<string | null>(null)
 
   const total = obtenerPrecioTotal()
 
-  // Al abrir, evaluar crédito silenciosamente si es cliente
+  // Al abrir, evaluar crédito y verificar si ePayco está activo
   useEffect(() => {
     if (isOpen && estaAutenticado && usuario?.rol === 'cliente' && token) {
       setCargandoCredito(true)
@@ -42,6 +45,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         .then(data => setEvaluacionCredito(data))
         .catch(() => setEvaluacionCredito({ califica: false }))
         .finally(() => setCargandoCredito(false))
+
+      // Verificar si ePayco está configurado
+      fetch(`${import.meta.env.VITE_API_URL || 'https://api.egoscolombia.com.co'}/api/pagos/epayco/estado`)
+        .then(r => r.json())
+        .then(d => setEpaycoActivo(d.configurado))
+        .catch(() => setEpaycoActivo(false))
     }
   }, [isOpen, estaAutenticado, usuario, token])
 
@@ -54,6 +63,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       setOrderId(null)
       setPlazoCredito(undefined)
       setCreditoId(null)
+      setPedidoParaEpayco(null)
     }
   }, [isOpen])
 
@@ -112,6 +122,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       }
 
       const pedidoId = resultado.orden.id
+
+      // Si es pago en línea, abrir widget de ePayco
+      if (selectedMethod === 'pago_en_linea') {
+        setPedidoParaEpayco(pedidoId)
+        setIsLoading(false)
+        return
+      }
 
       // 2. Aplicar bono si existe
       if (codigoBono) {
@@ -206,13 +223,40 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         )}
 
         {currentStep === 2 && (
-          <ConfirmationStep
-            selectedMethod={selectedMethod}
-            isLoading={isLoading}
-            onConfirm={processPayment}
-            onBack={() => setCurrentStep(1)}
-            limiteCredito={evaluacionCredito?.limite_aprobado}
-          />
+          <>
+            <ConfirmationStep
+              selectedMethod={selectedMethod}
+              isLoading={isLoading}
+              onConfirm={processPayment}
+              onBack={() => setCurrentStep(1)}
+              limiteCredito={evaluacionCredito?.limite_aprobado}
+            />
+            {/* Widget ePayco — aparece después de crear el pedido */}
+            {pedidoParaEpayco && selectedMethod === 'pago_en_linea' && token && (
+              <div className="mt-4 space-y-3">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+                  <i className="fas fa-check-circle text-blue-500 mr-1"></i>
+                  Pedido <strong>#{pedidoParaEpayco}</strong> creado. Completa el pago:
+                </div>
+                <EpaycoWidget
+                  pedidoId={pedidoParaEpayco}
+                  total={total}
+                  token={token}
+                  onExito={() => {
+                    setOrderId(pedidoParaEpayco)
+                    setPedidoParaEpayco(null)
+                    setCurrentStep(3)
+                    vaciarCarrito()
+                  }}
+                  onError={(msg) => setError(msg)}
+                  onCancelado={() => {
+                    setError('Pago cancelado. Puedes intentarlo de nuevo.')
+                    setPedidoParaEpayco(null)
+                  }}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {/* Paso 3: Éxito */}

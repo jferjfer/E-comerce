@@ -64,6 +64,11 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       FRONTEND_URL: https://egoscolombia.com.co
+      EPAYCO_P_CUST_ID: "504560"
+      EPAYCO_P_KEY: "4c61cb748710ade08dca87308102ba5a9d91b8fe"
+      EPAYCO_PUBLIC_KEY: "b459d654998c6fea2f9c6b9e1cacb960"
+      EPAYCO_PRIVATE_KEY: "2e11d3dcaaf185e0530a9fe30a0fcc50"
+      EPAYCO_TEST: "true"
     ports:
       - "${TRANSACTION_PORT:-3003}:${TRANSACTION_PORT:-3003}"
     dns:

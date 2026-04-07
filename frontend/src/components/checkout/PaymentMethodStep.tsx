@@ -68,7 +68,7 @@ export default function PaymentMethodStep({
                       Hasta {formatPrice(evaluacionCredito.limite_aprobado)}
                     </span>
                   )}
-                  {(method.id === 'pago_en_linea' || method.id === 'efectivo') && (
+                  {(method.id === 'efectivo') && (
                     <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
                       Próximamente
                     </span>
