@@ -30,7 +30,7 @@ jobs:
           service_account: github-actions-sa@crypto-topic-492202-q9.iam.gserviceaccount.com
 
       - name: Configurar gcloud
-        uses: google-github-actions/setup-gcloud@v2.1.4
+        uses: google-github-actions/setup-gcloud@v3.0.1
 
       - name: Configurar Docker para Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
