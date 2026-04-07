@@ -16,10 +16,10 @@ const axios = require('axios');
 // CONFIGURACIÓN
 // ============================================
 const EPAYCO_CONFIG = {
-  p_cust_id:    process.env.EPAYCO_P_CUST_ID    || '504560',
-  p_key:        process.env.EPAYCO_P_KEY         || '4c61cb748710ade08dca87308102ba5a9d91b8fe',
-  public_key:   process.env.EPAYCO_PUBLIC_KEY    || 'b459d654998c6fea2f9c6b9e1cacb960',
-  private_key:  process.env.EPAYCO_PRIVATE_KEY   || '2e11d3dcaaf185e0530a9fe30a0fcc50',
+  p_cust_id:    process.env.EPAYCO_P_CUST_ID    || '1578536',
+  p_key:        process.env.EPAYCO_P_KEY         || '5c2d1c361edfc7a4d965512d5292107ee5e6b47c',
+  public_key:   process.env.EPAYCO_PUBLIC_KEY    || '24ff35222124cc847bf0a05230de7ec4',
+  private_key:  process.env.EPAYCO_PRIVATE_KEY   || 'f01b73cbac63a43d5e2150fae7a78dd5',
   test:         process.env.EPAYCO_TEST !== 'false',
   currency:     'COP',
   country:      'CO',

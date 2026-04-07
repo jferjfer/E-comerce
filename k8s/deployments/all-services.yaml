@@ -156,13 +156,13 @@ spec:
         - name: FRONTEND_URL
           value: "https://egoscolombia.com.co"
         - name: EPAYCO_P_CUST_ID
-          value: "504560"
+          value: "1578536"
         - name: EPAYCO_P_KEY
-          value: "4c61cb748710ade08dca87308102ba5a9d91b8fe"
+          value: "5c2d1c361edfc7a4d965512d5292107ee5e6b47c"
         - name: EPAYCO_PUBLIC_KEY
-          value: "b459d654998c6fea2f9c6b9e1cacb960"
+          value: "24ff35222124cc847bf0a05230de7ec4"
         - name: EPAYCO_PRIVATE_KEY
-          value: "2e11d3dcaaf185e0530a9fe30a0fcc50"
+          value: "f01b73cbac63a43d5e2150fae7a78dd5"
         - name: EPAYCO_TEST
           value: "true"
         - name: SMTP_HOST
