@@ -414,6 +414,5 @@ export default function CreditPage() {
           ))}
         </div>
       </div>
-    </div>
   );
 }
