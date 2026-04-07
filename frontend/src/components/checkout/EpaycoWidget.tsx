@@ -10,6 +10,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { API_URL } from '@/config/api'
 
+import { API_URL } from '@/config/api'
+
 interface EpaycoWidgetProps {
   pedidoId: string
   total: number
@@ -104,6 +106,11 @@ export default function EpaycoWidget({ pedidoId, total, token, onExito, onError,
       }
 
       const { datos_widget } = data
+
+      if (!window.ePayco) {
+        onError('El widget de ePayco no cargó correctamente. Recarga la página.')
+        return
+      }
 
       // Configurar y abrir el widget de ePayco
       const handler = window.ePayco.checkout.configure({

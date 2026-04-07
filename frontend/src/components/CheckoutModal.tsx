@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_URL } from '@/config/api'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { formatPrice } from '@/utils/sanitize'
@@ -47,7 +48,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         .finally(() => setCargandoCredito(false))
 
       // Verificar si ePayco está configurado
-      fetch(`${import.meta.env.VITE_API_URL || 'https://api.egoscolombia.com.co'}/api/pagos/epayco/estado`)
+      fetch(`${API_URL}/api/pagos/epayco/estado`)
         .then(r => r.json())
         .then(d => setEpaycoActivo(d.configurado))
         .catch(() => setEpaycoActivo(false))
