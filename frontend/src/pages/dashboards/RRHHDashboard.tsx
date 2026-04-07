@@ -189,7 +189,7 @@ export default function RRHHDashboard() {
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Total Empleados', valor: empleados.length, icon: '👥', color: 'text-gray-900' },
             { label: 'Activos', valor: activos, icon: '✅', color: 'text-emerald-600' },
@@ -311,7 +311,8 @@ export default function RRHHDashboard() {
 
         {/* Tabla empleados */}
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead className="bg-gray-900 text-white">
               <tr>
                 <th className="px-4 py-3 text-left">Empleado</th>
@@ -384,6 +385,7 @@ export default function RRHHDashboard() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Modal confirmar eliminar */}

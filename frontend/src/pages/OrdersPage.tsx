@@ -277,7 +277,7 @@ export default function OrdersPage() {
                       {pedido.productos.map((producto: ProductoPedido, index: number) => {
                         const detalleProducto = productosDetalle[producto.id]
                         return (
-                          <div key={index} className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
+                          <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white p-3 rounded-lg border border-gray-200">
                             <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                               {detalleProducto?.imagen ? (
                                 <img
@@ -291,8 +291,8 @@ export default function OrdersPage() {
                                 </div>
                               )}
                             </div>
-                            <div className="flex-1">
-                              <h5 className="font-semibold text-gray-800">
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-semibold text-gray-800 text-sm">
                                 {detalleProducto?.nombre || `Producto #${producto.id.slice(0, 8)}`}
                               </h5>
                               {detalleProducto?.descripcion && (

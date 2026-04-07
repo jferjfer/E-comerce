@@ -78,7 +78,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Fecha de vencimiento
@@ -152,7 +152,7 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
             <p className="text-blue-700 mb-4">
               Serás redirigido a {method?.nombre} para completar tu solicitud de crédito
             </p>
-            <div className="grid grid-cols-2 gap-4 text-sm text-blue-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-blue-800">
               <div className="flex items-center">
                 <i className="fas fa-clock mr-2"></i>
                 Aprobación en minutos

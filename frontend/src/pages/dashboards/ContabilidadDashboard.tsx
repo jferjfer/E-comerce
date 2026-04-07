@@ -353,7 +353,7 @@ export default function ContabilidadDashboard() {
 
             {/* Resumen */}
             {resumenCompras && (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   { label: 'Total Compras', valor: formatPrice(resumenCompras.total_compras || 0), icon: '💰' },
                   { label: 'IVA Descontable', valor: formatPrice(resumenCompras.total_iva_descontable || 0), icon: '🧾' },
@@ -468,8 +468,7 @@ export default function ContabilidadDashboard() {
             )}
 
             {/* Lista compras */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm min-w-[600px]">
                 <thead className="bg-gray-900 text-white">
                   <tr>
                     <th className="px-4 py-3 text-left">#</th>
@@ -539,7 +538,8 @@ export default function ContabilidadDashboard() {
                       <p className="text-xs font-semibold text-gray-700">{formatPrice(a.total_debito)}</p>
                     </div>
                   </div>
-                  <table className="w-full text-xs">
+                  <div className="overflow-x-auto">
+                  <table className="w-full text-xs min-w-[400px]">
                     <tbody>
                       {a.movimientos.map((m: any, i: number) => (
                         <tr key={i} className="border-b last:border-0">
@@ -555,6 +555,7 @@ export default function ContabilidadDashboard() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               ))}
               {libroDiario.length === 0 && (
@@ -572,8 +573,7 @@ export default function ContabilidadDashboard() {
           <div className="space-y-4">
             <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm" />
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm min-w-[600px]">
                 <thead className="bg-gray-900 text-white">
                   <tr>
                     <th className="px-4 py-3 text-left">Código</th>

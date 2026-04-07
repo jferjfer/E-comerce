@@ -528,7 +528,7 @@ export default function MarketingManagerDashboard() {
                   <i className="fas fa-times text-xl"></i>
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 p-6 rounded-lg">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-semibold text-gray-700">Campañas</h4>

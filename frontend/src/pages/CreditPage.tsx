@@ -134,7 +134,7 @@ export default function CreditPage() {
           <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Simula tu Crédito</h2>
             
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Monto a Solicitar
@@ -240,7 +240,7 @@ export default function CreditPage() {
               <p className="text-gray-600">{creditoAprobado.mensaje}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Monto Aprobado</p>
                 <p className="text-2xl font-bold text-blue-600">${creditoAprobado.monto_aprobado.toLocaleString()}</p>
@@ -298,7 +298,7 @@ export default function CreditPage() {
         {/* Perfil del Cliente */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Tu Perfil Crediticio</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-green-50 p-4 rounded-lg">
               <p className="text-sm text-gray-600">Límite Aprobado</p>
               <p className="text-2xl font-bold text-green-600">${evaluacion?.limite_aprobado.toLocaleString()}</p>
@@ -318,11 +318,7 @@ export default function CreditPage() {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Simula tu Crédito</h2>
           
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Monto a Solicitar
-              </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               <input
                 type="range"
                 min="500000"
@@ -362,7 +358,7 @@ export default function CreditPage() {
         </div>
 
         {/* Opciones de Crédito */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {opciones.map((opcion, index) => (
             <div
               key={index}

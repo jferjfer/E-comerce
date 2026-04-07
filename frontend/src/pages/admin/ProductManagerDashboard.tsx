@@ -412,7 +412,7 @@ export default function ProductManagerDashboard() {
               {/* Tallas */}
               <div className="md:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tallas Disponibles *</label>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(talla => (
                     <label key={talla} className="flex items-center">
                       <input
@@ -436,7 +436,7 @@ export default function ProductManagerDashboard() {
               {/* Colores */}
               <div className="md:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Colores Disponibles *</label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {['Negro', 'Blanco', 'Azul', 'Rojo', 'Verde', 'Rosa', 'Amarillo', 'Morado', 'Gris', 'Beige', 'Marrón', 'Naranja'].map(color => (
                     <label key={color} className="flex items-center">
                       <input

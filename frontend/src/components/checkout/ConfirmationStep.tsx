@@ -142,7 +142,7 @@ export default function ConfirmationStep({
       {esCredito && (
         <div className="space-y-3">
           <p className="text-sm font-semibold text-gray-700">Elige tu plan de cuotas:</p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {[3, 6, 12].map(plazo => (
               <button
                 key={plazo}
