@@ -161,7 +161,7 @@ jobs:
         run: |
           docker build -t ${{ env.REGISTRY }}/frontend:${{ github.sha }} \
                        -t ${{ env.REGISTRY }}/frontend:latest \
-                       --build-arg VITE_API_URL=http://34.123.67.97 \
+                       --build-arg VITE_API_URL=https://api.egoscolombia.com.co \
                        ./frontend
           docker push ${{ env.REGISTRY }}/frontend:${{ github.sha }}
           docker push ${{ env.REGISTRY }}/frontend:latest

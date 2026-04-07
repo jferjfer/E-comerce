@@ -48,8 +48,9 @@ export default function OrdersPage() {
           const data = await response.json()
           devs[pedido.id] = data.devolucion
         }
-      } catch (error) {
-        // No hay devolución para este pedido
+        // 404 = no hay devolución, es normal, no loguear
+      } catch {
+        // ignorar
       }
     }
     setDevoluciones(devs)
