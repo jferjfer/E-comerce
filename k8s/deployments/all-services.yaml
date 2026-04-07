@@ -24,7 +24,7 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: FRONTEND_URL
-          value: "http://34.173.145.178"
+          value: "https://egoscolombia.com.co"
         - name: SMTP_HOST
           valueFrom:
             secretKeyRef:
@@ -154,7 +154,7 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: FRONTEND_URL
-          value: "http://34.173.145.178"
+          value: "https://egoscolombia.com.co"
         - name: SMTP_HOST
           valueFrom:
             secretKeyRef:

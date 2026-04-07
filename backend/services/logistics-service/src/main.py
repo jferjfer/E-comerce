@@ -11,7 +11,7 @@ app = FastAPI(title="Logistics Service v2.0", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3005", "http://localhost:3000"],
+    allow_origins=["https://egoscolombia.com.co", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

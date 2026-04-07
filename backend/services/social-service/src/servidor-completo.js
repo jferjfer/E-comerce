@@ -14,7 +14,7 @@ const puerto = process.env.PUERTO || 3004;
 // Middleware
 aplicacion.use(helmet());
 aplicacion.use(cors({
-  origin: ['http://localhost:3005', 'http://localhost:3000'],
+  origin: ['https://egoscolombia.com.co', 'http://localhost:3000'],
   credentials: true
 }));
 aplicacion.use(express.json());

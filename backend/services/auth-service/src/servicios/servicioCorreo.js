@@ -21,7 +21,7 @@ class ServicioCorreo {
   }
 
   async enviarBienvenida(email, nombreUsuario) {
-    const urlTienda = process.env.FRONTEND_URL || 'http://localhost:3005';
+    const urlTienda = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 0;">
@@ -68,7 +68,7 @@ class ServicioCorreo {
   }
 
   async enviarConfirmacionCompra(email, nombreUsuario, pedido) {
-    const urlTienda = process.env.FRONTEND_URL || 'http://localhost:3005';
+    const urlTienda = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
     const urlPedidos = `${urlTienda}/orders`;
 
     const formatearPrecio = (valor) =>
@@ -158,7 +158,7 @@ class ServicioCorreo {
   }
 
   async enviarCredencialesEmpleado(email, nombre, rol, password) {
-    const urlTienda = process.env.FRONTEND_URL || 'http://localhost:3005';
+    const urlTienda = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
 
     const rolesNombres = {
       rrhh: 'Recursos Humanos', contador: 'Contador', ceo: 'CEO',
@@ -212,7 +212,7 @@ class ServicioCorreo {
   }
 
   async enviarRecuperacionContrasena(email, token, nombreUsuario) {
-    const enlaceRecuperacion = `${process.env.FRONTEND_URL || 'http://localhost:3005'}/restablecer-contrasena?token=${token}`;
+    const enlaceRecuperacion = `${process.env.FRONTEND_URL || 'https://egoscolombia.com.co'}/restablecer-contrasena?token=${token}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

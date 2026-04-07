@@ -50,7 +50,7 @@ async function enviarNotificacionEstado(email, nombreUsuario, pedidoId, nuevoEst
   const info = MENSAJES_ESTADO[nuevoEstado];
   if (!info) return;
 
-  const urlPedidos = `${process.env.FRONTEND_URL || 'http://localhost:3005'}/orders`;
+  const urlPedidos = `${process.env.FRONTEND_URL || 'https://egoscolombia.com.co'}/orders`;
   const formatearPrecio = (v) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
 
@@ -302,7 +302,7 @@ async function inicializarBaseDatos() {
 aplicacion.use(helmet());
 
 const ALLOWED_ORIGINS = [
-  'http://localhost:3005',
+  'https://egoscolombia.com.co',
   'http://149.130.182.9:3005',
   'http://localhost:5173',
   'http://localhost:3000',

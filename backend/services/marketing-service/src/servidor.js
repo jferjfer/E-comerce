@@ -11,7 +11,7 @@ const puerto = process.env.PUERTO || 3006;
 aplicacion.use(helmet());
 
 const ALLOWED_ORIGINS = [
-  'http://localhost:3005',
+  'https://egoscolombia.com.co',
   'http://149.130.182.9:3005',
   'http://localhost:3000',
   'http://149.130.182.9:3000',

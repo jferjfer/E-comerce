@@ -16,7 +16,7 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
-      FRONTEND_URL: http://149.130.182.9:3005
+      FRONTEND_URL: https://egoscolombia.com.co
     ports:
       - "${AUTH_PORT:-3011}:${AUTH_PORT:-3011}"
     dns:
@@ -63,7 +63,7 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
-      FRONTEND_URL: http://149.130.182.9:3005
+      FRONTEND_URL: https://egoscolombia.com.co
     ports:
       - "${TRANSACTION_PORT:-3003}:${TRANSACTION_PORT:-3003}"
     dns:
@@ -100,7 +100,7 @@ services:
     environment:
       PUERTO: 3006
       DATABASE_URL: ${POSTGRES_MARKETING_URL}
-      FRONTEND_URL: http://149.130.182.9:3005
+      FRONTEND_URL: https://egoscolombia.com.co
     ports:
       - "3006:3006"
     dns:
@@ -145,7 +145,7 @@ services:
     container_name: gateway
     environment:
       PUERTO: ${GATEWAY_PORT:-3000}
-      FRONTEND_URL: http://149.130.182.9:3005
+      FRONTEND_URL: https://egoscolombia.com.co
       NODE_OPTIONS: "--max-http-header-size=16384"
     ports:
       - "${GATEWAY_PORT:-3000}:${GATEWAY_PORT:-3000}"
@@ -223,7 +223,7 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
-      FRONTEND_URL: http://149.130.182.9:3005
+      FRONTEND_URL: https://egoscolombia.com.co
       AUTH_SERVICE_URL: http://auth-service:3011
       TRANSACTION_SERVICE_URL: http://transaction-service:3003
       DIAN_SOFTWARE_ID: b7249493-84cf-430c-be82-64c830a2158c
