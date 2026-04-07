@@ -20,7 +20,7 @@ const EPAYCO_CONFIG = {
   p_key:        process.env.EPAYCO_P_KEY         || '5c2d1c361edfc7a4d965512d5292107ee5e6b47c',
   public_key:   process.env.EPAYCO_PUBLIC_KEY    || '24ff35222124cc847bf0a05230de7ec4',
   private_key:  process.env.EPAYCO_PRIVATE_KEY   || 'f01b73cbac63a43d5e2150fae7a78dd5',
-  test:         process.env.EPAYCO_TEST !== 'false',
+  test:         process.env.EPAYCO_TEST !== 'false', // false = producción
   currency:     'COP',
   country:      'CO',
   lang:         'es',
