@@ -21,36 +21,45 @@ export default function EpaycoRespuestaPage() {
 
   useEffect(() => {
     // Log para debug
-    console.log('ePayco respuesta params:', {
-      x_response, x_ref_payco, x_amount, x_id_invoice,
-      x_response_reason, x_cod_response,
-      todos: Object.fromEntries(params.entries())
-    })
+    const todosParams = Object.fromEntries(params.entries())
+    console.log('ePayco respuesta URL completa:', window.location.href)
+    console.log('ePayco respuesta params:', todosParams)
 
-    // Si ePayco envió x_response directamente
-    if (x_response) {
-      if (x_response === 'Aceptada' || x_cod_response === '1') {
-        setEstado('exitoso')
-        setDetalle('Tu pago fue procesado correctamente.')
-      } else if (x_response === 'Pendiente' || x_cod_response === '3' || x_cod_response === '7') {
-        setEstado('pendiente')
-        setDetalle('Tu pago está siendo validado. Te notificaremos pronto.')
+    // Si no hay ningún parámetro de ePayco
+    if (Object.keys(todosParams).length === 0) {
+      // Llegamos sin parámetros — consultar último pedido
+      if (token) {
+        consultarUltimoPedido()
       } else {
-        setEstado('fallido')
-        setDetalle(x_response_reason || `Pago ${x_response.toLowerCase()}`)
+        setEstado('exitoso')
+        setDetalle('Tu pedido fue creado. Revisa tus pedidos.')
       }
       return
     }
 
-    // Si no hay parámetros, consultar el último pedido del usuario
-    if (token && x_id_invoice) {
-      consultarEstadoPedido(x_id_invoice)
-    } else if (token) {
-      consultarUltimoPedido()
-    } else {
-      // Sin token ni parámetros — asumir exitoso si llegó aquí
+    // ePayco envió parámetros
+    if (x_response === 'Aceptada' || x_cod_response === '1') {
       setEstado('exitoso')
-      setDetalle('Tu pago fue procesado. Revisa tus pedidos.')
+      setDetalle('Tu pago fue procesado correctamente.')
+    } else if (x_response === 'Pendiente' || x_cod_response === '3' || x_cod_response === '7') {
+      setEstado('pendiente')
+      setDetalle('Tu pago está siendo validado. Te notificaremos pronto.')
+    } else if (x_response === 'Rechazada' || x_response === 'Fallida' || x_cod_response === '2' || x_cod_response === '4' || x_cod_response === '6') {
+      setEstado('fallido')
+      setDetalle(x_response_reason || `Pago ${x_response.toLowerCase()} — intenta con otro método de pago`)
+    } else if (x_response) {
+      // Cualquier otro valor de x_response no reconocido
+      setEstado('fallido')
+      setDetalle(x_response_reason || 'El pago no fue completado')
+    } else {
+      // Hay parámetros pero sin x_response — consultar pedido
+      if (token && x_id_invoice) {
+        consultarEstadoPedido(x_id_invoice)
+      } else if (token) {
+        consultarUltimoPedido()
+      } else {
+        setEstado('exitoso')
+      }
     }
   }, [x_response, x_cod_response])
 
@@ -119,8 +128,8 @@ export default function EpaycoRespuestaPage() {
       icon: 'fa-times-circle',
       color: 'text-red-500',
       bg: 'bg-red-50 border-red-200',
-      titulo: 'Pago no completado',
-      mensaje: detalle || x_response_reason || 'El pago no pudo ser procesado. Intenta de nuevo.'
+      titulo: 'Pago rechazado',
+      mensaje: detalle || x_response_reason || 'El pago no pudo ser procesado. Intenta con otro método.'
     },
     cargando: {
       icon: 'fa-circle-notch fa-spin',
@@ -170,18 +179,29 @@ export default function EpaycoRespuestaPage() {
         )}
 
         <div className="space-y-2">
-          <button
-            onClick={() => navigate('/orders')}
-            className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors"
-          >
-            <i className="fas fa-shopping-bag mr-2"></i>
-            Ver mis pedidos
-          </button>
+          {estado !== 'fallido' && (
+            <button
+              onClick={() => navigate('/orders')}
+              className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors"
+            >
+              <i className="fas fa-shopping-bag mr-2"></i>
+              Ver mis pedidos
+            </button>
+          )}
+          {estado === 'fallido' && (
+            <button
+              onClick={() => navigate(-1)}
+              className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-secondary transition-colors"
+            >
+              <i className="fas fa-redo mr-2"></i>
+              Reintentar pago
+            </button>
+          )}
           <button
             onClick={() => navigate('/')}
             className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm"
           >
-            Seguir comprando
+            {estado === 'fallido' ? 'Volver a la tienda' : 'Seguir comprando'}
           </button>
         </div>
       </div>
