@@ -468,7 +468,9 @@ export default function ContabilidadDashboard() {
             )}
 
             {/* Lista compras */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm min-w-[600px]">
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
                 <thead className="bg-gray-900 text-white">
                   <tr>
                     <th className="px-4 py-3 text-left">#</th>
@@ -513,6 +515,7 @@ export default function ContabilidadDashboard() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
@@ -573,7 +576,9 @@ export default function ContabilidadDashboard() {
           <div className="space-y-4">
             <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm" />
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm min-w-[600px]">
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
                 <thead className="bg-gray-900 text-white">
                   <tr>
                     <th className="px-4 py-3 text-left">Código</th>
@@ -598,6 +603,7 @@ export default function ContabilidadDashboard() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
