@@ -164,7 +164,7 @@ spec:
         - name: EPAYCO_PRIVATE_KEY
           value: "f01b73cbac63a43d5e2150fae7a78dd5"
         - name: EPAYCO_TEST
-          value: "false"
+          value: "true"
         - name: SMTP_HOST
           valueFrom:
             secretKeyRef:
