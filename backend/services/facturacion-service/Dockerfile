@@ -9,4 +9,8 @@ COPY . .
 
 EXPOSE 3010
 
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
+
 CMD ["sh", "-c", "cd /app/src && uvicorn main:app --host 0.0.0.0 --port 3010"]

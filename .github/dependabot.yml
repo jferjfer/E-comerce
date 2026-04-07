@@ -1,0 +1,82 @@
+version: 2
+updates:
+  # Frontend
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  # Gateway
+  - package-ecosystem: "npm"
+    directory: "/simple-gateway"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  # Auth Service
+  - package-ecosystem: "npm"
+    directory: "/backend/services/auth-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  # Transaction Service
+  - package-ecosystem: "npm"
+    directory: "/backend/services/transaction-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  # Social Service
+  - package-ecosystem: "npm"
+    directory: "/backend/services/social-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  # Marketing Service
+  - package-ecosystem: "npm"
+    directory: "/backend/services/marketing-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  # Python services
+  - package-ecosystem: "pip"
+    directory: "/backend/services/catalog-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  - package-ecosystem: "pip"
+    directory: "/backend/services/ai-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  - package-ecosystem: "pip"
+    directory: "/backend/services/credit-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  - package-ecosystem: "pip"
+    directory: "/backend/services/facturacion-service"
+    schedule:
+      interval: "weekly"
+    labels: ["security", "dependencies"]
+
+  # Docker images
+  - package-ecosystem: "docker"
+    directory: "/backend/services/auth-service"
+    schedule:
+      interval: "monthly"
+    labels: ["security", "docker"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["security", "github-actions"]

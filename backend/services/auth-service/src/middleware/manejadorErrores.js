@@ -40,7 +40,7 @@ const manejadorErrores = (error, req, res, next) => {
   // Error genérico
   res.status(500).json({
     error: 'Error interno del servidor',
-    ...(process.env.ENTORNO === 'desarrollo' && { detalle: error.message })
+    ...(process.env.NODE_ENV === 'development' && { detalle: error.message })
   });
 };
 

@@ -1,0 +1,139 @@
+---
+# Denegar todo el tráfico por defecto
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-default
+  namespace: egos
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Gateway: acepta tráfico externo y puede hablar con todos
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway
+  namespace: egos
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - {}
+  egress:
+  - {}
+---
+# Auth service: solo acepta del gateway y servicios internos
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auth-service
+  namespace: egos
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gateway
+    - podSelector:
+        matchLabels:
+          app: transaction-service
+    - podSelector:
+        matchLabels:
+          app: credit-service
+    - podSelector:
+        matchLabels:
+          app: facturacion-service
+    - podSelector:
+        matchLabels:
+          app: contabilidad-service
+  egress:
+  - {}
+---
+# Transaction service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-transaction-service
+  namespace: egos
+spec:
+  podSelector:
+    matchLabels:
+      app: transaction-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gateway
+  egress:
+  - {}
+---
+# Servicios internos: solo aceptan del gateway y transaction
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internal-services
+  namespace: egos
+spec:
+  podSelector:
+    matchExpressions:
+    - key: app
+      operator: In
+      values:
+      - catalog-service
+      - social-service
+      - marketing-service
+      - ai-service
+      - credit-service
+      - logistics-service
+      - facturacion-service
+      - contabilidad-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gateway
+    - podSelector:
+        matchLabels:
+          app: transaction-service
+    - podSelector:
+        matchLabels:
+          app: auth-service
+  egress:
+  - {}
+---
+# Redis: solo acepta de ai-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis
+  namespace: egos
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: ai-service

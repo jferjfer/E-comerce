@@ -45,7 +45,13 @@ app = FastAPI(title="EGOS Facturacion Service", version="1.0.0", lifespan=lifesp
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://egoscolombia.com.co",
+        "https://www.egoscolombia.com.co",
+        "https://api.egoscolombia.com.co",
+        "http://localhost:3005",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

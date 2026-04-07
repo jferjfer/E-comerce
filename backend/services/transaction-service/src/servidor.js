@@ -396,7 +396,7 @@ async function guardarCarrito(usuarioId, carrito) {
 
 // Middleware de autenticación JWT
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2';
+const JWT_SECRET = process.env.JWT_SECRETO;
 console.log('🔑 Transaction Service usando JWT_SECRET:', JWT_SECRET.substring(0, 20) + '...');
 
 const autenticacion = (req, res, next) => {
@@ -460,8 +460,8 @@ aplicacion.get('/api/carrito', autenticacion, async (req, res) => {
     res.json({ datos: carrito });
   } catch (error) {
     console.error('Error obteniendo carrito:', error.message);
-    console.error('Stack:', error.stack);
-    res.status(500).json({ error: 'Error obteniendo carrito', detalle: error.message });
+    if (process.env.NODE_ENV !== 'production') console.error('Stack:', error.stack);
+    res.status(500).json({ error: 'Error obteniendo carrito' });
   }
 });
 
@@ -536,8 +536,8 @@ aplicacion.post('/api/carrito', autenticacion, async (req, res) => {
     });
   } catch (error) {
     console.error('Error agregando al carrito:', error.message);
-    console.error('Stack:', error.stack);
-    res.status(500).json({ error: 'Error agregando producto', detalle: error.message });
+    if (process.env.NODE_ENV !== 'production') console.error('Stack:', error.stack);
+    res.status(500).json({ error: 'Error agregando producto' });
   }
 });
 
@@ -609,7 +609,7 @@ aplicacion.get('/api/pedidos', autenticacion, async (req, res) => {
     });
   } catch (error) {
     console.error('Error obteniendo pedidos:', error.message);
-    res.status(500).json({ error: 'Error obteniendo pedidos', detalle: error.message });
+    res.status(500).json({ error: 'Error obteniendo pedidos' });
   }
 });
 
@@ -900,8 +900,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     });
   } catch (error) {
     console.error('Error en checkout:', error.message);
-    console.error('Stack:', error.stack);
-    res.status(500).json({ error: 'Error procesando pedido', detalle: error.message });
+    if (process.env.NODE_ENV !== 'production') console.error('Stack:', error.stack);
+    res.status(500).json({ error: 'Error procesando pedido' });
   }
 });
 
@@ -1075,6 +1075,14 @@ aplicacion.get('/api/pedidos/:pedidoId/devolucion', autenticacion, async (req, r
 aplicacion.get('/api/devoluciones', autenticacion, async (req, res) => {
   try {
     const { estado } = req.query;
+    const usuarioRol = req.usuario.rol;
+    const usuarioId = req.usuario.id;
+
+    // Solo roles admin pueden ver todas las devoluciones
+    const rolesAdmin = ['ceo', 'customer_success', 'logistics_coordinator', 'operations_director', 'support_agent'];
+    if (!rolesAdmin.includes(usuarioRol)) {
+      return res.status(403).json({ error: 'Sin permisos para ver todas las devoluciones' });
+    }
 
     console.log(`📋 Listando devoluciones - Estado: ${estado || 'Todas'}`);
 

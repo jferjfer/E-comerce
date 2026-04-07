@@ -12,9 +12,16 @@ const port = process.env.PUERTO || 3000;
 
 // Seguridad con helmet
 app.use(helmet({
-  crossOriginResourcePolicy: false,
-  contentSecurityPolicy: false
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false,
+  hsts: { maxAge: 31536000, includeSubDomains: true },
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
+
+// Ocultar información del servidor
+app.disable('x-powered-by');
 
 // Rate limiting general — 200 requests por minuto por IP
 const limiterGeneral = rateLimit({

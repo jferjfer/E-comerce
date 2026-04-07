@@ -272,7 +272,13 @@ app = FastAPI(title="Credit Service v3.0", version="3.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://egoscolombia.com.co",
+        "https://www.egoscolombia.com.co",
+        "https://api.egoscolombia.com.co",
+        "http://localhost:3005",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

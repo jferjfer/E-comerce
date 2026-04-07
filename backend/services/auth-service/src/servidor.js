@@ -6,6 +6,7 @@ require('dotenv').config();
 const rutasAuth = require('./rutas/rutasAuth');
 const rutasUsuario = require('./rutas/rutasUsuario');
 const manejadorErrores = require('./middleware/manejadorErrores');
+const { sanitizarInputs, validarContentType } = require('./middleware/seguridadInputs');
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3012;
@@ -31,6 +32,10 @@ aplicacion.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 aplicacion.use(express.json({ limit: '10mb' }));
+
+// Middleware de seguridad de inputs
+aplicacion.use(sanitizarInputs);
+aplicacion.use(validarContentType);
 
 // Logging middleware detallado
 aplicacion.use((req, res, next) => {

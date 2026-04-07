@@ -173,6 +173,16 @@ jobs:
           location: ${{ env.REGION }}
           project_id: ${{ env.PROJECT_ID }}
 
+      - name: Escanear vulnerabilidades con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL'
+          exit-code: '0'
+          format: 'table'
+        continue-on-error: true
+
       - name: Deploy servicios modificados
         run: |
           deploy() {

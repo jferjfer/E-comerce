@@ -138,7 +138,7 @@ class ServicioAuth {
   }
 
   generarToken(usuario) {
-    const secret = process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2';
+    const secret = process.env.JWT_SECRETO;
     console.log('🔑 GENERANDO TOKEN CON SECRETO:', secret.substring(0, 20) + '...');
 
     return jwt.sign(
@@ -155,7 +155,7 @@ class ServicioAuth {
 
   async verificarToken(token) {
     try {
-      const secret = process.env.JWT_SECRETO || 'estilo_moda_jwt_secreto_produccion_2024_seguro_v2';
+      const secret = process.env.JWT_SECRETO;
       const decoded = jwt.verify(token, secret);
       return { valido: true, usuario: decoded };
     } catch (error) {

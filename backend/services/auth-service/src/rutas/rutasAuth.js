@@ -28,4 +28,20 @@ router.post('/login-simple', async (req, res) => {
 router.post('/solicitar-recuperacion', ControladorAuth.solicitarRecuperacion);
 router.post('/restablecer-contrasena', ControladorAuth.restablecerContrasena);
 
+// Derecho al olvido (Ley 1581)
+router.post('/solicitar-eliminacion', autenticar, async (req, res) => {
+  try {
+    const { motivo } = req.body;
+    const pool = require('../config/baseDatos');
+    await pool.query(
+      `INSERT INTO solicitud_eliminacion (usuario_id, email, motivo)
+       SELECT id, email, $1 FROM usuarios WHERE id = $2`,
+      [motivo || 'Solicitud del usuario', req.usuario.id]
+    );
+    res.json({ mensaje: 'Solicitud de eliminación registrada. Será procesada en 15 días hábiles según Ley 1581.' });
+  } catch (e) {
+    res.status(500).json({ error: 'Error procesando solicitud' });
+  }
+});
+
 module.exports = router;

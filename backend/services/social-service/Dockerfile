@@ -9,4 +9,8 @@ COPY . .
 
 EXPOSE 3004
 
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
+
 CMD ["sh", "-c", "node src/servidor-completo.js"]

@@ -1,5 +1,6 @@
 const ServicioAuth = require('../servicios/servicioAuth');
 const ServicioCorreo = require('../servicios/servicioCorreo');
+const ServicioSeguridad = require('../servicios/servicioSeguridad');
 const { validarRegistro, validarInicioSesion, sanitizarEntrada } = require('../utils/validaciones');
 const crypto = require('crypto');
 
@@ -43,25 +44,43 @@ class ControladorAuth {
 
   static async iniciarSesion(req, res, next) {
     try {
-      // Validar datos de entrada
       const { error, value } = validarInicioSesion(req.body);
       if (error) {
         error.isJoi = true;
         return next(error);
       }
 
-      // Normalizar password/contrasena
-      const contrasena = value.password || value.contrasena;
-      
-      // Iniciar sesión
-      const resultado = await ServicioAuth.iniciarSesion(value.email, contrasena);
+      const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+      const email = value.email;
 
-      if (!resultado.exito) {
-        return res.status(401).json({
+      // Verificar si la cuenta está bloqueada
+      const bloqueo = await ServicioSeguridad.estaBloqueado(email);
+      if (bloqueo.bloqueado) {
+        return res.status(429).json({
           exito: false,
-          error: resultado.error || 'Credenciales inválidas'
+          error: `Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intenta en ${bloqueo.minutosRestantes} minuto(s).`
         });
       }
+
+      const contrasena = value.password || value.contrasena;
+      const resultado = await ServicioAuth.iniciarSesion(email, contrasena);
+
+      if (!resultado.exito) {
+        // Registrar intento fallido
+        await ServicioSeguridad.registrarIntento(email, ip, false);
+        const bloqueoActual = await ServicioSeguridad.estaBloqueado(email);
+        const intentosRestantes = bloqueoActual.intentosRestantes || 0;
+        return res.status(401).json({
+          exito: false,
+          error: resultado.error || 'Credenciales inválidas',
+          intentos_restantes: intentosRestantes > 0 ? intentosRestantes : undefined
+        });
+      }
+
+      // Login exitoso
+      await ServicioSeguridad.registrarIntento(email, ip, true);
+      await ServicioSeguridad.limpiarIntentos(email);
+      await ServicioSeguridad.registrarAuditoria(resultado.usuario.id, 'LOGIN', 'Inicio de sesión exitoso', ip);
 
       res.json({
         exito: true,
@@ -80,12 +99,19 @@ class ControladorAuth {
       const token = req.header('Authorization')?.replace('Bearer ', '');
       
       if (token) {
+        // Revocar token en blacklist
+        const jwt = require('jsonwebtoken');
+        try {
+          const decoded = jwt.decode(token);
+          if (decoded) {
+            await ServicioSeguridad.revocarToken(token, decoded.id, decoded.exp);
+            await ServicioSeguridad.registrarAuditoria(decoded.id, 'LOGOUT', 'Cierre de sesión', req.ip);
+          }
+        } catch (e) {}
         await ServicioAuth.cerrarSesion(token);
       }
 
-      res.json({
-        mensaje: 'Sesión cerrada exitosamente'
-      });
+      res.json({ mensaje: 'Sesión cerrada exitosamente' });
     } catch (error) {
       next(error);
     }

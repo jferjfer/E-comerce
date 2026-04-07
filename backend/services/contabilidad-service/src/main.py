@@ -3,7 +3,7 @@ Contabilidad Service v1.0 — EGOS
 Contabilidad automática para VERTEL & CATILLO S.A.S
 NIT: 902.051.708-6 | CIIU: 4771/4642 | Régimen SIMPLE
 """
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
@@ -54,7 +54,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://egoscolombia.com.co",
+        "https://www.egoscolombia.com.co",
+        "https://api.egoscolombia.com.co",
+        "http://localhost:3005",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -105,6 +111,28 @@ class RegistrarCompra(BaseModel):
 # ============================================
 # ENDPOINTS — EVENTOS AUTOMÁTICOS
 # ============================================
+
+
+def verificar_rol_contabilidad(request: Request):
+    """Verifica que el usuario tenga rol de contabilidad"""
+    import jwt as pyjwt
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token requerido")
+    try:
+        token = auth.replace("Bearer ", "")
+        secret = os.getenv("JWT_SECRETO", "")
+        if not secret:
+            raise HTTPException(status_code=500, detail="Error de configuración")
+        decoded = pyjwt.decode(token, secret, algorithms=["HS256"])
+        rol = decoded.get("rol", "")
+        if rol not in ["ceo", "contador", "cfo"]:
+            raise HTTPException(status_code=403, detail="Acceso denegado — solo CEO, Contador o CFO")
+        return decoded
+    except pyjwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Sesión expirada")
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
 
 @app.post("/api/contabilidad/eventos/venta")
 async def evento_venta(evento: EventoVenta, db: Session = Depends(get_db)):
@@ -166,7 +194,8 @@ async def libro_diario(
     tipo: Optional[str] = Query(None),
     pagina: int = Query(1),
     limite: int = Query(50),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
 ):
     """Libro diario con todos los asientos"""
     query = db.query(AsientoContable)
@@ -218,7 +247,8 @@ async def libro_diario(
 async def libro_mayor(
     periodo: Optional[str] = Query(None),
     codigo_cuenta: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
 ):
     """Libro mayor — saldos por cuenta"""
     query = db.query(SaldoCuenta)
@@ -253,7 +283,8 @@ async def libro_mayor(
 @app.get("/api/contabilidad/balance-general")
 async def balance_general(
     periodo: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
 ):
     """Balance General — Activos, Pasivos y Patrimonio"""
     if not periodo:
@@ -432,7 +463,7 @@ async def anticipo_simple(anio: int, bimestre: int, db: Session = Depends(get_db
 # ============================================
 
 @app.get("/api/contabilidad/dashboard")
-async def dashboard(db: Session = Depends(get_db)):
+async def dashboard(db: Session = Depends(get_db), usuario: dict = Depends(verificar_rol_contabilidad)):
     """Dashboard contable — lee de BD transacciones en tiempo real"""
     ahora = datetime.now()
     periodo_actual = ahora.strftime("%Y-%m")
@@ -684,7 +715,7 @@ async def dashboard(db: Session = Depends(get_db)):
 # ============================================
 
 @app.post("/api/contabilidad/compras")
-async def registrar_compra_endpoint(compra: RegistrarCompra, db: Session = Depends(get_db)):
+async def registrar_compra_endpoint(compra: RegistrarCompra, db: Session = Depends(get_db), usuario: dict = Depends(verificar_rol_contabilidad)):
     """Registra una compra a proveedor con asiento contable automático"""
     try:
         fecha = datetime.fromisoformat(compra.fecha) if compra.fecha else datetime.now()
@@ -719,7 +750,8 @@ async def listar_compras(
     forma_pago: Optional[str] = Query(None),
     pagina: int = Query(1),
     limite: int = Query(50),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
 ):
     """Lista todas las compras registradas"""
     from database import Compra
