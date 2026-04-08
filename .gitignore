@@ -55,6 +55,7 @@ coverage/
 
 # K8s secrets con valores reales (nunca commitear)
 k8s/secrets/secrets-prod.yaml
+k8s/secrets/secrets.yaml
 
 # Certificados y documentos sensibles
 *.p12
