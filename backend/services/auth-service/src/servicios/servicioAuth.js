@@ -78,20 +78,23 @@ class ServicioAuth {
       };
 
       const usuario = await Usuario.buscarPorEmail(email);
+
+      // Siempre ejecutar bcrypt para tiempo constante (anti timing attack)
+      const hashDummy = '$2a$08$dummy.hash.for.timing.protection.only.xxxxxxxxxxxxxxxxxx';
+      const contrasenaAComparar = usuario ? usuario.contrasena : hashDummy;
+      const passwordValida = await bcrypt.compare(password, contrasenaAComparar);
+
+      // Esperar tiempo mínimo para igualar tiempos
+      await esperarTiempoMinimo();
+
       if (!usuario) {
-        // Simular bcrypt para que el tiempo sea igual con/sin usuario
-        await bcrypt.hash('timing_protection_dummy', 8);
-        await esperarTiempoMinimo();
         return { exito: false, error: 'No encontramos una cuenta con ese correo. ¿Quieres registrarte?' };
       }
 
       if (usuario.activo === false) {
-        await esperarTiempoMinimo();
         return { exito: false, error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.' };
       }
 
-      const passwordValida = await bcrypt.compare(password, usuario.contrasena);
-      await esperarTiempoMinimo();
       if (!passwordValida) {
         return { exito: false, error: 'La contraseña es incorrecta. ¿Olvidaste tu contraseña?' };
       }
