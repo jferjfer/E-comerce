@@ -31,6 +31,14 @@ import VirtualTryOnPage from './pages/VirtualTryOnPage'
 
 import EpaycoRespuestaPage from './pages/EpaycoRespuestaPage'
 import RRHHDashboard from './pages/dashboards/RRHHDashboard'
+import TerminosPage from './pages/legal/TerminosPage'
+import PrivacidadPage from './pages/legal/PrivacidadPage'
+import CookiesPage from './pages/legal/CookiesPage'
+import DevolucionesLegalPage from './pages/legal/DevolucionesPage'
+import SobreNosotrosPage from './pages/empresa/SobreNosotrosPage'
+import TrabajaConNosotrosPage from './pages/empresa/TrabajaConNosotrosPage'
+import SostenibilidadPage from './pages/empresa/SostenibilidadPage'
+import PrensaPage from './pages/empresa/PrensaPage'
 import ContabilidadDashboard from './pages/dashboards/ContabilidadDashboard'
 
 import MarketingManagerDashboard from './pages/dashboards/MarketingManagerDashboard'
@@ -133,6 +141,16 @@ function App() {
             </RoleGuard>
           } />
           <Route path="/pago/respuesta" element={<EpaycoRespuestaPage />} />
+          {/* LEGAL */}
+          <Route path="/terminos" element={<TerminosPage />} />
+          <Route path="/privacidad" element={<PrivacidadPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
+          <Route path="/devoluciones" element={<DevolucionesLegalPage />} />
+          {/* EMPRESA */}
+          <Route path="/sobre-nosotros" element={<SobreNosotrosPage />} />
+          <Route path="/trabaja-con-nosotros" element={<TrabajaConNosotrosPage />} />
+          <Route path="/sostenibilidad" element={<SostenibilidadPage />} />
+          <Route path="/prensa" element={<PrensaPage />} />
           <Route path="/rrhh" element={
             <RoleGuard requiredRoles={['rrhh', 'ceo']}>
               <RRHHDashboard />
