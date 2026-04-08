@@ -160,26 +160,31 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: EPAYCO_P_CUST_ID
+              optional: true
         - name: EPAYCO_P_KEY
           valueFrom:
             secretKeyRef:
               name: egos-secrets
               key: EPAYCO_P_KEY
+              optional: true
         - name: EPAYCO_PUBLIC_KEY
           valueFrom:
             secretKeyRef:
               name: egos-secrets
               key: EPAYCO_PUBLIC_KEY
+              optional: true
         - name: EPAYCO_PRIVATE_KEY
           valueFrom:
             secretKeyRef:
               name: egos-secrets
               key: EPAYCO_PRIVATE_KEY
+              optional: true
         - name: EPAYCO_TEST
           valueFrom:
             secretKeyRef:
               name: egos-secrets
               key: EPAYCO_TEST
+              optional: true
         - name: SMTP_HOST
           valueFrom:
             secretKeyRef:

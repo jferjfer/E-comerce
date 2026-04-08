@@ -124,11 +124,21 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
-      // Si es pago en línea, abrir widget de ePayco
+      // Si es pago en línea, verificar si ePayco está activo
       if (selectedMethod === 'pago_en_linea') {
-        setPedidoParaEpayco(pedidoId)
-        setIsLoading(false)
-        return
+        if (epaycoActivo) {
+          // ePayco configurado — abrir widget
+          setPedidoParaEpayco(pedidoId)
+          setIsLoading(false)
+          return
+        } else {
+          // ePayco no configurado — pedido creado, ir a éxito directamente
+          setOrderId(pedidoId)
+          setCurrentStep(3)
+          vaciarCarrito()
+          setIsLoading(false)
+          return
+        }
       }
 
       // 2. Aplicar bono si existe
