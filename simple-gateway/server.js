@@ -846,7 +846,7 @@ app.use('/api/virtual-tryon', createProxyMiddleware({
 
 // Proxy para rutas restantes
 Object.keys(services).forEach(path => {
-  if (['/api/auth', '/api/productos', '/api/categorias', '/api/carrito', '/api/pedidos', '/api/checkout'].includes(path)) return;
+  if (['/api/auth', '/api/productos', '/api/categorias', '/api/carrito', '/api/pedidos', '/api/checkout', '/api/pagos'].includes(path)) return;
 
   app.use(path, createProxyMiddleware({
     target: services[path],
