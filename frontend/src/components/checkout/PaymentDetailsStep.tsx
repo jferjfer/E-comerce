@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { metodosPago } from '@/data/products'
+import { metodosPago } from '@/data/metodosPago'
 import { formatPrice } from '@/utils/sanitize'
 
 interface PaymentDetailsStepProps {
@@ -10,27 +9,7 @@ interface PaymentDetailsStepProps {
 }
 
 export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBack }: PaymentDetailsStepProps) {
-  const [cardData, setCardData] = useState({
-    number: '',
-    name: '',
-    expiry: '',
-    cvv: ''
-  })
-
   const method = metodosPago.find(m => m.id === selectedMethod)
-
-  const handleCardChange = (field: string, value: string) => {
-    if (field === 'number') {
-      value = value.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1 ').trim()
-    }
-    if (field === 'expiry') {
-      value = value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2')
-    }
-    if (field === 'cvv') {
-      value = value.replace(/\D/g, '').slice(0, 4)
-    }
-    setCardData(prev => ({ ...prev, [field]: value }))
-  }
 
   return (
     <div className="space-y-6">
@@ -42,83 +21,19 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
         </div>
       </div>
 
-      {selectedMethod === 'contado' && (
-        <div className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
-              <i className="fas fa-credit-card text-primary mr-2"></i>
-              Información de la tarjeta
-            </h4>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Número de tarjeta
-                </label>
-                <input
-                  type="text"
-                  value={cardData.number}
-                  onChange={(e) => handleCardChange('number', e.target.value)}
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={19}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del titular
-                </label>
-                <input
-                  type="text"
-                  value={cardData.name}
-                  onChange={(e) => handleCardChange('name', e.target.value.toUpperCase())}
-                  placeholder="JUAN PÉREZ"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fecha de vencimiento
-                  </label>
-                  <input
-                    type="text"
-                    value={cardData.expiry}
-                    onChange={(e) => handleCardChange('expiry', e.target.value)}
-                    placeholder="MM/AA"
-                    maxLength={5}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CVV
-                  </label>
-                  <input
-                    type="text"
-                    value={cardData.cvv}
-                    onChange={(e) => handleCardChange('cvv', e.target.value)}
-                    placeholder="123"
-                    maxLength={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-            <div className="flex items-center text-green-800">
-              <i className="fas fa-shield-alt mr-2"></i>
-              <span className="text-sm font-medium">Pago 100% seguro y encriptado</span>
-            </div>
+      {selectedMethod === 'pago_en_linea' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <div className="text-center">
+            <i className="fas fa-shield-alt text-blue-600 text-3xl mb-3"></i>
+            <h4 className="font-bold text-blue-800 mb-2">Pago Seguro con ePayco</h4>
+            <p className="text-blue-700">
+              Serás redirigido al widget de ePayco para completar tu pago con tarjeta, PSE, Nequi, Daviplata o Efecty.
+            </p>
           </div>
         </div>
       )}
 
-      {selectedMethod === 'interno' && (
+      {selectedMethod === 'credito_interno' && (
         <div className="space-y-4">
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
             <h4 className="font-bold text-gray-800 mb-3 flex items-center">
@@ -126,16 +41,15 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
               Crédito EGOS Pre-aprobado
             </h4>
             <p className="text-gray-700 mb-4">Selecciona el plan de cuotas que mejor se adapte a ti:</p>
-            
             <div className="space-y-3">
               {[3, 6, 12].map(cuotas => (
                 <label key={cuotas} className="flex items-center p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                   <input type="radio" name="cuotas" className="mr-3 w-4 h-4 text-primary focus:ring-gray-400" />
                   <div className="flex-1">
                     <span className="font-semibold">{cuotas} cuotas de {formatPrice(Math.ceil(total / cuotas))}</span>
-                    {cuotas <= 6 && (
-                      <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Sin interés</span>
-                    )}
+                    <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+                      Tasa {cuotas === 3 ? '2.5' : cuotas === 6 ? '2.2' : '1.9'}%/mes
+                    </span>
                   </div>
                 </label>
               ))}
@@ -144,24 +58,14 @@ export default function PaymentDetailsStep({ selectedMethod, total, onNext, onBa
         </div>
       )}
 
-      {(selectedMethod === 'addi' || selectedMethod === 'sistecredito') && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+      {(selectedMethod === 'efectivo') && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
           <div className="text-center">
-            <i className="fas fa-external-link-alt text-blue-600 text-3xl mb-3"></i>
-            <h4 className="font-bold text-blue-800 mb-2">Redirección Segura</h4>
-            <p className="text-blue-700 mb-4">
-              Serás redirigido a {method?.nombre} para completar tu solicitud de crédito
+            <i className="fas fa-money-bill-wave text-amber-600 text-3xl mb-3"></i>
+            <h4 className="font-bold text-amber-800 mb-2">Pago en Efectivo</h4>
+            <p className="text-amber-700">
+              Se generará un código de pago. Tu pedido quedará pendiente hasta confirmar el pago en Efecty o Baloto.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-blue-800">
-              <div className="flex items-center">
-                <i className="fas fa-clock mr-2"></i>
-                Aprobación en minutos
-              </div>
-              <div className="flex items-center">
-                <i className="fas fa-mobile-alt mr-2"></i>
-                100% digital
-              </div>
-            </div>
           </div>
         </div>
       )}

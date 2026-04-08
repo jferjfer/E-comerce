@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCartStore } from '@/store/useCartStore'
-import { metodosPago } from '@/data/products'
+import { metodosPago } from '@/data/metodosPago'
 import { formatPrice } from '@/utils/sanitize'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -158,7 +158,9 @@ export default function ConfirmationStep({
                   {formatPrice(calcularCuota(plazo))}/mes
                 </p>
                 {plazo <= 6 && (
-                  <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Sin interés</p>
+                  <p className="text-[10px] text-amber-600 font-medium mt-0.5">
+                    {plazo === 3 ? 'Tasa 2.5%/mes' : 'Tasa 2.2%/mes'}
+                  </p>
                 )}
               </button>
             ))}

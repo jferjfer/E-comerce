@@ -258,6 +258,11 @@ spec:
         env:
         - name: PUERTO
           value: "3004"
+        - name: JWT_SECRETO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
         - name: MONGODB_URI
           valueFrom:
             secretKeyRef:
@@ -308,6 +313,11 @@ spec:
           value: "3006"
         - name: FRONTEND_URL
           value: "https://egoscolombia.com.co"
+        - name: JWT_SECRETO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
@@ -606,6 +616,11 @@ spec:
         env:
         - name: PUERTO
           value: "3012"
+        - name: JWT_SECRETO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:

@@ -1,4 +1,4 @@
-import { metodosPago } from '@/data/products'
+import { metodosPago } from '@/data/metodosPago'
 import { formatPrice } from '@/utils/sanitize'
 
 interface EvaluacionCredito {
