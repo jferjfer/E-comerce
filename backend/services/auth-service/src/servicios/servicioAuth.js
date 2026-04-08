@@ -66,17 +66,32 @@ class ServicioAuth {
 
   async iniciarSesion(email, password) {
     try {
+      // Tiempo mínimo de respuesta para mitigar timing attack
+      const tiempoInicio = Date.now();
+      const TIEMPO_MINIMO_MS = 1500;
+      const esperarTiempoMinimo = () => {
+        const elapsed = Date.now() - tiempoInicio;
+        if (elapsed < TIEMPO_MINIMO_MS) {
+          return new Promise(r => setTimeout(r, TIEMPO_MINIMO_MS - elapsed));
+        }
+        return Promise.resolve();
+      };
+
       const usuario = await Usuario.buscarPorEmail(email);
       if (!usuario) {
+        // Simular bcrypt para que el tiempo sea igual con/sin usuario
+        await bcrypt.hash('timing_protection_dummy', 8);
+        await esperarTiempoMinimo();
         return { exito: false, error: 'No encontramos una cuenta con ese correo. ¿Quieres registrarte?' };
       }
 
-      // Verificar si el usuario está activo
       if (usuario.activo === false) {
+        await esperarTiempoMinimo();
         return { exito: false, error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.' };
       }
 
       const passwordValida = await bcrypt.compare(password, usuario.contrasena);
+      await esperarTiempoMinimo();
       if (!passwordValida) {
         return { exito: false, error: 'La contraseña es incorrecta. ¿Olvidaste tu contraseña?' };
       }
