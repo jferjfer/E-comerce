@@ -1,18 +1,39 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useUserStore } from '@/store/useUserStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
+import { API_URL } from '@/config/api'
 import { api } from '@/services/api'
 import { Producto } from '@/types'
 import { formatPrice } from '@/utils/sanitize'
 
 export default function FavoritesPage() {
-  const { favorites, removeFromFavorites } = useUserStore()
+  const { favorites, removeFromFavorites, addToFavorites } = useUserStore()
+  const { token } = useAuthStore()
   const agregarItem = useCartStore(state => state.agregarItem)
   const addNotification = useNotificationStore(state => state.addNotification)
   const [productos, setProductos] = useState<Producto[]>([])
   const [cargando, setCargando] = useState(true)
+
+  // Sincronizar favoritos desde backend al cargar
+  useEffect(() => {
+    const sincronizarDesdeBackend = async () => {
+      if (!token) return
+      try {
+        const res = await fetch(`${API_URL}/api/listas-deseos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const idsBackend: string[] = (data.productos || []).map((p: any) => String(p))
+          idsBackend.forEach(id => { if (!favorites.includes(id)) addToFavorites(id) })
+        }
+      } catch {}
+    }
+    sincronizarDesdeBackend()
+  }, [token])
 
   useEffect(() => {
     cargarProductosFavoritos()
@@ -31,9 +52,17 @@ export default function FavoritesPage() {
     }
   }
 
-  const eliminarFavorito = (productoId: string) => {
+  const eliminarFavorito = async (productoId: string) => {
     removeFromFavorites(productoId)
     addNotification('Eliminado de favoritos', 'info')
+    if (token) {
+      try {
+        await fetch(`${API_URL}/api/listas-deseos/${productoId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      } catch {}
+    }
   }
 
   const agregarAlCarrito = (producto: Producto) => {

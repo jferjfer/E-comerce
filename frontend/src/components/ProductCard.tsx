@@ -5,6 +5,7 @@ import { useUserStore } from '@/store/useUserStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { formatPrice } from '@/utils/sanitize'
+import { API_URL } from '@/config/api'
 
 interface PropsTarjetaProducto {
   product: Producto
@@ -25,14 +26,32 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
     setTimeout(() => setAgregando(false), 600)
   }
 
-  const manejarToggleFavorito = (e: React.MouseEvent) => {
+  const manejarToggleFavorito = async (e: React.MouseEvent) => {
     e.stopPropagation()
+    const { token } = useAuthStore.getState()
     if (isFavorite(producto.id)) {
       removeFromFavorites(producto.id)
       addNotification('Eliminado de favoritos', 'info')
+      if (token) {
+        try {
+          await fetch(`${API_URL}/api/listas-deseos/${producto.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        } catch {}
+      }
     } else {
       addToFavorites(producto.id)
       addNotification('Agregado a favoritos', 'success')
+      if (token) {
+        try {
+          await fetch(`${API_URL}/api/listas-deseos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ producto_id: producto.id })
+          })
+        } catch {}
+      }
     }
   }
 

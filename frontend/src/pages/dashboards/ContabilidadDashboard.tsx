@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '@/config/api'
+import { useAuthStore } from '@/store/useAuthStore'
 import { formatPrice } from '@/utils/sanitize'
 
 interface DashboardData {
@@ -24,6 +25,7 @@ interface DashboardData {
 }
 
 export default function ContabilidadDashboard() {
+  const { token } = useAuthStore()
   const [data, setData] = useState<DashboardData | null>(null)
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple'>('dashboard')
@@ -68,7 +70,9 @@ export default function ContabilidadDashboard() {
 
   const cargarDashboard = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/contabilidad/dashboard`)
+      const res = await fetch(`${API_URL}/api/contabilidad/dashboard`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       const d = await res.json()
       setData(d)
     } catch (e) {
@@ -79,41 +83,54 @@ export default function ContabilidadDashboard() {
   }
 
   const cargarLibroDiario = async () => {
-    const res = await fetch(`${API_URL}/api/contabilidad/libro-diario?periodo=${periodo}&limite=50`)
+    const res = await fetch(`${API_URL}/api/contabilidad/libro-diario?periodo=${periodo}&limite=50`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     const d = await res.json()
     setLibroDiario(d.asientos || [])
   }
 
   const cargarLibroMayor = async () => {
-    const res = await fetch(`${API_URL}/api/contabilidad/libro-mayor?periodo=${periodo}`)
+    const res = await fetch(`${API_URL}/api/contabilidad/libro-mayor?periodo=${periodo}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     const d = await res.json()
     setLibroMayor(d.saldos || [])
   }
 
   const cargarBalance = async () => {
-    const res = await fetch(`${API_URL}/api/contabilidad/balance-general?periodo=${periodo}`)
+    const res = await fetch(`${API_URL}/api/contabilidad/balance-general?periodo=${periodo}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     setBalance(await res.json())
   }
 
   const cargarResultados = async () => {
-    const res = await fetch(`${API_URL}/api/contabilidad/estado-resultados?periodo=${periodo}`)
+    const res = await fetch(`${API_URL}/api/contabilidad/estado-resultados?periodo=${periodo}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     setResultados(await res.json())
   }
 
   const cargarIVA = async () => {
-    const res = await fetch(`${API_URL}/api/contabilidad/iva/${anio}/${bimestreActual}`)
+    const res = await fetch(`${API_URL}/api/contabilidad/iva/${anio}/${bimestreActual}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     setIvaData(await res.json())
   }
 
   const cargarSIMPLE = async () => {
-    const res = await fetch(`${API_URL}/api/contabilidad/simple/${anio}/${bimestreActual}`)
+    const res = await fetch(`${API_URL}/api/contabilidad/simple/${anio}/${bimestreActual}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     setSimpleData(await res.json())
   }
 
   const cargarCompras = async () => {
+    const headers = { Authorization: `Bearer ${token}` }
     const [r1, r2] = await Promise.all([
-      fetch(`${API_URL}/api/contabilidad/compras?periodo=${periodo}&limite=100`),
-      fetch(`${API_URL}/api/contabilidad/compras/resumen?periodo=${periodo}`)
+      fetch(`${API_URL}/api/contabilidad/compras?periodo=${periodo}&limite=100`, { headers }),
+      fetch(`${API_URL}/api/contabilidad/compras/resumen?periodo=${periodo}`, { headers })
     ])
     const d1 = await r1.json()
     const d2 = await r2.json()
@@ -131,7 +148,7 @@ export default function ContabilidadDashboard() {
     try {
       const res = await fetch(`${API_URL}/api/contabilidad/compras`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           ...formCompra,
           subtotal: parseFloat(formCompra.subtotal),

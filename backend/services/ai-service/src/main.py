@@ -394,6 +394,96 @@ async def recomendaciones(request: RecomendacionRequest):
         "response_time": round(duration, 3)
     }
 
+# ============================================
+# ENDPOINTS FALTANTES — requeridos por el gateway
+# ============================================
+
+@app.post("/api/recomendaciones")
+async def recomendaciones_post(request: RecomendacionRequest):
+    """Alias POST para compatibilidad con el frontend"""
+    return await recomendaciones(request)
+
+class EstiloRequest(BaseModel):
+    descripcion: str
+    categoria: Optional[str] = None
+
+@app.post("/api/estilos")
+async def analizar_estilo(request: EstiloRequest):
+    productos = await obtener_productos_db()
+    if request.categoria:
+        productos = [p for p in productos if p.get('categoria', '').lower() == request.categoria.lower()]
+    estilos = list({p.get('categoria') for p in productos if p.get('categoria')})[:10]
+    return {
+        "estilos": estilos,
+        "descripcion": request.descripcion,
+        "recomendaciones": productos[:5]
+    }
+
+class AnalisisRequest(BaseModel):
+    usuario_id: Optional[str] = None
+    productos_vistos: Optional[list] = []
+
+@app.post("/api/analisis")
+async def analisis_usuario(request: AnalisisRequest):
+    productos = await obtener_productos_db()
+    categorias = await obtener_categorias_db()
+    return {
+        "perfil": {
+            "usuario_id": request.usuario_id,
+            "categorias_preferidas": categorias[:3],
+            "productos_vistos": len(request.productos_vistos)
+        },
+        "recomendaciones": productos[:5]
+    }
+
+@app.get("/api/perfil/{usuario_id}")
+async def perfil_usuario(usuario_id: str):
+    productos = await obtener_productos_db()
+    categorias = await obtener_categorias_db()
+    return {
+        "usuario_id": usuario_id,
+        "estilo_predominante": categorias[0] if categorias else "General",
+        "categorias_favoritas": categorias[:3],
+        "productos_recomendados": productos[:4]
+    }
+
+# ============================================
+# ENDPOINTS AVATAR — proxy a helpers_avatar
+# ============================================
+
+@app.post("/api/avatar/crear")
+async def crear_avatar(
+    foto_cara: UploadFile = File(...),
+    foto_cuerpo: UploadFile = File(...),
+    producto_url: str = Form(...),
+    animacion: str = Form(default="catwalk")
+):
+    try:
+        cara_bytes = await foto_cara.read()
+        cuerpo_bytes = await foto_cuerpo.read()
+        resultado = await procesar_avatar_completo(cara_bytes, cuerpo_bytes, producto_url, animacion)
+        return resultado
+    except Exception as e:
+        print(f"❌ Error creando avatar: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/avatar/demo")
+async def avatar_demo(datos: dict):
+    producto_url = datos.get("producto_url", "")
+    animacion_info = obtener_animacion("catwalk")
+    return {
+        "avatar_url": "https://models.readyplayer.me/demo.glb",
+        "avatar_id": "demo-avatar",
+        "textura_url": producto_url,
+        "avatar": {"url": "https://models.readyplayer.me/demo.glb", "id": "demo", "provider": "demo", "personalizado": False},
+        "animacion": animacion_info or {"nombre": "catwalk", "url": "", "duracion_segundos": 5},
+        "metadata": {"tiempo_procesamiento": 0.1, "timestamp": datetime.now().isoformat()}
+    }
+
+@app.get("/api/avatar/animaciones")
+async def listar_animaciones():
+    return {"animaciones": listar_animaciones_disponibles()}
+
 @app.get("/metrics")
 async def metrics():
     return Response(content=generate_latest(), media_type="text/plain")

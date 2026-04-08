@@ -319,6 +319,67 @@ class AplicarBono(BaseModel):
 # ============================================
 # ENDPOINTS CRÉDITO
 # ============================================
+@app.get("/api/credito/comparar/{monto}/{plazo}")
+async def comparar_opciones(monto: float, plazo: int, usuario_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """Compara opciones de crédito propio vs aliados"""
+    opciones = []
+
+    # Opción EGOS (crédito interno) — solo si el usuario califica
+    disponible_egos = False
+    if usuario_id:
+        credito = db.query(CreditoInterno).filter(
+            CreditoInterno.usuario_id == usuario_id,
+            CreditoInterno.estado == "Activo"
+        ).first()
+        disponible_egos = credito is not None and (credito.limite_credito - credito.saldo_usado) >= monto
+
+    tasa_egos = calcular_tasa_interes(plazo)
+    calculo_egos = calcular_cuota(monto, tasa_egos, plazo)
+    opciones.append({
+        "proveedor": "EGOS",
+        "tipo": "Crédito Propio",
+        "disponible": disponible_egos,
+        "tasa_mensual": tasa_egos,
+        "cuota_mensual": calculo_egos["cuota_mensual"],
+        "interes_total": calculo_egos["interes_total"],
+        "total_pagar": calculo_egos["total_pagar"],
+        "requisitos": "Mínimo 6 meses de antigüedad y $2.000.000 en compras",
+        "estado_integracion": "Activo"
+    })
+
+    # Opción ADDI
+    tasa_addi = 2.9
+    calculo_addi = calcular_cuota(monto, tasa_addi, plazo)
+    opciones.append({
+        "proveedor": "ADDI",
+        "tipo": "Crédito Externo",
+        "disponible": False,
+        "tasa_mensual": tasa_addi,
+        "cuota_mensual": calculo_addi["cuota_mensual"],
+        "interes_total": calculo_addi["interes_total"],
+        "total_pagar": calculo_addi["total_pagar"],
+        "requisitos": "Cédula colombiana y cuenta bancaria",
+        "estado_integracion": "Próximamente"
+    })
+
+    # Opción Sistecredito
+    tasa_siste = 3.2
+    calculo_siste = calcular_cuota(monto, tasa_siste, plazo)
+    opciones.append({
+        "proveedor": "Sistecredito",
+        "tipo": "Crédito Externo",
+        "disponible": False,
+        "tasa_mensual": tasa_siste,
+        "cuota_mensual": calculo_siste["cuota_mensual"],
+        "interes_total": calculo_siste["interes_total"],
+        "total_pagar": calculo_siste["total_pagar"],
+        "requisitos": "Historial crediticio positivo",
+        "estado_integracion": "Próximamente"
+    })
+
+    return {"opciones": opciones, "monto": monto, "plazo": plazo}
+
+
 @app.get("/salud")
 async def verificar_salud(db: Session = Depends(get_db)):
     try:

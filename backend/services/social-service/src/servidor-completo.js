@@ -52,16 +52,22 @@ async function inicializarDB() {
 
 inicializarDB();
 
-// Middleware de autenticación simple
+// Middleware de autenticación JWT real
+const jwt = require('jsonwebtoken');
 const autenticacion = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
     return res.status(401).json({ error: 'Token requerido' });
   }
-  
-  // Simulación de usuario autenticado
-  req.usuario = { id: '1', nombre: 'Usuario Demo', email: 'demo@egos.com.co' };
-  next();
+  try {
+    const JWT_SECRETO = process.env.JWT_SECRETO;
+    if (!JWT_SECRETO) return res.status(500).json({ error: 'Error de configuración' });
+    const decoded = jwt.verify(token, JWT_SECRETO);
+    req.usuario = { id: String(decoded.id), nombre: decoded.nombre || 'Usuario', email: decoded.email, rol: decoded.rol };
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Token inválido o expirado' });
+  }
 };
 
 // Endpoints de reseñas
@@ -129,14 +135,18 @@ aplicacion.get('/api/preguntas/:productoId', (req, res) => {
   });
 });
 
-aplicacion.post('/api/preguntas', autenticacion, (req, res) => {
+aplicacion.post('/api/preguntas', autenticacion, async (req, res) => {
   const { producto_id, pregunta } = req.body;
   const usuario = req.usuario;
-  
+
+  if (!producto_id || !pregunta) {
+    return res.status(400).json({ error: 'producto_id y pregunta son requeridos' });
+  }
+
   console.log(`❓ Nueva pregunta de ${usuario.nombre} para producto ${producto_id}`);
-  
+
   const nuevaPregunta = {
-    id: String(preguntasDB.length + 1),
+    id: String(Date.now()),
     producto_id,
     usuario_id: usuario.id,
     usuario_nombre: usuario.nombre,
@@ -145,13 +155,38 @@ aplicacion.post('/api/preguntas', autenticacion, (req, res) => {
     fecha_pregunta: new Date().toISOString(),
     fecha_respuesta: null
   };
-  
+
   preguntasDB.push(nuevaPregunta);
-  
+
   res.status(201).json({
     mensaje: 'Pregunta enviada exitosamente',
     pregunta: nuevaPregunta
   });
+});
+
+// Responder pregunta (solo roles admin/seller)
+aplicacion.put('/api/preguntas/:id/responder', autenticacion, (req, res) => {
+  const { id } = req.params;
+  const { respuesta } = req.body;
+  const rolesPermitidos = ['ceo', 'product_manager', 'seller_premium', 'seller_standard', 'support_agent', 'customer_success'];
+
+  if (!rolesPermitidos.includes(req.usuario.rol)) {
+    return res.status(403).json({ error: 'Sin permisos para responder preguntas' });
+  }
+
+  if (!respuesta) {
+    return res.status(400).json({ error: 'La respuesta es requerida' });
+  }
+
+  const pregunta = preguntasDB.find(p => p.id === id);
+  if (!pregunta) {
+    return res.status(404).json({ error: 'Pregunta no encontrada' });
+  }
+
+  pregunta.respuesta = respuesta;
+  pregunta.fecha_respuesta = new Date().toISOString();
+
+  res.json({ mensaje: 'Pregunta respondida exitosamente', pregunta });
 });
 
 // Endpoints de listas de deseos

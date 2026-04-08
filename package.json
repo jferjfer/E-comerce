@@ -1,30 +1,17 @@
 {
-  "name": "estilo-y-moda-ecommerce",
+  "name": "egos-ecommerce",
   "version": "1.0.0",
-  "description": "Sistema de e-commerce con microservicios",
-  "main": "iniciar.js",
+  "description": "EGOS E-Commerce — Microservicios en GKE",
   "scripts": {
-    "start": "node iniciar.js",
-    "gateway": "cd simple-gateway && node iniciar.js",
-    "auth": "cd backend/services/auth-service && npm run iniciar",
-    "catalog": "cd backend/services/catalog-service && python iniciar.py",
-    "transaction": "cd backend/services/transaction-service && npm run iniciar",
-    "social": "cd backend/services/social-service && npm run iniciar",
-    "marketing": "cd backend/services/marketing-service && npm run iniciar",
-    "ai": "cd backend/services/ai-service && python iniciar.py",
-    "credit": "cd backend/services/credit-service && python iniciar.py",
-    "logistics": "cd backend/services/logistics-service && python iniciar.py",
-    "frontend": "cd frontend && npm run dev",
     "test": "jest",
     "test:unit": "jest tests/unit --verbose",
     "test:integration": "jest tests/integration --verbose",
     "test:e2e": "jest tests/e2e --verbose",
-    "test:all": "./run-tests.sh",
     "test:coverage": "jest --coverage",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "docker:rebuild": "docker-compose down && docker-compose build --no-cache && docker-compose up -d"
+    "k8s:apply": "kubectl apply -f k8s/secrets/secrets.yaml && kubectl apply -f k8s/deployments/all-services.yaml && kubectl apply -f k8s/ingress/ && kubectl apply -f k8s/autoscaling/hpa.yaml",
+    "k8s:delete": "kubectl delete -f k8s/deployments/all-services.yaml",
+    "k8s:status": "kubectl get pods -n egos",
+    "k8s:logs": "kubectl logs -f -l app=gateway -n egos"
   },
   "dependencies": {
     "axios": "^1.6.2",
@@ -37,15 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "supertest": "^6.3.3"
   },
-  "keywords": [
-    "ecommerce",
-    "microservicios",
-    "nodejs",
-    "react",
-    "docker",
-    "fastapi",
-    "python"
-  ],
+  "keywords": ["ecommerce", "microservicios", "gke", "kubernetes"],
   "author": "Jose Fernando Vertel",
   "license": "MIT"
 }

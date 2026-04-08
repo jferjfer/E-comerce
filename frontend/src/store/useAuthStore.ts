@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { Usuario } from '@/types'
 import { api } from '@/services/api'
 import { useTiendaCarrito } from './useCartStore'
+import { useUserStore } from './useUserStore'
 
 interface TiendaAuth {
   usuario: Usuario | null
@@ -48,9 +49,8 @@ export const useTiendaAuth = create<TiendaAuth>()(
 
       cerrarSesion: () => {
         set({ usuario: null, token: null, estaAutenticado: false })
-        // Limpiar carrito
-        const vaciarCarrito = useTiendaCarrito.getState().vaciarCarrito
-        vaciarCarrito()
+        useTiendaCarrito.getState().vaciarCarrito()
+        useUserStore.getState().logout()
       },
 
       registrar: async (datos: any) => {

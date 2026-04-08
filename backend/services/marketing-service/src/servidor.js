@@ -160,15 +160,22 @@ const campanasDB = [
 
 const fidelizacionDB = new Map(); // usuarioId -> puntos
 
-// Middleware de autenticación simple
+// Middleware de autenticación JWT real
+const jwt = require('jsonwebtoken');
 const autenticacion = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
     return res.status(401).json({ error: 'Token requerido' });
   }
-  
-  req.usuario = { id: '1', nombre: 'Usuario Demo', email: 'demo@egos.com.co' };
-  next();
+  try {
+    const JWT_SECRETO = process.env.JWT_SECRETO;
+    if (!JWT_SECRETO) return res.status(500).json({ error: 'Error de configuración' });
+    const decoded = jwt.verify(token, JWT_SECRETO);
+    req.usuario = { id: String(decoded.id), nombre: decoded.nombre || 'Usuario', email: decoded.email, rol: decoded.rol };
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Token inválido o expirado' });
+  }
 };
 
 // Endpoints de cupones
