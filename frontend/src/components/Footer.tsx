@@ -31,7 +31,7 @@ export default function Footer() {
               <p className="font-bodoni italic text-xs text-gold opacity-70 tracking-[3px] uppercase text-center">Wear Your Truth</p>
             </div>
             <p className="text-gray-500 text-xs mb-4 leading-relaxed">
-              NIT: 900.123.456-7<br/>Bogotá, Colombia
+              NIT: 902.051.708-6<br/>Bogotá D.C., Colombia
             </p>
             <div className="flex space-x-2">
               {[
@@ -51,8 +51,9 @@ export default function Footer() {
           <div>
             <h4 className="text-[10px] font-semibold mb-3 text-gold uppercase tracking-widest">Atención</h4>
             <ul className="space-y-2 text-gray-400 text-xs">
-              <li><i className="fas fa-phone mr-1.5 text-gold/60"></i>+57 1 234-5678</li>
-              <li><i className="fas fa-envelope mr-1.5 text-gold/60"></i>hola@egos.com.co</li>
+              <li><i className="fas fa-phone mr-1.5 text-gold/60"></i>301 787 9852</li>
+              <li><i className="fas fa-phone mr-1.5 text-gold/60"></i>314 811 3593</li>
+              <li><i className="fas fa-envelope mr-1.5 text-gold/60"></i>servicioalcliente@egoscolombia.com</li>
               <li><i className="fas fa-clock mr-1.5 text-gold/60"></i>Lun-Vie 8AM-6PM</li>
             </ul>
           </div>
@@ -101,7 +102,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/5 mt-8 pt-5 flex flex-col sm:flex-row justify-between items-center text-gray-600 text-xs gap-2">
-          <p>&copy; 2024 <span className="font-prata tracking-widest text-gray-500">EGOS</span> S.A.S. Todos los derechos reservados.</p>
+          <p>&copy; 2026 <span className="font-prata tracking-widest text-gray-500">VERTEL & CATILLO S.A.S</span> Todos los derechos reservados.</p>
           <div className="flex items-center space-x-1.5">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Bandera_de_Colombia.svg/20px-Bandera_de_Colombia.svg.png" alt="Colombia" className="w-4 h-3" />
             <span>Hecho en Colombia 🇨🇴</span>
