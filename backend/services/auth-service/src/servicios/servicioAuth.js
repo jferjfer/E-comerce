@@ -80,7 +80,7 @@ class ServicioAuth {
       const usuario = await Usuario.buscarPorEmail(email);
 
       // Siempre ejecutar bcrypt para tiempo constante (anti timing attack)
-      const hashDummy = '$2a$08$dummy.hash.for.timing.protection.only.xxxxxxxxxxxxxxxxxx';
+      const hashDummy = '$2a$08$HLjOIxUiUIfMufOF6JBTn.sMc32ffoTti4su4KmIi1pgBoonj5/QO';
       const contrasenaAComparar = usuario ? usuario.contrasena : hashDummy;
       const passwordValida = await bcrypt.compare(password, contrasenaAComparar);
 
