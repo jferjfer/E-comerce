@@ -735,13 +735,39 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
 
     // Si el frontend envía items con cantidades reales, usarlos directamente
     if (itemsFrontend && itemsFrontend.length > 0) {
+
+      // 🔒 VALIDACIÓN DE SEGURIDAD: precios y cantidades deben ser positivos
+      for (const item of itemsFrontend) {
+        if (!item.id) {
+          return res.status(400).json({ error: 'Producto inválido en el carrito' });
+        }
+        if (typeof item.precio !== 'number' || item.precio <= 0) {
+          return res.status(400).json({ error: `Precio inválido para producto ${item.id}` });
+        }
+        if (typeof item.cantidad !== 'number' || item.cantidad <= 0 || item.cantidad > 100) {
+          return res.status(400).json({ error: `Cantidad inválida para producto ${item.id} (máx 100)` });
+        }
+        if (item.precio > 50000000) {
+          return res.status(400).json({ error: `Precio excede el máximo permitido` });
+        }
+      }
+
       const total = itemsFrontend.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
+
+      if (total <= 0) {
+        return res.status(400).json({ error: 'El total del pedido debe ser mayor a cero' });
+      }
+
+      if (total < 5000) {
+        return res.status(400).json({ error: 'El monto mínimo de compra es $5.000 COP' });
+      }
+
       carrito = {
         id: null,
         productos: itemsFrontend.map(p => ({
           id: p.id,
-          cantidad: p.cantidad,
-          precio: p.precio,
+          cantidad: Math.floor(p.cantidad), // Asegurar entero
+          precio: Math.abs(p.precio),       // Asegurar positivo
           nombre: p.nombre || `Producto ${p.id}`
         })),
         total
