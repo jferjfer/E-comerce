@@ -19,7 +19,7 @@ cloudinary==1.36.0
 # Dependencias para Avatar 3D
 requests==2.31.0
 pygltflib==1.16.1
-trimesh==4.0.5
+trimesh==4.11.5
 
 # NUEVAS DEPENDENCIAS v4.0
 redis==5.0.1
