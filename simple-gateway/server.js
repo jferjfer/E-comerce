@@ -459,6 +459,35 @@ app.get('/api/productos/:id', async (req, res) => {
   }
 });
 
+app.put('/api/productos/:id', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'PUT',
+      url: `${CATALOG_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.delete('/api/productos/:id', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'DELETE',
+      url: `${CATALOG_URL}${req.url}`,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 app.all('/api/categorias*', async (req, res) => {
   try {
     const response = await axios({
