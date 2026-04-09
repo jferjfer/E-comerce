@@ -17,6 +17,8 @@ import httpx
 
 from database import get_db, init_db, Factura, ContadorFactura
 from generador_xml import generar_xml_factura
+from generador_nota_credito import generar_nota_credito
+from generador_nota_debito import generar_nota_debito
 from firmador_xml import firmar_xml
 from cliente_dian import enviar_factura_dian
 from generador_pdf import generar_pdf_factura
@@ -77,6 +79,24 @@ class SolicitudFactura(BaseModel):
     usuario_id: int
     cliente: ClienteFactura
     productos: List[ProductoFactura]
+
+class SolicitudNotaCredito(BaseModel):
+    factura_numero: str
+    cufe_factura: str
+    fecha_factura: str
+    cliente: ClienteFactura
+    productos: List[ProductoFactura]
+    motivo: Optional[str] = "Devolución de mercancía"
+    codigo_motivo: Optional[str] = "2"
+
+class SolicitudNotaDebito(BaseModel):
+    factura_numero: str
+    cufe_factura: str
+    fecha_factura: str
+    cliente: ClienteFactura
+    productos: List[ProductoFactura]
+    motivo: Optional[str] = "Intereses por mora"
+    codigo_motivo: Optional[str] = "1"
 
 class ActualizarCufe(BaseModel):
     cufe: str
@@ -525,6 +545,300 @@ async def reenviar_factura(factura_id: str, background_tasks: BackgroundTasks, d
     db.commit()
 
     return {"mensaje": f"Factura {factura.numero_completo} reenviada a {factura.cliente_email}"}
+
+
+# ============================================
+# ENDPOINTS NOTAS CRÉDITO
+# ============================================
+
+@app.post("/api/notas-credito/generar")
+async def generar_nota_credito_endpoint(
+    solicitud: SolicitudNotaCredito,
+    db: Session = Depends(get_db)
+):
+    """Genera una nota crédito electrónica"""
+    try:
+        numero = obtener_siguiente_numero(db)
+        fecha = ahora_colombia()
+
+        xml_string, cude, numero_completo, subtotal, iva, total = generar_nota_credito(
+            numero=numero,
+            factura_referencia=solicitud.factura_numero,
+            cufe_factura=solicitud.cufe_factura,
+            fecha_factura=solicitud.fecha_factura,
+            cliente=solicitud.cliente.model_dump(),
+            productos=[p.model_dump() for p in solicitud.productos],
+            motivo=solicitud.motivo,
+            codigo_motivo=solicitud.codigo_motivo,
+            fecha=fecha
+        )
+
+        # Firmar y enviar a DIAN
+        try:
+            xml_firmado = firmar_xml(xml_string)
+            resultado_dian = enviar_factura_dian(xml_firmado, numero_completo)
+        except Exception as e:
+            print(f"⚠️ Error firmando nota crédito: {e}")
+            resultado_dian = enviar_factura_dian(xml_string, numero_completo)
+
+        print(f"📝 Nota Crédito {numero_completo} - DIAN: {resultado_dian['estado']}")
+
+        return {
+            "mensaje": "Nota crédito generada",
+            "numero": numero_completo,
+            "cude": cude,
+            "subtotal": subtotal,
+            "iva": iva,
+            "total": total,
+            "estado_dian": resultado_dian["estado"],
+            "mensaje_dian": resultado_dian["mensaje"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# ENDPOINTS NOTAS DÉBITO
+# ============================================
+
+@app.post("/api/notas-debito/generar")
+async def generar_nota_debito_endpoint(
+    solicitud: SolicitudNotaDebito,
+    db: Session = Depends(get_db)
+):
+    """Genera una nota débito electrónica"""
+    try:
+        numero = obtener_siguiente_numero(db)
+        fecha = ahora_colombia()
+
+        xml_string, cude, numero_completo, subtotal, iva, total = generar_nota_debito(
+            numero=numero,
+            factura_referencia=solicitud.factura_numero,
+            cufe_factura=solicitud.cufe_factura,
+            fecha_factura=solicitud.fecha_factura,
+            cliente=solicitud.cliente.model_dump(),
+            productos=[p.model_dump() for p in solicitud.productos],
+            motivo=solicitud.motivo,
+            codigo_motivo=solicitud.codigo_motivo,
+            fecha=fecha
+        )
+
+        # Firmar y enviar a DIAN
+        try:
+            xml_firmado = firmar_xml(xml_string)
+            resultado_dian = enviar_factura_dian(xml_firmado, numero_completo)
+        except Exception as e:
+            print(f"⚠️ Error firmando nota débito: {e}")
+            resultado_dian = enviar_factura_dian(xml_string, numero_completo)
+
+        print(f"📝 Nota Débito {numero_completo} - DIAN: {resultado_dian['estado']}")
+
+        return {
+            "mensaje": "Nota débito generada",
+            "numero": numero_completo,
+            "cude": cude,
+            "subtotal": subtotal,
+            "iva": iva,
+            "total": total,
+            "estado_dian": resultado_dian["estado"],
+            "mensaje_dian": resultado_dian["mensaje"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# SET DE PRUEBAS DIAN — 50 documentos
+# ============================================
+
+@app.post("/api/dian/set-pruebas")
+async def enviar_set_pruebas(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Envía el set completo de pruebas a la DIAN: 30 facturas + 10 notas crédito + 10 notas débito"""
+    background_tasks.add_task(procesar_set_pruebas, db)
+    return {
+        "mensaje": "Set de pruebas iniciado en background",
+        "documentos": {"facturas": 30, "notas_credito": 10, "notas_debito": 10, "total": 50},
+        "test_set_id": "c5f5fbef-6621-420b-b986-857b2f1588d5"
+    }
+
+@app.get("/api/dian/set-pruebas/estado")
+async def estado_set_pruebas(db: Session = Depends(get_db)):
+    """Consulta el estado del set de pruebas"""
+    facturas = db.query(Factura).filter(Factura.pedido_id.like("TEST-%")).all()
+    aceptadas = [f for f in facturas if f.estado == "Aceptada"]
+    rechazadas = [f for f in facturas if f.estado == "Rechazada"]
+    pendientes = [f for f in facturas if f.estado in ["Pendiente", "Enviada"]]
+
+    return {
+        "total_enviados": len(facturas),
+        "aceptados": len(aceptadas),
+        "rechazados": len(rechazadas),
+        "pendientes": len(pendientes),
+        "documentos": [{
+            "numero": f.numero_completo,
+            "estado": f.estado,
+            "mensaje_dian": f.mensaje_dian,
+            "fecha": f.fecha_creacion.isoformat() if f.fecha_creacion else None
+        } for f in facturas]
+    }
+
+
+async def procesar_set_pruebas(db_session):
+    """Procesa los 50 documentos del set de pruebas DIAN"""
+    db = next(get_db())
+    resultados = []
+
+    # Clientes de prueba
+    clientes = [
+        {"nombre": "Consumidor Final", "email": "test@egoscolombia.com", "nit_cc": "222222222222", "direccion": "Bogotá D.C."},
+        {"nombre": "Empresa Prueba S.A.S", "email": "empresa@test.com", "nit_cc": "900123456", "direccion": "Medellín, Antioquia"},
+        {"nombre": "Juan Pérez", "email": "juan@test.com", "nit_cc": "1234567890", "direccion": "Cali, Valle"},
+    ]
+
+    # Productos de prueba
+    productos_base = [
+        [{"id": "TEST1", "nombre": "Vestido Midi Floral", "precio_unitario": 95900.0, "cantidad": 1}],
+        [{"id": "TEST2", "nombre": "Blusa Seda Off-Shoulder", "precio_unitario": 72900.0, "cantidad": 2}],
+        [{"id": "TEST3", "nombre": "Jean Skinny Tiro Alto", "precio_unitario": 89900.0, "cantidad": 1}],
+        [{"id": "TEST4", "nombre": "Blazer Ejecutivo", "precio_unitario": 185900.0, "cantidad": 1}],
+        [{"id": "TEST5", "nombre": "Zapatos Formales", "precio_unitario": 145900.0, "cantidad": 1}],
+        [{"id": "TEST1", "nombre": "Vestido Midi Floral", "precio_unitario": 95900.0, "cantidad": 1},
+         {"id": "TEST2", "nombre": "Blusa Seda Off-Shoulder", "precio_unitario": 72900.0, "cantidad": 1}],
+    ]
+
+    print(f"🧪 Iniciando set de pruebas DIAN — 50 documentos")
+
+    # ── 30 FACTURAS ──
+    facturas_generadas = []
+    for i in range(30):
+        try:
+            numero = obtener_siguiente_numero(db)
+            fecha = ahora_colombia()
+            cliente = clientes[i % len(clientes)]
+            productos = productos_base[i % len(productos_base)]
+            pedido_id = f"TEST-FAC-{i+1:03d}"
+
+            xml_string, cufe, numero_completo, qr_text, subtotal, iva, total = generar_xml_factura(
+                numero=numero, pedido_id=pedido_id,
+                cliente=cliente, productos=productos, fecha=fecha
+            )
+
+            # Firmar
+            try:
+                xml_firmado = firmar_xml(xml_string)
+            except Exception as e:
+                print(f"⚠️ Firma fallida factura {i+1}: {e}")
+                xml_firmado = xml_string
+
+            resultado = enviar_factura_dian(xml_firmado, numero_completo)
+
+            # Guardar en BD
+            factura = Factura(
+                numero=numero, numero_completo=numero_completo,
+                pedido_id=pedido_id, usuario_id=0,
+                cliente_nombre=cliente["nombre"], cliente_email=cliente["email"],
+                cliente_nit_cc=cliente["nit_cc"], cliente_direccion=cliente["direccion"],
+                subtotal=subtotal, iva=iva, total=total,
+                cufe=cufe, qr_code=qr_text, xml_enviado=xml_firmado,
+                estado=resultado["estado"], mensaje_dian=resultado["mensaje"],
+                xml_respuesta=resultado.get("xml_respuesta", "")
+            )
+            db.add(factura)
+            db.commit()
+
+            facturas_generadas.append({"numero": numero_completo, "cufe": cufe, "fecha": fecha.strftime("%Y-%m-%d")})
+            print(f"✅ Factura prueba {i+1}/30: {numero_completo} — {resultado['estado']}")
+
+        except Exception as e:
+            print(f"❌ Error factura prueba {i+1}: {e}")
+            import traceback; traceback.print_exc()
+
+    # ── 10 NOTAS CRÉDITO ──
+    for i in range(10):
+        try:
+            numero = obtener_siguiente_numero(db)
+            fecha = ahora_colombia()
+            ref = facturas_generadas[i] if i < len(facturas_generadas) else facturas_generadas[0]
+            cliente = clientes[i % len(clientes)]
+            productos = productos_base[i % len(productos_base)]
+
+            xml_string, cude, numero_completo, subtotal, iva, total = generar_nota_credito(
+                numero=numero,
+                factura_referencia=ref["numero"],
+                cufe_factura=ref["cufe"],
+                fecha_factura=ref["fecha"],
+                cliente=cliente, productos=productos,
+                motivo="Devolución de mercancía — Set de pruebas",
+                codigo_motivo="2", fecha=fecha
+            )
+
+            try:
+                xml_firmado = firmar_xml(xml_string)
+            except:
+                xml_firmado = xml_string
+
+            resultado = enviar_factura_dian(xml_firmado, numero_completo)
+
+            factura = Factura(
+                numero=numero, numero_completo=numero_completo,
+                pedido_id=f"TEST-NC-{i+1:03d}", usuario_id=0,
+                cliente_nombre=cliente["nombre"], cliente_email=cliente["email"],
+                cliente_nit_cc=cliente["nit_cc"], cliente_direccion=cliente["direccion"],
+                subtotal=subtotal, iva=iva, total=total,
+                cufe=cude, xml_enviado=xml_firmado,
+                estado=resultado["estado"], mensaje_dian=resultado["mensaje"]
+            )
+            db.add(factura)
+            db.commit()
+            print(f"✅ Nota Crédito prueba {i+1}/10: {numero_completo} — {resultado['estado']}")
+
+        except Exception as e:
+            print(f"❌ Error nota crédito prueba {i+1}: {e}")
+
+    # ── 10 NOTAS DÉBITO ──
+    for i in range(10):
+        try:
+            numero = obtener_siguiente_numero(db)
+            fecha = ahora_colombia()
+            ref = facturas_generadas[i] if i < len(facturas_generadas) else facturas_generadas[0]
+            cliente = clientes[i % len(clientes)]
+            productos = [{"id": "TEST-INT", "nombre": "Intereses por mora", "precio_unitario": 5000.0, "cantidad": 1}]
+
+            xml_string, cude, numero_completo, subtotal, iva, total = generar_nota_debito(
+                numero=numero,
+                factura_referencia=ref["numero"],
+                cufe_factura=ref["cufe"],
+                fecha_factura=ref["fecha"],
+                cliente=cliente, productos=productos,
+                motivo="Intereses por mora — Set de pruebas",
+                codigo_motivo="1", fecha=fecha
+            )
+
+            try:
+                xml_firmado = firmar_xml(xml_string)
+            except:
+                xml_firmado = xml_string
+
+            resultado = enviar_factura_dian(xml_firmado, numero_completo)
+
+            factura = Factura(
+                numero=numero, numero_completo=numero_completo,
+                pedido_id=f"TEST-ND-{i+1:03d}", usuario_id=0,
+                cliente_nombre=cliente["nombre"], cliente_email=cliente["email"],
+                cliente_nit_cc=cliente["nit_cc"], cliente_direccion=cliente["direccion"],
+                subtotal=subtotal, iva=iva, total=total,
+                cufe=cude, xml_enviado=xml_firmado,
+                estado=resultado["estado"], mensaje_dian=resultado["mensaje"]
+            )
+            db.add(factura)
+            db.commit()
+            print(f"✅ Nota Débito prueba {i+1}/10: {numero_completo} — {resultado['estado']}")
+
+        except Exception as e:
+            print(f"❌ Error nota débito prueba {i+1}: {e}")
+
+    print(f"🎉 Set de pruebas completado")
+    db.close()
 
 if __name__ == "__main__":
     import uvicorn
