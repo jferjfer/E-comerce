@@ -586,7 +586,7 @@ export default function ProductManagerDashboard() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">{producto.categoria}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      ${(producto.precio / 100).toLocaleString()}
+                      ${producto.precio.toLocaleString('es-CO')}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs rounded-full ${
