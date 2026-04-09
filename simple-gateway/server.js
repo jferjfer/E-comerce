@@ -623,6 +623,51 @@ app.all('/api/facturas*', async (req, res) => {
   }
 });
 
+app.all('/api/notas-credito*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${FACTURACION_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/notas-debito*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${FACTURACION_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 30000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.all('/api/dian*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${FACTURACION_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 120000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 app.all('/api/bonos*', async (req, res) => {
   try {
     const response = await axios({
