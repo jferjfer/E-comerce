@@ -124,18 +124,14 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
-      // Si es pago en línea, verificar si ePayco está activo
+      // Si es pago en línea, ePayco debe estar activo obligatoriamente
       if (selectedMethod === 'pago_en_linea') {
         if (epaycoActivo) {
-          // ePayco configurado — abrir widget
           setPedidoParaEpayco(pedidoId)
           setIsLoading(false)
           return
         } else {
-          // ePayco no configurado — pedido creado, ir a éxito directamente
-          setOrderId(pedidoId)
-          setCurrentStep(3)
-          vaciarCarrito()
+          setError('La pasarela de pagos no está disponible en este momento. Por favor elige otro método de pago.')
           setIsLoading(false)
           return
         }
