@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Autenticar en Google Cloud
         uses: google-github-actions/auth@v2.1.8
