@@ -64,12 +64,23 @@ export default function EpaycoWidget({ pedidoId, total, token, onExito, onError,
 
       console.log('📩 Respuesta ePayco:', data)
 
-      if (data.x_response === 'Aceptada' || data.x_response_code_transaction === '1') {
+      const motivo = data.x_response_reason_text || ''
+      const codigo = String(data.x_response_code_transaction || '')
+
+      if (data.x_response === 'Aceptada' || codigo === '1') {
         onExito()
       } else if (data.x_response === 'Cancelada') {
         onCancelado()
-      } else if (data.x_response === 'Rechazada' || data.x_response === 'Fallida') {
-        onError(`Pago ${data.x_response.toLowerCase()}: ${data.x_response_reason_text || 'Intenta de nuevo'}`)
+      } else if (data.x_response === 'Pendiente' || codigo === '3' || codigo === '7') {
+        onError(`Tu pago está pendiente de confirmación. ${motivo ? motivo + '.' : 'Recibirás un correo cuando sea aprobado.'}`)
+      } else if (data.x_response === 'Rechazada' || codigo === '2') {
+        const mensajeRechazo = motivo || 'Pago rechazado'
+        onError(`Pago rechazado: ${mensajeRechazo}. Verifica los datos de tu tarjeta o intenta con otro método.`)
+      } else if (data.x_response === 'Fallida' || codigo === '4') {
+        const mensajeFalla = motivo || 'Error en la transacción'
+        onError(`Pago fallido: ${mensajeFalla}. Intenta de nuevo o usa otro método de pago.`)
+      } else if (codigo === '6') {
+        onError(`Pago reversado: ${motivo || 'La transacción fue reversada'}. Contacta a tu banco si tienes dudas.`)
       }
     }
 

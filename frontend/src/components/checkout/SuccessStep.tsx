@@ -31,7 +31,7 @@ export default function SuccessStep({ orderId, onClose, metodoPago, cuotaMensual
         <p className="text-gray-500 mt-1 text-sm">
           {esEfectivo
             ? 'Realiza el pago en Efecty o Baloto para confirmar tu pedido'
-            : 'Tu pedido ha sido procesado correctamente'}
+            : 'Tu pedido ha sido confirmado y está siendo preparado'}
         </p>
       </div>
 

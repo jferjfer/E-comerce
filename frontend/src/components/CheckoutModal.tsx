@@ -212,9 +212,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <i className="fas fa-exclamation-circle flex-shrink-0"></i>
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+            <i className="fas fa-exclamation-circle flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p className="font-semibold mb-0.5">No se pudo completar el pago</p>
+              <p>{error}</p>
+            </div>
           </div>
         )}
 
