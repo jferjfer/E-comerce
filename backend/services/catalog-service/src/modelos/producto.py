@@ -22,14 +22,23 @@ class ProductoCrear(ProductoBase):
 class ProductoActualizar(BaseModel):
     nombre: Optional[str] = Field(None, min_length=1, max_length=255)
     talla: Optional[str] = None
+    tallas: Optional[List[str]] = None
     color: Optional[str] = None
+    colores: Optional[List[str]] = None
     precio: Optional[float] = Field(None, gt=0)
     imagen: Optional[str] = None
     descripcion: Optional[str] = None
+    categoria: Optional[str] = None
+    marca: Optional[str] = None
+    sku: Optional[str] = None
+    material: Optional[str] = None
+    stock: Optional[int] = None
+    en_stock: Optional[bool] = None
+    descuento: Optional[float] = None
+    calificacion: Optional[float] = None
+    es_eco: Optional[bool] = None
     atributos: Optional[dict] = None
     ids_categoria: Optional[List[str]] = None
-    id_tendencia_moda: Optional[str] = None
-    referencia_inventario: Optional[str] = None
     activo: Optional[bool] = None
 
 class ProductoRespuesta(BaseModel):

@@ -78,25 +78,26 @@ class ServicioProductos:
         return await self.bd[self.coleccion].find_one({"_id": id_producto})
 
     async def actualizar_producto(self, id_producto: str, datos: ProductoActualizar) -> Optional[dict]:
-        """Actualizar un producto"""
-        if not ObjectId.is_valid(id_producto):
-            return None
-        
+        """Actualizar un producto por su campo 'id' (string timestamp)"""
         datos_actualizacion = {k: v for k, v in datos.model_dump().items() if v is not None}
         if not datos_actualizacion:
             return None
-        
+
         datos_actualizacion["fecha_actualizacion"] = datetime.utcnow()
-        
+
+        # Buscar por campo 'id' (string), no por ObjectId
         resultado = await self.bd[self.coleccion].update_one(
-            {"_id": ObjectId(id_producto)},
+            {"id": id_producto},
             {"$set": datos_actualizacion}
         )
-        
-        if resultado.modified_count:
-            return await self.obtener_producto_por_id(id_producto)
-        
-        return None
+
+        if resultado.matched_count == 0:
+            return None
+
+        producto = await self.bd[self.coleccion].find_one({"id": id_producto})
+        if producto and "_id" in producto:
+            del producto["_id"]
+        return producto
 
     async def eliminar_producto(self, id_producto: str) -> bool:
         """Eliminar un producto (soft delete)"""

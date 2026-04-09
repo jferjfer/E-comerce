@@ -235,17 +235,62 @@ async def productos_destacados():
         print(f"❌ Error MongoDB: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo destacados: {str(e)}")
 
+@app.put("/api/productos/{producto_id}")
+async def actualizar_producto(producto_id: str, datos: dict):
+    print(f"✏️ Actualizando producto {producto_id}")
+
+    db = obtener_bd()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Base de datos no disponible")
+
+    try:
+        # Limpiar campos None y vacíos
+        datos_limpios = {k: v for k, v in datos.items() if v is not None and k != '_id'}
+        datos_limpios["fecha_actualizacion"] = datetime.now().isoformat()
+
+        resultado = await db.productos.update_one(
+            {"id": producto_id},
+            {"$set": datos_limpios}
+        )
+
+        if resultado.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+        # Retornar producto actualizado
+        producto = await db.productos.find_one({"id": producto_id})
+        if producto and "_id" in producto:
+            del producto["_id"]
+
+        print(f"✅ Producto {producto_id} actualizado")
+        return {
+            "exito": True,
+            "mensaje": "Producto actualizado exitosamente",
+            "producto": producto
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error actualizando producto: {e}")
+        raise HTTPException(status_code=500, detail=f"Error actualizando producto: {str(e)}")
+
+
 @app.get("/api/productos/{producto_id}")
 async def obtener_producto(producto_id: str):
     db = obtener_bd()
+    if db is None:
+        # Buscar en fallback
+        prod = next((p for p in PRODUCTOS_FALLBACK if p["id"] == producto_id), None)
+        if not prod:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+        return {"producto": prod}
+
     producto = await db.productos.find_one({"id": producto_id})
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    
-    # Limpiar _id de MongoDB
+
     if "_id" in producto:
         del producto["_id"]
-    
+
     return {"producto": producto}
 
 @app.get("/api/categorias")
