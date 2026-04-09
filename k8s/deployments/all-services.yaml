@@ -180,11 +180,7 @@ spec:
               key: EPAYCO_PRIVATE_KEY
               optional: true
         - name: EPAYCO_TEST
-          valueFrom:
-            secretKeyRef:
-              name: egos-secrets
-              key: EPAYCO_TEST
-              optional: true
+          value: "false"
         - name: SMTP_HOST
           valueFrom:
             secretKeyRef:
