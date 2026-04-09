@@ -5,7 +5,7 @@ python-dotenv==1.0.0
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 httpx==0.25.2
-zeep==4.2.1
+zeep[xmlsec]==4.2.1
 lxml==4.9.3
 cryptography==41.0.7
 signxml==3.2.1
@@ -14,3 +14,4 @@ Pillow==10.1.0
 reportlab==4.0.7
 python-dateutil==2.8.2
 requests==2.31.0
+xmlsec==1.3.13
