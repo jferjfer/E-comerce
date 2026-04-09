@@ -293,6 +293,21 @@ export const api = {
     }
   },
 
+  async actualizarProducto(id: string, producto: any) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/productos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(producto)
+      })
+      const data = await response.json()
+      if (response.ok) return { exito: true, producto: data.producto || data }
+      return { exito: false, error: data.detail || data.error || 'Error al actualizar' }
+    } catch (error) {
+      return { exito: false, error: 'Error de conexión' }
+    }
+  },
+
   async crearProducto(producto: any) {
     try {
       console.log('📦 Creando producto:', producto.nombre);

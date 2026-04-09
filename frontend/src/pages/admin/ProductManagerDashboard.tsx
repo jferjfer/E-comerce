@@ -12,6 +12,11 @@ export default function ProductManagerDashboard() {
   const addNotification = useNotificationStore(state => state.addNotification)
   const [productos, setProductos] = useState<Producto[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [productoEditando, setProductoEditando] = useState<Producto | null>(null)
+  const [formEdicion, setFormEdicion] = useState<any>({})
+  const [tallasEdicion, setTallasEdicion] = useState<string[]>([])
+  const [coloresEdicion, setColoresEdicion] = useState<string[]>([])
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false)
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
     precio: '',
@@ -143,6 +148,55 @@ export default function ProductManagerDashboard() {
     } catch (error) {
       console.error('Error creando producto:', error)
       addNotification('Error de conexión al crear el producto', 'error')
+    }
+  }
+
+  const abrirEdicion = (producto: Producto) => {
+    setProductoEditando(producto)
+    setFormEdicion({
+      nombre: producto.nombre,
+      precio: String(producto.precio),
+      descripcion: producto.descripcion,
+      categoria: producto.categoria,
+      imagen: producto.imagen,
+      en_stock: producto.en_stock,
+      material: (producto as any).material || '',
+      marca: (producto as any).marca || 'EGOS',
+      sku: (producto as any).sku || '',
+      descuento: String((producto as any).descuento || '0'),
+      stock_cantidad: String((producto as any).stock || ''),
+    })
+    setTallasEdicion(producto.tallas || [])
+    setColoresEdicion(producto.colores || [])
+  }
+
+  const guardarEdicion = async () => {
+    if (!productoEditando) return
+    if (!formEdicion.nombre || !formEdicion.precio || !formEdicion.descripcion) {
+      addNotification('Nombre, precio y descripción son obligatorios', 'error')
+      return
+    }
+    setGuardandoEdicion(true)
+    try {
+      const resultado = await api.actualizarProducto(productoEditando.id, {
+        ...formEdicion,
+        precio: parseFloat(formEdicion.precio),
+        stock: parseInt(formEdicion.stock_cantidad) || 0,
+        descuento: parseFloat(formEdicion.descuento) || 0,
+        tallas: tallasEdicion,
+        colores: coloresEdicion,
+      })
+      if (resultado.exito) {
+        addNotification('Producto actualizado exitosamente', 'success')
+        setProductoEditando(null)
+        await cargarProductos()
+      } else {
+        addNotification(resultado.error || 'Error al actualizar', 'error')
+      }
+    } catch {
+      addNotification('Error de conexión', 'error')
+    } finally {
+      setGuardandoEdicion(false)
     }
   }
 
@@ -544,12 +598,17 @@ export default function ProductManagerDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm space-x-2">
-                      <button className="text-blue-600 hover:text-blue-800">
+                      <button
+                        onClick={() => abrirEdicion(producto)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Editar producto"
+                      >
                         <i className="fas fa-edit"></i>
                       </button>
                       <button 
                         onClick={() => eliminarProducto(producto.id)}
                         className="text-red-600 hover:text-red-800"
+                        title="Eliminar producto"
                       >
                         <i className="fas fa-trash"></i>
                       </button>
@@ -561,6 +620,153 @@ export default function ProductManagerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── MODAL EDICIÓN ── */}
+      {productoEditando && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h2 className="text-xl font-bold text-gray-900">Editar Producto</h2>
+              <button onClick={() => setProductoEditando(null)} className="text-gray-400 hover:text-gray-600">
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Nombre *</label>
+                <input value={formEdicion.nombre} onChange={e => setFormEdicion({...formEdicion, nombre: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">SKU</label>
+                <input value={formEdicion.sku} onChange={e => setFormEdicion({...formEdicion, sku: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Marca</label>
+                <input value={formEdicion.marca} onChange={e => setFormEdicion({...formEdicion, marca: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Precio (COP) *</label>
+                <input type="number" value={formEdicion.precio} onChange={e => setFormEdicion({...formEdicion, precio: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Descuento (%)</label>
+                <input type="number" min="0" max="100" value={formEdicion.descuento} onChange={e => setFormEdicion({...formEdicion, descuento: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Stock</label>
+                <input type="number" value={formEdicion.stock_cantidad} onChange={e => setFormEdicion({...formEdicion, stock_cantidad: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Categoría</label>
+                <select value={formEdicion.categoria} onChange={e => setFormEdicion({...formEdicion, categoria: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  {['Vestidos','Camisas','Pantalones','Blazers','Faldas','Calzado','Accesorios','Ropa Interior','Deportiva','Formal'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Material</label>
+                <input value={formEdicion.material} onChange={e => setFormEdicion({...formEdicion, material: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Algodón, Poliéster..." />
+              </div>
+              <div className="flex items-center gap-2 pt-5">
+                <input type="checkbox" id="en_stock_edit" checked={formEdicion.en_stock}
+                  onChange={e => setFormEdicion({...formEdicion, en_stock: e.target.checked})} />
+                <label htmlFor="en_stock_edit" className="text-sm text-gray-700">En Stock</label>
+              </div>
+
+              {/* Imagen */}
+              <div className="md:col-span-3">
+                <label className="text-xs text-gray-500 mb-1 block">URL de Imagen</label>
+                <div className="flex gap-3 items-center">
+                  <input value={formEdicion.imagen} onChange={e => setFormEdicion({...formEdicion, imagen: e.target.value})}
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
+                  {formEdicion.imagen && (
+                    <img src={formEdicion.imagen} alt="preview" className="w-12 h-12 object-cover rounded-lg border" />
+                  )}
+                </div>
+                <div className="mt-2">
+                  <input type="file" accept="image/*" onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (file.size > 5 * 1024 * 1024) { addNotification('Imagen muy grande (máx 5MB)', 'error'); return }
+                    // Subir directamente a Cloudinary
+                    const formData = new FormData()
+                    formData.append('imagen', file)
+                    try {
+                      const res = await fetch(`${API_URL}/api/productos/${productoEditando.id}/imagen`, { method: 'POST', body: formData })
+                      const data = await res.json()
+                      if (data.exito) {
+                        setFormEdicion((prev: any) => ({...prev, imagen: data.url}))
+                        addNotification('Imagen actualizada en Cloudinary', 'success')
+                      } else {
+                        addNotification('Error subiendo imagen', 'error')
+                      }
+                    } catch { addNotification('Error de conexión', 'error') }
+                  }} className="text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-900 file:text-white cursor-pointer" />
+                  <p className="text-xs text-gray-400 mt-1">Sube una nueva imagen para reemplazar la actual</p>
+                </div>
+              </div>
+
+              {/* Tallas */}
+              <div className="md:col-span-3">
+                <label className="text-xs text-gray-500 mb-2 block">Tallas</label>
+                <div className="flex flex-wrap gap-2">
+                  {['XS','S','M','L','XL','XXL','28','30','32','34','36','38','39','40','41','42'].map(t => (
+                    <label key={t} className="flex items-center gap-1 text-sm">
+                      <input type="checkbox" checked={tallasEdicion.includes(t)}
+                        onChange={e => setTallasEdicion(prev => e.target.checked ? [...prev, t] : prev.filter(x => x !== t))} />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colores */}
+              <div className="md:col-span-3">
+                <label className="text-xs text-gray-500 mb-2 block">Colores</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Negro','Blanco','Azul','Rojo','Verde','Rosa','Amarillo','Morado','Gris','Beige','Marrón','Naranja'].map(c => (
+                    <label key={c} className="flex items-center gap-1 text-sm">
+                      <input type="checkbox" checked={coloresEdicion.includes(c)}
+                        onChange={e => setColoresEdicion(prev => e.target.checked ? [...prev, c] : prev.filter(x => x !== c))} />
+                      {c}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Descripción */}
+              <div className="md:col-span-3">
+                <label className="text-xs text-gray-500 mb-1 block">Descripción *</label>
+                <textarea value={formEdicion.descripcion} onChange={e => setFormEdicion({...formEdicion, descripcion: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2 text-sm h-20" />
+              </div>
+
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t">
+              <button onClick={() => setProductoEditando(null)}
+                className="border border-gray-300 text-gray-600 px-5 py-2 rounded-xl text-sm hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={guardarEdicion} disabled={guardandoEdicion}
+                className="bg-gray-900 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700 disabled:opacity-50">
+                {guardandoEdicion ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
