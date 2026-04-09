@@ -529,6 +529,13 @@ spec:
           value: "http://auth-service:3011"
         - name: TRANSACTION_SERVICE_URL
           value: "http://transaction-service:3003"
+        - name: DIAN_P12_PATH
+          value: "/app/certs/certificado.pfx"
+        - name: DIAN_P12_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: egos-certificado-dian
+              key: password
         - name: SMTP_HOST
           valueFrom:
             secretKeyRef:
@@ -574,6 +581,10 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: POSTGRES_FACTURACION_URL
+        volumeMounts:
+        - name: cert-dian
+          mountPath: /app/certs
+          readOnly: true
         resources:
           requests:
             cpu: "100m"
@@ -581,6 +592,13 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
+      volumes:
+      - name: cert-dian
+        secret:
+          secretName: egos-certificado-dian
+          items:
+          - key: certificado.pfx
+            path: certificado.pfx
 ---
 apiVersion: v1
 kind: Service

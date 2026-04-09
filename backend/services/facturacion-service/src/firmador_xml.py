@@ -69,7 +69,11 @@ class FirmadorXML:
             print(f"✅ Certificado cargado: {certificate.subject.rfc4514_string()}")
             print(f"   Emisor: {self.issuer_name}")
             print(f"   Serial: {self.serial_number}")
-            print(f"   Válido hasta: {certificate.not_valid_after_utc}")
+            try:
+                expiry = certificate.not_valid_after_utc
+            except AttributeError:
+                expiry = certificate.not_valid_after
+            print(f"   Válido hasta: {expiry}")
             return True
 
         except FileNotFoundError:
