@@ -20,7 +20,7 @@ const EPAYCO_CONFIG = {
   p_key:        process.env.EPAYCO_P_KEY,
   public_key:   process.env.EPAYCO_PUBLIC_KEY,
   private_key:  process.env.EPAYCO_PRIVATE_KEY,
-  test:         process.env.EPAYCO_TEST !== 'false',
+  test:         process.env.EPAYCO_TEST === 'true',
   currency:     'COP',
   country:      'CO',
   lang:         'es',
