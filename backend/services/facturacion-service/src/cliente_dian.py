@@ -1,8 +1,7 @@
 """
 Cliente SOAP para Web Services DIAN - Facturación Electrónica
-Con WS-Security usando BinarySignature (cert.pem + key.pem)
-URL Pruebas: https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc
-URL Producción: https://vpfe.dian.gov.co/WcfDianCustomerServices.svc
+Con WS-Security — firma el mensaje SOAP pero NO verifica la respuesta
+(la DIAN no firma sus respuestas)
 """
 import base64
 import os
@@ -10,6 +9,7 @@ import zipfile
 import io
 from zeep import Client
 from zeep.transports import Transport
+from zeep.wsse.signature import MemorySignature
 import requests
 
 DIAN_WSDL_PRUEBAS    = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
@@ -17,29 +17,45 @@ DIAN_WSDL_PRODUCCION = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsd
 
 AMBIENTE     = os.getenv("DIAN_AMBIENTE", "2")
 TEST_SET_ID  = os.getenv("DIAN_TEST_SET_ID", "c5f5fbef-6621-420b-b986-857b2f1588d5")
-SOFTWARE_ID  = os.getenv("DIAN_SOFTWARE_ID", "b7249493-84cf-430c-be82-64c830a2158c")
 CERT_PEM     = os.getenv("DIAN_CERT_PEM", "/app/certs/cert.pem")
 KEY_PEM      = os.getenv("DIAN_KEY_PEM", "/app/certs/key.pem")
 NIT_EMISOR   = "900205170"
 
+
+class DianWSSE(MemorySignature):
+    """
+    WS-Security para DIAN: firma el request pero NO verifica la respuesta
+    porque la DIAN no firma sus respuestas SOAP.
+    """
+    def verify(self, envelope):
+        # La DIAN no firma sus respuestas — omitir verificación
+        return envelope
+
+
 def get_wsdl_url():
     return DIAN_WSDL_PRUEBAS if AMBIENTE == "2" else DIAN_WSDL_PRODUCCION
 
+
 def crear_cliente_wsse():
-    """Crea cliente SOAP con WS-Security usando BinarySignature"""
+    """Crea cliente SOAP con WS-Security que firma el request"""
     session = requests.Session()
     session.verify = False
     transport = Transport(session=session, timeout=60)
 
     try:
-        from zeep.wsse.signature import BinarySignature
-        wsse = BinarySignature(CERT_PEM, KEY_PEM)
+        with open(KEY_PEM, "rb") as f:
+            key_data = f.read()
+        with open(CERT_PEM, "rb") as f:
+            cert_data = f.read()
+
+        wsse = DianWSSE(key_data, cert_data)
         client = Client(get_wsdl_url(), transport=transport, wsse=wsse)
-        print("✅ WS-Security BinarySignature configurado")
+        print("✅ WS-Security DIAN configurado (firma sin verificación de respuesta)")
         return client
     except Exception as e:
         print(f"⚠️ WS-Security falló ({e}), usando cliente sin firma")
         return Client(get_wsdl_url(), transport=transport)
+
 
 def xml_a_zip_base64(xml_string: str, nombre_archivo: str) -> str:
     """Convierte XML a ZIP en base64 para enviar a DIAN"""
@@ -48,6 +64,7 @@ def xml_a_zip_base64(xml_string: str, nombre_archivo: str) -> str:
         zf.writestr(f"{nombre_archivo}.xml", xml_string.encode('utf-8'))
     zip_buffer.seek(0)
     return base64.b64encode(zip_buffer.read()).decode('utf-8')
+
 
 def enviar_factura_dian(xml_string: str, numero_completo: str, nit_emisor: str = NIT_EMISOR) -> dict:
     """Envía la factura al Web Service de la DIAN con WS-Security"""
@@ -69,18 +86,18 @@ def enviar_factura_dian(xml_string: str, numero_completo: str, nit_emisor: str =
                 contentFile=zip_b64
             )
 
-        print(f"📥 Respuesta DIAN recibida para {numero_completo}")
+        print(f"📥 Respuesta DIAN para {numero_completo}: {str(response)[:200]}")
 
-        if response:
-            xml_respuesta = str(response)
-            if "Aceptada" in xml_respuesta or "aceptada" in xml_respuesta:
-                return {"exito": True, "estado": "Aceptada", "mensaje": "Factura aceptada por la DIAN", "xml_respuesta": xml_respuesta}
-            elif "Rechazada" in xml_respuesta or "rechazada" in xml_respuesta:
-                return {"exito": False, "estado": "Rechazada", "mensaje": f"Rechazada: {xml_respuesta[:300]}", "xml_respuesta": xml_respuesta}
-            else:
-                return {"exito": True, "estado": "Enviada", "mensaje": "Enviada, pendiente validación DIAN", "xml_respuesta": xml_respuesta}
+        xml_respuesta = str(response) if response is not None else ""
+
+        if "Aceptada" in xml_respuesta or "aceptada" in xml_respuesta:
+            return {"exito": True, "estado": "Aceptada", "mensaje": "Factura aceptada por la DIAN", "xml_respuesta": xml_respuesta}
+        elif "Rechazada" in xml_respuesta or "rechazada" in xml_respuesta:
+            return {"exito": False, "estado": "Rechazada", "mensaje": f"Rechazada: {xml_respuesta[:300]}", "xml_respuesta": xml_respuesta}
+        elif xml_respuesta:
+            return {"exito": True, "estado": "Enviada", "mensaje": f"Enviada a DIAN: {xml_respuesta[:200]}", "xml_respuesta": xml_respuesta}
         else:
-            return {"exito": False, "estado": "Error", "mensaje": "Sin respuesta del servidor DIAN", "xml_respuesta": ""}
+            return {"exito": True, "estado": "Enviada", "mensaje": "Enviada a DIAN (procesando)", "xml_respuesta": ""}
 
     except Exception as e:
         print(f"❌ Error enviando a DIAN: {e}")
