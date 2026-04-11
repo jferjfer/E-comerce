@@ -143,15 +143,89 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Cliente IA - lazy init para no crashear si la key no está configurada
-_ai_client = None
+# Cliente IA - Vertex AI (Gemini) como primario, DeepSeek como fallback
+_deepseek_client = None
+_vertex_disponible = None
 
-def get_ai_client():
-    global _ai_client
-    if _ai_client is None:
+def get_deepseek_client():
+    global _deepseek_client
+    if _deepseek_client is None:
         api_key = os.getenv('AI_GATEWAY_API_KEY', 'placeholder-no-configurado')
-        _ai_client = OpenAI(api_key=api_key, base_url='https://api.deepseek.com')
-    return _ai_client
+        _deepseek_client = OpenAI(api_key=api_key, base_url='https://api.deepseek.com')
+    return _deepseek_client
+
+async def chat_con_vertex(mensajes: list, temperatura: float, max_tokens: int) -> str:
+    """Llama a Vertex AI (Gemini) usando credenciales del cluster GKE"""
+    try:
+        import google.auth
+        import google.auth.transport.requests
+        import httpx as httpx_client
+
+        credentials, project = google.auth.default(
+            scopes=['https://www.googleapis.com/auth/cloud-platform']
+        )
+        credentials.refresh(google.auth.transport.requests.Request())
+
+        region = 'us-central1'
+        model = 'gemini-1.5-flash'
+        url = f'https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}/publishers/google/models/{model}:generateContent'
+
+        # Convertir formato OpenAI a Vertex AI
+        system_content = ''
+        user_messages = []
+        for m in mensajes:
+            if m['role'] == 'system':
+                system_content = m['content']
+            else:
+                user_messages.append({'role': m['role'], 'parts': [{'text': m['content']}]})
+
+        payload = {
+            'contents': user_messages,
+            'generationConfig': {
+                'temperature': temperatura,
+                'maxOutputTokens': max_tokens
+            }
+        }
+        if system_content:
+            payload['systemInstruction'] = {'parts': [{'text': system_content}]}
+
+        async with httpx_client.AsyncClient(timeout=30) as client:
+            response = await client.post(
+                url,
+                json=payload,
+                headers={'Authorization': f'Bearer {credentials.token}'}
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        raise Exception(f'Vertex AI error: {e}')
+
+async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int) -> tuple:
+    """Intenta Vertex AI primero, cae a DeepSeek si falla. Retorna (respuesta, proveedor)"""
+    global _vertex_disponible
+
+    # Intentar Vertex AI
+    if _vertex_disponible is not False:
+        try:
+            respuesta = await chat_con_vertex(mensajes, temperatura, max_tokens)
+            _vertex_disponible = True
+            print('✅ Respuesta de Vertex AI (Gemini)')
+            return respuesta, 'vertex'
+        except Exception as e:
+            print(f'⚠️ Vertex AI falló: {e} — usando DeepSeek')
+            _vertex_disponible = False
+
+    # Fallback a DeepSeek
+    response = deepseek_breaker.call(
+        get_deepseek_client().chat.completions.create,
+        model='deepseek-chat',
+        messages=mensajes,
+        temperature=temperatura,
+        max_tokens=max_tokens
+    )
+    print('✅ Respuesta de DeepSeek (fallback)')
+    return response.choices[0].message.content, 'deepseek'
 
 mongo_client_catalogo = None
 mongo_client_social = None
@@ -306,16 +380,12 @@ CATEGORÍAS: {', '.join(contexto['categorias'])}"""
         if request.historial:
             mensajes.extend(request.historial[-10:])
         mensajes.append({'role': 'user', 'content': request.mensaje})
-        
-        response = deepseek_breaker.call(
-            get_ai_client().chat.completions.create,
-            model='deepseek-chat',
-            messages=mensajes,
-            temperature=prompt_config['temp'],
-            max_tokens=prompt_config['tokens']
+
+        respuesta, proveedor = await chat_con_ia(
+            mensajes,
+            prompt_config['temp'],
+            prompt_config['tokens']
         )
-        
-        respuesta = response.choices[0].message.content
         
         import re
         respuesta = re.sub(r'\s*[\(\[]ID:\s*\d+[\)\]]', '', respuesta, flags=re.IGNORECASE)
@@ -339,7 +409,8 @@ CATEGORÍAS: {', '.join(contexto['categorias'])}"""
             "productos_recomendados": productos_recomendados,
             "en_contexto": True,
             "productos_disponibles": contexto['total_productos'],
-            "version": "4.0.0",
+            "version": "5.0.0",
+            "proveedor_ia": proveedor,
             "response_time": round(duration, 3)
         }
         
