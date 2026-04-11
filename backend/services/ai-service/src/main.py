@@ -155,29 +155,26 @@ def get_deepseek_client():
     return _deepseek_client
 
 async def chat_con_vertex(mensajes: list, temperatura: float, max_tokens: int) -> str:
-    """Llama a Vertex AI (Gemini) usando credenciales del cluster GKE"""
+    """Llama a Gemini via Google AI API (generativelanguage.googleapis.com)"""
     try:
-        import google.auth
-        import google.auth.transport.requests
         import httpx as httpx_client
 
-        credentials, project = google.auth.default(
-            scopes=['https://www.googleapis.com/auth/cloud-platform']
-        )
-        credentials.refresh(google.auth.transport.requests.Request())
+        api_key = os.getenv('GEMINI_API_KEY', '')
+        if not api_key:
+            raise Exception('GEMINI_API_KEY no configurada')
 
-        region = 'us-central1'
-        model = 'gemini-1.5-flash'
-        url = f'https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}/publishers/google/models/{model}:generateContent'
+        model = 'gemini-2.0-flash'
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
 
-        # Convertir formato OpenAI a Vertex AI
+        # Convertir formato OpenAI a Gemini
         system_content = ''
         user_messages = []
         for m in mensajes:
             if m['role'] == 'system':
                 system_content = m['content']
             else:
-                user_messages.append({'role': m['role'], 'parts': [{'text': m['content']}]})
+                role = 'model' if m['role'] == 'assistant' else 'user'
+                user_messages.append({'role': role, 'parts': [{'text': m['content']}]})
 
         payload = {
             'contents': user_messages,
@@ -190,16 +187,12 @@ async def chat_con_vertex(mensajes: list, temperatura: float, max_tokens: int) -
             payload['systemInstruction'] = {'parts': [{'text': system_content}]}
 
         async with httpx_client.AsyncClient(timeout=30) as client:
-            response = await client.post(
-                url,
-                json=payload,
-                headers={'Authorization': f'Bearer {credentials.token}'}
-            )
+            response = await client.post(url, json=payload)
             response.raise_for_status()
             data = response.json()
             return data['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
-        raise Exception(f'Vertex AI error: {e}')
+        raise Exception(f'Gemini API error: {e}')
 
 async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int) -> tuple:
     """Intenta Vertex AI primero, cae a DeepSeek si falla. Retorna (respuesta, proveedor)"""
@@ -210,8 +203,8 @@ async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int) -> tu
         try:
             respuesta = await chat_con_vertex(mensajes, temperatura, max_tokens)
             _vertex_disponible = True
-            print('✅ Respuesta de Vertex AI (Gemini)')
-            return respuesta, 'vertex'
+            print('✅ Respuesta de Gemini (Google AI)')
+            return respuesta, 'gemini'
         except Exception as e:
             print(f'⚠️ Vertex AI falló: {e} — usando DeepSeek')
             _vertex_disponible = False
