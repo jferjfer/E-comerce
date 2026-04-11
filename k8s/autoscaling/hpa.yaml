@@ -113,20 +113,20 @@ spec:
     kind: Deployment
     name: ai-service
   minReplicas: 1
-  maxReplicas: 4
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 65
+        averageUtilization: 80
   - type: Resource
     resource:
       name: memory
       target:
         type: Utilization
-        averageUtilization: 75
+        averageUtilization: 85
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
