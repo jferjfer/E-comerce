@@ -217,15 +217,22 @@ async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int) -> tu
             _vertex_disponible = False
 
     # Fallback a DeepSeek
-    response = deepseek_breaker.call(
-        get_deepseek_client().chat.completions.create,
-        model='deepseek-chat',
-        messages=mensajes,
-        temperature=temperatura,
-        max_tokens=max_tokens
-    )
-    print('✅ Respuesta de DeepSeek (fallback)')
-    return response.choices[0].message.content, 'deepseek'
+    try:
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: deepseek_breaker.call(
+                get_deepseek_client().chat.completions.create,
+                model='deepseek-chat',
+                messages=mensajes,
+                temperature=temperatura,
+                max_tokens=max_tokens
+            )
+        )
+        print('✅ Respuesta de DeepSeek (fallback)')
+        return response.choices[0].message.content, 'deepseek'
+    except Exception as e:
+        raise Exception(f'Ambos proveedores fallaron. DeepSeek: {e}')
 
 mongo_client_catalogo = None
 mongo_client_social = None
@@ -416,23 +423,14 @@ CATEGORÍAS: {', '.join(contexto['categorias'])}"""
         
     except Exception as e:
         request_count.labels(endpoint='chat', status='error').inc()
-        print(f"❌ Error: {e}")
-        error_msg = str(e)
-        if '402' in error_msg or 'Insufficient Balance' in error_msg:
-            return {
-                "respuesta": "En este momento el asistente de IA no está disponible. ¡Pero puedes explorar nuestro catálogo y contactarnos directamente! ✨",
-                "productos_recomendados": [],
-                "en_contexto": False,
-                "version": "4.0.0"
-            }
-        if '401' in error_msg or 'Authentication' in error_msg:
-            return {
-                "respuesta": "El asistente de IA está en mantenimiento. ¡Vuelve pronto! 🛍️",
-                "productos_recomendados": [],
-                "en_contexto": False,
-                "version": "4.0.0"
-            }
-        raise
+        print(f"\u274c Error: {e}")
+        return {
+            "respuesta": "En este momento el asistente de IA no est\u00e1 disponible. \u00a1Pero puedes explorar nuestro cat\u00e1logo y contactarnos directamente! \u2728",
+            "productos_recomendados": [],
+            "en_contexto": False,
+            "version": "5.0.0",
+            "proveedor_ia": "ninguno"
+        }
 
 @app.post("/api/recomendaciones/personalizada")
 async def recomendaciones(request: RecomendacionRequest):
