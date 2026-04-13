@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import EgosLogo from './EgosLogo'
 
 export default function Footer() {
   return (
@@ -10,7 +9,11 @@ export default function Footer() {
           {/* Marca EGOS */}
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
-              <EgosLogo size="md" showSlogan={true} />
+              <div className="flex flex-row items-baseline leading-none mb-1 gap-0 sm:flex-col sm:items-center">
+                <span className="font-bodoni text-3xl bg-gradient-to-br from-gold-light via-gold to-gold-dark bg-clip-text text-transparent" style={{letterSpacing: '-2px'}}>E</span>
+                <span className="font-prata text-base text-white tracking-[8px] uppercase sm:-mt-1">GOS</span>
+              </div>
+              <p className="font-bodoni italic text-xs text-gold opacity-70 tracking-[3px] uppercase sm:text-center">Wear Your Truth</p>
             </div>
             <p className="text-gray-500 text-xs mb-4 leading-relaxed">
               NIT: 902.051.708-6<br />Bogotá D.C., Colombia
