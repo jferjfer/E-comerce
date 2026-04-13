@@ -237,6 +237,7 @@ async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3003;
+// v2.2.0 — WebSocket fix + historial sin duplicados
 
 // Crear tabla pedido_historial si no existe
 async function inicializarBaseDatos() {
