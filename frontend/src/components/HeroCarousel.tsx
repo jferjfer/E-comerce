@@ -1,5 +1,6 @@
 import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react'
+import EgosLogo from './EgosLogo'
 
 export default function HeroCarousel() {
   const [items, setItems] = useState<any[]>([])
@@ -28,113 +29,7 @@ export default function HeroCarousel() {
 
   if (items.length === 0) return (
     <div className="text-center text-white flex flex-col items-center justify-center">
-      {/* Animación EGOS */}
-      <div className="egos-monogram">E</div>
-      <div className="egos-brand">EGOS</div>
-      <div className="egos-divider"></div>
-      <div className="egos-slogan">Wear Your Truth</div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Prata&display=swap');
-
-        .egos-monogram {
-          font-family: 'Bodoni Moda', serif;
-          font-size: clamp(60px, 15vw, 220px);
-          line-height: 1;
-          margin: 0;
-          background: linear-gradient(135deg, #c5a47e 0%, #e2c9af 25%, #ffffff 50%, #e2c9af 75%, #a67c52 100%);
-          background-size: 400% 400%;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          font-weight: 400;
-          letter-spacing: -4px;
-          opacity: 0;
-          filter: blur(20px);
-          transform: translateY(20px) scale(0.95);
-          animation: egosRevealMain 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-                     egosShimmer 8s linear infinite;
-        }
-
-        @media (min-width: 640px) {
-          .egos-monogram {
-            font-size: clamp(120px, 20vw, 220px);
-            letter-spacing: -10px;
-          }
-        }
-
-        .egos-brand {
-          font-family: 'Prata', serif;
-          font-size: clamp(16px, 4vw, 70px);
-          letter-spacing: clamp(6px, 2vw, 30px);
-          margin-top: -4px;
-          text-transform: uppercase;
-          font-weight: 400;
-          color: #ffffff;
-          opacity: 0;
-          filter: blur(10px);
-          transform: translateY(10px);
-          animation: egosRevealBrand 3s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
-        }
-
-        @media (min-width: 640px) {
-          .egos-brand {
-            font-size: clamp(28px, 5vw, 70px);
-            letter-spacing: clamp(10px, 3vw, 30px);
-            margin-top: -10px;
-          }
-        }
-
-        .egos-divider {
-          width: 0;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, #c5a47e, transparent);
-          margin: 8px auto;
-          opacity: 0.5;
-          animation: egosExpandDivider 2s ease-in-out 1.5s forwards;
-        }
-
-        @media (min-width: 640px) {
-          .egos-divider {
-            margin: 20px auto;
-          }
-        }
-
-        .egos-slogan {
-          font-family: 'Bodoni Moda', serif;
-          font-style: italic;
-          font-size: clamp(9px, 1.8vw, 18px);
-          letter-spacing: clamp(3px, 1.5vw, 14px);
-          color: #c5a47e;
-          text-transform: uppercase;
-          opacity: 0;
-          animation: egosSlogan 2s ease-out 2.5s forwards;
-        }
-
-        @media (min-width: 640px) {
-          .egos-slogan {
-            font-size: clamp(12px, 2vw, 18px);
-            letter-spacing: clamp(6px, 2vw, 14px);
-          }
-        }
-
-        @keyframes egosRevealMain {
-          to { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
-        }
-        @keyframes egosShimmer {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 400% 50%; }
-        }
-        @keyframes egosRevealBrand {
-          to { opacity: 1; filter: blur(0); transform: translateY(0); }
-        }
-        @keyframes egosExpandDivider {
-          to { width: 120px; }
-        }
-        @keyframes egosSlogan {
-          from { opacity: 0; transform: translateY(5px); }
-          to { opacity: 0.85; transform: translateY(0); }
-        }
-      `}</style>
+      <EgosLogo size="lg" showSlogan={true} />
     </div>
   )
 

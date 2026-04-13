@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ROLE_DEFINITIONS } from '@/config/roles'
+import EgosLogo from './EgosLogo'
 
 interface HeaderProps {
   onCartClick: () => void
@@ -35,16 +36,8 @@ export default function Header({ onCartClick }: HeaderProps) {
         <div className="flex justify-between items-center h-16 sm:h-20">
 
           {/* Logo EGOS */}
-          <Link to="/" className="flex flex-col items-center leading-none group flex-shrink-0">
-            <span className="font-bodoni text-2xl sm:text-3xl font-normal bg-gradient-to-br from-gold-light via-gold to-gold-dark bg-clip-text text-transparent" style={{letterSpacing: '-2px'}}>
-              E
-            </span>
-            <span className="font-prata text-sm sm:text-lg text-white uppercase tracking-[6px] sm:tracking-[8px] -mt-1">
-              EGOS
-            </span>
-            <span className="font-bodoni italic text-[8px] sm:text-[9px] tracking-[3px] text-gold opacity-80 uppercase hidden sm:block">
-              Wear Your Truth
-            </span>
+          <Link to="/" className="flex-shrink-0">
+            <EgosLogo size="md" showSlogan={true} />
           </Link>
 
           {/* Acciones */}
