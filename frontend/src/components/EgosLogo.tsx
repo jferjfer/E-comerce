@@ -7,7 +7,7 @@ export default function EgosLogo({ size = 'md', showSlogan = true }: EgosLogoPro
   const sizes = {
     sm: { e: 'text-xl',                    egos: 'text-xs tracking-[5px]',                          slogan: 'text-[7px] tracking-[2px]',           mt: '-mt-0.5' },
     md: { e: 'text-2xl sm:text-3xl',         egos: 'text-sm sm:text-lg tracking-[6px] sm:tracking-[8px]', slogan: 'text-[8px] sm:text-[9px] tracking-[3px]', mt: '-mt-1' },
-    lg: { e: 'text-2xl sm:text-4xl',         egos: 'text-base sm:text-2xl tracking-[6px] sm:tracking-[10px]', slogan: 'text-[8px] sm:text-[10px] tracking-[3px] sm:tracking-[4px]', mt: '-mt-1' },
+    lg: { e: 'text-2xl sm:text-8xl',         egos: 'text-base sm:text-5xl tracking-[6px] sm:tracking-[20px]', slogan: 'text-[8px] sm:text-base tracking-[3px] sm:tracking-[8px]', mt: '-mt-1 sm:-mt-3' },
   }
   const s = sizes[size]
 
