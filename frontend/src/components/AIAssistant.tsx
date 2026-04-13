@@ -139,7 +139,7 @@ export default function AIAssistant() {
   }
 
   const handleQuickAction = (action: string, text: string) => {
-    handleSendMessage(text.replace(/[👗🎨💰📏🔄]/g, '').trim())
+    handleSendMessage(text.replace(/[👗🎨💰📏🔄📦]/g, '').trim())
   }
 
   return esCliente ? (
@@ -149,12 +149,12 @@ export default function AIAssistant() {
         <div className="relative group">
           <button
             onClick={() => setIsOpen(true)}
-            className="brand-gradient text-white w-14 h-14 rounded-2xl shadow-xl hover:shadow-purple-400/50 transition-all duration-300 hover:scale-105 flex items-center justify-center"
+            className="bg-gray-900 text-white w-14 h-14 rounded-2xl shadow-xl hover:shadow-black/40 transition-all duration-300 hover:scale-105 flex items-center justify-center border border-[#c5a47e]/40"
           >
-            <i className="fas fa-magic text-lg"></i>
+            <i className="fas fa-magic text-lg" style={{color: '#c5a47e'}}></i>
           </button>
 
-          <div className="absolute bottom-16 right-0 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          <div className="absolute bottom-16 right-0 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-[#c5a47e]/30">
             ✨ Asesora de Imagen
             <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
           </div>
@@ -170,17 +170,17 @@ export default function AIAssistant() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-end p-4 z-50">
           <div className="bg-white rounded-t-3xl shadow-2xl w-full max-w-md h-[600px] flex flex-col animate-slide-up">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-t-3xl">
+            <div className="bg-gray-900 text-white p-4 rounded-t-3xl border-b border-[#c5a47e]/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">M</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-[#c5a47e]/60" style={{background: '#1f2937'}}>
+                    <span className="font-bold text-lg" style={{color: '#c5a47e'}}>N</span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">Noa</h3>
+                    <h3 className="font-semibold text-lg tracking-wide">Noa</h3>
                     <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <span className="text-sm opacity-90">En línea</span>
+                      <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                      <span className="text-xs opacity-70">Asesora de moda EGOS</span>
                     </div>
                   </div>
                 </div>
@@ -197,43 +197,43 @@ export default function AIAssistant() {
                         }])
                       }
                     }}
-                    className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
+                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10"
                     title="Limpiar historial"
                   >
-                    <i className="fas fa-trash text-white text-sm"></i>
+                    <i className="fas fa-trash text-white/60 text-sm"></i>
                   </button>
                   <button 
                     onClick={() => setIsOpen(false)}
-                    className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
+                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10"
                   >
-                    <i className="fas fa-times text-white"></i>
+                    <i className="fas fa-times text-white/80"></i>
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-purple-50 to-white">
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div key={message.id}>
                     <div className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                         message.isUser 
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-md' 
-                          : 'bg-white shadow-md border border-gray-100 text-gray-800 rounded-bl-md'
+                          ? 'bg-gray-900 text-white rounded-br-md' 
+                          : 'bg-white shadow-sm border border-[#e5d5c0] text-gray-700 rounded-bl-md'
                       }`}>
                         {!message.isUser && (
                           <div className="flex items-center mb-2">
-                            <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-2">
-                              <span className="text-white font-semibold text-xs">M</span>
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center mr-2" style={{background: '#1f2937', border: '1px solid #c5a47e'}}>
+                              <span className="font-semibold text-xs" style={{color: '#c5a47e'}}>N</span>
                             </div>
-                            <span className="text-xs font-semibold text-purple-600">Noa</span>
+                            <span className="text-xs font-semibold" style={{color: '#a67c52'}}>Noa</span>
                           </div>
                         )}
                         <p className="text-sm leading-relaxed">{message.text}</p>
                         <p className={`text-xs mt-2 ${
-                          message.isUser ? 'text-white text-opacity-70' : 'text-gray-400'
+                          message.isUser ? 'text-white/50' : 'text-gray-400'
                         }`}>
                           {message.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -256,15 +256,15 @@ export default function AIAssistant() {
                 
                 {isTyping && (
                   <div className="flex justify-start">
-                    <div className="bg-white shadow-md border border-gray-100 px-4 py-3 rounded-2xl rounded-bl-md">
+                    <div className="bg-white shadow-sm border border-[#e5d5c0] px-4 py-3 rounded-2xl rounded-bl-md">
                       <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">M</span>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{background: '#1f2937', border: '1px solid #c5a47e'}}>
+                          <span className="font-semibold text-xs" style={{color: '#c5a47e'}}>N</span>
                         </div>
                         <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#c5a47e'}}></div>
+                          <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#c5a47e', animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#c5a47e', animationDelay: '0.2s'}}></div>
                         </div>
                       </div>
                     </div>
@@ -282,7 +282,7 @@ export default function AIAssistant() {
                     <button
                       key={index}
                       onClick={() => handleQuickAction(action.action, action.text)}
-                      className="text-left p-3 text-sm bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl transition-colors border border-purple-100"
+                      className="text-left p-3 text-sm bg-white hover:bg-[#faf6f1] rounded-xl transition-colors border border-[#e5d5c0] text-gray-700"
                     >
                       {action.text}
                     </button>
@@ -301,16 +301,16 @@ export default function AIAssistant() {
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputText)}
                     placeholder="Escribe tu mensaje..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#c5a47e]/40 focus:border-[#c5a47e] focus:bg-white transition-colors"
                     disabled={isTyping}
                   />
                 </div>
                 <button
                   onClick={() => handleSendMessage(inputText)}
                   disabled={isTyping || !inputText.trim()}
-                  className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center shadow-lg"
+                  className="w-12 h-12 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-all transform hover:scale-105 disabled:opacity-40 disabled:transform-none flex items-center justify-center shadow-lg"
                 >
-                  <i className="fas fa-paper-plane"></i>
+                  <i className="fas fa-paper-plane" style={{color: '#c5a47e'}}></i>
                 </button>
               </div>
             </div>
