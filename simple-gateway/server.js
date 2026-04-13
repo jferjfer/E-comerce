@@ -518,26 +518,7 @@ app.all('/api/carrito*', async (req, res) => {
   }
 });
 
-app.get('/api/eventos/pedidos', async (req, res) => {
-  try {
-    const response = await axios({
-      method: 'GET',
-      url: `${TRANS_URL}/api/eventos/pedidos`,
-      headers: { Authorization: req.headers.authorization },
-      responseType: 'stream',
-      timeout: 0 // sin timeout para SSE
-    });
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    response.data.pipe(res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
+app.all('/api/pedidos*', async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
