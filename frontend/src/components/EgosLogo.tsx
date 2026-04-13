@@ -5,9 +5,9 @@ interface EgosLogoProps {
 
 export default function EgosLogo({ size = 'md', showSlogan = true }: EgosLogoProps) {
   const sizes = {
-    sm: { e: 'text-xl',           egos: 'text-xs tracking-[5px]',              slogan: 'text-[7px] tracking-[2px]', mt: '-mt-0.5' },
-    md: { e: 'text-2xl sm:text-3xl', egos: 'text-sm sm:text-lg tracking-[6px] sm:tracking-[8px]', slogan: 'text-[8px] sm:text-[9px] tracking-[3px]', mt: '-mt-1' },
-    lg: { e: 'text-4xl',          egos: 'text-2xl tracking-[10px]',            slogan: 'text-[10px] tracking-[4px]', mt: '-mt-1' },
+    sm: { e: 'text-xl',                    egos: 'text-xs tracking-[5px]',                          slogan: 'text-[7px] tracking-[2px]',           mt: '-mt-0.5' },
+    md: { e: 'text-2xl sm:text-3xl',         egos: 'text-sm sm:text-lg tracking-[6px] sm:tracking-[8px]', slogan: 'text-[8px] sm:text-[9px] tracking-[3px]', mt: '-mt-1' },
+    lg: { e: 'text-2xl sm:text-4xl',         egos: 'text-base sm:text-2xl tracking-[6px] sm:tracking-[10px]', slogan: 'text-[8px] sm:text-[10px] tracking-[3px] sm:tracking-[4px]', mt: '-mt-1' },
   }
   const s = sizes[size]
 
