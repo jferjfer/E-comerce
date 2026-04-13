@@ -39,7 +39,7 @@ export default function HeroCarousel() {
 
         .egos-monogram {
           font-family: 'Bodoni Moda', serif;
-          font-size: clamp(120px, 20vw, 220px);
+          font-size: clamp(60px, 15vw, 220px);
           line-height: 1;
           margin: 0;
           background: linear-gradient(135deg, #c5a47e 0%, #e2c9af 25%, #ffffff 50%, #e2c9af 75%, #a67c52 100%);
@@ -47,7 +47,7 @@ export default function HeroCarousel() {
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           font-weight: 400;
-          letter-spacing: -10px;
+          letter-spacing: -4px;
           opacity: 0;
           filter: blur(20px);
           transform: translateY(20px) scale(0.95);
@@ -55,11 +55,18 @@ export default function HeroCarousel() {
                      egosShimmer 8s linear infinite;
         }
 
+        @media (min-width: 640px) {
+          .egos-monogram {
+            font-size: clamp(120px, 20vw, 220px);
+            letter-spacing: -10px;
+          }
+        }
+
         .egos-brand {
           font-family: 'Prata', serif;
-          font-size: clamp(28px, 5vw, 70px);
-          letter-spacing: clamp(10px, 3vw, 30px);
-          margin-top: -10px;
+          font-size: clamp(16px, 4vw, 70px);
+          letter-spacing: clamp(6px, 2vw, 30px);
+          margin-top: -4px;
           text-transform: uppercase;
           font-weight: 400;
           color: #ffffff;
@@ -69,24 +76,45 @@ export default function HeroCarousel() {
           animation: egosRevealBrand 3s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
         }
 
+        @media (min-width: 640px) {
+          .egos-brand {
+            font-size: clamp(28px, 5vw, 70px);
+            letter-spacing: clamp(10px, 3vw, 30px);
+            margin-top: -10px;
+          }
+        }
+
         .egos-divider {
           width: 0;
           height: 1px;
           background: linear-gradient(90deg, transparent, #c5a47e, transparent);
-          margin: 20px auto;
+          margin: 8px auto;
           opacity: 0.5;
           animation: egosExpandDivider 2s ease-in-out 1.5s forwards;
+        }
+
+        @media (min-width: 640px) {
+          .egos-divider {
+            margin: 20px auto;
+          }
         }
 
         .egos-slogan {
           font-family: 'Bodoni Moda', serif;
           font-style: italic;
-          font-size: clamp(12px, 2vw, 18px);
-          letter-spacing: clamp(6px, 2vw, 14px);
+          font-size: clamp(9px, 1.8vw, 18px);
+          letter-spacing: clamp(3px, 1.5vw, 14px);
           color: #c5a47e;
           text-transform: uppercase;
           opacity: 0;
           animation: egosSlogan 2s ease-out 2.5s forwards;
+        }
+
+        @media (min-width: 640px) {
+          .egos-slogan {
+            font-size: clamp(12px, 2vw, 18px);
+            letter-spacing: clamp(6px, 2vw, 14px);
+          }
         }
 
         @keyframes egosRevealMain {
