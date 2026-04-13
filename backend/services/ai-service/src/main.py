@@ -163,7 +163,7 @@ async def chat_con_vertex(mensajes: list, temperatura: float, max_tokens: int) -
         if not api_key:
             raise Exception('GEMINI_API_KEY no configurada')
 
-        model = 'gemini-2.5-flash'
+        model = 'gemini-flash-latest'
         url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
 
         # Convertir formato OpenAI a Gemini
