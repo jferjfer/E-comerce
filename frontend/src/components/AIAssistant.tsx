@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/store/useAuthStore'
 import ProductRecommendation from './ProductRecommendation'
+import EgosLogo from './EgosLogo'
 import type { Producto } from '@/types'
 
 interface Message {
@@ -173,8 +174,8 @@ export default function AIAssistant() {
             <div className="bg-gray-900 text-white p-4 rounded-t-3xl border-b border-[#c5a47e]/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-[#c5a47e]/60" style={{background: '#1f2937'}}>
-                    <span className="font-bold text-lg" style={{color: '#c5a47e'}}>N</span>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-[#c5a47e]/40 bg-black">
+                    <EgosLogo size="sm" showSlogan={false} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg tracking-wide">Noa</h3>
@@ -225,8 +226,8 @@ export default function AIAssistant() {
                       }`}>
                         {!message.isUser && (
                           <div className="flex items-center mb-2">
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center mr-2" style={{background: '#1f2937', border: '1px solid #c5a47e'}}>
-                              <span className="font-semibold text-xs" style={{color: '#c5a47e'}}>N</span>
+                            <div className="w-5 h-5 rounded flex items-center justify-center mr-2 bg-black border border-[#c5a47e]/40">
+                              <span className="font-bodoni font-normal bg-gradient-to-br from-gold-light via-gold to-gold-dark bg-clip-text text-transparent text-[10px]" style={{letterSpacing:'-1px'}}>E</span>
                             </div>
                             <span className="text-xs font-semibold" style={{color: '#a67c52'}}>Noa</span>
                           </div>
@@ -258,8 +259,8 @@ export default function AIAssistant() {
                   <div className="flex justify-start">
                     <div className="bg-white shadow-sm border border-[#e5d5c0] px-4 py-3 rounded-2xl rounded-bl-md">
                       <div className="flex items-center space-x-2">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{background: '#1f2937', border: '1px solid #c5a47e'}}>
-                          <span className="font-semibold text-xs" style={{color: '#c5a47e'}}>N</span>
+                        <div className="w-5 h-5 rounded flex items-center justify-center bg-black border border-[#c5a47e]/40">
+                          <span className="font-bodoni font-normal bg-gradient-to-br from-gold-light via-gold to-gold-dark bg-clip-text text-transparent text-[10px]" style={{letterSpacing:'-1px'}}>E</span>
                         </div>
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#c5a47e'}}></div>
