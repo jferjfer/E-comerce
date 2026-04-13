@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -25,36 +25,32 @@ export function getSocket(): Socket {
 
 export function useSocket() {
   const { usuario } = useAuthStore()
-  const identificado = useRef(false)
 
   useEffect(() => {
     const socket = getSocket()
 
-    const onConnect = () => {
-      console.log('🔌 WebSocket conectado')
-      if (usuario && !identificado.current) {
-        socket.emit('identificar', String(usuario.id))
-
-        // Roles admin se unen a sala de admins
-        const rolesAdmin = ['ceo', 'customer_success', 'logistics_coordinator',
-          'operations_director', 'support_agent', 'marketing_manager',
-          'product_manager', 'category_manager', 'seller_premium']
-        if (rolesAdmin.includes(usuario.rol)) {
-          socket.emit('unirse_admin', usuario.rol)
-        }
-        identificado.current = true
+    const identificarse = () => {
+      if (!usuario) return
+      socket.emit('identificar', String(usuario.id))
+      const rolesAdmin = ['ceo', 'customer_success', 'logistics_coordinator',
+        'operations_director', 'support_agent', 'marketing_manager',
+        'product_manager', 'category_manager', 'seller_premium']
+      if (rolesAdmin.includes(usuario.rol)) {
+        socket.emit('unirse_admin', usuario.rol)
       }
+      console.log(`👤 Identificado como usuario ${usuario.id}`)
     }
 
+    // Identificarse si ya está conectado
     if (socket.connected) {
-      onConnect()
-    } else {
-      socket.on('connect', onConnect)
+      identificarse()
     }
+
+    // Identificarse en cada reconexión
+    socket.on('connect', identificarse)
 
     return () => {
-      socket.off('connect', onConnect)
-      identificado.current = false
+      socket.off('connect', identificarse)
     }
   }, [usuario])
 
