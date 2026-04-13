@@ -186,7 +186,7 @@ async def chat_con_vertex(mensajes: list, temperatura: float, max_tokens: int) -
         if system_content:
             payload['systemInstruction'] = {'parts': [{'text': system_content}]}
 
-        async with httpx_client.AsyncClient(timeout=30) as client:
+        async with httpx_client.AsyncClient(timeout=60) as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
             data = response.json()
@@ -195,19 +195,15 @@ async def chat_con_vertex(mensajes: list, temperatura: float, max_tokens: int) -
         raise Exception(f'Gemini API error: {e}')
 
 async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int) -> tuple:
-    """Intenta Vertex AI primero, cae a DeepSeek si falla. Retorna (respuesta, proveedor)"""
-    global _vertex_disponible
+    """Intenta Gemini primero en cada llamada, cae a DeepSeek si falla."""
 
-    # Intentar Vertex AI
-    if _vertex_disponible is not False:
-        try:
-            respuesta = await chat_con_vertex(mensajes, temperatura, max_tokens)
-            _vertex_disponible = True
-            print('✅ Respuesta de Gemini (Google AI)')
-            return respuesta, 'gemini'
-        except Exception as e:
-            print(f'⚠️ Vertex AI falló: {e} — usando DeepSeek')
-            _vertex_disponible = False
+    # Intentar Gemini siempre primero
+    try:
+        respuesta = await chat_con_vertex(mensajes, temperatura, max_tokens)
+        print('✅ Respuesta de Gemini (Google AI)')
+        return respuesta, 'gemini'
+    except Exception as e:
+        print(f'⚠️ Gemini falló: {e} — usando DeepSeek')
 
     # Fallback a DeepSeek
     try:
