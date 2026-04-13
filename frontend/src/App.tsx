@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import type { FutureConfig } from 'react-router-dom'
 import { useAuthStore } from './store/useAuthStore'
 import { useOrderNotifications } from './hooks/useOrderNotifications'
+import { useSocketIdentificacion } from './hooks/useSocket'
 import Header from './components/Header'
 import CartModal from './components/CartModal'
 import CheckoutModal from './components/CheckoutModal'
@@ -53,6 +54,8 @@ function App() {
 
   // Activar notificaciones de pedidos
   useOrderNotifications()
+  // Identificación global del socket — solo una vez
+  useSocketIdentificacion()
 
   const handleCheckout = () => {
     setShowCart(false)

@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { api } from '@/services/api'
 import { formatPrice } from '@/utils/sanitize'
 import { Link } from 'react-router-dom'
-import { useSocket, getSocket } from '@/hooks/useSocket'
+import { useSocket } from '@/hooks/useSocket'
 
 interface ProductoPedido {
   id: string
@@ -98,15 +98,6 @@ export default function OrdersPage() {
 
   useEffect(() => {
     cargarPedidos()
-    // Forzar re-identificación en el socket al entrar a la página
-    const socket = getSocket()
-    if (socket.connected && token) {
-      const { usuario } = useAuthStore.getState()
-      if (usuario) {
-        socket.emit('identificar', String(usuario.id))
-        console.log(`🔄 Re-identificado en OrdersPage: usuario ${usuario.id}`)
-      }
-    }
   }, [cargarPedidos])
 
   useEffect(() => {

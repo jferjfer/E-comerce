@@ -667,8 +667,8 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
 
     // Admin puede cambiar cualquier pedido, cliente solo el suyo
     const condicion = esAdmin
-      ? 'SELECT id, estado FROM pedido WHERE id = $1'
-      : 'SELECT id, estado FROM pedido WHERE id = $1 AND usuario_id = $2';
+      ? 'SELECT id, estado, usuario_id, total FROM pedido WHERE id = $1'
+      : 'SELECT id, estado, usuario_id, total FROM pedido WHERE id = $1 AND usuario_id = $2';
     const params = esAdmin ? [pedidoId] : [pedidoId, parseInt(usuarioId)];
 
     const verificacion = await pool.query(condicion, params);
@@ -678,14 +678,15 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
     }
 
     const estadoAnterior = verificacion.rows[0].estado;
+    const usuarioIdPedido = verificacion.rows[0].usuario_id;
+    const totalPedido = verificacion.rows[0].total;
 
     await pool.query(
       'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
       [estado, pedidoId]
     );
 
-    // El trigger registra automáticamente en pedido_historial
-    // Si hay comentario, actualizarlo en el registro del trigger
+    // Actualizar comentario del trigger
     if (comentario) {
       await pool.query(
         `UPDATE pedido_historial SET comentario = $1
@@ -694,26 +695,23 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       );
     }
 
-    // Notificar al cliente por correo y en tiempo real (sin bloquear respuesta)
-    pool.query('SELECT usuario_id, total FROM pedido WHERE id = $1', [pedidoId])
-      .then(async (pedidoData) => {
-        if (!pedidoData.rows.length) return;
-        const { usuario_id, total } = pedidoData.rows[0];
+    // Emitir WebSocket inmediatamente con datos ya disponibles
+    axios.post('http://gateway:3000/interno/emitir', {
+      evento: 'pedido_actualizado',
+      usuarioId: String(usuarioIdPedido),
+      sala: 'admins',
+      datos: { pedidoId, estadoAnterior, estado_nuevo: estado, total: totalPedido, usuario_id: usuarioIdPedido }
+    }, { timeout: 2000 }).then(() => {
+      console.log(`📡 WebSocket emitido a usuario_${usuarioIdPedido}`);
+    }).catch(e => console.log(`⚠️ WebSocket error: ${e.message}`));
 
-        // Emitir evento WebSocket via gateway
-        axios.post('http://gateway:3000/interno/emitir', {
-          evento: 'pedido_actualizado',
-          usuarioId: usuario_id,
-          sala: 'admins',
-          datos: { pedidoId, estadoAnterior, estado_nuevo: estado, total, usuario_id }
-        }, { timeout: 2000 }).catch(() => {});
-
-        // Enviar correo
-        const resU = await axios.get(`http://auth-service:3011/api/usuarios/${usuario_id}`, { timeout: 2000 });
+    // Enviar correo en background
+    axios.get(`http://auth-service:3011/api/usuarios/${usuarioIdPedido}`, { timeout: 2000 })
+      .then(resU => {
         const { email, nombre } = resU.data.usuario || {};
-        if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, estado, total || 0);
+        if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, estado, totalPedido || 0);
       })
-      .catch(e => console.log(`⚠️ No se pudo notificar cambio de estado:`, e.message));
+      .catch(e => console.log(`⚠️ No se pudo enviar correo: ${e.message}`));
 
     res.json({
       mensaje: 'Estado actualizado exitosamente',
