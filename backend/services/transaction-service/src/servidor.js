@@ -696,7 +696,12 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       );
     }
 
-    // Emitir WebSocket inmediatamente con datos ya disponibles
+    // Emitir SSE inmediatamente
+    emitirSSE(usuarioIdPedido, 'pedido_actualizado', {
+      pedidoId, estadoAnterior, estado_nuevo: estado, total: totalPedido
+    });
+
+    // Emitir WebSocket via gateway como respaldo
     axios.post('http://gateway:3000/interno/emitir', {
       evento: 'pedido_actualizado',
       usuarioId: String(usuarioIdPedido),
@@ -933,8 +938,51 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
   }
 });
 
-// Ruta de salud
-aplicacion.get('/salud', (req, res) => {
+// ============================================
+// SSE — Server-Sent Events
+// ============================================
+const sseClientes = new Map();
+
+aplicacion.get('/api/eventos/pedidos', (req, res) => {
+  const tokenHeader = req.headers.authorization?.replace('Bearer ', '');
+  const tokenQuery = req.query.token;
+  const token = tokenHeader || tokenQuery;
+  if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+  let usuarioId;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    usuarioId = String(decoded.id);
+  } catch { return res.status(401).json({ error: 'Token inválido' }); }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  if (!sseClientes.has(usuarioId)) sseClientes.set(usuarioId, new Set());
+  sseClientes.get(usuarioId).add(res);
+  console.log(`📡 SSE conectado: usuario ${usuarioId}`);
+
+  const heartbeat = setInterval(() => { try { res.write(':heartbeat\n\n'); } catch(e) {} }, 30000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClientes.get(usuarioId)?.delete(res);
+    if (sseClientes.get(usuarioId)?.size === 0) sseClientes.delete(usuarioId);
+  });
+});
+
+function emitirSSE(usuarioId, evento, datos) {
+  const clientes = sseClientes.get(String(usuarioId));
+  if (!clientes || clientes.size === 0) return;
+  const msg = `event: ${evento}\ndata: ${JSON.stringify(datos)}\n\n`;
+  clientes.forEach(res => { try { res.write(msg); } catch(e) {} });
+  console.log(`📡 SSE emitido a usuario ${usuarioId}`);
+}
+
+// Ruta de salud (req, res) => {
   res.json({
     estado: 'activo',
     servicio: 'transacciones',
