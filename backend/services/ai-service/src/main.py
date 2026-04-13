@@ -154,74 +154,22 @@ def get_deepseek_client():
         _deepseek_client = OpenAI(api_key=api_key, base_url='https://api.deepseek.com')
     return _deepseek_client
 
-async def chat_con_vertex(mensajes: list, temperatura: float, max_tokens: int) -> str:
-    """Llama a Gemini via Google AI API (generativelanguage.googleapis.com)"""
-    try:
-        import httpx as httpx_client
-
-        api_key = os.getenv('GEMINI_API_KEY', '')
-        if not api_key:
-            raise Exception('GEMINI_API_KEY no configurada')
-
-        model = 'gemini-flash-latest'
-        url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
-
-        # Convertir formato OpenAI a Gemini
-        system_content = ''
-        user_messages = []
-        for m in mensajes:
-            if m['role'] == 'system':
-                system_content = m['content']
-            else:
-                role = 'model' if m['role'] == 'assistant' else 'user'
-                user_messages.append({'role': role, 'parts': [{'text': m['content']}]})
-
-        payload = {
-            'contents': user_messages,
-            'generationConfig': {
-                'temperature': temperatura,
-                'maxOutputTokens': max_tokens
-            }
-        }
-        if system_content:
-            payload['systemInstruction'] = {'parts': [{'text': system_content}]}
-
-        async with httpx_client.AsyncClient(timeout=60) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            data = response.json()
-            return data['candidates'][0]['content']['parts'][0]['text']
-    except Exception as e:
-        raise Exception(f'Gemini API error: {e}')
-
 async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int) -> tuple:
-    """Intenta Gemini primero en cada llamada, cae a DeepSeek si falla."""
-
-    # Intentar Gemini siempre primero
-    try:
-        respuesta = await chat_con_vertex(mensajes, temperatura, max_tokens)
-        print('✅ Respuesta de Gemini (Google AI)')
-        return respuesta, 'gemini'
-    except Exception as e:
-        print(f'⚠️ Gemini falló: {e} — usando DeepSeek')
-
-    # Fallback a DeepSeek
-    try:
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: deepseek_breaker.call(
-                get_deepseek_client().chat.completions.create,
-                model='deepseek-chat',
-                messages=mensajes,
-                temperature=temperatura,
-                max_tokens=max_tokens
-            )
+    """Usa DeepSeek como proveedor principal de IA"""
+    loop = asyncio.get_event_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: deepseek_breaker.call(
+            get_deepseek_client().chat.completions.create,
+            model='deepseek-chat',
+            messages=mensajes,
+            temperature=temperatura,
+            max_tokens=max_tokens
         )
-        print('✅ Respuesta de DeepSeek (fallback)')
-        return response.choices[0].message.content, 'deepseek'
-    except Exception as e:
-        raise Exception(f'Ambos proveedores fallaron. DeepSeek: {e}')
+    )
+    print('✅ Respuesta de DeepSeek')
+    return response.choices[0].message.content, 'deepseek'
+
 
 mongo_client_catalogo = None
 mongo_client_social = None
@@ -362,7 +310,7 @@ async def chat_asistente(request: ChatRequest):
         
         productos_info = "\\n".join([
             f"ID={p.get('id')}, {p.get('nombre')}, {p.get('categoria')}, ${p.get('precio'):,.0f}"
-            for p in contexto['productos'][:30] if p.get('en_stock', True)
+            for p in contexto['productos'][:20] if p.get('en_stock', True)
         ])
         
         system_prompt = f"""{prompt_config['system']}
