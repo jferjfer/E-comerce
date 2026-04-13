@@ -689,8 +689,7 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
     if (comentario) {
       await pool.query(
         `UPDATE pedido_historial SET comentario = $1
-         WHERE id_pedido = $2 AND estado_nuevo = $3
-         ORDER BY fecha_cambio DESC LIMIT 1`,
+         WHERE id = (SELECT id FROM pedido_historial WHERE id_pedido = $2 AND estado_nuevo = $3 ORDER BY fecha_cambio DESC LIMIT 1)`,
         [comentario, pedidoId, estado]
       );
     }
