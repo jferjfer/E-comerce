@@ -45,7 +45,7 @@ export default function CustomerSuccessDashboard() {
     setCargando(true)
     try {
       const [resPedidos, resDevoluciones] = await Promise.all([
-        fetch(API_URL + '/api/admin/pedidos?estado=Creado', {
+        fetch(API_URL + '/api/admin/pedidos?estado=Confirmado', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
         fetch(API_URL + '/api/devoluciones?estado=Solicitada', {
@@ -241,7 +241,7 @@ export default function CustomerSuccessDashboard() {
                       <tr key={pedido.id} className="hover:bg-gray-100/30 transition-colors">
                         <td className="px-6 py-4">
                           <span className="font-mono text-sm font-semibold text-gray-800">#{pedido.id}</span>
-                          <div className="mt-1"><span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">Creado</span></div>
+                          <div className="mt-1"><span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Confirmado</span></div>
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <p className="font-medium text-gray-800">{pedido.nombre_cliente}</p>
