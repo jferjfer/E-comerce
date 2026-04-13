@@ -684,10 +684,14 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       [estado, pedidoId]
     );
 
+    // El trigger registra automáticamente en pedido_historial
+    // Si hay comentario, actualizarlo en el registro del trigger
     if (comentario) {
       await pool.query(
-        'INSERT INTO pedido_historial (id_pedido, estado_anterior, estado_nuevo, comentario) VALUES ($1, $2, $3, $4)',
-        [pedidoId, estadoAnterior, estado, comentario]
+        `UPDATE pedido_historial SET comentario = $1
+         WHERE id_pedido = $2 AND estado_nuevo = $3
+         ORDER BY fecha_cambio DESC LIMIT 1`,
+        [comentario, pedidoId, estado]
       );
     }
 
@@ -1478,16 +1482,18 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
 
     const pedido = pedidoActual.rows[0];
 
-    // Actualizar estado del pedido
+    // Actualizar estado del pedido — el trigger registra en historial automáticamente
     await pool.query(
       'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
       [estado, pedidoId]
     );
 
-    // Registrar en historial
+    // Actualizar comentario del registro del trigger con info de ePayco
     await pool.query(
-      'INSERT INTO pedido_historial (id_pedido, estado_anterior, estado_nuevo, comentario) VALUES ($1, $2, $3, $4)',
-      [pedidoId, pedido.estado, estado, `ePayco: ${descripcion} — Ref: ${refPayco}`]
+      `UPDATE pedido_historial SET comentario = $1
+       WHERE id_pedido = $2 AND estado_nuevo = $3
+       ORDER BY fecha_cambio DESC LIMIT 1`,
+      [`ePayco: ${descripcion} — Ref: ${refPayco}`, pedidoId, estado]
     );
 
     // Actualizar estado del pago

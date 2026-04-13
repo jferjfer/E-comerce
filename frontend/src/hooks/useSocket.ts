@@ -11,11 +11,13 @@ let socketInstance: Socket | null = null
 
 export function getSocket(): Socket {
   if (!socketInstance) {
+    const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
     socketInstance = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      transports: isProduction ? ['polling', 'websocket'] : ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 2000,
-      reconnectionAttempts: 10
+      reconnectionAttempts: 10,
+      upgrade: true
     })
   }
   return socketInstance
