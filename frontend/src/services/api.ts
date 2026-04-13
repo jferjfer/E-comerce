@@ -341,12 +341,12 @@ export const api = {
     }
   },
 
-  async chatIA(mensaje: string, historial: any[] = []) {
+  async chatIA(mensaje: string, historial: any[] = [], usuarioId?: string, token?: string) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensaje, historial })
+        body: JSON.stringify({ mensaje, historial, usuario_id: usuarioId, token })
       });
 
       const data = await response.json();

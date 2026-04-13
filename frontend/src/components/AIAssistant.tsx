@@ -49,9 +49,10 @@ export default function AIAssistant() {
   const esCliente = usuario?.rol === 'cliente'
 
   const quickActions = [
-    { text: '👗 Recomendar outfit para una ocasión', action: 'outfit_recommendation' },
-    { text: '🎨 Ayudarme a combinar colores', action: 'color_matching' },
-    { text: '💰 Mostrarme productos recomendados', action: 'show_recommendations' }
+    { text: '👗 Busco outfit para una ocasión especial', action: 'outfit' },
+    { text: '🎨 Ayúdame a combinar colores', action: 'colors' },
+    { text: '💰 Ver productos recomendados para mí', action: 'recommendations' },
+    { text: '📦 ¿Dónde está mi pedido?', action: 'order_status' }
   ]
 
   const scrollToBottom = () => {
@@ -86,7 +87,7 @@ export default function AIAssistant() {
       }))
 
       // Llamar al backend AI Service
-      const resultado = await api.chatIA(text.trim(), historial)
+      const resultado = await api.chatIA(text.trim(), historial, usuario?.id, token || undefined)
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),

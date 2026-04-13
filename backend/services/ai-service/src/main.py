@@ -87,38 +87,33 @@ cache_misses = Counter('cache_misses_total', 'Cache misses')
 ai_tokens = Counter('ai_tokens_total', 'AI tokens used', ['type'])
 
 # ============================================
-# PROMPT MANAGER
+# PROMPT MANAGER v3 — Recomendar primero, preguntar después
 # ============================================
 PROMPTS = {
-    "v1": {
-        "system": """Eres María, asesora de moda para 'EGOS'.
-REGLAS:
-1. Solo moda y compras
-2. Habla natural y profesional
-3. Describe productos sin IDs
-4. Al final: PRODUCTOS_RECOMENDADOS: [ids]""",
+    "v3": {
+        "system": """Eres María, asesora de moda experta de EGOS Colombia.
+
+PERSONALIDAD: Cálida, directa, entusiasta. Hablas como una amiga experta en moda.
+
+REGLAS IMPORTANTES:
+1. SIEMPRE recomienda 2-3 productos PRIMERO antes de hacer preguntas
+2. Usa los IDs reales de los productos del catálogo
+3. Describe brevemente cada producto recomendado (sin mencionar el ID)
+4. Después de recomendar, haz UNA sola pregunta para afinar más
+5. Si el cliente pregunta por su pedido, responde con la info del pedido
+6. NUNCA digas (ID: X) en la respuesta visible
+7. Usa emojis con moderación ✨
+8. Respuestas cortas y directas — máximo 150 palabras
+9. Al final SIEMPRE incluye: PRODUCTOS_RECOMENDADOS: [id1, id2, id3]
+
+Si el cliente pregunta por su pedido y tienes la info, respóndele directamente.""",
         "temp": 0.7,
-        "tokens": 400
-    },
-    "v2": {
-        "system": """Eres María, asesora de moda experta para 'EGOS'.
-
-PERSONALIDAD: Cálida, profesional, entusiasta
-
-REGLAS:
-1. SOLO moda, ropa, accesorios, estilo
-2. Habla natural, usa emojis ✨
-3. Haz preguntas para entender mejor
-4. Ofrece 2-3 opciones
-5. NUNCA uses (ID: X)
-6. Al final: PRODUCTOS_RECOMENDADOS: [ids]""",
-        "temp": 0.8,
-        "tokens": 600
+        "tokens": 500
     }
 }
 
-def get_prompt(version="v2"):
-    return PROMPTS.get(version, PROMPTS["v2"])
+def get_prompt(version="v3"):
+    return PROMPTS.get(version, PROMPTS["v3"])
 
 # ============================================
 # FASTAPI APP
@@ -278,6 +273,8 @@ async def obtener_colores_db():
 class ChatRequest(BaseModel):
     mensaje: str
     historial: Optional[List[dict]] = []
+    usuario_id: Optional[str] = None
+    token: Optional[str] = None
 
 class RecomendacionRequest(BaseModel):
     usuario_id: Optional[str] = None
@@ -306,23 +303,57 @@ async def chat_asistente(request: ChatRequest):
     
     try:
         contexto = await obtener_contexto_completo()
-        prompt_config = get_prompt("v2")
-        
-        productos_info = "\\n".join([
-            f"ID={p.get('id')}, {p.get('nombre')}, {p.get('categoria')}, ${p.get('precio'):,.0f}"
-            for p in contexto['productos'][:20] if p.get('en_stock', True)
+        prompt_config = get_prompt("v3")
+
+        # Solo productos EN STOCK con tallas disponibles
+        productos_en_stock = [
+            p for p in contexto['productos']
+            if p.get('en_stock', True) and p.get('tallas')
+        ][:25]
+
+        productos_info = "\n".join([
+            f"ID={p.get('id')}, {p.get('nombre')}, {p.get('categoria')}, "
+            f"${p.get('precio'):,.0f}, Tallas: {','.join(p.get('tallas', []))}, "
+            f"Colores: {','.join(p.get('colores', []))}"
+            for p in productos_en_stock
         ])
-        
+
+        # Contexto del usuario si está logueado
+        contexto_usuario = ""
+        if request.usuario_id and request.token:
+            try:
+                async with httpx.AsyncClient(timeout=3) as client:
+                    res_pedidos = await client.get(
+                        f"http://transaction-service:3003/api/pedidos",
+                        headers={"Authorization": f"Bearer {request.token}"}
+                    )
+                    if res_pedidos.status_code == 200:
+                        pedidos = res_pedidos.json().get('pedidos', [])[:3]
+                        if pedidos:
+                            pedidos_info = [
+                                f"Pedido #{p['id']} - Estado: {p['estado']} - "
+                                f"Total: ${float(p.get('total',0)):,.0f} - "
+                                f"Fecha: {p.get('fecha_creacion','')[:10]}"
+                                for p in pedidos
+                            ]
+                            contexto_usuario = f"\n\nPEDIDOS DEL CLIENTE:\n" + "\n".join(pedidos_info)
+            except:
+                pass
+
         system_prompt = f"""{prompt_config['system']}
 
-PRODUCTOS ({contexto['total_productos']} total):
+PRODUCTOS DISPONIBLES EN STOCK ({len(productos_en_stock)} productos):
 {productos_info}
 
-CATEGORÍAS: {', '.join(contexto['categorias'])}"""
-        
+CATEGORÍAS: {', '.join(contexto['categorias'])}{contexto_usuario}"""
+
+        # Historial completo para memoria de conversación
         mensajes = [{'role': 'system', 'content': system_prompt}]
         if request.historial:
-            mensajes.extend(request.historial[-10:])
+            # Usar todo el historial para memoria completa
+            for msg in request.historial[-20:]:
+                if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
+                    mensajes.append(msg)
         mensajes.append({'role': 'user', 'content': request.mensaje})
 
         respuesta, proveedor = await chat_con_ia(
