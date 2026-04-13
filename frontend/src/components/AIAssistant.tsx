@@ -27,7 +27,7 @@ export default function AIAssistant() {
       } catch {
         return [{
           id: '1',
-          text: '¡Hola! Soy María, tu asesora de imagen personal de EGOS. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
+          text: '¡Hola! Soy Noa ✨ Tu asesora de moda personal en EGOS. Cuéntame, ¿qué estás buscando hoy?',
           isUser: false,
           timestamp: new Date()
         }]
@@ -35,7 +35,7 @@ export default function AIAssistant() {
     }
     return [{
       id: '1',
-      text: '¡Hola! Soy María, tu asesora de imagen personal de EGOS. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
+      text: '¡Hola! Soy Noa ✨ Tu asesora de moda personal en EGOS. Cuéntame, ¿qué estás buscando hoy?',
       isUser: false,
       timestamp: new Date()
     }]
@@ -177,7 +177,7 @@ export default function AIAssistant() {
                     <span className="text-white font-bold text-lg">M</span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">María</h3>
+                    <h3 className="font-semibold text-lg">Noa</h3>
                     <div className="flex items-center space-x-1">
                       <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                       <span className="text-sm opacity-90">En línea</span>
@@ -191,7 +191,7 @@ export default function AIAssistant() {
                         localStorage.removeItem('ai-chat-history')
                         setMessages([{
                           id: '1',
-                          text: '¡Hola! Soy María, tu asesora de imagen personal de *EGOS*. Estoy aquí para ayudarte a encontrar tu estilo perfecto. ¿En qué puedo ayudarte?',
+                          text: '¡Hola! Soy Noa ✨ Tu asesora de moda personal en EGOS. Cuéntame, ¿qué estás buscando hoy?',
                           isUser: false,
                           timestamp: new Date()
                         }])
@@ -228,7 +228,7 @@ export default function AIAssistant() {
                             <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-2">
                               <span className="text-white font-semibold text-xs">M</span>
                             </div>
-                            <span className="text-xs font-semibold text-purple-600">María</span>
+                            <span className="text-xs font-semibold text-purple-600">Noa</span>
                           </div>
                         )}
                         <p className="text-sm leading-relaxed">{message.text}</p>
