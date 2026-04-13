@@ -518,7 +518,37 @@ app.all('/api/carrito*', async (req, res) => {
   }
 });
 
-app.all('/api/pedidos*', async (req, res) => {
+app.get('/api/eventos/pedidos', (req, res) => {
+  // Proxy SSE nativo sin axios — usa http directamente
+  const http = require('http');
+  const url = new URL(`${TRANS_URL}/api/eventos/pedidos`);
+  const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+  
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.flushHeaders();
+
+  const options = {
+    hostname: url.hostname,
+    port: url.port || 80,
+    path: `/api/eventos/pedidos?token=${token}`,
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    proxyRes.pipe(res);
+  });
+
+  proxyReq.on('error', () => res.end());
+  req.on('close', () => proxyReq.destroy());
+  proxyReq.end();
+});
+
+
   try {
     const response = await axios({
       method: req.method,
