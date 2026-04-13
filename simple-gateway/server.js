@@ -932,6 +932,38 @@ Object.keys(services).forEach(path => {
   }));
 });
 
+// Ruta SSE — proxy al transaction-service
+app.get('/api/eventos/pedidos', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+  if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const http = require('http');
+
+  try {
+    const proxyReq = http.request({
+      hostname: 'transaction-service',
+      port: 3003,
+      path: `/api/eventos/pedidos?token=${encodeURIComponent(token)}`,
+      method: 'GET'
+    }, (proxyRes) => {
+      proxyRes.on('data', chunk => { try { res.write(chunk); } catch(e) {} });
+      proxyRes.on('end', () => { try { res.end(); } catch(e) {} });
+      proxyRes.on('error', () => { try { res.end(); } catch(e) {} });
+    });
+    proxyReq.on('error', () => { try { res.end(); } catch(e) {} });
+    req.on('close', () => { try { proxyReq.destroy(); } catch(e) {} });
+    proxyReq.end();
+  } catch(e) {
+    try { res.end(); } catch(e2) {}
+  }
+});
+
 // Ruta de estado de servicios
 app.get('/estado-servicios', async (req, res) => {
   console.log('🔍 Verificando estado de microservicios...');
