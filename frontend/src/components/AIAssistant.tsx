@@ -44,7 +44,7 @@ export default function AIAssistant() {
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { usuario } = useAuthStore()
+  const { usuario, token } = useAuthStore()
 
   const esCliente = usuario?.rol === 'cliente'
 
