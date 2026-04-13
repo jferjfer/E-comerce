@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { api } from '@/services/api'
 import { formatPrice } from '@/utils/sanitize'
 import { Link } from 'react-router-dom'
-import { useSSEPedidos } from '@/hooks/useSSE'
+import { useSocket } from '@/hooks/useSocket'
 
 interface ProductoPedido {
   id: string
@@ -34,13 +34,7 @@ export default function OrdersPage() {
   const [motivoDevolucion, setMotivoDevolucion] = useState('')
   const [devoluciones, setDevoluciones] = useState<Record<string, any>>({})
   const { token } = useAuthStore()
-
-  useSSEPedidos(token, (datos) => {
-    setPedidos(prev => prev.map(p =>
-      p.id === datos.pedidoId ? { ...p, estado: datos.estado_nuevo } : p
-    ))
-    if (pedidoSeleccionado === datos.pedidoId) verHistorial(datos.pedidoId)
-  })
+  const socket = useSocket()
 
   const cargarDevoluciones = useCallback(async (pedidosList: Pedido[]) => {
     if (!token) return
@@ -105,6 +99,20 @@ export default function OrdersPage() {
   useEffect(() => {
     cargarPedidos()
   }, [cargarPedidos])
+
+  useEffect(() => {
+    const onPedidoActualizado = (datos: any) => {
+      console.log('📦 WebSocket pedido_actualizado:', datos)
+      setPedidos(prev => prev.map(p =>
+        p.id === datos.pedidoId ? { ...p, estado: datos.estado_nuevo } : p
+      ))
+      if (pedidoSeleccionado === datos.pedidoId) {
+        verHistorial(datos.pedidoId)
+      }
+    }
+    socket.on('pedido_actualizado', onPedidoActualizado)
+    return () => { socket.off('pedido_actualizado', onPedidoActualizado) }
+  }, [socket, pedidoSeleccionado])
 
   const verHistorial = async (pedidoId: string) => {
     if (!token) return
