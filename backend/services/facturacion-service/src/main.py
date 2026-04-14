@@ -651,6 +651,49 @@ async def generar_nota_debito_endpoint(
 # SET DE PRUEBAS DIAN — 50 documentos
 # ============================================
 
+@app.post("/api/dian/set-pruebas/consultar-zipkeys")
+async def consultar_zipkeys(db: Session = Depends(get_db)):
+    """Consulta el estado de los ZipKeys pendientes y actualiza la BD"""
+    from cliente_dian import consultar_estado_zip
+
+    facturas_pendientes = db.query(Factura).filter(
+        Factura.pedido_id.like("TEST-%"),
+        Factura.estado == "Enviada",
+        Factura.mensaje_dian.like("%ZipKey%")
+    ).all()
+
+    actualizadas = 0
+    for factura in facturas_pendientes:
+        try:
+            # Extraer ZipKey del mensaje
+            import re
+            match = re.search(r'ZipKey: ([\w-]+)', factura.mensaje_dian or '')
+            if not match:
+                continue
+            zip_key = match.group(1)
+            resultado = consultar_estado_zip(zip_key)
+            respuesta = resultado.get('respuesta', '')
+
+            if 'Aceptada' in respuesta or 'aceptada' in respuesta or 'ACCEPTED' in respuesta:
+                factura.estado = 'Aceptada'
+                factura.mensaje_dian = f'Aceptada por DIAN. ZipKey: {zip_key}'
+                actualizadas += 1
+            elif 'Rechazada' in respuesta or 'rechazada' in respuesta or 'REJECTED' in respuesta:
+                factura.estado = 'Rechazada'
+                factura.mensaje_dian = f'Rechazada por DIAN: {respuesta[:200]}'
+                actualizadas += 1
+            else:
+                print(f'⏳ {factura.numero_completo} aún procesando: {respuesta[:100]}')
+        except Exception as e:
+            print(f'⚠️ Error consultando ZipKey {factura.numero_completo}: {e}')
+
+    db.commit()
+    return {
+        'consultadas': len(facturas_pendientes),
+        'actualizadas': actualizadas
+    }
+
+
 @app.post("/api/dian/set-pruebas")
 async def enviar_set_pruebas(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Envía el set completo de pruebas a la DIAN: 30 facturas + 10 notas crédito + 10 notas débito"""
