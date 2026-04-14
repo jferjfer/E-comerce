@@ -576,6 +576,11 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: DIAN_AMBIENTE
+        - name: DIAN_TEST_SET_ID
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: DIAN_TEST_SET_ID
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
@@ -716,14 +721,7 @@ metadata:
   name: gateway
   namespace: egos
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: gateway
-  template:
-    metadata:
-      labels:
-        app: gateway
+  replicas: 2
     spec:
       containers:
       - name: gateway
