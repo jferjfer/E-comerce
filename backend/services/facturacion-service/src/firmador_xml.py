@@ -60,6 +60,7 @@ class FirmadorXML:
             self.cert_b64 = base64.b64encode(self.cert_der).decode()
 
             self.issuer_name = self._format_issuer(certificate.issuer)
+            # Serial en formato decimal (requerido por DIAN XAdES)
             self.serial_number = str(certificate.serial_number)
 
             digest = hashlib.sha256(self.cert_der).digest()
@@ -115,7 +116,7 @@ class FirmadorXML:
         xades_obj_id = f"XadesObjectId-{uuid.uuid4()}"
         qualifying_id = f"QualifyingProperties-{uuid.uuid4()}"
 
-        now = datetime.now(COLOMBIA_TZ).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        now = datetime.now(COLOMBIA_TZ).strftime("%Y-%m-%dT%H:%M:%S-05:00")
 
         # Construir SignedProperties
         signed_props = self._build_signed_properties(
@@ -293,7 +294,8 @@ _firmador = None
 
 def obtener_firmador(p12_path: str = None, p12_password: str = None) -> FirmadorXML:
     global _firmador
-    if _firmador is None:
+    # Siempre crear nueva instancia para usar el certificado actualizado
+    if _firmador is None or p12_path:
         _firmador = FirmadorXML(p12_path, p12_password)
     return _firmador
 

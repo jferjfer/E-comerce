@@ -11,8 +11,8 @@ from lxml import etree
 # CONFIGURACIÓN EMPRESA EMISORA
 # ============================================
 EMPRESA = {
-    "nit": "900205170",
-    "dv": "8",
+    "nit": "902051708",
+    "dv": "6",
     "razon_social": "Vertel & Catillo S.A.S",
     "nombre_comercial": "EGOS",
     "direccion": "CRA 107 A BIS #69B-58",
@@ -20,18 +20,18 @@ EMPRESA = {
     "departamento": "Cundinamarca",
     "pais": "CO",
     "telefono": "+573017879852",
-    "email": "stiloymodams@gmail.com",
-    "ciiu": "4791",
-    "regimen": "48",  # Responsable de IVA
+    "email": "servicioalcliente@egoscolombia.com",
+    "ciiu": "4771",
+    "regimen": "47",  # Régimen SIMPLE
     "tipo_persona": "1",  # Jurídica
 }
 
 # Configuración DIAN
 DIAN_CONFIG = {
-    "software_id": os.getenv("DIAN_SOFTWARE_ID", "b7249493-84cf-430c-be82-64c830a2158c"),
+    "software_id": os.getenv("DIAN_SOFTWARE_ID", "50286f89-5925-492b-9d5a-8b3f5782a340"),
     "clave_tecnica": os.getenv("DIAN_CLAVE_TECNICA", "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"),
-    "pin": os.getenv("DIAN_PIN", "20191"),
-    "test_set_id": os.getenv("DIAN_TEST_SET_ID", "c5f5fbef-6621-420b-b986-857b2f1588d5"),
+    "pin": os.getenv("DIAN_PIN", "14805"),
+    "test_set_id": os.getenv("DIAN_TEST_SET_ID", "8b907f6c-0f64-4408-88e1-11bfa8b952e6"),
     "prefijo": os.getenv("DIAN_PREFIJO", "SETP"),
     "resolucion": os.getenv("DIAN_RESOLUCION", "18760000001"),
     "fecha_resolucion": "2019-01-19",
@@ -103,7 +103,7 @@ def generar_xml_factura(
 
     numero_completo = f"{DIAN_CONFIG['prefijo']}{numero}"
     fecha_str = fecha.strftime("%Y-%m-%d")
-    hora_str = fecha.strftime("%H:%M:%S")
+    hora_str = fecha.strftime("%H:%M:%S-05:00")
 
     # Calcular valores
     subtotal = sum(p["precio_unitario"] * p["cantidad"] for p in productos)

@@ -20,7 +20,7 @@ DIAN_WSDL_PRUEBAS    = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc
 DIAN_WSDL_PRODUCCION = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
 
 AMBIENTE    = os.getenv("DIAN_AMBIENTE", "2")
-TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "8b907f6c-0f64-4408-88e1-11bfa8b952e6")
+TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "29982673-c13e-4fec-a6c1-c2cfd452c2b4")
 NIT_EMISOR  = "902051708"
 
 
