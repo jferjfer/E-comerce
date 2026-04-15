@@ -28,10 +28,10 @@ EMPRESA = {
 
 # Configuración DIAN
 DIAN_CONFIG = {
-    "software_id": os.getenv("DIAN_SOFTWARE_ID", "50286f89-5925-492b-9d5a-8b3f5782a340"),
+    "software_id": os.getenv("DIAN_SOFTWARE_ID", "e366fc5f-eea4-4bc8-8ca9-4dfcd1255eba"),
     "clave_tecnica": os.getenv("DIAN_CLAVE_TECNICA", "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"),
-    "pin": os.getenv("DIAN_PIN", "14805"),
-    "test_set_id": os.getenv("DIAN_TEST_SET_ID", "8b907f6c-0f64-4408-88e1-11bfa8b952e6"),
+    "pin": os.getenv("DIAN_PIN", "13251"),
+    "test_set_id": os.getenv("DIAN_TEST_SET_ID", "7dbfd362-fad0-4e3a-8983-76a3422e504b"),
     "prefijo": os.getenv("DIAN_PREFIJO", "SETP"),
     "resolucion": os.getenv("DIAN_RESOLUCION", "18760000001"),
     "fecha_resolucion": "2019-01-19",

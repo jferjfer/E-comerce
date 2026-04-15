@@ -18,11 +18,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # v1.2.0 - WS-Security con codeflexDian
 
-DIAN_URL_PRUEBAS    = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc"
-DIAN_URL_PRODUCCION = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc"
+DIAN_URL_PRUEBAS    = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
+DIAN_URL_PRODUCCION = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
 
 AMBIENTE    = os.getenv("DIAN_AMBIENTE", "2")
-TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "29982673-c13e-4fec-a6c1-c2cfd452c2b4")
+TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "7dbfd362-fad0-4e3a-8983-76a3422e504b")
 NIT_EMISOR  = "902051708"
 
 P12_PATH     = os.getenv("DIAN_P12_PATH", "/app/certs/certificado.pfx")
@@ -104,7 +104,7 @@ def enviar_factura_dian(xml_string: str, numero_completo: str, nit_emisor: str =
         )
 
         print(f"📥 Respuesta DIAN HTTP {response.status_code} para {numero_completo}")
-        response_text = response.text[:500]
+        response_text = response.text[:2000]
         print(f"   Respuesta: {response_text}")
 
         if response.status_code != 200:
