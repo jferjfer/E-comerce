@@ -162,7 +162,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     # ── Campos principales (orden exacto del ejemplo) ──
     etree.SubElement(root, f"{{{CBC}}}UBLVersionID").text = "UBL 2.1"
     etree.SubElement(root, f"{{{CBC}}}CustomizationID").text = "05"
-    etree.SubElement(root, f"{{{CBC}}}ProfileID").text = "DIAN 2.1"
+    etree.SubElement(root, f"{{{CBC}}}ProfileID").text = "DIAN 2.1: Factura Electrónica de Venta"
     etree.SubElement(root, f"{{{CBC}}}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{{{CBC}}}ID").text = numero_completo
     etree.SubElement(root, f"{{{CBC}}}UUID",
