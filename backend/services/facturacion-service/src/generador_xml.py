@@ -119,7 +119,6 @@ def generar_xml_factura(
         DIAN_CONFIG["clave_tecnica"], DIAN_CONFIG["ambiente"]
     )
 
-    # Construir XML
     root = etree.Element("Invoice", nsmap={
         None: "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
         "cac": "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
@@ -127,7 +126,13 @@ def generar_xml_factura(
         "ext": "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2",
         "sts": "dian:gov:co:facturaelectronica:Structures-2-1",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "ds": "http://www.w3.org/2000/09/xmldsig#",
+        "xades": "http://uri.etsi.org/01903/v1.3.2#",
+        "xades141": "http://uri.etsi.org/01903/v1.4.1#",
     })
+    root.set("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation",
+             "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 "
+             "http://docs.oasis-open.org/ubl/os-UBL-2.1/xsd/maindoc/UBL-Invoice-2.1.xsd")
 
     cbc = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
     cac = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
@@ -166,12 +171,14 @@ def generar_xml_factura(
                      listAgencyName="United Nations Economic Commission for Europe",
                      listSchemeURI="urn:oasis:names:specification:ubl:codelist:gc:CountryIdentificationCode-2.1").text = "CO"
 
-    # SoftwareProvider
+    # SoftwareProvider — ProviderID debe ser NIT de la DIAN (800197268) con schemeID=4
     sw_provider = etree.SubElement(dian_ext, f"{{{sts}}}SoftwareProvider")
     sw_prov_id = etree.SubElement(sw_provider, f"{{{sts}}}ProviderID",
                                    schemeAgencyID="195",
-                                   schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)")
-    sw_prov_id.text = EMPRESA["nit"]
+                                   schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                                   schemeID="4",
+                                   schemeName="31")
+    sw_prov_id.text = "800197268"
     sw_id = etree.SubElement(sw_provider, f"{{{sts}}}SoftwareID",
                               schemeAgencyID="195",
                               schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)")
@@ -198,9 +205,8 @@ def generar_xml_factura(
     qr_text = f"NumFac={numero_completo}&FecFac={fecha_str}&NitFac={EMPRESA['nit']}&DocAdq={nit_adquiriente}&ValFac={subtotal:.2f}&ValIva={iva:.2f}&ValTotal={total:.2f}&CUFE={cufe}"
     etree.SubElement(dian_ext, f"{{{sts}}}QRCode").text = qr_text
 
-    # Campos principales
     etree.SubElement(root, f"{{{cbc}}}UBLVersionID").text = "UBL 2.1"
-    etree.SubElement(root, f"{{{cbc}}}CustomizationID").text = "10"
+    etree.SubElement(root, f"{{{cbc}}}CustomizationID").text = "05"
     etree.SubElement(root, f"{{{cbc}}}ProfileID").text = "DIAN 2.1"
     etree.SubElement(root, f"{{{cbc}}}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{{{cbc}}}ID").text = numero_completo
@@ -213,7 +219,9 @@ def generar_xml_factura(
                      listAgencyID="195",
                      listAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
                      listSchemeURI="urn:oasis:names:specification:ubl:codelist:gc:InvoiceTypeCode-2.1").text = "01"
-    etree.SubElement(root, f"{{{cbc}}}Note").text = f"Factura de venta EGOS - Pedido #{pedido_id}"
+    # Note con cadena CUFE según ejemplos DIAN
+    note_cadena = f"{numero_completo}{fecha_str}{hora_str}{subtotal:.2f}01{iva:.2f}000.00000.00{total:.2f}{EMPRESA['nit']}{nit_adquiriente}{DIAN_CONFIG['clave_tecnica']}{DIAN_CONFIG['ambiente']}"
+    etree.SubElement(root, f"{{{cbc}}}Note").text = note_cadena
     etree.SubElement(root, f"{{{cbc}}}DocumentCurrencyCode",
                      listID="ISO 4217 Alpha", listAgencyID="6",
                      listAgencyName="United Nations Economic Commission for Europe").text = "COP"

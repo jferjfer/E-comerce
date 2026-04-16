@@ -41,15 +41,13 @@ def generar_nota_credito(
 
     numero_completo = f"{DIAN_CONFIG['prefijo']}{numero}"
     fecha_str = fecha.strftime("%Y-%m-%d")
-    hora_str = fecha.strftime("%H:%M:%S")
+    hora_str = fecha.strftime("%H:%M:%S-05:00")
 
     subtotal = sum(p["precio_unitario"] * p["cantidad"] for p in productos)
     iva = round(subtotal * IVA_RATE, 2)
     total = round(subtotal + iva, 2)
-
     nit_adquiriente = cliente.get("nit_cc", "222222222222")
 
-    # CUDE para notas crédito (similar al CUFE)
     cadena_cude = (
         f"{numero_completo}{fecha_str}{hora_str}"
         f"{subtotal:.2f}01{iva:.2f}000.00000.00"
@@ -64,6 +62,9 @@ def generar_nota_credito(
         "cbc": "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2",
         "ext": "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2",
         "sts": "dian:gov:co:facturaelectronica:Structures-2-1",
+        "ds": "http://www.w3.org/2000/09/xmldsig#",
+        "xades": "http://uri.etsi.org/01903/v1.3.2#",
+        "xades141": "http://uri.etsi.org/01903/v1.4.1#",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     }
 
@@ -73,6 +74,9 @@ def generar_nota_credito(
     sts = nsmap["sts"]
 
     root = etree.Element("CreditNote", nsmap=nsmap)
+    root.set("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation",
+             "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2 "
+             "http://docs.oasis-open.org/ubl/os-UBL-2.1/xsd/maindoc/UBL-CreditNote-2.1.xsd")
 
     # UBLExtensions — DianExtensions
     ext_root = etree.SubElement(root, f"{{{ext}}}UBLExtensions")
@@ -122,7 +126,7 @@ def generar_nota_credito(
 
     # Campos principales
     etree.SubElement(root, f"{{{cbc}}}UBLVersionID").text = "UBL 2.1"
-    etree.SubElement(root, f"{{{cbc}}}CustomizationID").text = "20"
+    etree.SubElement(root, f"{{{cbc}}}CustomizationID").text = "11"
     etree.SubElement(root, f"{{{cbc}}}ProfileID").text = "DIAN 2.1"
     etree.SubElement(root, f"{{{cbc}}}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{{{cbc}}}ID").text = numero_completo
