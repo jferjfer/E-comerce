@@ -129,8 +129,21 @@ class FirmadorXML:
             hashlib.sha256(signed_props_c14n).digest()
         ).decode()
 
-        # Digest del documento (sin firma, enveloped)
-        doc_c14n = etree.tostring(tree, method="c14n", exclusive=False)
+        # Digest del documento con transformación enveloped-signature
+        # Debe calcularse sobre el documento SIN el nodo Signature
+        # Clonamos el árbol y removemos cualquier firma existente para el cálculo
+        import copy
+        tree_copy = copy.deepcopy(tree)
+        NS_EXT = "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
+        # Remover UBLExtension de firma si existe
+        for ext in tree_copy.findall(f"{{{NS_EXT}}}UBLExtensions/{{{NS_EXT}}}UBLExtension"):
+            content = ext.find(f"{{{NS_EXT}}}ExtensionContent")
+            if content is not None:
+                sig = content.find("{http://www.w3.org/2000/09/xmldsig#}Signature")
+                if sig is not None:
+                    ext.getparent().remove(ext)
+                    break
+        doc_c14n = etree.tostring(tree_copy, method="c14n", exclusive=False)
         doc_digest = base64.b64encode(
             hashlib.sha256(doc_c14n).digest()
         ).decode()
