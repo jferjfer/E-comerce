@@ -244,12 +244,17 @@ def generar_xml_factura(
     supplier_name = etree.SubElement(supplier_party, f"{{{cac}}}PartyName")
     etree.SubElement(supplier_name, f"{{{cbc}}}Name").text = EMPRESA["nombre_comercial"]
 
-    supplier_legal = etree.SubElement(supplier_party, f"{{{cac}}}PartyLegalEntity")
-    etree.SubElement(supplier_legal, f"{{{cbc}}}RegistrationName").text = EMPRESA["razon_social"]
-    etree.SubElement(supplier_legal, f"{{{cbc}}}CompanyID",
-                     schemeAgencyID="195",
-                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
+    supplier_physical = etree.SubElement(supplier_party, f"{{{cac}}}PhysicalLocation")
+    supplier_address = etree.SubElement(supplier_physical, f"{{{cac}}}Address")
+    etree.SubElement(supplier_address, f"{{{cbc}}}ID").text = "11001"
+    etree.SubElement(supplier_address, f"{{{cbc}}}CityName").text = EMPRESA["ciudad"]
+    etree.SubElement(supplier_address, f"{{{cbc}}}CountrySubentity").text = EMPRESA["departamento"]
+    etree.SubElement(supplier_address, f"{{{cbc}}}CountrySubentityCode").text = "11"
+    supplier_addr_line = etree.SubElement(supplier_address, f"{{{cac}}}AddressLine")
+    etree.SubElement(supplier_addr_line, f"{{{cbc}}}Line").text = EMPRESA["direccion"]
+    supplier_country = etree.SubElement(supplier_address, f"{{{cac}}}Country")
+    etree.SubElement(supplier_country, f"{{{cbc}}}IdentificationCode").text = "CO"
+    etree.SubElement(supplier_country, f"{{{cbc}}}Name", languageID="es").text = "Colombia"
 
     supplier_tax = etree.SubElement(supplier_party, f"{{{cac}}}PartyTaxScheme")
     etree.SubElement(supplier_tax, f"{{{cbc}}}RegistrationName").text = EMPRESA["razon_social"]
@@ -257,11 +262,33 @@ def generar_xml_factura(
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
                      schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
+    etree.SubElement(supplier_tax, f"{{{cbc}}}TaxLevelCode", listName="05").text = "O-13"
+    supplier_reg_addr = etree.SubElement(supplier_tax, f"{{{cac}}}RegistrationAddress")
+    etree.SubElement(supplier_reg_addr, f"{{{cbc}}}ID").text = "11001"
+    etree.SubElement(supplier_reg_addr, f"{{{cbc}}}CityName").text = EMPRESA["ciudad"]
+    etree.SubElement(supplier_reg_addr, f"{{{cbc}}}CountrySubentity").text = EMPRESA["departamento"]
+    etree.SubElement(supplier_reg_addr, f"{{{cbc}}}CountrySubentityCode").text = "11"
+    supplier_reg_line = etree.SubElement(supplier_reg_addr, f"{{{cac}}}AddressLine")
+    etree.SubElement(supplier_reg_line, f"{{{cbc}}}Line").text = EMPRESA["direccion"]
+    supplier_reg_country = etree.SubElement(supplier_reg_addr, f"{{{cac}}}Country")
+    etree.SubElement(supplier_reg_country, f"{{{cbc}}}IdentificationCode").text = "CO"
+    etree.SubElement(supplier_reg_country, f"{{{cbc}}}Name", languageID="es").text = "Colombia"
     supplier_tax_scheme = etree.SubElement(supplier_tax, f"{{{cac}}}TaxScheme")
     etree.SubElement(supplier_tax_scheme, f"{{{cbc}}}ID").text = "01"
     etree.SubElement(supplier_tax_scheme, f"{{{cbc}}}Name").text = "IVA"
 
+    supplier_legal = etree.SubElement(supplier_party, f"{{{cac}}}PartyLegalEntity")
+    etree.SubElement(supplier_legal, f"{{{cbc}}}RegistrationName").text = EMPRESA["razon_social"]
+    etree.SubElement(supplier_legal, f"{{{cbc}}}CompanyID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                     schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
+    supplier_crs = etree.SubElement(supplier_legal, f"{{{cac}}}CorporateRegistrationScheme")
+    etree.SubElement(supplier_crs, f"{{{cbc}}}ID").text = DIAN_CONFIG["prefijo"]
+    etree.SubElement(supplier_crs, f"{{{cbc}}}Name").text = DIAN_CONFIG["pin"]
+
     supplier_contact = etree.SubElement(supplier_party, f"{{{cac}}}Contact")
+    etree.SubElement(supplier_contact, f"{{{cbc}}}Telephone").text = EMPRESA["telefono"]
     etree.SubElement(supplier_contact, f"{{{cbc}}}ElectronicMail").text = EMPRESA["email"]
 
     # Receptor (AccountingCustomerParty)
@@ -281,6 +308,12 @@ def generar_xml_factura(
 
     customer_contact = etree.SubElement(customer_party, f"{{{cac}}}Contact")
     etree.SubElement(customer_contact, f"{{{cbc}}}ElectronicMail").text = cliente.get("email", "")
+
+    # PaymentMeans
+    payment_means = etree.SubElement(root, f"{{{cac}}}PaymentMeans")
+    etree.SubElement(payment_means, f"{{{cbc}}}ID").text = "1"
+    etree.SubElement(payment_means, f"{{{cbc}}}PaymentMeansCode").text = "10"
+    etree.SubElement(payment_means, f"{{{cbc}}}PaymentDueDate").text = fecha_str
 
     # Totales de impuestos
     tax_total = etree.SubElement(root, f"{{{cac}}}TaxTotal")
@@ -318,7 +351,7 @@ def generar_xml_factura(
         line = etree.SubElement(root, f"{{{cac}}}InvoiceLine")
         etree.SubElement(line, f"{{{cbc}}}ID").text = str(i)
         etree.SubElement(line, f"{{{cbc}}}InvoicedQuantity",
-                         unitCode="94").text = str(cantidad)
+                         unitCode="NIU").text = str(cantidad)
         etree.SubElement(line, f"{{{cbc}}}LineExtensionAmount",
                          currencyID="COP").text = f"{subtotal_linea:.2f}"
 
@@ -348,7 +381,7 @@ def generar_xml_factura(
         etree.SubElement(line_price, f"{{{cbc}}}PriceAmount",
                          currencyID="COP").text = f"{precio_unit:.2f}"
         etree.SubElement(line_price, f"{{{cbc}}}BaseQuantity",
-                         unitCode="94").text = "1"
+                         unitCode="NIU").text = "1"
 
     xml_string = etree.tostring(root, pretty_print=True,
                                 xml_declaration=True, encoding="UTF-8").decode()
