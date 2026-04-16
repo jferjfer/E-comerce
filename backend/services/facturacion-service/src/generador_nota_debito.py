@@ -1,41 +1,18 @@
 """
 Generador de Notas Débito UBL 2.1 — DIAN Colombia
-Cobra montos adicionales sobre una factura electrónica
+Estructura basada exactamente en ejemplo oficial DebitNote.xml de la DIAN
 """
 import hashlib
-import os
 from datetime import datetime
 from typing import List, Dict
 from lxml import etree
-from generador_xml import EMPRESA, DIAN_CONFIG, IVA_RATE, calcular_cufe
+from generador_xml import EMPRESA, DIAN_CONFIG, IVA_RATE, CBC, CAC, EXT
+from generador_nota_credito import STS_NC
 
-def generar_nota_debito(
-    numero: int,
-    factura_referencia: str,
-    cufe_factura: str,
-    fecha_factura: str,
-    cliente: Dict,
-    productos: List[Dict],
-    motivo: str = "Intereses por mora",
-    codigo_motivo: str = "1",
-    fecha: datetime = None
-) -> tuple:
-    """
-    Genera XML UBL 2.1 de Nota Débito
 
-    Args:
-        numero: Número secuencial
-        factura_referencia: Número de la factura original
-        cufe_factura: CUFE de la factura original
-        fecha_factura: Fecha de la factura original (YYYY-MM-DD)
-        cliente: Datos del cliente
-        productos: Conceptos a cobrar
-        motivo: Descripción del motivo
-        codigo_motivo: 1=Intereses, 2=Gastos por cobrar, 3=Cambio valor, 4=Otros
-
-    Returns:
-        tuple: (xml_string, cude, numero_completo, subtotal, iva, total)
-    """
+def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
+                        cliente, productos, motivo="Intereses por mora",
+                        codigo_motivo="1", fecha=None):
     if fecha is None:
         fecha = datetime.now()
 
@@ -56,189 +33,237 @@ def generar_nota_debito(
     )
     cude = hashlib.sha384(cadena_cude.encode()).hexdigest()
 
+    security_code = hashlib.sha384(
+        f"{DIAN_CONFIG['software_id']}{DIAN_CONFIG['pin']}{numero_completo}".encode()
+    ).hexdigest()
+
     nsmap = {
         None: "urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2",
-        "cac": "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
-        "cbc": "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2",
-        "ext": "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2",
-        "sts": "dian:gov:co:facturaelectronica:Structures-2-1",
+        "cac": CAC,
+        "cbc": CBC,
         "ds": "http://www.w3.org/2000/09/xmldsig#",
+        "ext": EXT,
+        "sts": STS_NC,
         "xades": "http://uri.etsi.org/01903/v1.3.2#",
         "xades141": "http://uri.etsi.org/01903/v1.4.1#",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     }
 
-    cbc = nsmap["cbc"]
-    cac = nsmap["cac"]
-    ext = nsmap["ext"]
-    sts = nsmap["sts"]
-
     root = etree.Element("DebitNote", nsmap=nsmap)
     root.set("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation",
-             "urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2 "
+             "urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2    "
              "http://docs.oasis-open.org/ubl/os-UBL-2.1/xsd/maindoc/UBL-DebitNote-2.1.xsd")
 
-    # UBLExtensions
-    ext_root = etree.SubElement(root, f"{{{ext}}}UBLExtensions")
-    ext_item = etree.SubElement(ext_root, f"{{{ext}}}UBLExtension")
-    ext_content = etree.SubElement(ext_item, f"{{{ext}}}ExtensionContent")
-    dian_ext = etree.SubElement(ext_content, f"{{{sts}}}DianExtensions")
+    # UBLExtensions — SIN InvoiceControl
+    uble = etree.SubElement(root, f"{{{EXT}}}UBLExtensions")
+    uble_item = etree.SubElement(uble, f"{{{EXT}}}UBLExtension")
+    uble_content = etree.SubElement(uble_item, f"{{{EXT}}}ExtensionContent")
+    dian = etree.SubElement(uble_content, f"{{{STS_NC}}}DianExtensions")
 
-    inv_control = etree.SubElement(dian_ext, f"{{{sts}}}InvoiceControl")
-    etree.SubElement(inv_control, f"{{{sts}}}InvoiceAuthorization").text = DIAN_CONFIG["resolucion"]
-    auth_period = etree.SubElement(inv_control, f"{{{sts}}}AuthorizationPeriod")
-    etree.SubElement(auth_period, f"{{{cbc}}}StartDate").text = DIAN_CONFIG["fecha_resolucion"]
-    etree.SubElement(auth_period, f"{{{cbc}}}EndDate").text = "2030-01-19"
-    auth_range = etree.SubElement(inv_control, f"{{{sts}}}AuthorizedInvoices")
-    etree.SubElement(auth_range, f"{{{sts}}}Prefix").text = DIAN_CONFIG["prefijo"]
-    etree.SubElement(auth_range, f"{{{sts}}}From").text = DIAN_CONFIG["rango_desde"]
-    etree.SubElement(auth_range, f"{{{sts}}}To").text = DIAN_CONFIG["rango_hasta"]
-
-    inv_source = etree.SubElement(dian_ext, f"{{{sts}}}InvoiceSource")
-    etree.SubElement(inv_source, f"{{{cbc}}}IdentificationCode",
-                     listAgencyID="6", listAgencyName="United Nations Economic Commission for Europe",
+    inv_src = etree.SubElement(dian, f"{{{STS_NC}}}InvoiceSource")
+    etree.SubElement(inv_src, f"{{{CBC}}}IdentificationCode",
+                     listAgencyID="6",
+                     listAgencyName="United Nations Economic Commission for Europe",
                      listSchemeURI="urn:oasis:names:specification:ubl:codelist:gc:CountryIdentificationCode-2.1").text = "CO"
 
-    sw_provider = etree.SubElement(dian_ext, f"{{{sts}}}SoftwareProvider")
-    sp_id = etree.SubElement(sw_provider, f"{{{sts}}}ProviderID",
-                              schemeAgencyID="195", schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                              schemeID="4", schemeName="31")
-    sp_id.text = "800197268"
-    sw_id = etree.SubElement(sw_provider, f"{{{sts}}}SoftwareID",
-                              schemeAgencyID="195", schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)")
-    sw_id.text = DIAN_CONFIG["software_id"]
+    swp = etree.SubElement(dian, f"{{{STS_NC}}}SoftwareProvider")
+    etree.SubElement(swp, f"{{{STS_NC}}}ProviderID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                     schemeID="4", schemeName="31").text = "800197268"
+    etree.SubElement(swp, f"{{{STS_NC}}}SoftwareID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)").text = DIAN_CONFIG["software_id"]
 
-    security_code = hashlib.sha384(
-        f"{DIAN_CONFIG['software_id']}{DIAN_CONFIG['pin']}{numero_completo}".encode()
-    ).hexdigest()
-    sw_sec = etree.SubElement(dian_ext, f"{{{sts}}}SoftwareSecurityCode",
-                               schemeAgencyID="195", schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)")
-    sw_sec.text = security_code
+    etree.SubElement(dian, f"{{{STS_NC}}}SoftwareSecurityCode",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)").text = security_code
 
-    auth_prov = etree.SubElement(dian_ext, f"{{{sts}}}AuthorizationProvider")
-    ap_id = etree.SubElement(auth_prov, f"{{{sts}}}AuthorizationProviderID",
-                              schemeID="4", schemeName="31", schemeAgencyID="195",
-                              schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)")
-    ap_id.text = "800197268"
+    auth_prov = etree.SubElement(dian, f"{{{STS_NC}}}AuthorizationProvider")
+    etree.SubElement(auth_prov, f"{{{STS_NC}}}AuthorizationProviderID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                     schemeID="4", schemeName="31").text = "800197268"
 
-    qr_text = f"NumFac={numero_completo}&FecFac={fecha_str}&NitFac={EMPRESA['nit']}&DocAdq={nit_adquiriente}&ValFac={subtotal:.2f}&ValIva={iva:.2f}&ValTotal={total:.2f}&CUDE={cude}"
-    etree.SubElement(dian_ext, f"{{{sts}}}QRCode").text = qr_text
+    qr_text = (f"NroFactura={numero_completo}\n"
+               f"\t\t\t\t\t\t\t\tNitFacturador={EMPRESA['nit']}\n"
+               f"\t\t\t\t\t\t\t\tNitAdquiriente={nit_adquiriente}\n"
+               f"\t\t\t\t\t\t\t\tFechaFactura={fecha_str}\n"
+               f"\t\t\t\t\t\t\t\tValorTotalFactura={total:.2f}\n"
+               f"\t\t\t\t\t\t\t\tCUFE={cude}")
+    etree.SubElement(dian, f"{{{STS_NC}}}QRCode").text = qr_text
 
     # Campos principales
-    etree.SubElement(root, f"{{{cbc}}}UBLVersionID").text = "UBL 2.1"
-    etree.SubElement(root, f"{{{cbc}}}CustomizationID").text = "11"
-    etree.SubElement(root, f"{{{cbc}}}ProfileID").text = "DIAN 2.1"
-    etree.SubElement(root, f"{{{cbc}}}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
-    etree.SubElement(root, f"{{{cbc}}}ID").text = numero_completo
-    etree.SubElement(root, f"{{{cbc}}}UUID", schemeID=DIAN_CONFIG["ambiente"], schemeName="CUDE-SHA384").text = cude
-    etree.SubElement(root, f"{{{cbc}}}IssueDate").text = fecha_str
-    etree.SubElement(root, f"{{{cbc}}}IssueTime").text = hora_str
-    etree.SubElement(root, f"{{{cbc}}}DebitNoteTypeCode").text = "92"
-    etree.SubElement(root, f"{{{cbc}}}Note").text = f"Nota Débito - {motivo}"
-    etree.SubElement(root, f"{{{cbc}}}DocumentCurrencyCode",
-                     listID="ISO 4217 Alpha", listAgencyID="6",
-                     listAgencyName="United Nations Economic Commission for Europe").text = "COP"
-    etree.SubElement(root, f"{{{cbc}}}LineCountNumeric").text = str(len(productos))
+    etree.SubElement(root, f"{{{CBC}}}UBLVersionID").text = "UBL 2.1"
+    etree.SubElement(root, f"{{{CBC}}}CustomizationID").text = "11"
+    etree.SubElement(root, f"{{{CBC}}}ProfileID").text = "DIAN 2.1"
+    etree.SubElement(root, f"{{{CBC}}}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
+    etree.SubElement(root, f"{{{CBC}}}ID").text = numero_completo
+    etree.SubElement(root, f"{{{CBC}}}UUID", schemeID=DIAN_CONFIG["ambiente"], schemeName="CUDE-SHA384").text = cude
+    etree.SubElement(root, f"{{{CBC}}}IssueDate").text = fecha_str
+    etree.SubElement(root, f"{{{CBC}}}IssueTime").text = hora_str
+    note = (f"{numero_completo}{fecha_str}{hora_str}"
+            f"{subtotal:.2f}01{iva:.2f}000.00000.00{total:.2f}"
+            f"{EMPRESA['nit']}{nit_adquiriente}{DIAN_CONFIG['clave_tecnica']}{DIAN_CONFIG['ambiente']}")
+    etree.SubElement(root, f"{{{CBC}}}Note").text = note
+    etree.SubElement(root, f"{{{CBC}}}DocumentCurrencyCode",
+                     listAgencyID="6",
+                     listAgencyName="United Nations Economic Commission for Europe",
+                     listID="ISO 4217 Alpha").text = "COP"
+    etree.SubElement(root, f"{{{CBC}}}LineCountNumeric").text = str(len(productos))
 
-    # Motivo
-    dr = etree.SubElement(root, f"{{{cac}}}DiscrepancyResponse")
-    etree.SubElement(dr, f"{{{cbc}}}ReferenceID").text = factura_referencia
-    etree.SubElement(dr, f"{{{cbc}}}ResponseCode").text = codigo_motivo
-    etree.SubElement(dr, f"{{{cbc}}}Description").text = motivo
+    # DiscrepancyResponse
+    dr = etree.SubElement(root, f"{{{CAC}}}DiscrepancyResponse")
+    etree.SubElement(dr, f"{{{CBC}}}ReferenceID").text = factura_referencia
+    etree.SubElement(dr, f"{{{CBC}}}ResponseCode").text = codigo_motivo
+    etree.SubElement(dr, f"{{{CBC}}}Description").text = motivo
 
-    # Referencia factura original
-    br = etree.SubElement(root, f"{{{cac}}}BillingReference")
-    ir = etree.SubElement(br, f"{{{cac}}}InvoiceDocumentReference")
-    etree.SubElement(ir, f"{{{cbc}}}ID").text = factura_referencia
-    etree.SubElement(ir, f"{{{cbc}}}UUID", schemeName="CUFE-SHA384").text = cufe_factura
-    etree.SubElement(ir, f"{{{cbc}}}IssueDate").text = fecha_factura
+    # BillingReference
+    br = etree.SubElement(root, f"{{{CAC}}}BillingReference")
+    ir = etree.SubElement(br, f"{{{CAC}}}InvoiceDocumentReference")
+    etree.SubElement(ir, f"{{{CBC}}}ID").text = factura_referencia
+    etree.SubElement(ir, f"{{{CBC}}}UUID", schemeName="CUFE-SHA384").text = cufe_factura
+    etree.SubElement(ir, f"{{{CBC}}}IssueDate").text = fecha_factura
 
-    # Emisor
-    supplier = etree.SubElement(root, f"{{{cac}}}AccountingSupplierParty")
-    etree.SubElement(supplier, f"{{{cbc}}}AdditionalAccountID").text = EMPRESA["tipo_persona"]
-    supplier_party = etree.SubElement(supplier, f"{{{cac}}}Party")
-    sp_name = etree.SubElement(supplier_party, f"{{{cac}}}PartyName")
-    etree.SubElement(sp_name, f"{{{cbc}}}Name").text = EMPRESA["nombre_comercial"]
-    sp_legal = etree.SubElement(supplier_party, f"{{{cac}}}PartyLegalEntity")
-    etree.SubElement(sp_legal, f"{{{cbc}}}RegistrationName").text = EMPRESA["razon_social"]
-    etree.SubElement(sp_legal, f"{{{cbc}}}CompanyID",
-                     schemeAgencyID="195", schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+    # AccountingSupplierParty
+    supplier = etree.SubElement(root, f"{{{CAC}}}AccountingSupplierParty")
+    etree.SubElement(supplier, f"{{{CBC}}}AdditionalAccountID").text = EMPRESA["tipo_persona"]
+    sp = etree.SubElement(supplier, f"{{{CAC}}}Party")
+
+    sp_name = etree.SubElement(sp, f"{{{CAC}}}PartyName")
+    etree.SubElement(sp_name, f"{{{CBC}}}Name").text = EMPRESA["nombre_comercial"]
+
+    sp_physical = etree.SubElement(sp, f"{{{CAC}}}PhysicalLocation")
+    sp_addr = etree.SubElement(sp_physical, f"{{{CAC}}}Address")
+    etree.SubElement(sp_addr, f"{{{CBC}}}ID").text = EMPRESA["municipio_code"]
+    etree.SubElement(sp_addr, f"{{{CBC}}}CityName").text = EMPRESA["ciudad"]
+    etree.SubElement(sp_addr, f"{{{CBC}}}CountrySubentity").text = EMPRESA["departamento"]
+    etree.SubElement(sp_addr, f"{{{CBC}}}CountrySubentityCode").text = EMPRESA["departamento_code"]
+    sp_al = etree.SubElement(sp_addr, f"{{{CAC}}}AddressLine")
+    etree.SubElement(sp_al, f"{{{CBC}}}Line").text = EMPRESA["direccion"]
+    sp_co = etree.SubElement(sp_addr, f"{{{CAC}}}Country")
+    etree.SubElement(sp_co, f"{{{CBC}}}IdentificationCode").text = "CO"
+    etree.SubElement(sp_co, f"{{{CBC}}}Name", languageID="es").text = "Colombia"
+
+    sp_tax = etree.SubElement(sp, f"{{{CAC}}}PartyTaxScheme")
+    etree.SubElement(sp_tax, f"{{{CBC}}}RegistrationName").text = EMPRESA["razon_social"]
+    etree.SubElement(sp_tax, f"{{{CBC}}}CompanyID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
                      schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
-    sp_tax = etree.SubElement(supplier_party, f"{{{cac}}}PartyTaxScheme")
-    etree.SubElement(sp_tax, f"{{{cbc}}}RegistrationName").text = EMPRESA["razon_social"]
-    etree.SubElement(sp_tax, f"{{{cbc}}}CompanyID",
-                     schemeAgencyID="195", schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
-    sp_ts = etree.SubElement(sp_tax, f"{{{cac}}}TaxScheme")
-    etree.SubElement(sp_ts, f"{{{cbc}}}ID").text = "01"
-    etree.SubElement(sp_ts, f"{{{cbc}}}Name").text = "IVA"
-    sp_contact = etree.SubElement(supplier_party, f"{{{cac}}}Contact")
-    etree.SubElement(sp_contact, f"{{{cbc}}}ElectronicMail").text = EMPRESA["email"]
+    etree.SubElement(sp_tax, f"{{{CBC}}}TaxLevelCode", listName="05").text = "O-13"
+    sp_ra = etree.SubElement(sp_tax, f"{{{CAC}}}RegistrationAddress")
+    etree.SubElement(sp_ra, f"{{{CBC}}}ID").text = EMPRESA["municipio_code"]
+    etree.SubElement(sp_ra, f"{{{CBC}}}CityName").text = EMPRESA["ciudad"]
+    etree.SubElement(sp_ra, f"{{{CBC}}}CountrySubentity").text = EMPRESA["departamento"]
+    etree.SubElement(sp_ra, f"{{{CBC}}}CountrySubentityCode").text = EMPRESA["departamento_code"]
+    sp_ral = etree.SubElement(sp_ra, f"{{{CAC}}}AddressLine")
+    etree.SubElement(sp_ral, f"{{{CBC}}}Line").text = EMPRESA["direccion"]
+    sp_rac = etree.SubElement(sp_ra, f"{{{CAC}}}Country")
+    etree.SubElement(sp_rac, f"{{{CBC}}}IdentificationCode").text = "CO"
+    etree.SubElement(sp_rac, f"{{{CBC}}}Name", languageID="es").text = "Colombia"
+    sp_ts = etree.SubElement(sp_tax, f"{{{CAC}}}TaxScheme")
+    etree.SubElement(sp_ts, f"{{{CBC}}}ID").text = "01"
+    etree.SubElement(sp_ts, f"{{{CBC}}}Name").text = "IVA"
 
-    # Receptor
-    customer = etree.SubElement(root, f"{{{cac}}}AccountingCustomerParty")
-    etree.SubElement(customer, f"{{{cbc}}}AdditionalAccountID").text = "2"
-    customer_party = etree.SubElement(customer, f"{{{cac}}}Party")
-    cp_name = etree.SubElement(customer_party, f"{{{cac}}}PartyName")
-    etree.SubElement(cp_name, f"{{{cbc}}}Name").text = cliente.get("nombre", "Consumidor Final")
-    cp_legal = etree.SubElement(customer_party, f"{{{cac}}}PartyLegalEntity")
-    etree.SubElement(cp_legal, f"{{{cbc}}}RegistrationName").text = cliente.get("nombre", "Consumidor Final")
-    etree.SubElement(cp_legal, f"{{{cbc}}}CompanyID",
-                     schemeAgencyID="195", schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+    sp_legal = etree.SubElement(sp, f"{{{CAC}}}PartyLegalEntity")
+    etree.SubElement(sp_legal, f"{{{CBC}}}RegistrationName").text = EMPRESA["razon_social"]
+    etree.SubElement(sp_legal, f"{{{CBC}}}CompanyID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                     schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
+    sp_crs = etree.SubElement(sp_legal, f"{{{CAC}}}CorporateRegistrationScheme")
+    etree.SubElement(sp_crs, f"{{{CBC}}}ID").text = DIAN_CONFIG["prefijo"]
+    etree.SubElement(sp_crs, f"{{{CBC}}}Name").text = DIAN_CONFIG["pin"]
+
+    sp_contact = etree.SubElement(sp, f"{{{CAC}}}Contact")
+    etree.SubElement(sp_contact, f"{{{CBC}}}Telephone").text = EMPRESA["telefono"]
+    etree.SubElement(sp_contact, f"{{{CBC}}}ElectronicMail").text = EMPRESA["email"]
+
+    # AccountingCustomerParty
+    customer = etree.SubElement(root, f"{{{CAC}}}AccountingCustomerParty")
+    etree.SubElement(customer, f"{{{CBC}}}AdditionalAccountID").text = "2"
+    cp = etree.SubElement(customer, f"{{{CAC}}}Party")
+    cp_name = etree.SubElement(cp, f"{{{CAC}}}PartyName")
+    etree.SubElement(cp_name, f"{{{CBC}}}Name").text = cliente.get("nombre", "Consumidor Final")
+
+    cp_tax = etree.SubElement(cp, f"{{{CAC}}}PartyTaxScheme")
+    etree.SubElement(cp_tax, f"{{{CBC}}}RegistrationName").text = cliente.get("nombre", "Consumidor Final")
+    etree.SubElement(cp_tax, f"{{{CBC}}}CompanyID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
                      schemeID="0", schemeName="13").text = nit_adquiriente
-    cp_contact = etree.SubElement(customer_party, f"{{{cac}}}Contact")
-    etree.SubElement(cp_contact, f"{{{cbc}}}ElectronicMail").text = cliente.get("email", "")
+    etree.SubElement(cp_tax, f"{{{CBC}}}TaxLevelCode", listName="49").text = "R-99-PN"
+    cp_ts = etree.SubElement(cp_tax, f"{{{CAC}}}TaxScheme")
+    etree.SubElement(cp_ts, f"{{{CBC}}}ID").text = "ZY"
+    etree.SubElement(cp_ts, f"{{{CBC}}}Name").text = "No causa"
 
-    # Impuestos
-    tax_total = etree.SubElement(root, f"{{{cac}}}TaxTotal")
-    etree.SubElement(tax_total, f"{{{cbc}}}TaxAmount", currencyID="COP").text = f"{iva:.2f}"
-    tax_sub = etree.SubElement(tax_total, f"{{{cac}}}TaxSubtotal")
-    etree.SubElement(tax_sub, f"{{{cbc}}}TaxableAmount", currencyID="COP").text = f"{subtotal:.2f}"
-    etree.SubElement(tax_sub, f"{{{cbc}}}TaxAmount", currencyID="COP").text = f"{iva:.2f}"
-    tax_cat = etree.SubElement(tax_sub, f"{{{cac}}}TaxCategory")
-    etree.SubElement(tax_cat, f"{{{cbc}}}Percent").text = "19.00"
-    ts = etree.SubElement(tax_cat, f"{{{cac}}}TaxScheme")
-    etree.SubElement(ts, f"{{{cbc}}}ID").text = "01"
-    etree.SubElement(ts, f"{{{cbc}}}Name").text = "IVA"
+    cp_legal = etree.SubElement(cp, f"{{{CAC}}}PartyLegalEntity")
+    etree.SubElement(cp_legal, f"{{{CBC}}}RegistrationName").text = cliente.get("nombre", "Consumidor Final")
+    etree.SubElement(cp_legal, f"{{{CBC}}}CompanyID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                     schemeID="0", schemeName="13").text = nit_adquiriente
 
-    # Totales
-    rma = etree.SubElement(root, f"{{{cac}}}RequestedMonetaryTotal")
-    etree.SubElement(rma, f"{{{cbc}}}LineExtensionAmount", currencyID="COP").text = f"{subtotal:.2f}"
-    etree.SubElement(rma, f"{{{cbc}}}TaxExclusiveAmount", currencyID="COP").text = f"{subtotal:.2f}"
-    etree.SubElement(rma, f"{{{cbc}}}TaxInclusiveAmount", currencyID="COP").text = f"{total:.2f}"
-    etree.SubElement(rma, f"{{{cbc}}}PayableAmount", currencyID="COP").text = f"{total:.2f}"
+    cp_contact = etree.SubElement(cp, f"{{{CAC}}}Contact")
+    etree.SubElement(cp_contact, f"{{{CBC}}}ElectronicMail").text = cliente.get("email", "")
 
-    # Líneas
+    # PaymentMeans
+    pm = etree.SubElement(root, f"{{{CAC}}}PaymentMeans")
+    etree.SubElement(pm, f"{{{CBC}}}ID").text = "2"
+    etree.SubElement(pm, f"{{{CBC}}}PaymentMeansCode").text = "41"
+    etree.SubElement(pm, f"{{{CBC}}}PaymentDueDate").text = fecha_str
+
+    # TaxTotal
+    tax_total = etree.SubElement(root, f"{{{CAC}}}TaxTotal")
+    etree.SubElement(tax_total, f"{{{CBC}}}TaxAmount", currencyID="COP").text = f"{iva:.2f}"
+    tax_sub = etree.SubElement(tax_total, f"{{{CAC}}}TaxSubtotal")
+    etree.SubElement(tax_sub, f"{{{CBC}}}TaxableAmount", currencyID="COP").text = f"{subtotal:.2f}"
+    etree.SubElement(tax_sub, f"{{{CBC}}}TaxAmount", currencyID="COP").text = f"{iva:.2f}"
+    tax_cat = etree.SubElement(tax_sub, f"{{{CAC}}}TaxCategory")
+    etree.SubElement(tax_cat, f"{{{CBC}}}Percent").text = "19.00"
+    ts_el = etree.SubElement(tax_cat, f"{{{CAC}}}TaxScheme")
+    etree.SubElement(ts_el, f"{{{CBC}}}ID").text = "01"
+    etree.SubElement(ts_el, f"{{{CBC}}}Name").text = "IVA"
+
+    # RequestedMonetaryTotal (nota débito usa este en lugar de LegalMonetaryTotal)
+    rmt = etree.SubElement(root, f"{{{CAC}}}RequestedMonetaryTotal")
+    etree.SubElement(rmt, f"{{{CBC}}}LineExtensionAmount", currencyID="COP").text = f"{subtotal:.2f}"
+    etree.SubElement(rmt, f"{{{CBC}}}TaxExclusiveAmount", currencyID="COP").text = f"{subtotal:.2f}"
+    etree.SubElement(rmt, f"{{{CBC}}}TaxInclusiveAmount", currencyID="COP").text = f"{total:.2f}"
+    etree.SubElement(rmt, f"{{{CBC}}}PayableAmount", currencyID="COP").text = f"{total:.2f}"
+
+    # DebitNoteLines
     for i, producto in enumerate(productos, 1):
         precio_unit = producto["precio_unitario"]
         cantidad = producto["cantidad"]
         subtotal_linea = precio_unit * cantidad
         iva_linea = round(subtotal_linea * IVA_RATE, 2)
 
-        line = etree.SubElement(root, f"{{{cac}}}DebitNoteLine")
-        etree.SubElement(line, f"{{{cbc}}}ID").text = str(i)
-        etree.SubElement(line, f"{{{cbc}}}DebitedQuantity", unitCode="94").text = str(cantidad)
-        etree.SubElement(line, f"{{{cbc}}}LineExtensionAmount", currencyID="COP").text = f"{subtotal_linea:.2f}"
+        line = etree.SubElement(root, f"{{{CAC}}}DebitNoteLine")
+        etree.SubElement(line, f"{{{CBC}}}ID").text = str(i)
+        etree.SubElement(line, f"{{{CBC}}}DebitedQuantity", unitCode="NIU").text = f"{cantidad:.6f}"
+        etree.SubElement(line, f"{{{CBC}}}LineExtensionAmount", currencyID="COP").text = f"{subtotal_linea:.2f}"
 
-        line_tax = etree.SubElement(line, f"{{{cac}}}TaxTotal")
-        etree.SubElement(line_tax, f"{{{cbc}}}TaxAmount", currencyID="COP").text = f"{iva_linea:.2f}"
-        lt_sub = etree.SubElement(line_tax, f"{{{cac}}}TaxSubtotal")
-        etree.SubElement(lt_sub, f"{{{cbc}}}TaxableAmount", currencyID="COP").text = f"{subtotal_linea:.2f}"
-        etree.SubElement(lt_sub, f"{{{cbc}}}TaxAmount", currencyID="COP").text = f"{iva_linea:.2f}"
-        lt_cat = etree.SubElement(lt_sub, f"{{{cac}}}TaxCategory")
-        etree.SubElement(lt_cat, f"{{{cbc}}}Percent").text = "19.00"
-        lt_ts = etree.SubElement(lt_cat, f"{{{cac}}}TaxScheme")
-        etree.SubElement(lt_ts, f"{{{cbc}}}ID").text = "01"
-        etree.SubElement(lt_ts, f"{{{cbc}}}Name").text = "IVA"
+        lt = etree.SubElement(line, f"{{{CAC}}}TaxTotal")
+        etree.SubElement(lt, f"{{{CBC}}}TaxAmount", currencyID="COP").text = f"{iva_linea:.2f}"
+        lt_sub = etree.SubElement(lt, f"{{{CAC}}}TaxSubtotal")
+        etree.SubElement(lt_sub, f"{{{CBC}}}TaxableAmount", currencyID="COP").text = f"{subtotal_linea:.2f}"
+        etree.SubElement(lt_sub, f"{{{CBC}}}TaxAmount", currencyID="COP").text = f"{iva_linea:.2f}"
+        lt_cat = etree.SubElement(lt_sub, f"{{{CAC}}}TaxCategory")
+        etree.SubElement(lt_cat, f"{{{CBC}}}Percent").text = "19.00"
+        lt_ts = etree.SubElement(lt_cat, f"{{{CAC}}}TaxScheme")
+        etree.SubElement(lt_ts, f"{{{CBC}}}ID").text = "01"
+        etree.SubElement(lt_ts, f"{{{CBC}}}Name").text = "IVA"
 
-        line_item = etree.SubElement(line, f"{{{cac}}}Item")
-        etree.SubElement(line_item, f"{{{cbc}}}Description").text = producto.get("nombre", "Producto")
-        li_id = etree.SubElement(line_item, f"{{{cac}}}SellersItemIdentification")
-        etree.SubElement(li_id, f"{{{cbc}}}ID").text = str(producto.get("id", i))
+        item = etree.SubElement(line, f"{{{CAC}}}Item")
+        etree.SubElement(item, f"{{{CBC}}}Description").text = producto.get("nombre", "Producto")
+        item_id = etree.SubElement(item, f"{{{CAC}}}SellersItemIdentification")
+        etree.SubElement(item_id, f"{{{CBC}}}ID").text = str(producto.get("id", i))
 
-        line_price = etree.SubElement(line, f"{{{cac}}}Price")
-        etree.SubElement(line_price, f"{{{cbc}}}PriceAmount", currencyID="COP").text = f"{precio_unit:.2f}"
-        etree.SubElement(line_price, f"{{{cbc}}}BaseQuantity", unitCode="94").text = "1"
+        price = etree.SubElement(line, f"{{{CAC}}}Price")
+        etree.SubElement(price, f"{{{CBC}}}PriceAmount", currencyID="COP").text = f"{precio_unit:.2f}"
+        etree.SubElement(price, f"{{{CBC}}}BaseQuantity", unitCode="NIU").text = "1.000000"
 
     xml_string = etree.tostring(root, pretty_print=True, xml_declaration=True, encoding="UTF-8").decode()
     return xml_string, cude, numero_completo, subtotal, iva, total
