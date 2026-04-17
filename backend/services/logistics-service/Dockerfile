@@ -9,7 +9,7 @@ COPY . .
 
 EXPOSE 3009
 
-RUN addgroup -g 1001 appgroup && adduser -u 1001 -G appgroup -s /bin/sh -D appuser
+RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup -s /bin/sh -m appuser
 RUN chown -R appuser:appgroup /app
 USER appuser
 
