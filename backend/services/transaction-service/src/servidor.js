@@ -23,13 +23,19 @@ const MENSAJES_ESTADO = {
   Confirmado: {
     emoji: '✅',
     titulo: '¡Pedido Confirmado!',
-    mensaje: 'Tu pedido ha sido revisado y confirmado. Estamos preparándolo para enviarlo.',
+    mensaje: 'Tu pago fue recibido y tu pedido está confirmado. Nuestro equipo ya lo está alistando.',
     color: '#11998e'
   },
-  Enviado: {
+  Alistado: {
+    emoji: '📦',
+    titulo: '¡Pedido Alistado!',
+    mensaje: 'Tu pedido ya está empacado y listo para ser despachado. Pronto estará en camino.',
+    color: '#f59e0b'
+  },
+  'En Camino': {
     emoji: '🚚',
     titulo: '¡Tu pedido está en camino!',
-    mensaje: 'Tu pedido ha sido despachado y está en camino hacia ti.',
+    mensaje: 'Tu pedido fue despachado y está en camino hacia ti. Pronto lo recibirás.',
     color: '#667eea'
   },
   Entregado: {
@@ -43,6 +49,18 @@ const MENSAJES_ESTADO = {
     titulo: 'Pedido Cancelado',
     mensaje: 'Tu pedido ha sido cancelado. Si tienes dudas, contáctanos.',
     color: '#e74c3c'
+  },
+  Devuelto: {
+    emoji: '↩️',
+    titulo: 'Devolución Solicitada',
+    mensaje: 'Hemos recibido tu solicitud de devolución. Nuestro equipo la revisará pronto.',
+    color: '#f97316'
+  },
+  'Devolucion Procesada': {
+    emoji: '💚',
+    titulo: 'Devolución Procesada',
+    mensaje: 'Tu devolución ha sido procesada exitosamente. El reembolso será aplicado en breve.',
+    color: '#10b981'
   }
 };
 
@@ -696,6 +714,67 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       );
     }
 
+    // ── Acciones según el nuevo estado ──
+    if (estado === 'Confirmado') {
+      // Generar factura electrónica
+      const pedidoCompleto = await pool.query(
+        `SELECT p.*, 
+          COALESCE(p.cliente_nombre, '') as cliente_nombre,
+          COALESCE(p.cliente_email, '') as cliente_email,
+          COALESCE(p.cliente_documento, '') as cliente_documento,
+          COALESCE(p.cliente_tipo_doc, 'CC') as cliente_tipo_doc,
+          COALESCE(p.cliente_direccion, 'Bogotá D.C') as cliente_direccion,
+          COALESCE(p.metodo_pago, 'pago_en_linea') as metodo_pago
+         FROM pedido p WHERE p.id = $1`, [pedidoId]
+      );
+      const pd = pedidoCompleto.rows[0];
+
+      const productos = await pool.query(
+        'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1',
+        [pedidoId]
+      );
+
+      // Generar factura
+      axios.post('http://facturacion-service:3010/api/facturas/generar', {
+        pedido_id: pedidoId,
+        usuario_id: usuarioIdPedido,
+        cliente: {
+          nombre: pd.cliente_nombre || 'Consumidor Final',
+          email: pd.cliente_email || '',
+          nit_cc: pd.cliente_documento || '222222222222',
+          tipo_documento: pd.cliente_tipo_doc || 'CC',
+          direccion: pd.cliente_direccion || 'Bogotá D.C'
+        },
+        productos: productos.rows.map(p => ({
+          id: p.id,
+          nombre: p.nombre || `Producto ${p.id}`,
+          precio_unitario: parseFloat(p.precio_unitario),
+          cantidad: p.cantidad
+        }))
+      }, { timeout: 5000 }).then(() => {
+        console.log(`🧾 Factura generada para pedido confirmado ${pedidoId}`);
+      }).catch(e => console.log(`⚠️ Error generando factura: ${e.message}`));
+
+      // Registrar asiento contable
+      axios.post('http://contabilidad-service:3012/api/contabilidad/eventos/venta', {
+        pedido_id: pedidoId,
+        total: totalPedido,
+        usuario_id: usuarioIdPedido,
+        metodo_pago: pd.metodo_pago || 'pago_en_linea',
+        fecha: new Date().toISOString()
+      }, { timeout: 3000 }).then(() => {
+        console.log(`📊 Asiento contable registrado para pedido ${pedidoId}`);
+      }).catch(e => console.log(`⚠️ Error asiento contable: ${e.message}`));
+
+      // Actualizar total compras del usuario
+      axios.put('http://auth-service:3011/api/usuarios/total-compras', {
+        nuevoTotal: parseFloat(totalPedido)
+      }, {
+        headers: { Authorization: req.headers.authorization },
+        timeout: 3000
+      }).catch(e => console.log(`⚠️ No se pudo actualizar total compras: ${e.message}`));
+    }
+
     // Emitir SSE inmediatamente
     emitirSSE(usuarioIdPedido, 'pedido_actualizado', {
       pedidoId, estadoAnterior, estado_nuevo: estado, total: totalPedido
@@ -850,7 +929,7 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       fecha_creacion: new Date().toISOString()
     };
 
-    // Enviar correo de confirmación y generar factura
+    // Enviar correo de confirmación del pedido (siempre)
     let datosUsuario = { nombre: 'Cliente', email: '' };
     try {
       const resUsuario = await axios.get(
@@ -863,7 +942,7 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
         email: email || '',
         documento_tipo: documento_tipo || 'CC',
         documento_numero: documento_numero || '',
-        direccion: direccion || ciudad || 'Bogotá D.C'
+        direccion: direccion_envio || direccion || ciudad || 'Bogotá D.C'
       };
       if (email) {
         enviarConfirmacionCompra(email, nombre || 'Cliente', pedido);
@@ -872,60 +951,26 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       console.log('⚠️ No se pudo obtener datos del usuario para correo:', errCorreo.message);
     }
 
-    // Registrar asiento contable automático
-    axios.post('http://contabilidad-service:3012/api/contabilidad/eventos/venta', {
-      pedido_id: pedidoId,
-      total: carrito.total,
-      usuario_id: usuarioId,
-      metodo_pago: metodo_pago || 'pago_en_linea',
-      fecha: new Date().toISOString()
-    }, { timeout: 3000 }).then(() => {
-      console.log(`📊 Asiento contable registrado para pedido ${pedidoId}`);
-    }).catch(e => {
-      console.log(`⚠️ No se pudo registrar asiento contable: ${e.message}`);
-    });
-
     // Notificar a admins en tiempo real que hay un pedido nuevo
     axios.post('http://gateway:3000/interno/emitir', {
       evento: 'pedido_nuevo',
       sala: 'admins',
-      datos: { pedidoId, total: carrito.total, usuario_id: usuarioId, estado: 'Creado' }
+      datos: { pedidoId, total: carrito.total, usuario_id: usuarioId, estado: 'Creado', metodo_pago }
     }, { timeout: 2000 }).catch(() => {});
 
-    // Actualizar total_compras_historico del usuario
-    axios.put(`http://auth-service:3011/api/usuarios/total-compras`, {
-      nuevoTotal: parseFloat(carrito.total)
-    }, {
-      headers: { Authorization: req.headers.authorization },
-      timeout: 3000
-    }).then(() => {
-      console.log(`💰 Total compras actualizado para usuario ${usuarioId}: +${carrito.total}`);
-    }).catch(e => {
-      console.log(`⚠️ No se pudo actualizar total compras: ${e.message}`);
-    });
-
-    // Generar factura electrónica en background
-    axios.post('http://facturacion-service:3010/api/facturas/generar', {
-      pedido_id: pedidoId,
-      usuario_id: usuarioId,
-      cliente: {
-        nombre: datosUsuario.nombre,
-        email: datosUsuario.email,
-        nit_cc: datosUsuario.documento_numero || 'Consumidor Final',
-        tipo_documento: datosUsuario.documento_tipo || 'CC',
-        direccion: datosUsuario.direccion || datosUsuario.ciudad || 'Bogotá D.C'
-      },
-      productos: carrito.productos.map(p => ({
-        id: p.id,
-        nombre: p.nombre || `Producto ${p.id}`,
-        precio_unitario: p.precio,
-        cantidad: p.cantidad
-      }))
-    }, { timeout: 5000 }).then(() => {
-      console.log(`🧾 Factura electrónica iniciada para pedido ${pedidoId}`);
-    }).catch(e => {
-      console.log(`⚠️ No se pudo iniciar factura: ${e.message}`);
-    });
+    // Guardar datos del usuario en el pedido para usarlos al confirmar
+    // (se usarán cuando el admin cambie el estado a Confirmado)
+    await pool.query(
+      `UPDATE pedido SET 
+        cliente_nombre = $1, cliente_email = $2, cliente_documento = $3,
+        cliente_tipo_doc = $4, cliente_direccion = $5, metodo_pago = $6
+       WHERE id = $7`,
+      [
+        datosUsuario.nombre, datosUsuario.email, datosUsuario.documento_numero,
+        datosUsuario.documento_tipo, datosUsuario.direccion, metodo_pago || 'pago_en_linea',
+        pedidoId
+      ]
+    ).catch(() => {}); // Si falla no bloquea el flujo
 
     res.json({
       mensaje: 'Pedido creado exitosamente',
@@ -1395,7 +1440,7 @@ aplicacion.post('/api/pedidos/:pedidoId/simular-cambio', autenticacion, async (r
     }
 
     const estadoActual = verificacion.rows[0].estado;
-    const estados = ['Creado', 'Enviado', 'Entregado'];
+    const estados = ['Creado', 'Confirmado', 'Alistado', 'En Camino', 'Entregado'];
     const indiceActual = estados.indexOf(estadoActual);
     const nuevoEstado = estados[indiceActual + 1] || 'Entregado';
 

@@ -45,7 +45,7 @@ export default function CustomerSuccessDashboard() {
     setCargando(true)
     try {
       const [resPedidos, resDevoluciones] = await Promise.all([
-        fetch(API_URL + '/api/admin/pedidos?estado=Confirmado', {
+        fetch(API_URL + '/api/admin/pedidos?estado=Creado', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
         fetch(API_URL + '/api/devoluciones?estado=Solicitada', {
@@ -241,7 +241,7 @@ export default function CustomerSuccessDashboard() {
                       <tr key={pedido.id} className="hover:bg-gray-100/30 transition-colors">
                         <td className="px-6 py-4">
                           <span className="font-mono text-sm font-semibold text-gray-800">#{pedido.id}</span>
-                          <div className="mt-1"><span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Confirmado</span></div>
+                          <div className="mt-1"><span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Creado</span></div>
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <p className="font-medium text-gray-800">{pedido.nombre_cliente}</p>
@@ -252,8 +252,8 @@ export default function CustomerSuccessDashboard() {
                         <td className="px-6 py-4 text-sm text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
-                            <button onClick={() => cambiarEstadoPedido(pedido.id, 'Confirmado', 'Confirmado por Customer Success')} disabled={procesando === pedido.id} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
-                              <i className="fas fa-check"></i> Confirmar
+                            <button onClick={() => cambiarEstadoPedido(pedido.id, 'Confirmado', 'Pago confirmado por Customer Success')} disabled={procesando === pedido.id} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
+                              <i className="fas fa-check"></i> Confirmar Pago
                             </button>
                             <button onClick={() => cambiarEstadoPedido(pedido.id, 'Cancelado', 'Cancelado por Customer Success')} disabled={procesando === pedido.id} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-sm hover:bg-red-200 disabled:opacity-50 flex items-center gap-1">
                               <i className="fas fa-times"></i> Cancelar

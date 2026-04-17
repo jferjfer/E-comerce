@@ -31,10 +31,14 @@ interface Devolucion {
 }
 
 const BADGE: Record<string, string> = {
-  Confirmado: 'bg-blue-100 text-blue-800',
-  Enviado: 'bg-gray-100 text-gray-700',
-  Entregado: 'bg-green-100 text-green-800',
-  Cancelado: 'bg-red-100 text-red-800',
+  Creado:               'bg-blue-100 text-blue-800',
+  Confirmado:           'bg-emerald-100 text-emerald-800',
+  Alistado:             'bg-amber-100 text-amber-800',
+  'En Camino':          'bg-purple-100 text-purple-800',
+  Entregado:            'bg-green-100 text-green-800',
+  Cancelado:            'bg-red-100 text-red-800',
+  Devuelto:             'bg-orange-100 text-orange-800',
+  'Devolucion Procesada': 'bg-teal-100 text-teal-800',
 }
 
 export default function LogisticsCoordinatorDashboard() {
@@ -57,7 +61,13 @@ export default function LogisticsCoordinatorDashboard() {
         fetch(API_URL + '/api/admin/pedidos?estado=Confirmado', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
-        fetch(API_URL + '/api/admin/pedidos?estado=Enviado', {
+        fetch(API_URL + '/api/admin/pedidos?estado=Alistado', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(r => r.json()),
+        fetch(API_URL + '/api/admin/pedidos?estado=En Camino', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(r => r.json()),
+        fetch(API_URL + '/api/devoluciones?estado=Aprobada', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(r => r.json()),
         fetch(API_URL + '/api/devoluciones?estado=Aprobada', {
@@ -66,9 +76,15 @@ export default function LogisticsCoordinatorDashboard() {
       ])
 
       const confirmados = (resConfirmados.pedidos || []).map((p: Pedido) => ({ ...p, estado: 'Confirmado' }))
-      const enviados = (resEnviados.pedidos || []).map((p: Pedido) => ({ ...p, estado: 'Enviado' }))
-      setPedidos([...confirmados, ...enviados])
-      setDevoluciones(resDevoluciones.devoluciones || [])
+      const alistados = (resEnviados.pedidos || []).map((p: Pedido) => ({ ...p, estado: 'Alistado' }))
+      const enCamino = (resDevoluciones.pedidos || []).map((p: Pedido) => ({ ...p, estado: 'En Camino' }))
+      setPedidos([...confirmados, ...alistados, ...enCamino])
+
+      // Cargar devoluciones aprobadas
+      const resDev = await fetch(API_URL + '/api/devoluciones?estado=Aprobada', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json())
+      setDevoluciones(resDev.devoluciones || [])
     } catch (error) {
       console.error('Error cargando datos:', error)
     } finally {
@@ -130,8 +146,9 @@ export default function LogisticsCoordinatorDashboard() {
   }
 
   const confirmados = pedidos.filter(p => p.estado === 'Confirmado')
-  const enviados = pedidos.filter(p => p.estado === 'Enviado')
-  const tabActual = tab === 'confirmados' ? confirmados : tab === 'enviados' ? enviados : []
+  const alistados = pedidos.filter(p => p.estado === 'Alistado')
+  const enCamino = pedidos.filter(p => p.estado === 'En Camino')
+  const tabActual = tab === 'confirmados' ? confirmados : tab === 'enviados' ? [...alistados, ...enCamino] : []
   const paginados = tabActual.slice((pagina-1)*POR_PAGINA, pagina*POR_PAGINA)
 
   return (
@@ -252,13 +269,18 @@ export default function LogisticsCoordinatorDashboard() {
                         <td className="px-6 py-4 text-sm text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
                         <td className="px-6 py-4">
                           {pedido.estado === 'Confirmado' && (
-                            <button onClick={() => cambiarEstado(pedido.id, 'Enviado', 'Despachado por Logística')} disabled={procesando === pedido.id} className="bg-gray-100 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-50 flex items-center gap-2">
-                              <i className="fas fa-shipping-fast"></i> Marcar Enviado
+                            <button onClick={() => cambiarEstado(pedido.id, 'Alistado', 'Pedido alistado por Logística')} disabled={procesando === pedido.id} className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-amber-600 disabled:opacity-50 flex items-center gap-2">
+                              <i className="fas fa-box"></i> Alistar
                             </button>
                           )}
-                          {pedido.estado === 'Enviado' && (
+                          {pedido.estado === 'Alistado' && (
+                            <button onClick={() => cambiarEstado(pedido.id, 'En Camino', 'Pedido despachado por Logística')} disabled={procesando === pedido.id} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2">
+                              <i className="fas fa-truck"></i> Despachar
+                            </button>
+                          )}
+                          {pedido.estado === 'En Camino' && (
                             <button onClick={() => cambiarEstado(pedido.id, 'Entregado', 'Entregado al cliente')} disabled={procesando === pedido.id} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2">
-                              <i className="fas fa-check-circle"></i> Marcar Entregado
+                              <i className="fas fa-check-circle"></i> Entregado
                             </button>
                           )}
                         </td>

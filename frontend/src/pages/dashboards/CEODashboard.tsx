@@ -164,8 +164,11 @@ export default function CEODashboard() {
                           <p className="text-sm font-bold text-primary">{formatPrice(pedido.total)}</p>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${
                             pedido.estado === 'Entregado' ? 'bg-green-100 text-green-800' :
-                            pedido.estado === 'Enviado' ? 'bg-blue-100 text-blue-800' :
+                            pedido.estado === 'Confirmado' ? 'bg-emerald-100 text-emerald-800' :
+                            pedido.estado === 'Alistado' ? 'bg-amber-100 text-amber-800' :
+                            pedido.estado === 'En Camino' ? 'bg-purple-100 text-purple-800' :
                             pedido.estado === 'Cancelado' ? 'bg-red-100 text-red-800' :
+                            pedido.estado === 'Devuelto' ? 'bg-orange-100 text-orange-800' :
                             'bg-yellow-100 text-yellow-800'
                           }`}>{pedido.estado}</span>
                         </div>

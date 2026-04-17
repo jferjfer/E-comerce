@@ -122,22 +122,28 @@ export default function OrdersPage() {
 
   const getEstadoColor = (estado: string) => {
     const colores: Record<string, string> = {
-      'Creado': 'bg-blue-100 text-blue-800',
-      'En preparación': 'bg-yellow-100 text-yellow-800',
-      'Enviado': 'bg-gray-100 text-gray-700',
-      'Entregado': 'bg-green-100 text-green-800',
-      'Cancelado': 'bg-red-100 text-red-800'
+      'Creado':               'bg-blue-100 text-blue-800',
+      'Confirmado':           'bg-emerald-100 text-emerald-800',
+      'Alistado':             'bg-amber-100 text-amber-800',
+      'En Camino':            'bg-purple-100 text-purple-800',
+      'Entregado':            'bg-green-100 text-green-800',
+      'Cancelado':            'bg-red-100 text-red-800',
+      'Devuelto':             'bg-orange-100 text-orange-800',
+      'Devolucion Procesada': 'bg-teal-100 text-teal-800',
     }
     return colores[estado] || 'bg-gray-100 text-gray-800'
   }
 
   const getEstadoIcono = (estado: string) => {
     const iconos: Record<string, string> = {
-      'Creado': 'fa-file-alt',
-      'En preparación': 'fa-box',
-      'Enviado': 'fa-truck',
-      'Entregado': 'fa-check-circle',
-      'Cancelado': 'fa-times-circle'
+      'Creado':               'fa-file-alt',
+      'Confirmado':           'fa-check-circle',
+      'Alistado':             'fa-box',
+      'En Camino':            'fa-truck',
+      'Entregado':            'fa-check-double',
+      'Cancelado':            'fa-times-circle',
+      'Devuelto':             'fa-undo',
+      'Devolucion Procesada': 'fa-heart',
     }
     return iconos[estado] || 'fa-circle'
   }
