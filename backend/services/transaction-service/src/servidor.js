@@ -1603,6 +1603,50 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
         datos: { pedidoId, estado_nuevo: estado, total: pedido.total, usuario_id: pedido.usuario_id }
       }, { timeout: 2000 }).catch(() => {});
 
+      // Generar factura electrónica automáticamente
+      const productos = await pool.query(
+        'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1',
+        [pedidoId]
+      );
+      const pd = await pool.query(
+        `SELECT COALESCE(cliente_nombre,'Consumidor Final') as cliente_nombre,
+                COALESCE(cliente_email,'') as cliente_email,
+                COALESCE(cliente_documento,'222222222222') as cliente_documento,
+                COALESCE(cliente_tipo_doc,'CC') as cliente_tipo_doc,
+                COALESCE(cliente_direccion,'Bogotá D.C') as cliente_direccion
+         FROM pedido WHERE id = $1`, [pedidoId]
+      );
+      const datosCliente = pd.rows[0] || {};
+
+      axios.post('http://facturacion-service:3010/api/facturas/generar', {
+        pedido_id: pedidoId,
+        usuario_id: pedido.usuario_id,
+        cliente: {
+          nombre: datosCliente.cliente_nombre,
+          email: datosCliente.cliente_email,
+          nit_cc: datosCliente.cliente_documento,
+          tipo_documento: datosCliente.cliente_tipo_doc,
+          direccion: datosCliente.cliente_direccion
+        },
+        productos: productos.rows.map(p => ({
+          id: p.id,
+          nombre: p.nombre || `Producto ${p.id}`,
+          precio_unitario: parseFloat(p.precio_unitario),
+          cantidad: p.cantidad
+        }))
+      }, { timeout: 5000 }).then(() => {
+        console.log(`🧾 Factura generada por ePayco para pedido ${pedidoId}`);
+      }).catch(e => console.log(`⚠️ Error generando factura ePayco: ${e.message}`));
+
+      // Registrar asiento contable
+      axios.post('http://contabilidad-service:3012/api/contabilidad/eventos/venta', {
+        pedido_id: pedidoId,
+        total: pedido.total,
+        usuario_id: pedido.usuario_id,
+        metodo_pago: 'pago_en_linea',
+        fecha: new Date().toISOString()
+      }, { timeout: 3000 }).catch(e => console.log(`⚠️ Error asiento contable ePayco: ${e.message}`));
+
       // Actualizar total de compras del usuario
       axios.put('http://auth-service:3011/api/usuarios/total-compras', {
         nuevoTotal: parseFloat(pedido.total)
