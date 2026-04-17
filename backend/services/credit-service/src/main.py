@@ -456,7 +456,7 @@ async def solicitar_credito_interno(solicitud: SolicitudCreditoInterno, db: Sess
 
     print(f"💳 Solicitud crédito: Usuario {usuario_id}, ${monto:,.0f} a {plazo} meses")
 
-    # Re-evaluar en tiempo real
+    # Verificar si ya tiene crédito activo
     credito_existente = db.query(CreditoInterno).filter(
         CreditoInterno.usuario_id == usuario_id,
         CreditoInterno.estado == "Activo"
@@ -470,7 +470,6 @@ async def solicitar_credito_interno(solicitud: SolicitudCreditoInterno, db: Sess
                 "razon": f"Saldo insuficiente. Disponible: ${saldo_disponible:,.0f}",
                 "saldo_disponible": saldo_disponible
             }
-        # Usar crédito existente
         tasa = calcular_tasa_interes(plazo)
         calculo = calcular_cuota(monto, tasa, plazo)
         return {
@@ -484,6 +483,40 @@ async def solicitar_credito_interno(solicitud: SolicitudCreditoInterno, db: Sess
             "total_pagar": calculo["total_pagar"],
             "mensaje": "Crédito aprobado con línea existente"
         }
+
+    # Verificar requisitos mínimos consultando auth-service
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            res = await client.get(f"{AUTH_SERVICE_URL}/api/usuarios/{usuario_id}")
+            if res.status_code == 200:
+                usuario = res.json().get("usuario", {})
+                fecha_registro = usuario.get("fecha_creacion", "")
+                total_compras = float(usuario.get("total_compras_historico", 0) or 0)
+
+                if fecha_registro:
+                    fecha_reg = datetime.fromisoformat(fecha_registro.replace("Z", ""))
+                    meses_antiguedad = (datetime.now() - fecha_reg).days // 30
+
+                    if meses_antiguedad < MESES_MINIMOS:
+                        return {
+                            "aprobado": False,
+                            "razon": f"Antigüedad insuficiente: {meses_antiguedad} meses (mínimo {MESES_MINIMOS})"
+                        }
+
+                    if total_compras < MONTO_MINIMO_COMPRAS:
+                        return {
+                            "aprobado": False,
+                            "razon": f"Compras insuficientes: ${total_compras:,.0f} (mínimo ${MONTO_MINIMO_COMPRAS:,.0f})"
+                        }
+
+                    limite_maximo = calcular_limite_credito(total_compras, meses_antiguedad)
+                    if monto > limite_maximo:
+                        return {
+                            "aprobado": False,
+                            "razon": f"Monto solicitado excede el límite aprobado: ${limite_maximo:,.0f}"
+                        }
+    except Exception as e:
+        print(f"⚠️ No se pudo verificar perfil del usuario: {e}")
 
     # Crear nueva línea de crédito
     tasa = calcular_tasa_interes(plazo)

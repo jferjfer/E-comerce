@@ -52,9 +52,12 @@ async function inicializarDB() {
 
 inicializarDB();
 
+const axios = require('axios');
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth-service:3011';
+
 // Middleware de autenticación JWT real
 const jwt = require('jsonwebtoken');
-const autenticacion = (req, res, next) => {
+const autenticacion = async (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
     return res.status(401).json({ error: 'Token requerido' });
@@ -63,7 +66,13 @@ const autenticacion = (req, res, next) => {
     const JWT_SECRETO = process.env.JWT_SECRETO;
     if (!JWT_SECRETO) return res.status(500).json({ error: 'Error de configuración' });
     const decoded = jwt.verify(token, JWT_SECRETO);
-    req.usuario = { id: String(decoded.id), nombre: decoded.nombre || 'Usuario', email: decoded.email, rol: decoded.rol };
+    // Obtener nombre real desde auth-service
+    let nombreReal = decoded.nombre || 'Usuario';
+    try {
+      const resUser = await axios.get(`${AUTH_SERVICE_URL}/api/usuarios/${decoded.id}`, { timeout: 2000 });
+      nombreReal = resUser.data.usuario?.nombre || nombreReal;
+    } catch (e) {}
+    req.usuario = { id: String(decoded.id), nombre: nombreReal, email: decoded.email, rol: decoded.rol };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token inválido o expirado' });

@@ -197,9 +197,10 @@ aplicacion.get('/api/cupones', async (req, res) => {
 
 aplicacion.post('/api/cupones/validar', async (req, res) => {
   try {
-    const { codigo, monto_compra } = req.body;
+    const { codigo, monto_compra, total_compra } = req.body;
+    const montoCompra = monto_compra || total_compra || 0;
     
-    console.log(`🎫 Validando cupón: ${codigo} para compra de $${monto_compra}`);
+    console.log(`🎫 Validando cupón: ${codigo} para compra de $${montoCompra}`);
     
     const cupon = await validarCupon(codigo);
     
@@ -207,7 +208,7 @@ aplicacion.post('/api/cupones/validar', async (req, res) => {
       return res.status(404).json({ error: 'Cupón no válido o expirado' });
     }
     
-    if (cupon.minimo_compra && monto_compra < cupon.minimo_compra) {
+    if (cupon.minimo_compra && montoCompra < cupon.minimo_compra) {
       return res.status(400).json({ 
         error: `Compra mínima requerida: $${cupon.minimo_compra}` 
       });
@@ -220,7 +221,7 @@ aplicacion.post('/api/cupones/validar', async (req, res) => {
     let descuento = 0;
     
     if (cupon.tipo === 'porcentaje') {
-      descuento = (monto_compra * cupon.valor) / 100;
+      descuento = (montoCompra * cupon.valor) / 100;
     } else if (cupon.tipo === 'monto_fijo') {
       descuento = cupon.valor;
     }
@@ -231,7 +232,9 @@ aplicacion.post('/api/cupones/validar', async (req, res) => {
         codigo: cupon.codigo,
         descripcion: cupon.descripcion,
         tipo: cupon.tipo,
-        descuento: Math.round(descuento * 100) / 100
+        valor: cupon.valor,
+        descuento: Math.round(descuento * 100) / 100,
+        total_con_descuento: Math.max(0, montoCompra - Math.round(descuento * 100) / 100)
       }
     });
   } catch (error) {
