@@ -11,6 +11,11 @@ import CategoryManagerDashboard from '@/pages/dashboards/CategoryManagerDashboar
 import ProductManagerDashboard from '@/pages/dashboards/ProductManagerDashboard';
 import SellerPremiumDashboard from '@/pages/dashboards/SellerPremiumDashboard';
 import VIPCustomerDashboard from '@/pages/dashboards/VIPCustomerDashboard';
+import ContabilidadDashboard from '@/pages/dashboards/ContabilidadDashboard';
+import MarketingManagerDashboard from '@/pages/dashboards/MarketingManagerDashboard';
+import RRHHDashboard from '@/pages/dashboards/RRHHDashboard';
+import CustomerSuccessDashboard from '@/pages/dashboards/CustomerSuccessDashboard';
+import LogisticsCoordinatorDashboard from '@/pages/dashboards/LogisticsCoordinatorDashboard';
 
 const RegularCustomerDashboard = () => <div className="p-6"><h1 className="text-2xl font-bold">Dashboard - En desarrollo</h1></div>;
 
@@ -24,6 +29,12 @@ const ROLE_DASHBOARDS: Record<string, React.FC> = {
   product_manager: ProductManagerDashboard,
   seller_premium: SellerPremiumDashboard,
   vip_customer: VIPCustomerDashboard,
+  contador: ContabilidadDashboard,
+  cfo_alt: ContabilidadDashboard,
+  marketing_manager: MarketingManagerDashboard,
+  rrhh: RRHHDashboard,
+  customer_success: CustomerSuccessDashboard,
+  logistics_coordinator: LogisticsCoordinatorDashboard,
   regular_customer: RegularCustomerDashboard
 };
 
