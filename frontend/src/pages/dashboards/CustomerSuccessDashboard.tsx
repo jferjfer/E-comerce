@@ -252,9 +252,6 @@ export default function CustomerSuccessDashboard() {
                         <td className="px-6 py-4 text-sm text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
-                            <button onClick={() => cambiarEstadoPedido(pedido.id, 'Confirmado', 'Pago confirmado por Customer Success')} disabled={procesando === pedido.id} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
-                              <i className="fas fa-check"></i> Confirmar Pago
-                            </button>
                             <button onClick={() => cambiarEstadoPedido(pedido.id, 'Cancelado', 'Cancelado por Customer Success')} disabled={procesando === pedido.id} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-sm hover:bg-red-200 disabled:opacity-50 flex items-center gap-1">
                               <i className="fas fa-times"></i> Cancelar
                             </button>
