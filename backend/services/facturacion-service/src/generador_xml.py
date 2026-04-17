@@ -71,9 +71,10 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     fecha_str = fecha.strftime("%Y-%m-%d")
     hora_str = fecha.strftime("%H:%M:%S-05:00")
 
-    subtotal = sum(p["precio_unitario"] * p["cantidad"] for p in productos)
-    iva = round(subtotal * IVA_RATE, 2)
-    total = round(subtotal + iva, 2)
+    # Precios con IVA incluido — desagregar base gravable
+    total = round(sum(p["precio_unitario"] * p["cantidad"] for p in productos), 2)
+    subtotal = round(total / (1 + IVA_RATE), 2)
+    iva = round(total - subtotal, 2)
     nit_adquiriente = cliente.get("nit_cc", "222222222222")
 
     cufe = calcular_cufe(numero_completo, fecha_str, hora_str,
@@ -310,9 +311,10 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
 
     # ── InvoiceLines ──
     for i, producto in enumerate(productos, 1):
-        precio_unit = producto["precio_unitario"]
+        precio_con_iva = producto["precio_unitario"]
         cantidad = producto["cantidad"]
-        subtotal_linea = precio_unit * cantidad
+        precio_unit = round(precio_con_iva / (1 + IVA_RATE), 2)  # precio sin IVA
+        subtotal_linea = round(precio_unit * cantidad, 2)
         iva_linea = round(subtotal_linea * IVA_RATE, 2)
 
         line = etree.SubElement(root, f"{{{CAC}}}InvoiceLine")

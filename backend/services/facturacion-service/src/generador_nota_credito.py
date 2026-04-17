@@ -22,9 +22,10 @@ def generar_nota_credito(numero, factura_referencia, cufe_factura, fecha_factura
     fecha_str = fecha.strftime("%Y-%m-%d")
     hora_str = fecha.strftime("%H:%M:%S-05:00")
 
-    subtotal = sum(p["precio_unitario"] * p["cantidad"] for p in productos)
-    iva = round(subtotal * IVA_RATE, 2)
-    total = round(subtotal + iva, 2)
+    # Precios con IVA incluido — desagregar base gravable
+    total = round(sum(p["precio_unitario"] * p["cantidad"] for p in productos), 2)
+    subtotal = round(total / (1 + IVA_RATE), 2)
+    iva = round(total - subtotal, 2)
     nit_adquiriente = cliente.get("nit_cc", "222222222222")
 
     cadena_cude = (

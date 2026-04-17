@@ -92,7 +92,7 @@ def generar_pdf_factura(
         Paragraph("<b>Vertel &amp; Catillo S.A.S</b>", estilo('e1', fontSize=8, leading=11)),
         Spacer(1, 6),
         Paragraph("<b>Vertel &amp; Catillo S.A.S</b>", estilo('e1', fontSize=8, leading=11)),
-        Paragraph("NIT: 900.205.170-8  DV: 8", estilo('e2', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
+        Paragraph("NIT: 902.051.708-6", estilo('e2', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
         Paragraph("CRA 107 A BIS #69B-58, Bogotá D.C", estilo('e3', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
         Paragraph("hola@egos.com.co", estilo('e4', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
         Spacer(1, 4),
@@ -115,7 +115,7 @@ def generar_pdf_factura(
         Spacer(1, 6),
         Paragraph("Res. DIAN No. 18760000001",
                   estilo('f6', fontSize=6, alignment=TA_RIGHT, textColor=GRIS, leading=9)),
-        Paragraph("Rango autorizado: 980000000 – 985000000",
+        Paragraph("Rango autorizado: 990.000.000 – 995.000.000",
                   estilo('f7', fontSize=6, alignment=TA_RIGHT, textColor=GRIS, leading=9)),
         Paragraph("Vigencia: 19/01/2019 – 19/01/2030",
                   estilo('f8', fontSize=6, alignment=TA_RIGHT, textColor=GRIS, leading=9)),
@@ -198,24 +198,25 @@ def generar_pdf_factura(
     ]]
 
     subtotal_calc = 0.0
+    IVA_RATE = 0.19
     for i, p in enumerate(productos, 1):
-        precio = float(p.get("precio_unitario", 0))
-        cant   = int(p.get("cantidad", 1))
-        sub    = precio * cant
-        subtotal_calc += sub
+        precio_con_iva = float(p.get("precio_unitario", 0))
+        cant           = int(p.get("cantidad", 1))
+        precio_sin_iva = round(precio_con_iva / (1 + IVA_RATE), 2)
+        sub_sin_iva    = round(precio_sin_iva * cant, 2)
+        subtotal_calc += sub_sin_iva
 
         prod_rows.append([
             Paragraph(str(i), estilo('pc', fontSize=8, alignment=TA_CENTER)),
             Paragraph(p.get("nombre", "Producto"), estilo('pd', fontSize=8, leading=11)),
             Paragraph(str(cant), estilo('pc', fontSize=8, alignment=TA_CENTER)),
-            Paragraph(fmt(precio), estilo('pr', fontSize=8, alignment=TA_RIGHT)),
-            Paragraph(fmt(sub), estilo('pr', fontSize=8, alignment=TA_RIGHT)),
+            Paragraph(fmt(precio_sin_iva), estilo('pr', fontSize=8, alignment=TA_RIGHT)),
+            Paragraph(fmt(sub_sin_iva), estilo('pr', fontSize=8, alignment=TA_RIGHT)),
         ])
 
-    # Usar valores calculados si los pasados son 0
     if subtotal == 0:
         subtotal = subtotal_calc
-        iva      = round(subtotal * 0.19, 2)
+        iva      = round(subtotal * IVA_RATE, 2)
         total    = round(subtotal + iva, 2)
 
     prod_t = Table(prod_rows, colWidths=[1*cm, 9*cm, 1.5*cm, 3.5*cm, 3*cm])
