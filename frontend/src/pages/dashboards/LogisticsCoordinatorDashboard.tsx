@@ -56,34 +56,16 @@ export default function LogisticsCoordinatorDashboard() {
   const cargarDatos = async () => {
     setCargando(true)
     try {
-      // Cargar pedidos confirmados Y enviados en paralelo
-      const [resConfirmados, resEnviados, resDevoluciones] = await Promise.all([
-        fetch(API_URL + '/api/admin/pedidos?estado=Confirmado', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.json()),
-        fetch(API_URL + '/api/admin/pedidos?estado=Alistado', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.json()),
-        fetch(API_URL + '/api/admin/pedidos?estado=En Camino', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.json()),
-        fetch(API_URL + '/api/devoluciones?estado=Aprobada', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.json()),
-        fetch(API_URL + '/api/devoluciones?estado=Aprobada', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.json())
+      const [resConfirmados, resAlistados, resEnCamino, resDev] = await Promise.all([
+        fetch(API_URL + '/api/admin/pedidos?estado=Confirmado', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch(API_URL + '/api/admin/pedidos?estado=Alistado',   { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch(API_URL + '/api/admin/pedidos?estado=En%20Camino',{ headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch(API_URL + '/api/devoluciones?estado=Aprobada',    { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
       ])
-
       const confirmados = (resConfirmados.pedidos || []).map((p: Pedido) => ({ ...p, estado: 'Confirmado' }))
-      const alistados = (resEnviados.pedidos || []).map((p: Pedido) => ({ ...p, estado: 'Alistado' }))
-      const enCamino = (resDevoluciones.pedidos || []).map((p: Pedido) => ({ ...p, estado: 'En Camino' }))
+      const alistados   = (resAlistados.pedidos   || []).map((p: Pedido) => ({ ...p, estado: 'Alistado' }))
+      const enCamino    = (resEnCamino.pedidos     || []).map((p: Pedido) => ({ ...p, estado: 'En Camino' }))
       setPedidos([...confirmados, ...alistados, ...enCamino])
-
-      // Cargar devoluciones aprobadas
-      const resDev = await fetch(API_URL + '/api/devoluciones?estado=Aprobada', {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json())
       setDevoluciones(resDev.devoluciones || [])
     } catch (error) {
       console.error('Error cargando datos:', error)
@@ -145,11 +127,12 @@ export default function LogisticsCoordinatorDashboard() {
     }
   }
 
-  const confirmados = pedidos.filter(p => p.estado === 'Confirmado')
-  const alistados = pedidos.filter(p => p.estado === 'Alistado')
-  const enCamino = pedidos.filter(p => p.estado === 'En Camino')
-  const tabActual = tab === 'confirmados' ? confirmados : tab === 'enviados' ? [...alistados, ...enCamino] : []
-  const paginados = tabActual.slice((pagina-1)*POR_PAGINA, pagina*POR_PAGINA)
+  const confirmados  = pedidos.filter(p => p.estado === 'Confirmado')
+  const alistados    = pedidos.filter(p => p.estado === 'Alistado')
+  const enCamino     = pedidos.filter(p => p.estado === 'En Camino')
+  const enTransito   = [...alistados, ...enCamino]
+  const tabActual    = tab === 'confirmados' ? confirmados : tab === 'enviados' ? enTransito : []
+  const paginados    = tabActual.slice((pagina-1)*POR_PAGINA, pagina*POR_PAGINA)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -181,7 +164,7 @@ export default function LogisticsCoordinatorDashboard() {
           </div>
           <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-gray-200">
             <p className="text-sm text-gray-600">En Tránsito</p>
-            <p className="text-3xl font-bold text-gray-700">{enviados.length}</p>
+            <p className="text-3xl font-bold text-gray-700">{enTransito.length}</p>
             <p className="text-xs text-gray-500 mt-1">pedidos enviados</p>
           </div>
           <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500">
@@ -192,7 +175,7 @@ export default function LogisticsCoordinatorDashboard() {
           <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500">
             <p className="text-sm text-gray-600">Valor en Tránsito</p>
             <p className="text-xl font-bold text-green-600">
-              {formatPrice(enviados.reduce((s, p) => s + Number(p.total || 0), 0))}
+              {formatPrice(enTransito.reduce((s, p) => s + Number(p.total || 0), 0))}
             </p>
             <p className="text-xs text-gray-500 mt-1">enviados</p>
           </div>
@@ -214,7 +197,7 @@ export default function LogisticsCoordinatorDashboard() {
           >
             <i className="fas fa-shipping-fast mr-2"></i>
             En Tránsito
-            {enviados.length > 0 && <span className="ml-2 bg-gray-100 text-white text-xs px-2 py-0.5 rounded-full">{enviados.length}</span>}
+            {enTransito.length > 0 && <span className="ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">{enTransito.length}</span>}
           </button>
           <button
             onClick={() => setTab('devoluciones')}
