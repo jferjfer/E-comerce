@@ -29,7 +29,7 @@ def generar_nota_credito(numero, factura_referencia, cufe_factura, fecha_factura
 
     cadena_cude = (
         f"{numero_completo}{fecha_str}{hora_str}"
-        f"{subtotal:.2f}01{iva:.2f}000.00000.00"
+        f"{subtotal:.2f}01{iva:.2f}040.00030.00"
         f"{total:.2f}{EMPRESA['nit']}{nit_adquiriente}"
         f"{DIAN_CONFIG['clave_tecnica']}{DIAN_CONFIG['ambiente']}"
     )
@@ -72,7 +72,7 @@ def generar_nota_credito(numero, factura_referencia, cufe_factura, fecha_factura
     etree.SubElement(swp, f"{{{STS_NC}}}ProviderID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID="4", schemeName="31").text = "800197268"
+                     schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
     etree.SubElement(swp, f"{{{STS_NC}}}SoftwareID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)").text = DIAN_CONFIG["software_id"]
@@ -106,7 +106,7 @@ def generar_nota_credito(numero, factura_referencia, cufe_factura, fecha_factura
     etree.SubElement(root, f"{{{CBC}}}IssueTime").text = hora_str
     etree.SubElement(root, f"{{{CBC}}}CreditNoteTypeCode").text = "91"
     note = (f"{numero_completo}{fecha_str}{hora_str}"
-            f"{subtotal:.2f}01{iva:.2f}000.00000.00{total:.2f}"
+            f"{subtotal:.2f}01{iva:.2f}040.00030.00{total:.2f}"
             f"{EMPRESA['nit']}{nit_adquiriente}{DIAN_CONFIG['clave_tecnica']}{DIAN_CONFIG['ambiente']}")
     etree.SubElement(root, f"{{{CBC}}}Note").text = note
     etree.SubElement(root, f"{{{CBC}}}DocumentCurrencyCode",

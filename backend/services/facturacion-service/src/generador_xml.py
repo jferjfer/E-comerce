@@ -53,10 +53,11 @@ STS = "dian:gov:co:facturaelectronica:Structures-2-1"
 def calcular_cufe(numero_factura, fecha_factura, hora_factura, valor_factura,
                   cod_impuesto1, valor_impuesto1, valor_total,
                   nit_emisor, nit_adquiriente, clave_tecnica, ambiente):
+    # Formato exacto: NumFac+FecFac+HorFac+ValFac+01+ValIVA+04+0.00+03+0.00+ValTot+NitFac+NumAdq+ClaveTec+Ambiente
     cadena = (
         f"{numero_factura}{fecha_factura}{hora_factura}"
         f"{valor_factura:.2f}{cod_impuesto1}{valor_impuesto1:.2f}"
-        f"000.00000.00{valor_total:.2f}"
+        f"040.00030.00{valor_total:.2f}"
         f"{nit_emisor}{nit_adquiriente}{clave_tecnica}{ambiente}"
     )
     return hashlib.sha384(cadena.encode()).hexdigest()
@@ -126,12 +127,12 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
                      listAgencyName="United Nations Economic Commission for Europe",
                      listSchemeURI="urn:oasis:names:specification:ubl:codelist:gc:CountryIdentificationCode-2.1").text = "CO"
 
-    # SoftwareProvider — ProviderID = NIT DIAN con schemeID=4
+    # SoftwareProvider — ProviderID = NIT del emisor con DV
     swp = etree.SubElement(dian, f"{{{STS}}}SoftwareProvider")
     etree.SubElement(swp, f"{{{STS}}}ProviderID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID="4", schemeName="31").text = "800197268"
+                     schemeID=EMPRESA["dv"], schemeName="31").text = EMPRESA["nit"]
     etree.SubElement(swp, f"{{{STS}}}SoftwareID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)").text = DIAN_CONFIG["software_id"]
@@ -173,7 +174,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     etree.SubElement(root, f"{{{CBC}}}InvoiceTypeCode").text = "01"
     # Note con cadena CUFE exacta del ejemplo
     note = (f"{numero_completo}{fecha_str}{hora_str}"
-            f"{subtotal:.2f}01{iva:.2f}000.00000.00{total:.2f}"
+            f"{subtotal:.2f}01{iva:.2f}040.00030.00{total:.2f}"
             f"{EMPRESA['nit']}{nit_adquiriente}{DIAN_CONFIG['clave_tecnica']}{DIAN_CONFIG['ambiente']}")
     etree.SubElement(root, f"{{{CBC}}}Note").text = note
     etree.SubElement(root, f"{{{CBC}}}DocumentCurrencyCode",
@@ -251,6 +252,13 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     etree.SubElement(customer, f"{{{CBC}}}AdditionalAccountID").text = "2"
     cp = etree.SubElement(customer, f"{{{CAC}}}Party")
 
+    # PartyIdentification requerido cuando AdditionalAccountID=2
+    cp_pid = etree.SubElement(cp, f"{{{CAC}}}PartyIdentification")
+    etree.SubElement(cp_pid, f"{{{CBC}}}ID",
+                     schemeAgencyID="195",
+                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                     schemeID="0", schemeName="13").text = nit_adquiriente
+
     cp_name = etree.SubElement(cp, f"{{{CAC}}}PartyName")
     etree.SubElement(cp_name, f"{{{CBC}}}Name").text = cliente.get("nombre", "Consumidor Final")
 
@@ -259,7 +267,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     etree.SubElement(cp_tax, f"{{{CBC}}}CompanyID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeName="13").text = nit_adquiriente
+                     schemeID="0", schemeName="13").text = nit_adquiriente
     etree.SubElement(cp_tax, f"{{{CBC}}}TaxLevelCode", listName="49").text = "R-99-PN"
     cp_ts = etree.SubElement(cp_tax, f"{{{CAC}}}TaxScheme")
     etree.SubElement(cp_ts, f"{{{CBC}}}ID").text = "ZY"
@@ -270,7 +278,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     etree.SubElement(cp_legal, f"{{{CBC}}}CompanyID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeName="13").text = nit_adquiriente
+                     schemeID="0", schemeName="13").text = nit_adquiriente
 
     cp_contact = etree.SubElement(cp, f"{{{CAC}}}Contact")
     etree.SubElement(cp_contact, f"{{{CBC}}}ElectronicMail").text = cliente.get("email", "")

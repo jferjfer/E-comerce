@@ -63,8 +63,7 @@ class FirmadorXML:
             # Serial en formato decimal (requerido por DIAN XAdES)
             self.serial_number = str(certificate.serial_number)
 
-            digest = hashlib.sha256(self.cert_der).digest()
-            self.cert_digest = base64.b64encode(digest).decode()
+            self.cert_digest = base64.b64encode(hashlib.sha384(self.cert_der).digest()).decode()
 
             self._loaded = True
             print(f"✅ Certificado cargado: {certificate.subject.rfc4514_string()}")
@@ -116,7 +115,14 @@ class FirmadorXML:
         xades_obj_id = f"XadesObjectId-{uuid.uuid4()}"
         qualifying_id = f"QualifyingProperties-{uuid.uuid4()}"
 
-        now = datetime.now(COLOMBIA_TZ).strftime("%Y-%m-%dT%H:%M:%S-05:00")
+        # Extraer IssueDate e IssueTime del XML para que SigningTime coincida (FAD09e)
+        import re as _re
+        _date = _re.search(r'<cbc:IssueDate>([^<]+)', xml_string)
+        _time = _re.search(r'<cbc:IssueTime>([^<]+)', xml_string)
+        if _date and _time:
+            now = f"{_date.group(1)}T{_time.group(1)}"
+        else:
+            now = datetime.now(COLOMBIA_TZ).strftime("%Y-%m-%dT%H:%M:%S-05:00")
 
         # Construir SignedProperties
         signed_props = self._build_signed_properties(
@@ -126,7 +132,7 @@ class FirmadorXML:
         # Canonicalizar SignedProperties para digest
         signed_props_c14n = etree.tostring(signed_props, method="c14n", exclusive=False)
         signed_props_digest = base64.b64encode(
-            hashlib.sha256(signed_props_c14n).digest()
+            hashlib.sha384(signed_props_c14n).digest()
         ).decode()
 
         # Digest del documento con transformación enveloped-signature
@@ -145,14 +151,14 @@ class FirmadorXML:
                     break
         doc_c14n = etree.tostring(tree_copy, method="c14n", exclusive=False)
         doc_digest = base64.b64encode(
-            hashlib.sha256(doc_c14n).digest()
+            hashlib.sha384(doc_c14n).digest()
         ).decode()
 
         # Construir KeyInfo
         keyinfo_xml = self._build_keyinfo(keyinfo_id)
         keyinfo_c14n = etree.tostring(keyinfo_xml, method="c14n", exclusive=False)
         keyinfo_digest = base64.b64encode(
-            hashlib.sha256(keyinfo_c14n).digest()
+            hashlib.sha384(keyinfo_c14n).digest()
         ).decode()
 
         # Construir SignedInfo
@@ -202,7 +208,7 @@ class FirmadorXML:
         sc = etree.SubElement(ssp, f"{{{NS_XADES}}}SigningCertificate")
         cert = etree.SubElement(sc, f"{{{NS_XADES}}}Cert")
         cd = etree.SubElement(cert, f"{{{NS_XADES}}}CertDigest")
-        etree.SubElement(cd, f"{{{NS_DS}}}DigestMethod", Algorithm="http://www.w3.org/2001/04/xmlenc#sha256")
+        etree.SubElement(cd, f"{{{NS_DS}}}DigestMethod", Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha384")
         etree.SubElement(cd, f"{{{NS_DS}}}DigestValue").text = self.cert_digest
         iss = etree.SubElement(cert, f"{{{NS_XADES}}}IssuerSerial")
         etree.SubElement(iss, f"{{{NS_DS}}}X509IssuerName").text = self.issuer_name
@@ -215,7 +221,7 @@ class FirmadorXML:
         etree.SubElement(spid_id, f"{{{NS_XADES}}}Identifier").text = POLITICA_FIRMA["url"]
         etree.SubElement(spid_id, f"{{{NS_XADES}}}Description")
         sph = etree.SubElement(spid, f"{{{NS_XADES}}}SigPolicyHash")
-        etree.SubElement(sph, f"{{{NS_DS}}}DigestMethod", Algorithm=POLITICA_FIRMA["algorithm"])
+        etree.SubElement(sph, f"{{{NS_DS}}}DigestMethod", Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha384")
         etree.SubElement(sph, f"{{{NS_DS}}}DigestValue").text = POLITICA_FIRMA["digest"]
 
         # SignerRole
@@ -264,13 +270,13 @@ class FirmadorXML:
         etree.SubElement(transforms, f"{{{NS_DS}}}Transform",
                          Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature")
         etree.SubElement(ref1, f"{{{NS_DS}}}DigestMethod",
-                         Algorithm="http://www.w3.org/2001/04/xmlenc#sha256")
+                         Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha384")
         etree.SubElement(ref1, f"{{{NS_DS}}}DigestValue").text = doc_digest
 
         # Reference KeyInfo
         ref2 = etree.SubElement(si, f"{{{NS_DS}}}Reference", Id="ReferenceKeyInfo", URI=f"#{keyinfo_id}")
         etree.SubElement(ref2, f"{{{NS_DS}}}DigestMethod",
-                         Algorithm="http://www.w3.org/2001/04/xmlenc#sha256")
+                         Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha384")
         etree.SubElement(ref2, f"{{{NS_DS}}}DigestValue").text = keyinfo_digest
 
         # Reference SignedProperties
@@ -278,7 +284,7 @@ class FirmadorXML:
                                 Type="http://uri.etsi.org/01903#SignedProperties",
                                 URI=f"#{signed_props_id}")
         etree.SubElement(ref3, f"{{{NS_DS}}}DigestMethod",
-                         Algorithm="http://www.w3.org/2001/04/xmlenc#sha256")
+                         Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha384")
         etree.SubElement(ref3, f"{{{NS_DS}}}DigestValue").text = signed_props_digest
 
         return si

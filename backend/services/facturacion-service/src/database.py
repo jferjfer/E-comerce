@@ -55,7 +55,7 @@ class ContadorFactura(Base):
     __tablename__ = "contador_factura"
 
     id = Column(Integer, primary_key=True, default=1)
-    ultimo_numero = Column(Integer, default=979999999)  # empieza en 980000000
+    ultimo_numero = Column(Integer, default=989999999)  # empieza en 990000000
 
 def get_db():
     db = SessionLocal()
@@ -71,7 +71,7 @@ def init_db():
         db = SessionLocal()
         contador = db.query(ContadorFactura).first()
         if not contador:
-            db.add(ContadorFactura(id=1, ultimo_numero=979999999))
+            db.add(ContadorFactura(id=1, ultimo_numero=989999999))
             db.commit()
         db.close()
         print("✅ Tablas de facturación creadas/verificadas")
