@@ -111,6 +111,7 @@ async def listar_productos(
         filtro = {}
         
         # Construir filtros MongoDB
+        filtro["en_stock"] = True  # Solo productos activos al cliente
         if categoria:
             filtro["categoria"] = {"$regex": categoria, "$options": "i"}
         
@@ -272,6 +273,17 @@ async def actualizar_producto(producto_id: str, datos: dict):
     except Exception as e:
         print(f"❌ Error actualizando producto: {e}")
         raise HTTPException(status_code=500, detail=f"Error actualizando producto: {str(e)}")
+
+
+@app.delete("/api/productos/{producto_id}")
+async def eliminar_producto(producto_id: str):
+    db = obtener_bd()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Base de datos no disponible")
+    resultado = await db.productos.delete_one({"id": producto_id})
+    if resultado.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return {"exito": True, "mensaje": "Producto eliminado"}
 
 
 @app.get("/api/productos/{producto_id}")
