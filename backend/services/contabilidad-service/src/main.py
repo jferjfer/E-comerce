@@ -22,7 +22,7 @@ from database import (
 from motor_contable import (
     registrar_venta, registrar_pago, registrar_devolucion,
     registrar_credito_interno, calcular_iva_bimestre,
-    calcular_anticipo_simple, registrar_compra
+    calcular_anticipo_simple, registrar_compra, registrar_capital_inicial
 )
 
 EMPRESA = {
@@ -92,6 +92,12 @@ class AsientoManual(BaseModel):
     descripcion: str
     referencia: Optional[str] = None
     movimientos: List[dict]
+
+
+class RegistrarCapitalInicial(BaseModel):
+    monto: float
+    descripcion: Optional[str] = "Capital inicial VERTEL & CATILLO S.A.S"
+    fecha: Optional[str] = None
 
 
 class RegistrarCompra(BaseModel):
@@ -622,6 +628,37 @@ async def dashboard(db: Session = Depends(get_db), usuario: dict = Depends(verif
 # ============================================
 # ENDPOINTS — COMPRAS Y GASTOS
 # ============================================
+
+@app.post("/api/contabilidad/capital-inicial")
+async def registrar_capital_endpoint(
+    datos: RegistrarCapitalInicial,
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
+):
+    """Registra el capital inicial de la sociedad"""
+    try:
+        # Verificar que no exista ya un asiento de capital
+        existente = db.query(AsientoContable).filter(
+            AsientoContable.referencia == "CAPITAL-INICIAL"
+        ).first()
+        if existente:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ya existe un asiento de capital inicial (#{existente.numero}). Para modificarlo contacte al administrador."
+            )
+        fecha = datetime.fromisoformat(datos.fecha) if datos.fecha else datetime.now()
+        asiento = registrar_capital_inicial(db, datos.monto, datos.descripcion or "Capital inicial VERTEL & CATILLO S.A.S", fecha)
+        return {
+            "mensaje": "Capital inicial registrado exitosamente",
+            "asiento_id": asiento.id,
+            "numero": asiento.numero,
+            "monto": datos.monto
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/contabilidad/compras")
 async def registrar_compra_endpoint(compra: RegistrarCompra, db: Session = Depends(get_db), usuario: dict = Depends(verificar_rol_contabilidad)):

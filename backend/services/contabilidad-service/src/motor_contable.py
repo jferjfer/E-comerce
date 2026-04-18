@@ -48,6 +48,57 @@ def _actualizar_saldo(db: Session, codigo: str, nombre: str, tipo: str,
         saldo.saldo_final = saldo.saldo_inicial + saldo.total_creditos - saldo.total_debitos
 
 
+def registrar_capital_inicial(
+    db: Session,
+    monto: float,
+    descripcion: str = "Capital inicial VERTEL & CATILLO S.A.S",
+    fecha: datetime = None
+) -> AsientoContable:
+    """
+    Asiento de apertura / capital inicial:
+    DB 111010 Cuenta de ahorros    (monto)
+       CR 310505 Capital social    (monto)
+    """
+    if fecha is None:
+        fecha = datetime.now()
+
+    periodo = fecha.strftime("%Y-%m")
+    numero = _siguiente_numero(db)
+
+    asiento = AsientoContable(
+        numero=numero, fecha=fecha, tipo=TipoAsiento.APERTURA,
+        descripcion=descripcion,
+        referencia="CAPITAL-INICIAL",
+        total_debito=monto, total_credito=monto, periodo=periodo
+    )
+    db.add(asiento)
+    db.flush()
+
+    movimientos = [
+        MovimientoContable(
+            asiento_id=asiento.id, codigo_cuenta="111010",
+            nombre_cuenta="Cuenta de ahorros",
+            debito=monto, credito=0,
+            descripcion="Aporte de capital"
+        ),
+        MovimientoContable(
+            asiento_id=asiento.id, codigo_cuenta="310505",
+            nombre_cuenta="Capital VERTEL & CATILLO S.A.S",
+            debito=0, credito=monto,
+            descripcion="Capital social inicial"
+        ),
+    ]
+    for m in movimientos:
+        db.add(m)
+
+    _actualizar_saldo(db, "111010", "Cuenta de ahorros", "Activo", "Debito", periodo, monto, 0)
+    _actualizar_saldo(db, "310505", "Capital VERTEL & CATILLO S.A.S", "Patrimonio", "Credito", periodo, 0, monto)
+
+    db.commit()
+    print(f"✅ Asiento #{numero} — Capital inicial ${monto:,.0f}")
+    return asiento
+
+
 def registrar_venta(db: Session, pedido_id: str, total: float,
                     usuario_id: int = None, fecha: datetime = None) -> AsientoContable:
     """

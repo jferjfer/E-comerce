@@ -28,7 +28,7 @@ export default function ContabilidadDashboard() {
   const { token } = useAuthStore()
   const [data, setData] = useState<DashboardData | null>(null)
   const [cargando, setCargando] = useState(true)
-  const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple'>('dashboard')
+  const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple' | 'capital'>('dashboard')
   const [libroDiario, setLibroDiario] = useState<any[]>([])
   const [libroMayor, setLibroMayor] = useState<any[]>([])
   const [balance, setBalance] = useState<any>(null)
@@ -49,6 +49,10 @@ export default function ContabilidadDashboard() {
   })
   const [guardandoCompra, setGuardandoCompra] = useState(false)
   const [mensajeCompra, setMensajeCompra] = useState<{tipo: string, texto: string} | null>(null)
+  const [capitalMonto, setCapitalMonto] = useState('')
+  const [capitalDesc, setCapitalDesc] = useState('Capital inicial VERTEL & CATILLO S.A.S')
+  const [guardandoCapital, setGuardandoCapital] = useState(false)
+  const [mensajeCapital, setMensajeCapital] = useState<{tipo: string, texto: string} | null>(null)
 
   const anio = new Date().getFullYear()
   const bimestre = Math.ceil(new Date().getMonth() / 2) + (new Date().getMonth() % 2 === 0 ? 0 : 0)
@@ -59,6 +63,7 @@ export default function ContabilidadDashboard() {
   }, [])
 
   useEffect(() => {
+    if (tab === 'capital') return
     if (tab === 'diario') cargarLibroDiario()
     if (tab === 'mayor') cargarLibroMayor()
     if (tab === 'balance') cargarBalance()
@@ -138,6 +143,34 @@ export default function ContabilidadDashboard() {
     setResumenCompras(d2)
   }
 
+  const guardarCapital = async () => {
+    if (!capitalMonto || parseFloat(capitalMonto) <= 0) {
+      setMensajeCapital({ tipo: 'error', texto: 'Ingresa un monto válido' })
+      return
+    }
+    setGuardandoCapital(true)
+    setMensajeCapital(null)
+    try {
+      const res = await fetch(`${API_URL}/api/contabilidad/capital-inicial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ monto: parseFloat(capitalMonto), descripcion: capitalDesc })
+      })
+      const d = await res.json()
+      if (res.ok) {
+        setMensajeCapital({ tipo: 'success', texto: `✅ Capital registrado — Asiento #${d.numero} por $${parseFloat(capitalMonto).toLocaleString('es-CO')}` })
+        setCapitalMonto('')
+        cargarDashboard()
+      } else {
+        setMensajeCapital({ tipo: 'error', texto: d.detail || 'Error registrando capital' })
+      }
+    } catch {
+      setMensajeCapital({ tipo: 'error', texto: 'Error de conexión' })
+    } finally {
+      setGuardandoCapital(false)
+    }
+  }
+
   const guardarCompra = async () => {
     if (!formCompra.proveedor_nombre || !formCompra.descripcion || !formCompra.subtotal) {
       setMensajeCompra({ tipo: 'error', texto: 'Proveedor, descripción y subtotal son obligatorios' })
@@ -180,6 +213,7 @@ export default function ContabilidadDashboard() {
 
   const TABS = [
     { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'capital', label: '🏦 Capital Inicial' },
     { id: 'compras', label: '🛒 Compras' },
     { id: 'diario', label: '📖 Libro Diario' },
     { id: 'mayor', label: '📋 Libro Mayor' },
@@ -346,7 +380,74 @@ export default function ContabilidadDashboard() {
           </div>
         )}
 
-        {/* ── COMPRAS ── */}
+        {/* ── CAPITAL INICIAL ── */}
+        {tab === 'capital' && (
+          <div className="max-w-lg space-y-4">
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="bg-gray-900 text-white px-4 py-3">
+                <h3 className="font-bold">🏦 Capital Inicial de la Sociedad</h3>
+                <p className="text-xs text-gray-400">Cuenta 310505 — Capital VERTEL & CATILLO S.A.S</p>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
+                  <strong>¿Por qué registrar el capital inicial?</strong><br/>
+                  Sin el capital inicial el balance general no cuadra. Este asiento registra el dinero que los socios aportaron para constituir la empresa.
+                  <br/><br/>
+                  <strong>Asiento:</strong><br/>
+                  DB 111010 Cuenta de ahorros (lo que aportaron)<br/>
+                  CR 310505 Capital social (patrimonio de la empresa)
+                </div>
+
+                {mensajeCapital && (
+                  <div className={`p-3 rounded-lg text-sm ${
+                    mensajeCapital.tipo === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  }`}>
+                    {mensajeCapital.texto}
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Monto del capital inicial (COP) *</label>
+                  <input
+                    type="number"
+                    value={capitalMonto}
+                    onChange={e => setCapitalMonto(e.target.value)}
+                    placeholder="Ej: 10000000"
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                  {capitalMonto && parseFloat(capitalMonto) > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      ${parseFloat(capitalMonto).toLocaleString('es-CO')} COP
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Descripción</label>
+                  <input
+                    value={capitalDesc}
+                    onChange={e => setCapitalDesc(e.target.value)}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                </div>
+
+                <button
+                  onClick={guardarCapital}
+                  disabled={guardandoCapital}
+                  className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 disabled:opacity-50"
+                >
+                  {guardandoCapital ? 'Registrando...' : 'Registrar Capital Inicial'}
+                </button>
+
+                <p className="text-xs text-gray-400 text-center">
+                  ⚠️ Solo se puede registrar una vez. Consulta con tu contador antes de proceder.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── COMPRAS ── */}}
         {tab === 'compras' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
