@@ -204,6 +204,21 @@ export default function ProductManagerDashboard() {
     }
   }
 
+  const toggleStock = async (id: string, estadoActual: boolean) => {
+    try {
+      const r = await fetch(`${API_URL}/api/productos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ en_stock: !estadoActual })
+      })
+      if (r.ok) {
+        setProductos(prev => prev.map(p => p.id === id ? { ...p, en_stock: !estadoActual } : p))
+      }
+    } catch {
+      alert('Error de conexión')
+    }
+  }
+
   const eliminarProducto = async (id: string, nombre: string) => {
     if (!confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return
     try {
@@ -303,9 +318,16 @@ export default function ProductManagerDashboard() {
                       <p className="text-xs text-gray-400">Costo: {formatPrice(p.costo_adquisicion)}</p>
                     )}
                     <div className="flex items-center justify-between mt-2">
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${p.en_stock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <button
+                        onClick={() => toggleStock(p.id, p.en_stock)}
+                        className={`text-xs px-1.5 py-0.5 rounded-full cursor-pointer transition-colors ${
+                          p.en_stock
+                            ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700'
+                            : 'bg-red-100 text-red-700 hover:bg-green-100 hover:text-green-700'
+                        }`}
+                        title={p.en_stock ? 'Click para desactivar' : 'Click para activar'}>
                         {p.en_stock ? 'Activo' : 'Inactivo'}
-                      </span>
+                      </button>
                       <div className="flex gap-2">
                         <button onClick={() => abrirEditar(p)}
                           className="text-xs text-blue-600 hover:text-blue-800" title="Editar">
