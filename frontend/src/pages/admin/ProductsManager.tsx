@@ -6,6 +6,16 @@ import RoleGuard from '@/components/auth/RoleGuard'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { API_URL } from '@/config/api'
 
+// ── Fórmula PVP EGOS ──
+const IVA        = 0.19
+const COM_EPAYCO = 0.0299 * 1.19
+const FIX_EPAYCO = 900 * 1.19
+const DENOMINADOR = 1 - (IVA + COM_EPAYCO)
+
+function calcularPVP(costo: number, envio = 25000, empaque = 5000): number {
+  return Math.ceil((costo + costo + envio + empaque + FIX_EPAYCO) / DENOMINADOR)
+}
+
 export default function ProductsManager() {
   const [products, setProducts] = useState<Producto[]>([])
   const [cargando, setCargando] = useState(true)
@@ -44,7 +54,9 @@ export default function ProductsManager() {
     setProductoEditando(producto)
     setFormEdicion({
       nombre: producto.nombre,
-      precio: String(producto.precio),
+      costo_adquisicion: String((producto as any).costo_adquisicion || ''),
+      costo_envio: '25000',
+      costo_empaque: '5000',
       descripcion: producto.descripcion,
       categoria: producto.categoria,
       imagen: producto.imagen,
@@ -52,7 +64,6 @@ export default function ProductsManager() {
       material: (producto as any).material || '',
       marca: (producto as any).marca || 'EGOS',
       sku: (producto as any).sku || '',
-      descuento: String((producto as any).descuento || '0'),
       stock_cantidad: String((producto as any).stock || ''),
     })
     setTallasEdicion(producto.tallas || [])
@@ -61,22 +72,38 @@ export default function ProductsManager() {
 
   const guardarEdicion = async () => {
     if (!productoEditando) return
-    if (!formEdicion.nombre || !formEdicion.precio || !formEdicion.descripcion) {
-      addNotification('Nombre, precio y descripción son obligatorios', 'error')
+    if (!formEdicion.nombre || !formEdicion.costo_adquisicion || !formEdicion.descripcion) {
+      addNotification('Nombre, costo de adquisición y descripción son obligatorios', 'error')
       return
     }
+    const costo = parseFloat(formEdicion.costo_adquisicion)
+    if (costo <= 0) { addNotification('El costo debe ser mayor a 0', 'error'); return }
+
+    const pvp = calcularPVP(
+      costo,
+      parseFloat(formEdicion.costo_envio) || 25000,
+      parseFloat(formEdicion.costo_empaque) || 5000
+    )
+
     setGuardandoEdicion(true)
     try {
       const resultado = await api.actualizarProducto(productoEditando.id, {
-        ...formEdicion,
-        precio: parseFloat(formEdicion.precio),
+        nombre: formEdicion.nombre,
+        precio: pvp,
+        costo_adquisicion: costo,
+        descripcion: formEdicion.descripcion,
+        categoria: formEdicion.categoria,
+        imagen: formEdicion.imagen,
+        en_stock: formEdicion.en_stock,
+        material: formEdicion.material,
+        marca: formEdicion.marca,
+        sku: formEdicion.sku,
         stock: parseInt(formEdicion.stock_cantidad) || 0,
-        descuento: parseFloat(formEdicion.descuento) || 0,
         tallas: tallasEdicion,
         colores: coloresEdicion,
       })
       if (resultado.exito) {
-        addNotification('Producto actualizado exitosamente', 'success')
+        addNotification(`Producto actualizado — PVP: ${formatPrice(pvp)}`, 'success')
         setProductoEditando(null)
         const { productos } = await api.obtenerProductos()
         setProducts(productos)
@@ -335,15 +362,51 @@ export default function ProductsManager() {
                 <input value={formEdicion.marca} onChange={e => setFormEdicion({...formEdicion, marca: e.target.value})}
                   className="w-full border rounded-lg px-3 py-2 text-sm" />
               </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Precio (COP) *</label>
-                <input type="number" value={formEdicion.precio} onChange={e => setFormEdicion({...formEdicion, precio: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Descuento (%)</label>
-                <input type="number" min="0" max="100" value={formEdicion.descuento} onChange={e => setFormEdicion({...formEdicion, descuento: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+            <div className="md:col-span-3">
+                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                  <p className="text-xs font-bold text-amber-800 mb-3">💰 Calculadora PVP — Fórmula EGOS</p>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Costo adquisición *</label>
+                      <input type="number" value={formEdicion.costo_adquisicion}
+                        onChange={e => setFormEdicion({...formEdicion, costo_adquisicion: e.target.value})}
+                        placeholder="40000"
+                        className="w-full border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Costo envío</label>
+                      <input type="number" value={formEdicion.costo_envio}
+                        onChange={e => setFormEdicion({...formEdicion, costo_envio: e.target.value})}
+                        className="w-full border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 mb-1 block">Costo empaque</label>
+                      <input type="number" value={formEdicion.costo_empaque}
+                        onChange={e => setFormEdicion({...formEdicion, costo_empaque: e.target.value})}
+                        className="w-full border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                  </div>
+                  {formEdicion.costo_adquisicion && parseFloat(formEdicion.costo_adquisicion) > 0 && (() => {
+                    const pvp = calcularPVP(
+                      parseFloat(formEdicion.costo_adquisicion),
+                      parseFloat(formEdicion.costo_envio) || 25000,
+                      parseFloat(formEdicion.costo_empaque) || 5000
+                    )
+                    return (
+                      <div className="bg-white rounded-lg p-3 border border-amber-300 text-xs">
+                        <div className="grid grid-cols-2 gap-1 text-gray-600 mb-2">
+                          <span>Costo + Utilidad:</span><span className="text-right font-medium">{formatPrice(parseFloat(formEdicion.costo_adquisicion) * 2)}</span>
+                          <span>Envío + empaque:</span><span className="text-right font-medium">{formatPrice((parseFloat(formEdicion.costo_envio)||0)+(parseFloat(formEdicion.costo_empaque)||0))}</span>
+                          <span>IVA + ePayco:</span><span className="text-right font-medium">{formatPrice(pvp * (IVA + COM_EPAYCO))}</span>
+                        </div>
+                        <div className="border-t pt-2 flex justify-between font-bold">
+                          <span>PVP al cliente:</span>
+                          <span className="text-amber-700 text-base">{formatPrice(pvp)}</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Stock</label>
