@@ -154,10 +154,10 @@ def registrar_pago(db: Session, pedido_id: str, total: float,
 def registrar_devolucion(db: Session, pedido_id: str, total: float,
                          fecha: datetime = None) -> AsientoContable:
     """
-    Asiento por devolución:
-    DB 417505 Devoluciones ventas        (base)
+    Asiento por devolución (cliente ya pagó, se le devuelve el dinero):
+    DB 417505 Devoluciones ventas        (base sin IVA)
     DB 240805 IVA por pagar              (IVA — se reversa)
-       CR 130505 Clientes nacionales     (total)
+       CR 111010 Banco/Cuenta ahorros    (total — reembolso al cliente)
     """
     if fecha is None:
         fecha = datetime.now()
@@ -188,9 +188,10 @@ def registrar_devolucion(db: Session, pedido_id: str, total: float,
             descripcion="Reversa IVA por devolución"
         ),
         MovimientoContable(
-            asiento_id=asiento.id, codigo_cuenta="130505",
-            nombre_cuenta="Clientes nacionales",
-            debito=0, credito=total
+            asiento_id=asiento.id, codigo_cuenta="111010",
+            nombre_cuenta="Cuenta de ahorros",
+            debito=0, credito=total,
+            descripcion="Reembolso al cliente"
         ),
     ]
     for m in movimientos:
@@ -198,7 +199,7 @@ def registrar_devolucion(db: Session, pedido_id: str, total: float,
 
     _actualizar_saldo(db, "417505", "Devoluciones ventas prendas", "Ingreso", "Debito", periodo, base, 0)
     _actualizar_saldo(db, "240805", "IVA por pagar", "Pasivo", "Credito", periodo, iva, 0)
-    _actualizar_saldo(db, "130505", "Clientes nacionales", "Activo", "Debito", periodo, 0, total)
+    _actualizar_saldo(db, "111010", "Cuenta de ahorros", "Activo", "Debito", periodo, 0, total)
 
     db.commit()
     print(f"✅ Asiento #{numero} — Devolución ${total:,.0f}")
