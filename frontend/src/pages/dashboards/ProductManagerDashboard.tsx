@@ -49,6 +49,8 @@ interface FormProducto {
   costo_adquisicion: string
   costo_envio: string
   costo_empaque: string
+  precio_manual: string
+  usar_precio_manual: boolean
   categoria: string
   descripcion: string
   tallas: string[]
@@ -58,8 +60,8 @@ interface FormProducto {
 
 const FORM_INICIAL: FormProducto = {
   nombre: '', costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
-  costo_empaque: String(COSTO_EMPAQUE), categoria: 'Vestidos',
-  descripcion: '', tallas: ['S','M','L'], colores: ['Negro'], en_stock: true
+  costo_empaque: String(COSTO_EMPAQUE), precio_manual: '', usar_precio_manual: false,
+  categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'], colores: ['Negro'], en_stock: true
 }
 
 export default function ProductManagerDashboard() {
@@ -118,6 +120,8 @@ export default function ProductManagerDashboard() {
       costo_adquisicion: p.costo_adquisicion ? String(p.costo_adquisicion) : '',
       costo_envio: String(COSTO_ENVIO),
       costo_empaque: String(COSTO_EMPAQUE),
+      precio_manual: String(p.precio),
+      usar_precio_manual: !p.costo_adquisicion,
       categoria: p.categoria,
       descripcion: p.descripcion,
       tallas: p.tallas || [],
@@ -129,29 +133,42 @@ export default function ProductManagerDashboard() {
   }
 
   const guardar = async () => {
-    if (!form.nombre || !form.costo_adquisicion) {
-      setMensaje({ tipo: 'error', texto: 'Nombre y costo de adquisición son obligatorios' })
+    if (!form.nombre) {
+      setMensaje({ tipo: 'error', texto: 'El nombre es obligatorio' })
       return
     }
-    const costo = parseFloat(form.costo_adquisicion)
-    if (costo <= 0) {
-      setMensaje({ tipo: 'error', texto: 'El costo debe ser mayor a 0' })
-      return
+
+    let precioFinal: number
+
+    if (form.usar_precio_manual) {
+      // Precio promocional manual
+      precioFinal = parseFloat(form.precio_manual)
+      if (!precioFinal || precioFinal <= 0) {
+        setMensaje({ tipo: 'error', texto: 'Ingresa un precio promocional válido' })
+        return
+      }
+    } else {
+      // Precio calculado con fórmula PVP
+      const costo = parseFloat(form.costo_adquisicion)
+      if (!costo || costo <= 0) {
+        setMensaje({ tipo: 'error', texto: 'El costo de adquisición es obligatorio' })
+        return
+      }
+      precioFinal = calcularPVP(
+        costo,
+        parseFloat(form.costo_envio) || COSTO_ENVIO,
+        parseFloat(form.costo_empaque) || COSTO_EMPAQUE
+      )
     }
 
     setGuardando(true)
     setMensaje(null)
 
-    const pvp = calcularPVP(
-      costo,
-      parseFloat(form.costo_envio) || COSTO_ENVIO,
-      parseFloat(form.costo_empaque) || COSTO_EMPAQUE
-    )
-
     const datos = {
       nombre: form.nombre,
-      precio: pvp,
-      costo_adquisicion: costo,
+      precio: precioFinal,
+      costo_adquisicion: parseFloat(form.costo_adquisicion) || 0,
+      precio_manual: form.usar_precio_manual,
       categoria: form.categoria,
       descripcion: form.descripcion,
       tallas: form.tallas,
@@ -265,6 +282,9 @@ export default function ProductManagerDashboard() {
                     <p className="text-xs font-semibold text-gray-800 truncate">{p.nombre}</p>
                     <p className="text-xs text-gray-400">{p.categoria}</p>
                     <p className="text-sm font-bold text-amber-700 mt-1">{formatPrice(p.precio)}</p>
+                    {p.costo_adquisicion && (
+                      <p className="text-xs text-gray-400">Costo: {formatPrice(p.costo_adquisicion)}</p>
+                    )}
                     <div className="flex items-center justify-between mt-2">
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${p.en_stock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {p.en_stock ? 'Activo' : 'Inactivo'}
@@ -372,7 +392,48 @@ export default function ProductManagerDashboard() {
                 )}
               </div>
 
-              {/* Categoría */}
+              {/* Toggle precio manual */}
+              <div className={`rounded-xl p-4 border-2 transition-colors ${
+                form.usar_precio_manual
+                  ? 'bg-orange-50 border-orange-300'
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">🏷️ Precio Promocional</p>
+                    <p className="text-xs text-gray-500">Activa para ofertas o descuentos especiales</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, usar_precio_manual: !f.usar_precio_manual }))}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      form.usar_precio_manual ? 'bg-orange-500' : 'bg-gray-300'
+                    }`}>
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      form.usar_precio_manual ? 'translate-x-7' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+                {form.usar_precio_manual && (
+                  <div>
+                    <label className="text-xs text-orange-700 font-semibold mb-1 block">
+                      ⚠️ Precio promocional (la fórmula PVP queda desactivada)
+                    </label>
+                    <input
+                      type="number"
+                      value={form.precio_manual}
+                      onChange={e => setForm({...form, precio_manual: e.target.value})}
+                      placeholder="Ej: 59900"
+                      className="w-full border-2 border-orange-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 font-bold text-orange-700"
+                    />
+                    {form.precio_manual && pvpPreview > 0 && (
+                      <p className="text-xs text-orange-600 mt-1">
+                        Descuento vs PVP normal: {formatPrice(pvpPreview - parseFloat(form.precio_manual))} ({Math.round((1 - parseFloat(form.precio_manual)/pvpPreview)*100)}% off)
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">Categoría *</label>
                 <select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})}
