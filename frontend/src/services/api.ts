@@ -28,7 +28,7 @@ export const api = {
   async obtenerProductos(): Promise<{ productos: Producto[]; total: number }> {
     try {
       console.log('🔄 Sincronizando productos con backend...');
-      const response = await fetch(`${API_BASE_URL}/api/productos`);
+      const response = await fetch(`${API_BASE_URL}/api/productos?limite=200`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);

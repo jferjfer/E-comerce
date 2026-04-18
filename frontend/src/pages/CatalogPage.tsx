@@ -21,6 +21,7 @@ export default function CatalogPage() {
   const [mostrarModalProducto, setMostrarModalProducto] = useState(false)
   const [mostrarAR, setMostrarAR] = useState(false)
   const [productos, setProductos] = useState<Producto[]>([])
+  const [categorias, setCategorias] = useState<string[]>([])
   const [cargando, setCargando] = useState(true)
 
   // Cargar productos del backend
@@ -29,9 +30,14 @@ export default function CatalogPage() {
       setCargando(true)
       try {
         console.log('🔄 Cargando productos del catálogo...')
-        const data = await api.obtenerProductos()
-        setProductos(data.productos || [])
-        console.log(`✅ ${data.productos?.length || 0} productos cargados`)
+        const [dataProductos, dataCategorias] = await Promise.all([
+          api.obtenerProductos(),
+          api.obtenerCategorias()
+        ])
+        setProductos(dataProductos.productos || [])
+        const cats = (dataCategorias.categorias || []).map((c: any) => c.nombre)
+        setCategorias(cats)
+        console.log(`✅ ${dataProductos.productos?.length || 0} productos cargados`)
       } catch (error) {
         console.error('❌ Error al cargar productos:', error)
         setProductos([])
@@ -90,10 +96,9 @@ export default function CatalogPage() {
               className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
             >
               <option value="">Todas</option>
-              <option value="Vestidos">Vestidos</option>
-              <option value="Camisas">Camisas</option>
-              <option value="Pantalones">Pantalones</option>
-              <option value="Blazers">Blazers</option>
+              {categorias.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
 
             <select
