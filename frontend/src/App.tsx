@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import type { FutureConfig } from 'react-router-dom'
 import { useAuthStore } from './store/useAuthStore'
 import { useOrderNotifications } from './hooks/useOrderNotifications'
 import { useSocketIdentificacion } from './hooks/useSocket'
@@ -11,27 +10,23 @@ import NotificationContainer from './components/Notification'
 import AIAssistant from './components/AIAssistant'
 import RoleGuard from './components/auth/RoleGuard'
 import RoleBasedHome from './components/routing/RoleBasedHome'
+
 import HomePage from './pages/HomePage'
 import CatalogPage from './pages/CatalogPage'
 import ProfilePage from './pages/ProfilePage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import ProductsManager from './pages/admin/ProductsManager'
 import RecoverPasswordPage from './pages/RecoverPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import OrdersPage from './pages/OrdersPage'
 import FavoritesPage from './pages/FavoritesPage'
 import PaymentsPage from './pages/PaymentsPage'
 import CustomerDashboard from './pages/CustomerDashboard'
-import ProductManagerDashboard from './pages/admin/ProductManagerDashboard'
 import CreditPage from './pages/CreditPage'
-import CrearProductoPage from './pages/admin/CrearProductoPage'
-
 import StyleAnalysisPage from './pages/StyleAnalysisPage'
 import VirtualTryOnPage from './pages/VirtualTryOnPage'
-
 import EpaycoRespuestaPage from './pages/EpaycoRespuestaPage'
-import RRHHDashboard from './pages/dashboards/RRHHDashboard'
+
 import TerminosPage from './pages/legal/TerminosPage'
 import PrivacidadPage from './pages/legal/PrivacidadPage'
 import CookiesPage from './pages/legal/CookiesPage'
@@ -40,21 +35,25 @@ import SobreNosotrosPage from './pages/empresa/SobreNosotrosPage'
 import TrabajaConNosotrosPage from './pages/empresa/TrabajaConNosotrosPage'
 import SostenibilidadPage from './pages/empresa/SostenibilidadPage'
 import PrensaPage from './pages/empresa/PrensaPage'
-import ContabilidadDashboard from './pages/dashboards/ContabilidadDashboard'
 
+// ── Dashboards por rol ──
+import CEODashboard from './pages/dashboards/CEODashboard'
+import ContabilidadDashboard from './pages/dashboards/ContabilidadDashboard'
 import MarketingManagerDashboard from './pages/dashboards/MarketingManagerDashboard'
 import CustomerSuccessDashboard from './pages/dashboards/CustomerSuccessDashboard'
 import LogisticsCoordinatorDashboard from './pages/dashboards/LogisticsCoordinatorDashboard'
-import CEODashboard from './pages/dashboards/CEODashboard'
+import RRHHDashboard from './pages/dashboards/RRHHDashboard'
+
+// ── Único dashboard de productos con fórmula PVP ──
+import ProductManagerDashboard from './pages/dashboards/ProductManagerDashboard'
+import CrearProductoPage from './pages/admin/CrearProductoPage'
 
 function App() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
   const { estaAutenticado } = useAuthStore()
 
-  // Activar notificaciones de pedidos
   useOrderNotifications()
-  // Identificación global del socket — solo una vez
   useSocketIdentificacion()
 
   const handleCheckout = () => {
@@ -70,42 +69,23 @@ function App() {
         <Routes>
           <Route path="/" element={<RoleBasedHome />} />
           <Route path="/catalog" element={<CatalogPage />} />
-          {/* AUTH ROUTES */}
-          <Route path="/login" element={
-            estaAutenticado ? <Navigate to="/" /> : <LoginPage />
-          } />
+
+          {/* AUTH */}
+          <Route path="/login" element={estaAutenticado ? <Navigate to="/" /> : <LoginPage />} />
           <Route path="/recuperar-contrasena" element={<RecoverPasswordPage />} />
           <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
 
-          {/* CUSTOMER ROUTES */}
-          <Route path="/customer-dashboard" element={
-            <RoleGuard requiredRoles={['cliente']}>
-              <CustomerDashboard />
-            </RoleGuard>
-          } />
-          <Route path="/profile" element={
-            estaAutenticado ? <ProfilePage /> : <Navigate to="/login" />
-          } />
-          <Route path="/orders" element={
-            estaAutenticado ? <OrdersPage /> : <Navigate to="/login" />
-          } />
-          <Route path="/favorites" element={
-            estaAutenticado ? <FavoritesPage /> : <Navigate to="/login" />
-          } />
-          <Route path="/payments" element={
-            estaAutenticado ? <PaymentsPage /> : <Navigate to="/login" />
-          } />
-          <Route path="/credit" element={
-            estaAutenticado ? <CreditPage /> : <Navigate to="/login" />
-          } />
-          <Route path="/style-analysis" element={
-            estaAutenticado ? <StyleAnalysisPage /> : <Navigate to="/login" />
-          } />
-          <Route path="/virtual-tryon" element={
-            <VirtualTryOnPage />
-          } />
+          {/* CLIENTE */}
+          <Route path="/customer-dashboard" element={<RoleGuard requiredRoles={['cliente']}><CustomerDashboard /></RoleGuard>} />
+          <Route path="/profile" element={estaAutenticado ? <ProfilePage /> : <Navigate to="/login" />} />
+          <Route path="/orders" element={estaAutenticado ? <OrdersPage /> : <Navigate to="/login" />} />
+          <Route path="/favorites" element={estaAutenticado ? <FavoritesPage /> : <Navigate to="/login" />} />
+          <Route path="/payments" element={estaAutenticado ? <PaymentsPage /> : <Navigate to="/login" />} />
+          <Route path="/credit" element={estaAutenticado ? <CreditPage /> : <Navigate to="/login" />} />
+          <Route path="/style-analysis" element={estaAutenticado ? <StyleAnalysisPage /> : <Navigate to="/login" />} />
+          <Route path="/virtual-tryon" element={<VirtualTryOnPage />} />
 
-          {/* PRODUCT MANAGEMENT ROUTES */}
+          {/* PRODUCTOS — único dashboard con fórmula PVP */}
           <Route path="/products" element={
             <RoleGuard requiredRoles={['product_manager', 'category_manager', 'seller_premium', 'ceo']}>
               <ProductManagerDashboard />
@@ -117,71 +97,40 @@ function App() {
             </RoleGuard>
           } />
 
-          {/* ADMIN ROUTES */}
+          {/* ADMIN */}
           <Route path="/admin" element={
-            <RoleGuard requiredRoles={[
-              'ceo', 'cfo', 'cmo', 'operations_director', 'tech_director', 'regional_manager',
-              'brand_manager', 'inventory_manager', 'pricing_analyst',
-              'content_editor', 'visual_merchandiser', 'photographer', 'customer_success',
-              'support_agent', 'logistics_coordinator', 'qa_specialist', 'seller_standard', 'seller_basic'
-            ]}>
+            <RoleGuard requiredRoles={['ceo','cfo','cmo','operations_director','tech_director','regional_manager',
+              'brand_manager','inventory_manager','pricing_analyst','content_editor','visual_merchandiser',
+              'photographer','customer_success','support_agent','logistics_coordinator','qa_specialist',
+              'seller_standard','seller_basic']}>
               <DashboardPage />
             </RoleGuard>
           } />
-          <Route path="/ceo" element={
-            <RoleGuard requiredRoles={['ceo']}>
-              <CEODashboard />
-            </RoleGuard>
-          } />
-          <Route path="/marketing" element={
-            <RoleGuard requiredRoles={['marketing_manager', 'cmo', 'ceo']}>
-              <MarketingManagerDashboard />
-            </RoleGuard>
-          } />
-          <Route path="/customer-success" element={
-            <RoleGuard requiredRoles={['customer_success', 'ceo']}>
-              <CustomerSuccessDashboard />
-            </RoleGuard>
-          } />
+          <Route path="/ceo" element={<RoleGuard requiredRoles={['ceo']}><CEODashboard /></RoleGuard>} />
+          <Route path="/marketing" element={<RoleGuard requiredRoles={['marketing_manager','cmo','ceo']}><MarketingManagerDashboard /></RoleGuard>} />
+          <Route path="/customer-success" element={<RoleGuard requiredRoles={['customer_success','ceo']}><CustomerSuccessDashboard /></RoleGuard>} />
+          <Route path="/rrhh" element={<RoleGuard requiredRoles={['rrhh','ceo']}><RRHHDashboard /></RoleGuard>} />
+          <Route path="/contabilidad" element={<RoleGuard requiredRoles={['ceo','contador']}><ContabilidadDashboard /></RoleGuard>} />
+          <Route path="/logistics" element={<RoleGuard requiredRoles={['logistics_coordinator','ceo']}><LogisticsCoordinatorDashboard /></RoleGuard>} />
+
+          {/* PAGOS */}
           <Route path="/pago/respuesta" element={<EpaycoRespuestaPage />} />
+
           {/* LEGAL */}
           <Route path="/terminos" element={<TerminosPage />} />
           <Route path="/privacidad" element={<PrivacidadPage />} />
           <Route path="/cookies" element={<CookiesPage />} />
           <Route path="/devoluciones" element={<DevolucionesLegalPage />} />
+
           {/* EMPRESA */}
           <Route path="/sobre-nosotros" element={<SobreNosotrosPage />} />
           <Route path="/trabaja-con-nosotros" element={<TrabajaConNosotrosPage />} />
           <Route path="/sostenibilidad" element={<SostenibilidadPage />} />
           <Route path="/prensa" element={<PrensaPage />} />
-          <Route path="/rrhh" element={
-            <RoleGuard requiredRoles={['rrhh', 'ceo']}>
-              <RRHHDashboard />
-            </RoleGuard>
-          } />
-          <Route path="/contabilidad" element={
-            <RoleGuard requiredRoles={['ceo', 'contador']}>
-              <ContabilidadDashboard />
-            </RoleGuard>
-          } />
-          <Route path="/logistics" element={
-            <RoleGuard requiredRoles={['logistics_coordinator', 'ceo']}>
-              <LogisticsCoordinatorDashboard />
-            </RoleGuard>
-          } />
         </Routes>
 
-        <CartModal
-          isOpen={showCart}
-          onClose={() => setShowCart(false)}
-          onCheckout={handleCheckout}
-        />
-
-        <CheckoutModal
-          isOpen={showCheckout}
-          onClose={() => setShowCheckout(false)}
-        />
-
+        <CartModal isOpen={showCart} onClose={() => setShowCart(false)} onCheckout={handleCheckout} />
+        <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} />
         <NotificationContainer />
         <AIAssistant />
       </div>

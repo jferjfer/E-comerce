@@ -63,7 +63,7 @@ export default function EpaycoRespuestaPage() {
     }
   }, [x_response, x_cod_response])
 
-  const consultarEstadoPedido = async (pedidoId: string) => {
+  const consultarEstadoPedido = async (pedidoId: string, intentos = 0) => {
     try {
       const res = await fetch(`${API_URL}/api/pedidos`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -73,11 +73,18 @@ export default function EpaycoRespuestaPage() {
       if (pedido) {
         if (pedido.estado === 'Confirmado' || pedido.estado === 'Enviado' || pedido.estado === 'Entregado') {
           setEstado('exitoso')
-        } else if (pedido.estado === 'Creado') {
-          setEstado('pendiente')
-          setDetalle('Tu pedido fue creado. El pago está siendo procesado.')
-        } else {
+          setDetalle('Tu pago fue procesado correctamente.')
+        } else if (pedido.estado === 'Cancelado') {
           setEstado('fallido')
+          setDetalle('El pago fue rechazado o cancelado.')
+        } else if (pedido.estado === 'Creado' && intentos < 4) {
+          // Webhook aún no llegó — reintentar hasta 4 veces cada 3 segundos
+          setDetalle(`Verificando pago... (${intentos + 1}/4)`)
+          setTimeout(() => consultarEstadoPedido(pedidoId, intentos + 1), 3000)
+        } else {
+          // Después de 4 intentos sigue en Creado — mostrar pendiente real
+          setEstado('pendiente')
+          setDetalle('Tu pago está siendo validado por ePayco. Recibirás un correo cuando sea confirmado.')
         }
       } else {
         setEstado('exitoso')
@@ -87,7 +94,7 @@ export default function EpaycoRespuestaPage() {
     }
   }
 
-  const consultarUltimoPedido = async () => {
+  const consultarUltimoPedido = async (intentos = 0) => {
     try {
       const res = await fetch(`${API_URL}/api/pedidos`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -95,11 +102,18 @@ export default function EpaycoRespuestaPage() {
       const data = await res.json()
       const ultimo = data.pedidos?.[0]
       if (ultimo) {
-        if (ultimo.estado === 'Confirmado' || ultimo.estado === 'Enviado') {
+        if (ultimo.estado === 'Confirmado' || ultimo.estado === 'Enviado' || ultimo.estado === 'Entregado') {
           setEstado('exitoso')
+          setDetalle('Tu pago fue procesado correctamente.')
+        } else if (ultimo.estado === 'Cancelado') {
+          setEstado('fallido')
+          setDetalle('El pago fue rechazado o cancelado.')
+        } else if (ultimo.estado === 'Creado' && intentos < 4) {
+          setDetalle(`Verificando pago... (${intentos + 1}/4)`)
+          setTimeout(() => consultarUltimoPedido(intentos + 1), 3000)
         } else {
           setEstado('pendiente')
-          setDetalle('Tu pedido fue creado. El pago está siendo procesado.')
+          setDetalle('Tu pago está siendo validado por ePayco. Recibirás un correo cuando sea confirmado.')
         }
       } else {
         setEstado('exitoso')
