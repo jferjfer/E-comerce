@@ -296,14 +296,24 @@ async def obtener_producto(producto_id: str):
 @app.get("/api/categorias")
 async def listar_categorias():
     print("📂 Obteniendo categorías")
-    categorias = [
-        {"id": "1", "nombre": "Vestidos", "descripcion": "Vestidos elegantes y casuales"},
-        {"id": "2", "nombre": "Camisas", "descripcion": "Camisas y blusas"},
-        {"id": "3", "nombre": "Pantalones", "descripcion": "Pantalones y jeans"},
-        {"id": "4", "nombre": "Blazers", "descripcion": "Blazers y chaquetas"},
-        {"id": "5", "nombre": "Calzado", "descripcion": "Zapatos y calzado en general"}
+    db = obtener_bd()
+    if db is not None:
+        try:
+            productos = await db.productos.find({}, {"categoria": 1}).to_list(length=500)
+            cats = sorted(set(p.get('categoria') for p in productos if p.get('categoria')))
+            categorias = [{"id": str(i+1), "nombre": c, "descripcion": c} for i, c in enumerate(cats)]
+            return {"categorias": categorias}
+        except Exception as e:
+            print(f"❌ Error obteniendo categorías: {e}")
+    # Fallback con todas las categorías conocidas
+    categorias_default = [
+        'Vestidos','Blusas','Jeans','Blazers','Faldas','Conjuntos',
+        'Camisas','Pantalones','Cardigans','Tops','Deportivo',
+        'Sudaderas','Chaquetas','Monos','Shorts','Kimonos','Camisetas',
+        'Formal','Accesorios','Bolsos','Calzado','Ropa Interior',
+        'Pijamas','Maternidad','Tallas Grandes'
     ]
-    return {"categorias": categorias}
+    return {"categorias": [{"id": str(i+1), "nombre": c, "descripcion": c} for i, c in enumerate(categorias_default)]}
 
 @app.get("/api/buscar")
 async def buscar_productos(q: str = Query(..., description="Término de búsqueda")):

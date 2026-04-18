@@ -22,7 +22,9 @@ function calcularPVP(costoAdquisicion: number, costoEnvio = COSTO_ENVIO, costoEm
 const CATEGORIAS = [
   'Vestidos','Blusas','Jeans','Blazers','Faldas','Conjuntos',
   'Camisas','Pantalones','Cardigans','Tops','Deportivo',
-  'Sudaderas','Chaquetas','Monos','Shorts','Kimonos','Camisetas'
+  'Sudaderas','Chaquetas','Monos','Shorts','Kimonos','Camisetas',
+  'Formal','Accesorios','Bolsos','Calzado','Ropa Interior',
+  'Pijamas','Maternidad','Tallas Grandes','Niños','Hombre'
 ]
 
 const TALLAS_DEFAULT = ['XS','S','M','L','XL']
