@@ -83,7 +83,7 @@ export default function ProductManagerDashboard() {
   const cargarProductos = async () => {
     setCargando(true)
     try {
-      const r = await fetch(`${API_URL}/api/productos?limite=200`, {
+      const r = await fetch(`${API_URL}/api/productos?limite=200&todos=true`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const d = await r.json()

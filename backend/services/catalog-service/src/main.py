@@ -61,7 +61,8 @@ async def listar_productos(
     buscar: Optional[str] = Query(None, description="Buscar en nombre y descripción"),
     ordenar: Optional[str] = Query("relevancia", description="Ordenar por: precio_asc, precio_desc, nombre, calificacion"),
     limite: int = Query(50, description="Límite de productos"),
-    pagina: int = Query(1, description="Página")
+    pagina: int = Query(1, description="Página"),
+    todos: bool = Query(False, description="Incluir productos inactivos (solo admin)")
 ):
     print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar}")
     
@@ -110,8 +111,9 @@ async def listar_productos(
     try:
         filtro = {}
         
-        # Construir filtros MongoDB
-        filtro["en_stock"] = True  # Solo productos activos al cliente
+        # Solo productos activos para clientes (sin parámetro todos)
+        if not todos:
+            filtro["en_stock"] = True
         if categoria:
             filtro["categoria"] = {"$regex": categoria, "$options": "i"}
         
