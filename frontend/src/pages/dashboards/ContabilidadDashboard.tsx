@@ -28,7 +28,7 @@ export default function ContabilidadDashboard() {
   const { token } = useAuthStore()
   const [data, setData] = useState<DashboardData | null>(null)
   const [cargando, setCargando] = useState(true)
-  const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple' | 'capital'>('dashboard')
+  const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple' | 'capital' | 'facturas'>('dashboard')
   const [libroDiario, setLibroDiario] = useState<any[]>([])
   const [libroMayor, setLibroMayor] = useState<any[]>([])
   const [balance, setBalance] = useState<any>(null)
@@ -53,6 +53,9 @@ export default function ContabilidadDashboard() {
   const [capitalDesc, setCapitalDesc] = useState('Capital inicial VERTEL & CATILLO S.A.S')
   const [guardandoCapital, setGuardandoCapital] = useState(false)
   const [mensajeCapital, setMensajeCapital] = useState<{tipo: string, texto: string} | null>(null)
+  const [facturas, setFacturas] = useState<any[]>([])
+  const [cargandoFacturas, setCargandoFacturas] = useState(false)
+  const [filtroEstadoFactura, setFiltroEstadoFactura] = useState('')
 
   const anio = new Date().getFullYear()
   const bimestre = Math.ceil(new Date().getMonth() / 2) + (new Date().getMonth() % 2 === 0 ? 0 : 0)
@@ -64,6 +67,7 @@ export default function ContabilidadDashboard() {
 
   useEffect(() => {
     if (tab === 'capital') return
+    if (tab === 'facturas') cargarFacturas()
     if (tab === 'diario') cargarLibroDiario()
     if (tab === 'mayor') cargarLibroMayor()
     if (tab === 'balance') cargarBalance()
@@ -143,6 +147,52 @@ export default function ContabilidadDashboard() {
     setResumenCompras(d2)
   }
 
+  const cargarFacturas = async () => {
+    setCargandoFacturas(true)
+    try {
+      const url = filtroEstadoFactura
+        ? `${API_URL}/api/facturas/admin/todas?estado=${filtroEstadoFactura}`
+        : `${API_URL}/api/facturas/admin/todas`
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      const d = await res.json()
+      setFacturas(d.facturas || [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setCargandoFacturas(false)
+    }
+  }
+
+  const descargarPDF = async (facturaId: string, numero: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/facturas/${facturaId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${numero}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert('Error descargando PDF')
+    }
+  }
+
+  const reenviarFactura = async (facturaId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/facturas/${facturaId}/reenviar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const d = await res.json()
+      alert(d.mensaje || 'Factura reenviada')
+    } catch {
+      alert('Error reenviando factura')
+    }
+  }
+
   const guardarCapital = async () => {
     if (!capitalMonto || parseFloat(capitalMonto) <= 0) {
       setMensajeCapital({ tipo: 'error', texto: 'Ingresa un monto válido' })
@@ -213,6 +263,7 @@ export default function ContabilidadDashboard() {
 
   const TABS = [
     { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'facturas', label: '🧾 Facturas' },
     { id: 'capital', label: '🏦 Capital Inicial' },
     { id: 'compras', label: '🛒 Compras' },
     { id: 'diario', label: '📖 Libro Diario' },
@@ -376,6 +427,130 @@ export default function ContabilidadDashboard() {
               <p className="text-sm text-gray-600">
                 📝 <strong>{data.resumen.total_asientos_mes}</strong> asientos contables registrados este mes automáticamente
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── FACTURAS ── */}
+        {tab === 'facturas' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                value={filtroEstadoFactura}
+                onChange={e => { setFiltroEstadoFactura(e.target.value); }}
+                className="border rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="">Todos los estados</option>
+                <option value="Enviada">Enviada</option>
+                <option value="Aceptada">Aceptada</option>
+                <option value="Rechazada">Rechazada</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Error">Error</option>
+              </select>
+              <button onClick={cargarFacturas}
+                className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">
+                🔄 Actualizar
+              </button>
+              <span className="text-sm text-gray-500">{facturas.length} facturas</span>
+            </div>
+
+            {/* KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Total', valor: facturas.length, color: 'text-gray-900' },
+                { label: 'Enviadas', valor: facturas.filter(f => f.estado === 'Enviada').length, color: 'text-blue-600' },
+                { label: 'Aceptadas', valor: facturas.filter(f => f.estado === 'Aceptada').length, color: 'text-emerald-600' },
+                { label: 'Rechazadas', valor: facturas.filter(f => f.estado === 'Rechazada' || f.estado === 'Error').length, color: 'text-red-600' },
+              ].map((k, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 shadow-sm border">
+                  <p className="text-xs text-gray-500">{k.label}</p>
+                  <p className={`text-2xl font-bold mt-1 ${k.color}`}>{k.valor}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Tabla */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              {cargandoFacturas ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[800px]">
+                    <thead className="bg-gray-900 text-white">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Número</th>
+                        <th className="px-4 py-3 text-left">Pedido</th>
+                        <th className="px-4 py-3 text-left">Cliente</th>
+                        <th className="px-4 py-3 text-right">Total</th>
+                        <th className="px-4 py-3 text-center">Estado DIAN</th>
+                        <th className="px-4 py-3 text-center">Email</th>
+                        <th className="px-4 py-3 text-left">Fecha</th>
+                        <th className="px-4 py-3 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {facturas.map((f, i) => (
+                        <tr key={i} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 font-mono text-xs font-bold text-gray-800">{f.numero}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-gray-500">{f.pedido_id}</td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-medium text-gray-800">{f.cliente_nombre}</p>
+                            <p className="text-xs text-gray-400">{f.cliente_email}</p>
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-gray-900">{formatPrice(f.total)}</td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              f.estado === 'Aceptada' ? 'bg-emerald-100 text-emerald-700' :
+                              f.estado === 'Enviada' ? 'bg-blue-100 text-blue-700' :
+                              f.estado === 'Rechazada' || f.estado === 'Error' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {f.estado}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {f.enviada_cliente
+                              ? <span className="text-emerald-600 text-xs">✅ Enviada</span>
+                              : <span className="text-gray-400 text-xs">❌ No</span>
+                            }
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500">
+                            {f.fecha ? new Date(f.fecha).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }) : '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={() => descargarPDF(f.id, f.numero)}
+                                className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-lg"
+                                title="Descargar PDF"
+                              >
+                                📄 PDF
+                              </button>
+                              <button
+                                onClick={() => reenviarFactura(f.id)}
+                                className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded-lg"
+                                title="Reenviar al cliente"
+                              >
+                                📧 Reenviar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {facturas.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="text-center py-12 text-gray-400">
+                            <p className="text-3xl mb-2">🧾</p>
+                            <p>No hay facturas registradas</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}
