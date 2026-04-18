@@ -316,7 +316,11 @@ async def balance_general(
         elif s.tipo_cuenta == "Patrimonio" and s.saldo_final != 0:
             patrimonio[s.codigo_cuenta] = item
         elif s.tipo_cuenta == "Ingreso" and s.saldo_final != 0:
-            utilidad_ejercicio += s.saldo_final
+            # Las devoluciones (naturaleza Debito en Ingreso) restan la utilidad
+            if s.naturaleza == "Debito":
+                utilidad_ejercicio -= s.saldo_final
+            else:
+                utilidad_ejercicio += s.saldo_final
         elif s.tipo_cuenta in ("Gasto", "Costo") and s.saldo_final != 0:
             utilidad_ejercicio -= s.saldo_final
 
