@@ -610,18 +610,27 @@ app.all('/api/contabilidad*', async (req, res) => {
 
 app.all('/api/facturas*', async (req, res) => {
   try {
+    // Rutas de PDF — pasar binario directamente sin convertir a JSON
+    const esPDF = req.url.endsWith('/pdf')
     const response = await axios({
       method: req.method,
       url: `${FACTURACION_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
-      timeout: 30000
-    });
-    res.status(response.status).json(response.data);
+      timeout: 30000,
+      responseType: esPDF ? 'arraybuffer' : 'json'
+    })
+    if (esPDF) {
+      res.set('Content-Type', 'application/pdf')
+      res.set('Content-Disposition', response.headers['content-disposition'] || 'attachment')
+      res.status(response.status).send(Buffer.from(response.data))
+    } else {
+      res.status(response.status).json(response.data)
+    }
   } catch (error) {
-    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message })
   }
-});
+})
 
 app.all('/api/notas-credito*', async (req, res) => {
   try {
