@@ -204,6 +204,23 @@ export default function ProductManagerDashboard() {
     }
   }
 
+  const eliminarProducto = async (id: string, nombre: string) => {
+    if (!confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return
+    try {
+      const r = await fetch(`${API_URL}/api/productos/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (r.ok) {
+        setProductos(prev => prev.filter(p => p.id !== id))
+      } else {
+        alert('Error al eliminar el producto')
+      }
+    } catch {
+      alert('Error de conexión')
+    }
+  }
+
   const toggleTalla = (t: string) => {
     setForm(f => ({
       ...f,
@@ -289,10 +306,16 @@ export default function ProductManagerDashboard() {
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${p.en_stock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {p.en_stock ? 'Activo' : 'Inactivo'}
                       </span>
-                      <button onClick={() => abrirEditar(p)}
-                        className="text-xs text-blue-600 hover:text-blue-800">
-                        <i className="fas fa-edit"></i>
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => abrirEditar(p)}
+                          className="text-xs text-blue-600 hover:text-blue-800" title="Editar">
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button onClick={() => eliminarProducto(p.id, p.nombre)}
+                          className="text-xs text-red-500 hover:text-red-700" title="Eliminar">
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
