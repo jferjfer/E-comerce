@@ -3,7 +3,7 @@ Contabilidad Service v1.0 — EGOS
 Contabilidad automática para VERTEL & CATILLO S.A.S
 NIT: 902.051.708-6 | CIIU: 4771/4642 | Régimen SIMPLE
 """
-from fastapi import FastAPI, HTTPException, Depends, Query, Request
+from fastapi import FastAPI, HTTPException, Depends, Query, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
@@ -664,6 +664,60 @@ async def registrar_capital_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/contabilidad/compras/{compra_id}/soporte")
+async def subir_soporte_compra(
+    compra_id: str,
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
+):
+    """Sube imagen o PDF de la factura del proveedor a Cloudinary"""
+    from database import Compra
+    import cloudinary
+    import cloudinary.uploader
+
+    compra = db.query(Compra).filter(Compra.id == compra_id).first()
+    if not compra:
+        raise HTTPException(status_code=404, detail="Compra no encontrada")
+
+    # Validar tipo
+    tipos_permitidos = ['image/jpeg','image/png','image/webp','application/pdf']
+    if archivo.content_type not in tipos_permitidos:
+        raise HTTPException(status_code=400, detail="Solo se permiten imágenes (JPG, PNG) o PDF")
+
+    contenido = await archivo.read()
+    if len(contenido) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Archivo muy grande (máximo 10MB)")
+
+    try:
+        cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME')
+        api_key = os.getenv('CLOUDINARY_API_KEY')
+        api_secret = os.getenv('CLOUDINARY_API_SECRET')
+
+        if not cloud_name:
+            raise HTTPException(status_code=500, detail="Cloudinary no configurado")
+
+        cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
+
+        import io
+        resultado = cloudinary.uploader.upload(
+            io.BytesIO(contenido),
+            folder=f"egos/compras",
+            public_id=f"compra_{compra.numero}_{compra_id[:8]}",
+            resource_type="auto"
+        )
+        url = resultado['secure_url']
+
+        compra.url_soporte = url
+        db.commit()
+
+        return {"exito": True, "url": url, "mensaje": "Soporte subido exitosamente"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error subiendo archivo: {str(e)}")
+
+
 @app.post("/api/contabilidad/compras")
 async def registrar_compra_endpoint(compra: RegistrarCompra, db: Session = Depends(get_db), usuario: dict = Depends(verificar_rol_contabilidad)):
     """Registra una compra a proveedor con asiento contable automático"""
@@ -733,7 +787,8 @@ async def listar_compras(
             "forma_pago": c.forma_pago,
             "plazo_dias": c.plazo_dias,
             "estado": c.estado,
-            "periodo": c.periodo
+            "periodo": c.periodo,
+            "url_soporte": c.url_soporte
         } for c in compras],
         "total": total,
         "pagina": pagina,

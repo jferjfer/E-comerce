@@ -49,6 +49,8 @@ export default function ContabilidadDashboard() {
   })
   const [guardandoCompra, setGuardandoCompra] = useState(false)
   const [mensajeCompra, setMensajeCompra] = useState<{tipo: string, texto: string} | null>(null)
+  const [compraIdParaSoporte, setCompraIdParaSoporte] = useState<string | null>(null)
+  const [subiendoSoporte, setSubiendoSoporte] = useState(false)
   const [capitalMonto, setCapitalMonto] = useState('')
   const [capitalDesc, setCapitalDesc] = useState('Capital inicial VERTEL & CATILLO S.A.S')
   const [guardandoCapital, setGuardandoCapital] = useState(false)
@@ -218,6 +220,31 @@ export default function ContabilidadDashboard() {
       setMensajeCapital({ tipo: 'error', texto: 'Error de conexión' })
     } finally {
       setGuardandoCapital(false)
+    }
+  }
+
+  const subirSoporte = async (compraId: string, archivo: File) => {
+    setSubiendoSoporte(true)
+    try {
+      const formData = new FormData()
+      formData.append('archivo', archivo)
+      const res = await fetch(`${API_URL}/api/contabilidad/compras/${compraId}/soporte`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      })
+      const d = await res.json()
+      if (res.ok) {
+        setMensajeCompra({ tipo: 'success', texto: '✅ Soporte subido exitosamente' })
+        cargarCompras()
+      } else {
+        setMensajeCompra({ tipo: 'error', texto: d.detail || 'Error subiendo soporte' })
+      }
+    } catch {
+      setMensajeCompra({ tipo: 'error', texto: 'Error de conexión' })
+    } finally {
+      setSubiendoSoporte(false)
+      setCompraIdParaSoporte(null)
     }
   }
 
@@ -680,8 +707,7 @@ export default function ContabilidadDashboard() {
                     <label className="text-xs text-gray-500 mb-1 block">Descripción *</label>
                     <input value={formCompra.descripcion} onChange={e => setFormCompra({...formCompra, descripcion: e.target.value})}
                       placeholder="Qué se compró" className="w-full border rounded-lg px-3 py-2 text-sm" />
-                  </div>
-                  <div>
+                  </div>                  <div>
                     <label className="text-xs text-gray-500 mb-1 block">Tipo de Compra *</label>
                     <select value={formCompra.tipo_compra} onChange={e => setFormCompra({...formCompra, tipo_compra: e.target.value})}
                       className="w-full border rounded-lg px-3 py-2 text-sm">
@@ -704,9 +730,13 @@ export default function ContabilidadDashboard() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Número Factura</label>
+                    <label className="text-xs text-gray-500 mb-1 block">
+                      N° Factura del Proveedor
+                      <span className="ml-1 text-gray-400" title="Número que aparece en la factura que el proveedor te entregó a ti">ⓘ</span>
+                    </label>
                     <input value={formCompra.numero_factura} onChange={e => setFormCompra({...formCompra, numero_factura: e.target.value})}
-                      placeholder="Ej: 001-2024" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                      placeholder="Ej: FE-2026-001" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                    <p className="text-xs text-gray-400 mt-0.5">El número que aparece en la factura que te dio el proveedor</p>
                   </div>
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Subtotal (sin IVA) *</label>
@@ -775,6 +805,7 @@ export default function ContabilidadDashboard() {
                     <th className="px-4 py-3 text-right">Total</th>
                     <th className="px-4 py-3 text-center">Pago</th>
                     <th className="px-4 py-3 text-center">Estado</th>
+                    <th className="px-4 py-3 text-center">Soporte</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -801,6 +832,20 @@ export default function ContabilidadDashboard() {
                           {c.estado}
                         </span>
                       </td>
+                      <td className="px-4 py-2 text-center">
+                        {c.url_soporte ? (
+                          <a href={c.url_soporte} target="_blank" rel="noreferrer"
+                            className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg">
+                            📄 Ver
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => setCompraIdParaSoporte(c.id)}
+                            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-lg">
+                            ⬆️ Subir
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {compras.length === 0 && (
@@ -809,6 +854,47 @@ export default function ContabilidadDashboard() {
                 </tbody>
               </table>
               </div>
+            </div>
+          </div>
+        )}
+
+            </div>
+          </div>
+        )}
+
+        {/* Modal subir soporte */}
+        {compraIdParaSoporte && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
+              <h3 className="font-bold text-gray-800">📄 Subir Soporte de Factura</h3>
+              <p className="text-sm text-gray-500">Sube la imagen o PDF de la factura que te entregó el proveedor.</p>
+              <p className="text-xs text-gray-400">Formatos: JPG, PNG, PDF — Máximo 10MB</p>
+              {mensajeCompra && (
+                <div className={`p-3 rounded-lg text-sm ${
+                  mensajeCompra.tipo === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}>{mensajeCompra.texto}</div>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                disabled={subiendoSoporte}
+                onChange={e => {
+                  const archivo = e.target.files?.[0]
+                  if (archivo) subirSoporte(compraIdParaSoporte, archivo)
+                }}
+                className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:bg-gray-900 file:text-white cursor-pointer"
+              />
+              {subiendoSoporte && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                  Subiendo...
+                </div>
+              )}
+              <button
+                onClick={() => { setCompraIdParaSoporte(null); setMensajeCompra(null) }}
+                className="w-full border border-gray-300 text-gray-600 py-2 rounded-xl text-sm hover:bg-gray-50">
+                Cerrar
+              </button>
             </div>
           </div>
         )}

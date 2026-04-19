@@ -197,6 +197,7 @@ class Compra(Base):
     asiento_id = Column(String, nullable=True)
     periodo = Column(String(7), nullable=False)
     fecha_creacion = Column(DateTime, default=datetime.now)
+    url_soporte = Column(String(500), nullable=True)  # URL del soporte/factura digitalizada
 
 
 class ContadorCompra(Base):

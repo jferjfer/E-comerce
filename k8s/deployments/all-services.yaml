@@ -655,6 +655,24 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: POSTGRES_TRANSACTION_URL
+        - name: CLOUDINARY_CLOUD_NAME
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: CLOUDINARY_CLOUD_NAME
+              optional: true
+        - name: CLOUDINARY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: CLOUDINARY_API_KEY
+              optional: true
+        - name: CLOUDINARY_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: CLOUDINARY_API_SECRET
+              optional: true
         resources:
           requests:
             cpu: "100m"
