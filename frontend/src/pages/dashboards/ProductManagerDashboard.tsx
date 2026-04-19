@@ -27,8 +27,12 @@ const CATEGORIAS = [
   'Pijamas','Maternidad','Tallas Grandes','Niños','Hombre'
 ]
 
-const TALLAS_DEFAULT = ['XS','S','M','L','XL']
-const COLORES_DEFAULT = ['Negro','Blanco','Gris','Azul','Rojo','Verde','Beige','Rosa']
+const TALLAS_DEFAULT = ['XS','S','M','L','XL','XXL','28','30','32','34','36','38','39','40','41','42','43']
+const COLORES_DEFAULT = [
+  'Negro','Blanco','Gris','Azul','Rojo','Verde','Beige','Rosa',
+  'Amarillo','Morado','Naranja','Café','Vino','Dorado','Plateado',
+  'Azul Marino','Verde Militar','Terracota','Coral','Fucsia'
+]
 
 interface Producto {
   id: string
@@ -46,6 +50,9 @@ interface Producto {
 
 interface FormProducto {
   nombre: string
+  sku: string
+  marca: string
+  material: string
   costo_adquisicion: string
   costo_envio: string
   costo_empaque: string
@@ -56,12 +63,16 @@ interface FormProducto {
   tallas: string[]
   colores: string[]
   en_stock: boolean
+  stock_cantidad: string
+  imagen_url: string
 }
 
 const FORM_INICIAL: FormProducto = {
-  nombre: '', costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
+  nombre: '', sku: '', marca: 'EGOS', material: '',
+  costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
   costo_empaque: String(COSTO_EMPAQUE), precio_manual: '', usar_precio_manual: false,
-  categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'], colores: ['Negro'], en_stock: true
+  categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'],
+  colores: ['Negro'], en_stock: true, stock_cantidad: '', imagen_url: ''
 }
 
 export default function ProductManagerDashboard() {
@@ -117,6 +128,9 @@ export default function ProductManagerDashboard() {
     setEditando(p)
     setForm({
       nombre: p.nombre,
+      sku: (p as any).sku || '',
+      marca: (p as any).marca || 'EGOS',
+      material: (p as any).material || '',
       costo_adquisicion: p.costo_adquisicion ? String(p.costo_adquisicion) : '',
       costo_envio: String(COSTO_ENVIO),
       costo_empaque: String(COSTO_EMPAQUE),
@@ -126,7 +140,9 @@ export default function ProductManagerDashboard() {
       descripcion: p.descripcion,
       tallas: p.tallas || [],
       colores: p.colores || [],
-      en_stock: p.en_stock
+      en_stock: p.en_stock,
+      stock_cantidad: String((p as any).stock || ''),
+      imagen_url: p.imagen || ''
     })
     setMensaje(null)
     setMostrarForm(true)
@@ -166,6 +182,9 @@ export default function ProductManagerDashboard() {
 
     const datos = {
       nombre: form.nombre,
+      sku: form.sku,
+      marca: form.marca,
+      material: form.material,
       precio: precioFinal,
       costo_adquisicion: parseFloat(form.costo_adquisicion) || 0,
       precio_manual: form.usar_precio_manual,
@@ -174,6 +193,8 @@ export default function ProductManagerDashboard() {
       tallas: form.tallas,
       colores: form.colores,
       en_stock: form.en_stock,
+      stock: parseInt(form.stock_cantidad) || 0,
+      imagen: form.imagen_url || undefined,
       calificacion: editando?.calificacion || 4.5
     }
 
@@ -386,12 +407,26 @@ export default function ProductManagerDashboard() {
                 </div>
               )}
 
-              {/* Nombre */}
-              <div>
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">Nombre del producto *</label>
-                <input value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})}
-                  placeholder="Ej: Vestido Midi Floral Primavera"
-                  className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              {/* Nombre + SKU + Marca */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="md:col-span-1">
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Nombre del producto *</label>
+                  <input value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})}
+                    placeholder="Ej: Vestido Midi Floral"
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">SKU</label>
+                  <input value={form.sku} onChange={e => setForm({...form, sku: e.target.value})}
+                    placeholder="Ej: VES-001"
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Marca</label>
+                  <input value={form.marca} onChange={e => setForm({...form, marca: e.target.value})}
+                    placeholder="EGOS"
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
               </div>
 
               {/* Costo adquisición + PVP calculado */}
@@ -479,12 +514,63 @@ export default function ProductManagerDashboard() {
                   </div>
                 )}
               </div>
+              {/* Categoría + Material + Stock */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Categoría *</label>
+                  <select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Material / Composición</label>
+                  <input value={form.material} onChange={e => setForm({...form, material: e.target.value})}
+                    placeholder="Ej: 95% algodón, 5% elastano"
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Stock disponible</label>
+                  <input type="number" value={form.stock_cantidad}
+                    onChange={e => setForm({...form, stock_cantidad: e.target.value})}
+                    placeholder="Ej: 50"
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+              </div>
+
+              {/* Imagen */}
               <div>
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">Categoría *</label>
-                <select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})}
-                  className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-                  {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">Imagen del producto</label>
+                <div className="flex gap-3 items-start">
+                  <div className="flex-1 space-y-2">
+                    <input value={form.imagen_url} onChange={e => setForm({...form, imagen_url: e.target.value})}
+                      placeholder="URL de imagen (https://...)"
+                      className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                    <input type="file" accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        if (file.size > 5 * 1024 * 1024) { setMensaje({ tipo: 'error', texto: 'Máx 5MB' }); return }
+                        const prodId = editando?.id || `temp_${Date.now()}`
+                        const formData = new FormData()
+                        formData.append('imagen', file)
+                        try {
+                          const r = await fetch(`${API_URL}/api/productos/${prodId}/imagen`, {
+                            method: 'POST', body: formData
+                          })
+                          const d = await r.json()
+                          if (d.exito) { setForm(f => ({...f, imagen_url: d.url})); setMensaje({ tipo: 'success', texto: '✅ Imagen subida' }) }
+                          else setMensaje({ tipo: 'error', texto: 'Error subiendo imagen' })
+                        } catch { setMensaje({ tipo: 'error', texto: 'Error de conexión' }) }
+                      }}
+                      className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-900 file:text-white cursor-pointer" />
+                    <p className="text-xs text-gray-400">Sube una imagen o pega una URL. Máx 5MB.</p>
+                  </div>
+                  {form.imagen_url && (
+                    <img src={form.imagen_url} alt="preview"
+                      className="w-20 h-20 object-cover rounded-xl border flex-shrink-0" />
+                  )}
+                </div>
               </div>
 
               {/* Descripción */}
@@ -498,35 +584,72 @@ export default function ProductManagerDashboard() {
               {/* Tallas */}
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-2 block">Tallas disponibles</label>
-                <div className="flex flex-wrap gap-2">
-                  {TALLAS_DEFAULT.map(t => (
-                    <button key={t} type="button" onClick={() => toggleTalla(t)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                        form.tallas.includes(t)
-                          ? 'bg-gray-900 text-white border-gray-900'
-                          : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
-                      }`}>
-                      {t}
-                    </button>
-                  ))}
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400">Ropa:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['XS','S','M','L','XL','XXL'].map(t => (
+                      <button key={t} type="button" onClick={() => toggleTalla(t)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                        }`}>{t}</button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400">Jeans / Pantalones:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['26','28','30','32','34','36'].map(t => (
+                      <button key={t} type="button" onClick={() => toggleTalla(t)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                        }`}>{t}</button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400">Calzado:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['35','36','37','38','39','40','41','42','43'].map(t => (
+                      <button key={t} type="button" onClick={() => toggleTalla(t)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                        }`}>{t}</button>
+                    ))}
+                  </div>
+                  {form.tallas.length > 0 && (
+                    <p className="text-xs text-amber-700">Seleccionadas: {form.tallas.join(', ')}</p>
+                  )}
                 </div>
               </div>
 
               {/* Colores */}
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-2 block">Colores disponibles</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-2">
                   {COLORES_DEFAULT.map(c => (
                     <button key={c} type="button" onClick={() => toggleColor(c)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                         form.colores.includes(c)
                           ? 'bg-gray-900 text-white border-gray-900'
                           : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
-                      }`}>
-                      {c}
-                    </button>
+                      }`}>{c}</button>
                   ))}
                 </div>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="Agregar color personalizado..."
+                    className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const val = (e.target as HTMLInputElement).value.trim()
+                        if (val && !form.colores.includes(val)) {
+                          setForm(f => ({...f, colores: [...f.colores, val]}))
+                          ;(e.target as HTMLInputElement).value = ''
+                        }
+                      }
+                    }}
+                  />
+                  <span className="text-xs text-gray-400 self-center">Enter para agregar</span>
+                </div>
+                {form.colores.length > 0 && (
+                  <p className="text-xs text-amber-700 mt-1">Seleccionados: {form.colores.join(', ')}</p>
+                )}
               </div>
 
               {/* En stock */}
