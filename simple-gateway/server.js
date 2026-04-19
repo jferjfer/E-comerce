@@ -624,12 +624,12 @@ app.all('/api/contabilidad*', async (req, res) => {
       data: req.body,
       headers: { Authorization: req.headers.authorization },
       timeout: 10000
-    });
-    res.status(response.status).json(response.data);
+    })
+    res.status(response.status).json(response.data)
   } catch (error) {
-    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message })
   }
-});
+})
 
 app.all('/api/facturas*', async (req, res) => {
   try {
