@@ -836,11 +836,13 @@ export default function ContabilidadDashboard() {
                         {c.url_soporte ? (
                           <div className="flex gap-1 justify-center">
                             <a href={c.url_soporte} target="_blank" rel="noreferrer"
-                              className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg">
+                              className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg"
+                              title="Ver en nueva pestaña">
                               👁️ Ver
                             </a>
-                            <a href={c.url_soporte} download
-                              className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded-lg">
+                            <a href={`${c.url_soporte}?fl_attachment=true`} download={`soporte_compra_${c.numero}`}
+                              className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded-lg"
+                              title="Descargar archivo">
                               ⬇️ Bajar
                             </a>
                             <button

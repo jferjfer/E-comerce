@@ -700,11 +700,16 @@ async def subir_soporte_compra(
         cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
 
         import io
+        # Determinar resource_type y format según tipo de archivo
+        es_pdf = archivo.content_type == 'application/pdf'
         resultado = cloudinary.uploader.upload(
             io.BytesIO(contenido),
             folder=f"egos/compras",
             public_id=f"compra_{compra.numero}_{compra_id[:8]}",
-            resource_type="auto"
+            resource_type="raw" if es_pdf else "image",
+            format="pdf" if es_pdf else None,
+            use_filename=True,
+            unique_filename=False
         )
         url = resultado['secure_url']
 
