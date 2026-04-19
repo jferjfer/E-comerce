@@ -593,6 +593,29 @@ app.all('/api/credito*', async (req, res) => {
   }
 });
 
+// Ruta especial para subir soportes de compras (multipart)
+app.post('/api/contabilidad/compras/:id/soporte', upload.single('archivo'), async (req, res) => {
+  try {
+    const form = new FormData()
+    form.append('archivo', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
+    })
+    const response = await axios.post(
+      `${CONTABILIDAD_URL}/api/contabilidad/compras/${req.params.id}/soporte`,
+      form,
+      {
+        headers: { ...form.getHeaders(), Authorization: req.headers.authorization },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
+      }
+    )
+    res.status(response.status).json(response.data)
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message })
+  }
+})
+
 app.all('/api/contabilidad*', async (req, res) => {
   try {
     const response = await axios({
