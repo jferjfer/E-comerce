@@ -835,7 +835,9 @@ export default function ContabilidadDashboard() {
                       <td className="px-4 py-2 text-center">
                         {c.url_soporte ? (
                           <div className="flex gap-1 justify-center">
-                            <a href={c.url_soporte} target="_blank" rel="noreferrer"
+                            <a
+                              href={`https://docs.google.com/viewer?url=${encodeURIComponent(c.url_soporte)}`}
+                              target="_blank" rel="noreferrer"
                               className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg"
                               title="Ver en nueva pestaña">
                               👁️ Ver
