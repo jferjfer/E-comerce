@@ -1,0 +1,14 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-t'
+    - 'us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/frontend:$BUILD_ID'
+    - '-t'
+    - 'us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/frontend:latest'
+    - '--build-arg'
+    - 'VITE_API_URL=https://api.egoscolombia.com.co'
+    - '.'
+images:
+  - 'us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/frontend:$BUILD_ID'
+  - 'us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/frontend:latest'
