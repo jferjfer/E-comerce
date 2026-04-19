@@ -834,10 +834,22 @@ export default function ContabilidadDashboard() {
                       </td>
                       <td className="px-4 py-2 text-center">
                         {c.url_soporte ? (
-                          <a href={c.url_soporte} target="_blank" rel="noreferrer"
-                            className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg">
-                            📄 Ver
-                          </a>
+                          <div className="flex gap-1 justify-center">
+                            <a href={c.url_soporte} target="_blank" rel="noreferrer"
+                              className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg">
+                              👁️ Ver
+                            </a>
+                            <a href={c.url_soporte} download
+                              className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded-lg">
+                              ⬇️ Bajar
+                            </a>
+                            <button
+                              onClick={() => setCompraIdParaSoporte(c.id)}
+                              className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-lg"
+                              title="Reemplazar soporte">
+                              ↩️
+                            </button>
+                          </div>
                         ) : (
                           <button
                             onClick={() => setCompraIdParaSoporte(c.id)}
