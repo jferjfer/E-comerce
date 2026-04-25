@@ -1,4 +1,5 @@
-// v2.1.0 — RRHH + refresh token + CORS limpio
+// v2.1.0 — refresh token + CORS limpio + seguridad
+// build: 2026-04-25
 const express = require('express');
 const rutasUsuario = require('./rutas/rutasUsuario');
 const manejadorErrores = require('./middleware/manejadorErrores');
