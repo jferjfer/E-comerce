@@ -1,4 +1,5 @@
-// v2.3.0 — mejoras: sitemap, refresh token, PSE, idempotencia
+// v2.3.0 — mejoras: sitemap, refresh token, PSE, idempotencia, seguridad
+// build: 2026-04-25
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
