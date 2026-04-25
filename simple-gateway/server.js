@@ -12,7 +12,7 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const port = process.env.PUERTO || 3000;
 
-const { registrarMetricas } = require('./shared/metricas');
+const { registrarMetricas } = require('./metricas');
 registrarMetricas(app, 'gateway');
 
 // Seguridad con helmet
