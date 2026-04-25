@@ -20,7 +20,6 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
   const [colorSeleccionado, setColorSeleccionado] = useState('')
   const agregarItem = useCartStore(state => state.agregarItem)
   const { addToFavorites, removeFromFavorites, isFavorite } = useUserStore()
-  const { usuario } = useAuthStore()
   const addNotification = useNotificationStore(state => state.addNotification)
 
   const tieneTallas = producto.tallas && producto.tallas.length > 0
@@ -28,6 +27,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
   const necesitaSelector = tieneTallas || tieneColores
 
   const manejarClickAgregar = () => {
+    if (!producto.en_stock) return
     if (necesitaSelector && !mostrarSelector) {
       setTallaSeleccionada(producto.tallas?.[0] || '')
       setColorSeleccionado(producto.colores?.[0] || '')
@@ -76,14 +76,15 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
 
   const renderStars = (rating: number) => (
     Array.from({ length: 5 }, (_, i) => (
-      <i key={i} className={`fas fa-star text-[10px] ${i < Math.round(rating) ? 'text-amber-400' : 'text-gray-200'}`} />
+      <i key={i} className={`fas fa-star text-[9px] ${i < Math.round(rating) ? 'text-amber-400' : 'text-gray-200'}`} />
     ))
   )
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden card-hover border border-gray-100 group">
+    <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 group flex flex-col">
+
       {/* Imagen */}
-      <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '120%' }}>
+      <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '118%' }}>
         <Link to={`/producto/${producto.id}`} className="absolute inset-0">
           <img
             src={producto.imagen}
@@ -93,59 +94,73 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
           />
         </Link>
 
-        {/* Overlay acciones */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
+        {/* Overlay suave */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-        {/* Botón favorito */}
+        {/* Badge agotado sobre imagen */}
+        {!producto.en_stock && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <span className="bg-white/95 text-gray-800 text-xs font-bold px-3 py-1 rounded-full shadow">
+              Agotado
+            </span>
+          </div>
+        )}
+
+        {/* Badge eco */}
+        {producto.es_eco && (
+          <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+            🌿 Eco
+          </span>
+        )}
+
+        {/* Favorito */}
         <button
           onClick={manejarToggleFavorito}
-          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
+          className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
             isFavorite(producto.id)
-              ? 'bg-rose-500 text-white scale-110'
-              : 'bg-white/90 text-gray-400 hover:text-rose-500 hover:scale-110'
+              ? 'bg-rose-500 text-white'
+              : 'bg-white/90 text-gray-400 hover:text-rose-500 opacity-0 group-hover:opacity-100'
           }`}
         >
-          <i className={`${isFavorite(producto.id) ? 'fas' : 'far'} fa-heart text-xs`}></i>
+          <i className={`${isFavorite(producto.id) ? 'fas' : 'far'} fa-heart text-[11px]`}></i>
         </button>
 
-
-        {/* Botón ver detalles en hover */}
+        {/* Ver detalles hover */}
         <button
           onClick={() => onViewDetails(producto)}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white text-gray-800 text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap border border-gray-100"
+          className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-white/95 text-gray-800 text-[11px] font-semibold px-3.5 py-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap hover:bg-white"
         >
-          <i className="fas fa-eye mr-1.5 text-primary"></i>
+          <i className="fas fa-eye mr-1.5 text-primary text-[10px]"></i>
           Ver detalles
         </button>
       </div>
 
       {/* Contenido */}
-      <div className="p-3">
-        {/* Categoría y estrellas */}
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{producto.categoria}</span>
-          <div className="flex gap-0.5">{renderStars(producto.calificacion)}</div>
+      <div className="p-3 flex flex-col flex-1">
+
+        {/* Categoría + estrellas */}
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium truncate mr-1">
+            {producto.categoria}
+          </span>
+          <div className="flex gap-0.5 flex-shrink-0">
+            {renderStars(producto.calificacion)}
+          </div>
         </div>
 
         {/* Nombre */}
-        <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2">
+        <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2 flex-1">
           <Link to={`/producto/${producto.id}`} className="hover:text-primary transition-colors">
             {producto.nombre}
           </Link>
         </h3>
 
         {/* Precio */}
-        <p className="text-base font-bold text-primary mb-1">{formatPrice(producto.precio)}</p>
-
-        {/* Stock */}
-        <p className={`text-[11px] font-medium mb-2 ${
-          producto.en_stock ? 'text-emerald-600' : 'text-red-500'
-        }`}>
-          <i className={`fas ${producto.en_stock ? 'fa-check-circle' : 'fa-times-circle'} mr-1`}></i>
-          {producto.en_stock ? 'Disponible' : 'Agotado'}
+        <p className="text-base font-bold text-primary mb-2.5">
+          {formatPrice(producto.precio)}
         </p>
 
-        {/* Selector talla/color inline */}
+        {/* Selector talla/color */}
         {mostrarSelector && (
           <div className="mb-2 p-2 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
             {tieneTallas && (
@@ -197,20 +212,20 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
           </div>
         )}
 
-        {/* Botón */}
+        {/* Botón agregar */}
         <button
           onClick={manejarClickAgregar}
           disabled={agregando || !producto.en_stock}
-          className={`w-full flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-xl transition-all duration-200 ${
+          className={`w-full flex items-center justify-center gap-1.5 text-xs font-semibold py-2.5 rounded-xl transition-all duration-200 ${
             !producto.en_stock
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : agregando
               ? 'bg-emerald-500 text-white scale-95'
-              : 'bg-primary text-white hover:bg-secondary'
+              : 'bg-primary text-white hover:bg-secondary active:scale-95'
           }`}
         >
-          <i className={`fas ${agregando ? 'fa-check' : !producto.en_stock ? 'fa-ban' : 'fa-cart-plus'} text-xs`}></i>
-          <span>{agregando ? '¡Agregado!' : !producto.en_stock ? 'Agotado' : 'Agregar al carrito'}</span>
+          <i className={`fas ${agregando ? 'fa-check' : !producto.en_stock ? 'fa-ban' : 'fa-cart-plus'} text-[11px]`}></i>
+          <span>{agregando ? '¡Agregado!' : !producto.en_stock ? 'No disponible' : 'Agregar al carrito'}</span>
         </button>
       </div>
     </div>
