@@ -135,7 +135,15 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
         </h3>
 
         {/* Precio */}
-        <p className="text-base font-bold text-primary mb-2">{formatPrice(producto.precio)}</p>
+        <p className="text-base font-bold text-primary mb-1">{formatPrice(producto.precio)}</p>
+
+        {/* Stock */}
+        <p className={`text-[11px] font-medium mb-2 ${
+          producto.en_stock ? 'text-emerald-600' : 'text-red-500'
+        }`}>
+          <i className={`fas ${producto.en_stock ? 'fa-check-circle' : 'fa-times-circle'} mr-1`}></i>
+          {producto.en_stock ? 'Disponible' : 'Agotado'}
+        </p>
 
         {/* Selector talla/color inline */}
         {mostrarSelector && (
@@ -192,15 +200,17 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
         {/* Botón */}
         <button
           onClick={manejarClickAgregar}
-          disabled={agregando}
+          disabled={agregando || !producto.en_stock}
           className={`w-full flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-xl transition-all duration-200 ${
-            agregando
+            !producto.en_stock
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : agregando
               ? 'bg-emerald-500 text-white scale-95'
               : 'bg-primary text-white hover:bg-secondary'
           }`}
         >
-          <i className={`fas ${agregando ? 'fa-check' : 'fa-cart-plus'} text-xs`}></i>
-          <span>{agregando ? '¡Agregado!' : 'Agregar al carrito'}</span>
+          <i className={`fas ${agregando ? 'fa-check' : !producto.en_stock ? 'fa-ban' : 'fa-cart-plus'} text-xs`}></i>
+          <span>{agregando ? '¡Agregado!' : !producto.en_stock ? 'Agotado' : 'Agregar al carrito'}</span>
         </button>
       </div>
     </div>
