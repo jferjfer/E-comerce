@@ -1,9 +1,5 @@
+// v2.1.0 — RRHH + refresh token + CORS limpio
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-require('dotenv').config();
-
-const rutasAuth = require('./rutas/rutasAuth');
 const rutasUsuario = require('./rutas/rutasUsuario');
 const manejadorErrores = require('./middleware/manejadorErrores');
 const { sanitizarInputs, validarContentType } = require('./middleware/seguridadInputs');
