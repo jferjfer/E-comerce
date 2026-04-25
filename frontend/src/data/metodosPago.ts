@@ -3,10 +3,17 @@ import { MetodoPago } from '@/types'
 export const metodosPago: MetodoPago[] = [
   {
     id: 'pago_en_linea',
-    nombre: 'Pago en línea',
+    nombre: 'Tarjeta de crédito / débito',
     tipo: 'externo',
-    descripcion: 'Tarjeta, PSE, Nequi, Daviplata, Efecty y más — procesado por ePayco',
+    descripcion: 'Visa, Mastercard, Amex — procesado por ePayco',
     icono: 'fas fa-credit-card'
+  },
+  {
+    id: 'pse',
+    nombre: 'PSE — Débito bancario',
+    tipo: 'externo',
+    descripcion: 'Paga directamente desde tu cuenta bancaria colombiana (Breve)',
+    icono: 'fas fa-university'
   },
   {
     id: 'credito_interno',

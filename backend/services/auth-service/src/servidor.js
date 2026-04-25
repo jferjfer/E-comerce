@@ -17,11 +17,10 @@ aplicacion.use(helmet());
 
 const ALLOWED_ORIGINS = [
   'https://egoscolombia.com.co',
-  'http://149.130.182.9:3005',
+  'https://www.egoscolombia.com.co',
   'http://localhost:5173',
   'http://localhost:3000',
-  'http://149.130.182.9:3000',
-  'http://149.130.182.9',
+  'http://localhost:3005',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 

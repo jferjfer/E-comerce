@@ -14,6 +14,7 @@ interface EpaycoWidgetProps {
   pedidoId: string
   total: number
   token: string
+  metodoPago?: string
   onExito: () => void
   onError: (mensaje: string) => void
   onCancelado: () => void
@@ -29,7 +30,7 @@ declare global {
   }
 }
 
-export default function EpaycoWidget({ pedidoId, total, token, onExito, onError, onCancelado }: EpaycoWidgetProps) {
+export default function EpaycoWidget({ pedidoId, total, token, metodoPago, onExito, onError, onCancelado }: EpaycoWidgetProps) {
   const [cargando, setCargando] = useState(false)
   const [scriptCargado, setScriptCargado] = useState(false)
   const handlerRef = useRef<any>(null)
@@ -141,6 +142,9 @@ export default function EpaycoWidget({ pedidoId, total, token, onExito, onError,
         country:      datos_widget.country,
         lang:         datos_widget.lang,
 
+        // Preseleccionar PSE si el cliente lo eligió
+        ...(metodoPago === 'pse' && { p_type_doc: 'PSE' }),
+
         // URLs
         response:     datos_widget.response,
         confirmation: datos_widget.confirmation,
@@ -180,7 +184,7 @@ export default function EpaycoWidget({ pedidoId, total, token, onExito, onError,
       ) : (
         <>
           <i className="fas fa-lock text-xs"></i>
-          Pagar con ePayco
+          {metodoPago === 'pse' ? 'Pagar con PSE' : 'Pagar con ePayco'}
         </>
       )}
     </button>

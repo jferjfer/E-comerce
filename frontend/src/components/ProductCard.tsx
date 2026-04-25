@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Producto } from '@/types'
 import { useCartStore } from '@/store/useCartStore'
 import { useUserStore } from '@/store/useUserStore'
@@ -14,15 +15,33 @@ interface PropsTarjetaProducto {
 
 export default function ProductCard({ product: producto, onViewDetails }: PropsTarjetaProducto) {
   const [agregando, setAgregando] = useState(false)
+  const [mostrarSelector, setMostrarSelector] = useState(false)
+  const [tallaSeleccionada, setTallaSeleccionada] = useState('')
+  const [colorSeleccionado, setColorSeleccionado] = useState('')
   const agregarItem = useCartStore(state => state.agregarItem)
   const { addToFavorites, removeFromFavorites, isFavorite } = useUserStore()
   const { usuario } = useAuthStore()
   const addNotification = useNotificationStore(state => state.addNotification)
 
-  const manejarAgregarCarrito = async () => {
+  const tieneTallas = producto.tallas && producto.tallas.length > 0
+  const tieneColores = producto.colores && producto.colores.length > 0
+  const necesitaSelector = tieneTallas || tieneColores
+
+  const manejarClickAgregar = () => {
+    if (necesitaSelector && !mostrarSelector) {
+      setTallaSeleccionada(producto.tallas?.[0] || '')
+      setColorSeleccionado(producto.colores?.[0] || '')
+      setMostrarSelector(true)
+      return
+    }
+    confirmarAgregarCarrito()
+  }
+
+  const confirmarAgregarCarrito = async () => {
     setAgregando(true)
-    agregarItem(producto)
-    addNotification(`${producto.nombre} agregado al carrito`, 'success')
+    setMostrarSelector(false)
+    agregarItem({ ...producto, talla: tallaSeleccionada || undefined, color: colorSeleccionado || undefined } as any)
+    addNotification(`${producto.nombre}${tallaSeleccionada ? ` (${tallaSeleccionada})` : ''} agregado al carrito`, 'success')
     setTimeout(() => setAgregando(false), 600)
   }
 
@@ -65,12 +84,14 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
     <div className="bg-white rounded-2xl overflow-hidden card-hover border border-gray-100 group">
       {/* Imagen */}
       <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '120%' }}>
-        <img
-          src={producto.imagen}
-          alt={producto.nombre}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-        />
+        <Link to={`/producto/${producto.id}`} className="absolute inset-0">
+          <img
+            src={producto.imagen}
+            alt={producto.nombre}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+          />
+        </Link>
 
         {/* Overlay acciones */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
@@ -107,14 +128,70 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
         </div>
 
         {/* Nombre */}
-        <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2">{producto.nombre}</h3>
+        <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug mb-2">
+          <Link to={`/producto/${producto.id}`} className="hover:text-primary transition-colors">
+            {producto.nombre}
+          </Link>
+        </h3>
 
         {/* Precio */}
         <p className="text-base font-bold text-primary mb-2">{formatPrice(producto.precio)}</p>
 
+        {/* Selector talla/color inline */}
+        {mostrarSelector && (
+          <div className="mb-2 p-2 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+            {tieneTallas && (
+              <div>
+                <p className="text-[10px] text-gray-500 font-medium mb-1">Talla</p>
+                <div className="flex flex-wrap gap-1">
+                  {producto.tallas!.map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setTallaSeleccionada(t)}
+                      className={`px-2 py-0.5 text-xs rounded-lg border transition-all ${
+                        tallaSeleccionada === t
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-gray-300 text-gray-600 hover:border-primary'
+                      }`}
+                    >{t}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {tieneColores && (
+              <div>
+                <p className="text-[10px] text-gray-500 font-medium mb-1">Color</p>
+                <div className="flex flex-wrap gap-1">
+                  {producto.colores!.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setColorSeleccionado(c)}
+                      className={`px-2 py-0.5 text-xs rounded-lg border transition-all ${
+                        colorSeleccionado === c
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-gray-300 text-gray-600 hover:border-primary'
+                      }`}
+                    >{c}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex gap-1 pt-1">
+              <button
+                onClick={() => setMostrarSelector(false)}
+                className="flex-1 text-xs py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100"
+              >Cancelar</button>
+              <button
+                onClick={confirmarAgregarCarrito}
+                className="flex-1 text-xs py-1.5 rounded-lg bg-primary text-white hover:bg-secondary"
+              >Confirmar</button>
+            </div>
+          </div>
+        )}
+
         {/* Botón */}
         <button
-          onClick={manejarAgregarCarrito}
+          onClick={manejarClickAgregar}
           disabled={agregando}
           className={`w-full flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-xl transition-all duration-200 ${
             agregando

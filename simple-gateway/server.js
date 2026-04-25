@@ -10,6 +10,9 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const port = process.env.PUERTO || 3000;
 
+const { registrarMetricas } = require('./shared/metricas');
+registrarMetricas(app, 'gateway');
+
 // Seguridad con helmet
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -368,6 +371,7 @@ app.get('/api/auth/verificar', (req, res) => manejarAuthDirecto(req, res, 'verif
 app.post('/api/auth/logout', (req, res) => manejarAuthDirecto(req, res, 'logout'));
 app.post('/api/auth/solicitar-recuperacion', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'solicitar-recuperacion'));
 app.post('/api/auth/restablecer-contrasena', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'restablecer-contrasena'));
+app.post('/api/auth/refresh', (req, res) => manejarAuthDirecto(req, res, 'refresh'));
 
 // Rutas de usuarios
 app.get('/api/usuarios/perfil', async (req, res) => {
@@ -993,6 +997,32 @@ app.get('/api/eventos/pedidos', (req, res) => {
     proxyReq.end();
   } catch(e) {
     try { res.end(); } catch(e2) {}
+  }
+});
+
+// Sitemap dinámico — genera URLs de productos desde catalog-service
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const respuesta = await axios.get(`${CATALOG_URL}/api/productos?limite=500`, { timeout: 8000 });
+    const productos = respuesta.data?.productos || [];
+    const base = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
+    const hoy = new Date().toISOString().split('T')[0];
+
+    const urls = [
+      `<url><loc>${base}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+      `<url><loc>${base}/catalog</loc><changefreq>daily</changefreq><priority>0.9</priority></url>`,
+      ...productos.map(p =>
+        `<url><loc>${base}/producto/${p.id}</loc><lastmod>${hoy}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`
+      )
+    ].join('\n  ');
+
+    res.set('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`);
+  } catch (e) {
+    res.status(500).send('Error generando sitemap');
   }
 });
 

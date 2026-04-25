@@ -36,6 +36,20 @@ export const useTiendaAuth = create<TiendaAuth>()(
             })
             const establecerToken = useTiendaCarrito.getState().establecerToken
             setTimeout(() => establecerToken(resultado.token!), 0)
+
+            // Sincronizar favoritos desde backend
+            try {
+              const resFav = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/listas-deseos`, {
+                headers: { Authorization: `Bearer ${resultado.token}` }
+              })
+              if (resFav.ok) {
+                const dataFav = await resFav.json()
+                const { useUserStore } = await import('./useUserStore')
+                const favIds: string[] = dataFav.productos || []
+                useUserStore.setState({ favorites: favIds })
+              }
+            } catch {}
+
             return true
           }
           

@@ -6,7 +6,7 @@ import ProductCard from '@/components/ProductCard'
 import Modal from '@/components/Modal'
 import ARModal from '@/components/ARModal'
 import Footer from '@/components/Footer'
-import HeroCarousel from '@/components/HeroCarousel'
+import { SkeletonProductGrid } from '@/components/Skeleton'
 import { Producto } from '@/types'
 import { formatPrice } from '@/utils/sanitize'
 import { useCartStore } from '@/store/useCartStore'
@@ -27,6 +27,8 @@ export default function HomePage() {
     busqueda: '',
     ordenar: 'relevancia'
   })
+  const [paginaActual, setPaginaActual] = useState(1)
+  const PRODUCTOS_POR_PAGINA = 24
 
   // Cargar todos los productos del backend
   useEffect(() => {
@@ -104,7 +106,20 @@ export default function HomePage() {
       busqueda: '',
       ordenar: 'relevancia'
     })
+    setPaginaActual(1)
   }
+
+  // Reset paginación al cambiar filtros
+  const actualizarFiltro = (nuevo: Partial<typeof filtros>) => {
+    setFiltros(prev => ({ ...prev, ...nuevo }))
+    setPaginaActual(1)
+  }
+
+  const productosVisibles = useMemo(
+    () => productosFiltrados.slice(0, paginaActual * PRODUCTOS_POR_PAGINA),
+    [productosFiltrados, paginaActual]
+  )
+  const hayMas = productosVisibles.length < productosFiltrados.length
 
   const manejarVerDetalles = (producto: Producto) => {
     setProductoSeleccionado(producto)
@@ -146,7 +161,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide sm:flex-wrap sm:py-3 sm:gap-3">
             <select
               value={filtros.categoria}
-              onChange={(e) => setFiltros(prev => ({ ...prev, categoria: e.target.value }))}
+              onChange={(e) => actualizarFiltro({ categoria: e.target.value })}
               className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-gray-400/20 bg-white"
             >
               <option value="">Todas</option>
@@ -161,7 +176,7 @@ export default function HomePage() {
               type="text"
               placeholder="Buscar..."
               value={filtros.busqueda}
-              onChange={(e) => setFiltros(prev => ({ ...prev, busqueda: e.target.value }))}
+              onChange={(e) => actualizarFiltro({ busqueda: e.target.value })}
               className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm w-28 sm:w-40 focus:ring-2 focus:ring-gray-400/20"
             />
 
@@ -170,7 +185,7 @@ export default function HomePage() {
                 type="number"
                 placeholder="Mín"
                 value={filtros.precioMin}
-                onChange={(e) => setFiltros(prev => ({ ...prev, precioMin: e.target.value }))}
+                onChange={(e) => actualizarFiltro({ precioMin: e.target.value })}
                 className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-gray-400/20"
               />
               <span className="text-gray-400 text-xs">-</span>
@@ -178,14 +193,14 @@ export default function HomePage() {
                 type="number"
                 placeholder="Máx"
                 value={filtros.precioMax}
-                onChange={(e) => setFiltros(prev => ({ ...prev, precioMax: e.target.value }))}
+                onChange={(e) => actualizarFiltro({ precioMax: e.target.value })}
                 className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs w-14 sm:w-20 focus:ring-2 focus:ring-gray-400/20"
               />
             </div>
 
             <select
               value={filtros.ordenar}
-              onChange={(e) => setFiltros(prev => ({ ...prev, ordenar: e.target.value }))}
+              onChange={(e) => actualizarFiltro({ ordenar: e.target.value })}
               className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-gray-400/20 bg-white"
             >
               <option value="relevancia">Relevancia</option>
@@ -204,7 +219,7 @@ export default function HomePage() {
             </button>
 
             <span className="flex-shrink-0 text-xs text-gray-500 font-medium ml-auto">
-              {cargando ? '...' : `${productosFiltrados.length} items`}
+              {cargando ? '...' : `${productosVisibles.length} de ${productosFiltrados.length}`}
             </span>
           </div>
         </div>
@@ -214,26 +229,30 @@ export default function HomePage() {
       <section className="py-4 sm:py-6 md:py-8 bg-gray-50">
         <div className="w-full px-3 sm:px-4 lg:px-6 2xl:px-10">
           {cargando ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
-              {Array.from({ length: 16 }).map((_, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-sm p-3 animate-pulse">
-                  <div className="bg-gray-200 h-40 sm:h-52 rounded-lg mb-3"></div>
-                  <div className="bg-gray-200 h-3 rounded mb-2"></div>
-                  <div className="bg-gray-200 h-4 rounded mb-2 w-3/4"></div>
-                  <div className="bg-gray-200 h-7 rounded"></div>
-                </div>
-              ))}
-            </div>
+            <SkeletonProductGrid cantidad={24} />
           ) : productosFiltrados.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
-              {productosFiltrados.map((producto, index) => (
-                <ProductCard
-                  key={producto.id || `producto-${index}`}
-                  product={producto}
-                  onViewDetails={manejarVerDetalles}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+                {productosVisibles.map((producto, index) => (
+                  <ProductCard
+                    key={producto.id || `producto-${index}`}
+                    product={producto}
+                    onViewDetails={manejarVerDetalles}
+                  />
+                ))}
+              </div>
+              {hayMas && (
+                <div className="flex justify-center mt-8">
+                  <button
+                    onClick={() => setPaginaActual(p => p + 1)}
+                    className="bg-white border border-gray-300 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-50 hover:border-primary hover:text-primary transition-all font-medium text-sm shadow-sm"
+                  >
+                    <i className="fas fa-plus mr-2"></i>
+                    Ver más productos ({productosFiltrados.length - productosVisibles.length} restantes)
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-12">
               <i className="fas fa-search text-4xl text-gray-400 mb-4"></i>

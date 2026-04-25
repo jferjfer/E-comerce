@@ -124,8 +124,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
-      // Si es pago en línea, ePayco debe estar activo obligatoriamente
-      if (selectedMethod === 'pago_en_linea') {
+      // Si es pago en línea o PSE, ePayco debe estar activo
+      if (selectedMethod === 'pago_en_linea' || selectedMethod === 'pse') {
         if (epaycoActivo) {
           setPedidoParaEpayco(pedidoId)
           setIsLoading(false)
@@ -242,7 +242,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               limiteCredito={evaluacionCredito?.limite_aprobado}
             />
             {/* Widget ePayco — aparece después de crear el pedido */}
-            {pedidoParaEpayco && selectedMethod === 'pago_en_linea' && token && (
+            {pedidoParaEpayco && (selectedMethod === 'pago_en_linea' || selectedMethod === 'pse') && token && (
               <div className="mt-4 space-y-3">
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
                   <i className="fas fa-check-circle text-blue-500 mr-1"></i>
@@ -252,6 +252,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   pedidoId={pedidoParaEpayco}
                   total={total}
                   token={token}
+                  metodoPago={selectedMethod}
                   onExito={() => {
                     setOrderId(pedidoParaEpayco)
                     setPedidoParaEpayco(null)

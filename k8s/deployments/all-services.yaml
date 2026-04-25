@@ -480,6 +480,11 @@ spec:
         env:
         - name: PUERTO
           value: "3009"
+        - name: MONGODB_CATALOG_URI
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: MONGODB_CATALOG_URI
         resources:
           requests:
             cpu: "100m"

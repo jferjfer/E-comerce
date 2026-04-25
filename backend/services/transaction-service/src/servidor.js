@@ -134,7 +134,9 @@ async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
 
   const metodoPagoTexto = {
     'pago_en_linea': 'Pago en línea',
+    'pse': 'PSE — Débito bancario',
     'credito': 'Crédito EGOS',
+    'credito_interno': 'Crédito EGOS a cuotas',
     'efectivo': 'Efectivo',
     'tarjeta': 'Tarjeta'
   }[pedido.metodo_pago] || pedido.metodo_pago || 'Pago en línea';
@@ -323,11 +325,10 @@ aplicacion.use(helmet());
 
 const ALLOWED_ORIGINS = [
   'https://egoscolombia.com.co',
-  'http://149.130.182.9:3005',
+  'https://www.egoscolombia.com.co',
   'http://localhost:5173',
   'http://localhost:3000',
-  'http://149.130.182.9:3000',
-  'http://149.130.182.9',
+  'http://localhost:3005',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -416,7 +417,6 @@ async function guardarCarrito(usuarioId, carrito) {
 // Middleware de autenticación JWT
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRETO;
-console.log('🔑 Transaction Service usando JWT_SECRET:', JWT_SECRET.substring(0, 20) + '...');
 
 const autenticacion = (req, res, next) => {
   try {
@@ -425,7 +425,7 @@ const autenticacion = (req, res, next) => {
       return res.status(401).json({ error: 'Token requerido' });
     }
 
-    console.log('🔑 Verificando token con secreto:', JWT_SECRET.substring(0, 10) + '...');
+    console.log('🔑 Verificando token...');
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log('✅ Token válido para usuario:', decoded.id);
     req.usuario = { id: decoded.id, email: decoded.email, rol: decoded.rol };
@@ -848,12 +848,32 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
         return res.status(400).json({ error: 'El monto mínimo de compra es $5.000 COP' });
       }
 
+      // 🔒 VALIDACIÓN DE STOCK: verificar en catalog-service
+      const productosAgotados = [];
+      await Promise.all(itemsFrontend.map(async (item) => {
+        try {
+          const resProd = await axios.get(`http://catalog-service:3002/api/productos/${item.id}`, { timeout: 4000 });
+          const prod = resProd.data?.producto || resProd.data;
+          if (prod && prod.en_stock === false) {
+            productosAgotados.push(prod.nombre || `Producto ${item.id}`);
+          }
+        } catch (e) {
+          console.log(`⚠️ No se pudo verificar stock de ${item.id}: ${e.message}`);
+        }
+      }));
+
+      if (productosAgotados.length > 0) {
+        return res.status(400).json({
+          error: `Los siguientes productos están agotados: ${productosAgotados.join(', ')}. Por favor retíralos del carrito.`
+        });
+      }
+
       carrito = {
         id: null,
         productos: itemsFrontend.map(p => ({
           id: p.id,
-          cantidad: Math.floor(p.cantidad), // Asegurar entero
-          precio: Math.abs(p.precio),       // Asegurar positivo
+          cantidad: Math.floor(p.cantidad),
+          precio: Math.abs(p.precio),
           nombre: p.nombre || `Producto ${p.id}`
         })),
         total
@@ -887,6 +907,25 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
 
     // Crear pedido con ID personalizado
     const pedidoId = generarId('EM');
+
+    // 🔒 IDEMPOTENCIA: verificar si ya existe un pedido reciente del mismo usuario
+    // con el mismo total en los últimos 30 segundos (evita doble clic)
+    const pedidoReciente = await pool.query(
+      `SELECT id FROM pedido
+       WHERE usuario_id = $1
+         AND total = $2
+         AND fecha_creacion > NOW() - INTERVAL '30 seconds'
+       LIMIT 1`,
+      [parseInt(usuarioId), carrito.total]
+    );
+    if (pedidoReciente.rows.length > 0) {
+      console.log(`⚠️ Pedido duplicado detectado para usuario ${usuarioId}, retornando pedido existente`);
+      return res.json({
+        mensaje: 'Pedido creado exitosamente',
+        orden: { id: pedidoReciente.rows[0].id, usuario_id: usuarioId, total: carrito.total, estado: 'Creado' }
+      });
+    }
+
     await pool.query(
       'INSERT INTO pedido (id, usuario_id, estado, total) VALUES ($1, $2, $3, $4)',
       [pedidoId, parseInt(usuarioId), 'Creado', carrito.total]

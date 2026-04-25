@@ -5,9 +5,39 @@ import uvicorn
 import os
 from typing import List, Optional
 from datetime import datetime, timedelta
+from contextlib import asynccontextmanager
 import random
+from motor.motor_asyncio import AsyncIOMotorClient
 
-app = FastAPI(title="Logistics Service v2.0", version="2.0.0")
+# ============================================
+# MONGODB
+# ============================================
+mongo_client = None
+db_catalogo = None
+
+async def conectar_mongo():
+    global mongo_client, db_catalogo
+    uri = os.getenv('MONGODB_CATALOG_URI', '')
+    if not uri:
+        print('⚠️ MONGODB_CATALOG_URI no configurado, usando inventario en memoria')
+        return
+    try:
+        mongo_client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000)
+        await mongo_client.admin.command('ping')
+        db_catalogo = mongo_client['catalogo']
+        print('✅ Logistics conectado a MongoDB')
+    except Exception as e:
+        print(f'⚠️ No se pudo conectar a MongoDB: {e}')
+        db_catalogo = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await conectar_mongo()
+    yield
+    if mongo_client:
+        mongo_client.close()
+
+app = FastAPI(title="Logistics Service v2.1", version="2.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,18 +47,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Base de datos en memoria
-almacenes = {
+# Almacenes fijos (estructura, no cambia)
+ALMACENES = {
     "ALM-BOG": {"id": "ALM-BOG", "nombre": "Almacén Bogotá Centro", "ciudad": "Bogotá", "capacidad": 10000},
     "ALM-MED": {"id": "ALM-MED", "nombre": "Almacén Medellín Norte", "ciudad": "Medellín", "capacidad": 8000},
     "ALM-CAL": {"id": "ALM-CAL", "nombre": "Almacén Cali Sur", "ciudad": "Cali", "capacidad": 6000}
 }
 
+# Inventario en memoria como fallback
+almacenes = ALMACENES
 inventario = {
     "ALM-BOG": {"1": 50, "2": 30, "3": 25, "4": 40, "5": 35},
     "ALM-MED": {"1": 30, "2": 45, "3": 20, "4": 25, "5": 30},
     "ALM-CAL": {"1": 25, "2": 35, "3": 30, "4": 20, "5": 25}
 }
+
+# Helpers MongoDB
+async def get_inventario_mongo(almacen_id: str) -> dict:
+    if db_catalogo is None:
+        return inventario.get(almacen_id, {})
+    doc = await db_catalogo.inventario.find_one({"almacen_id": almacen_id})
+    return doc.get('stock', {}) if doc else inventario.get(almacen_id, {})
+
+async def set_inventario_mongo(almacen_id: str, producto_id: str, cantidad: int):
+    if db_catalogo is None:
+        if almacen_id not in inventario:
+            inventario[almacen_id] = {}
+        inventario[almacen_id][producto_id] = cantidad
+        return
+    await db_catalogo.inventario.update_one(
+        {"almacen_id": almacen_id},
+        {"$set": {f"stock.{producto_id}": cantidad, "fecha_actualizacion": datetime.now().isoformat()}},
+        upsert=True
+    )
+    # Sincronizar en_stock del producto en catálogo
+    total = sum(
+        (await get_inventario_mongo(a)).get(producto_id, 0)
+        for a in ALMACENES
+    )
+    await db_catalogo.productos.update_one(
+        {"id": producto_id},
+        {"$set": {"en_stock": total > 0}}
+    )
 
 envios = {}
 domicilios = {}
@@ -56,104 +116,74 @@ class RegistrarDomicilio(BaseModel):
 
 @app.get("/salud")
 async def verificar_salud():
-    total_productos = sum(sum(inv.values()) for inv in inventario.values())
+    total_productos = 0
+    for aid in ALMACENES:
+        stock = await get_inventario_mongo(aid)
+        total_productos += sum(stock.values())
     return {
         "estado": "activo",
         "servicio": "logistica",
-        "version": "2.0.0",
+        "version": "2.1.0",
+        "mongodb_conectado": db_catalogo is not None,
         "timestamp": datetime.now().isoformat(),
         "estadisticas": {
-            "almacenes_activos": len(almacenes),
-            "envios_activos": len([e for e in envios.values() if e["estado"] != "Entregado"]),
+            "almacenes_activos": len(ALMACENES),
             "productos_en_stock": total_productos
         }
     }
 
 @app.get("/api/almacenes")
 async def listar_almacenes():
-    return {"almacenes": list(almacenes.values()), "total": len(almacenes)}
+    return {"almacenes": list(ALMACENES.values()), "total": len(ALMACENES)}
 
 @app.get("/api/inventario/{producto_id}")
 async def consultar_inventario_producto(producto_id: str):
     disponibilidad = []
     total_disponible = 0
-    
-    for almacen_id, stock in inventario.items():
+    for almacen_id, almacen in ALMACENES.items():
+        stock = await get_inventario_mongo(almacen_id)
         cantidad = stock.get(producto_id, 0)
         total_disponible += cantidad
-        
         if cantidad > 0:
             disponibilidad.append({
                 "almacen_id": almacen_id,
-                "almacen_nombre": almacenes[almacen_id]["nombre"],
-                "ciudad": almacenes[almacen_id]["ciudad"],
+                "almacen_nombre": almacen["nombre"],
+                "ciudad": almacen["ciudad"],
                 "cantidad": cantidad
             })
-    
-    return {
-        "producto_id": producto_id,
-        "total_disponible": total_disponible,
-        "disponible": total_disponible > 0,
-        "almacenes": disponibilidad
-    }
+    return {"producto_id": producto_id, "total_disponible": total_disponible, "disponible": total_disponible > 0, "almacenes": disponibilidad}
 
 @app.get("/api/inventario/almacen/{almacen_id}")
 async def consultar_inventario_almacen(almacen_id: str):
-    if almacen_id not in almacenes:
+    if almacen_id not in ALMACENES:
         raise HTTPException(status_code=404, detail="Almacén no encontrado")
-    
-    stock = inventario.get(almacen_id, {})
+    stock = await get_inventario_mongo(almacen_id)
     productos = [{"producto_id": pid, "cantidad": cant} for pid, cant in stock.items()]
-    
-    return {
-        "almacen": almacenes[almacen_id],
-        "productos": productos,
-        "total_productos": len(productos)
-    }
+    return {"almacen": ALMACENES[almacen_id], "productos": productos, "total_productos": len(productos)}
 
 @app.put("/api/inventario/actualizar")
 async def actualizar_inventario(actualizacion: ActualizarInventario):
-    if actualizacion.almacen_id not in almacenes:
+    if actualizacion.almacen_id not in ALMACENES:
         raise HTTPException(status_code=404, detail="Almacén no encontrado")
-    
-    if actualizacion.almacen_id not in inventario:
-        inventario[actualizacion.almacen_id] = {}
-    
-    inventario[actualizacion.almacen_id][actualizacion.producto_id] = actualizacion.cantidad
-    
+    await set_inventario_mongo(actualizacion.almacen_id, actualizacion.producto_id, actualizacion.cantidad)
     print(f"📦 Inventario actualizado: {actualizacion.almacen_id} - Producto {actualizacion.producto_id}: {actualizacion.cantidad}")
-    
-    return {
-        "mensaje": "Inventario actualizado",
-        "almacen_id": actualizacion.almacen_id,
-        "producto_id": actualizacion.producto_id,
-        "nueva_cantidad": actualizacion.cantidad
-    }
+    return {"mensaje": "Inventario actualizado", "almacen_id": actualizacion.almacen_id, "producto_id": actualizacion.producto_id, "nueva_cantidad": actualizacion.cantidad}
 
 @app.post("/api/envios/crear")
 async def crear_envio(solicitud: SolicitudEnvio):
     print(f"🚚 Creando envío para pedido {solicitud.pedido_id}")
-    
-    # Seleccionar almacén más cercano
-    almacen_seleccionado = None
-    for almacen_id, almacen in almacenes.items():
-        if almacen["ciudad"].lower() == solicitud.ciudad.lower():
-            almacen_seleccionado = almacen_id
-            break
-    
-    if not almacen_seleccionado:
-        almacen_seleccionado = "ALM-BOG"  # Default
-    
-    # Verificar stock y descontar
+    almacen_seleccionado = next(
+        (aid for aid, a in ALMACENES.items() if a["ciudad"].lower() == solicitud.ciudad.lower()),
+        "ALM-BOG"
+    )
     for producto in solicitud.productos:
         producto_id = str(producto["id"])
         cantidad = producto["cantidad"]
-        
-        if producto_id in inventario[almacen_seleccionado]:
-            if inventario[almacen_seleccionado][producto_id] >= cantidad:
-                inventario[almacen_seleccionado][producto_id] -= cantidad
-            else:
-                raise HTTPException(status_code=400, detail=f"Stock insuficiente para producto {producto_id}")
+        stock = await get_inventario_mongo(almacen_seleccionado)
+        if stock.get(producto_id, 0) >= cantidad:
+            await set_inventario_mongo(almacen_seleccionado, producto_id, stock[producto_id] - cantidad)
+        else:
+            raise HTTPException(status_code=400, detail=f"Stock insuficiente para producto {producto_id}")
     
     # Calcular fecha de entrega
     dias_entrega = 1 if solicitud.tipo_envio == "express" else 3

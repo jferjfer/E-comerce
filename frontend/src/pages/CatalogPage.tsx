@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import ProductCard from '@/components/ProductCard'
-import ARModal from '@/components/ARModal'
+import { SkeletonProductGrid } from '@/components/Skeleton'
 import Footer from '@/components/Footer'
 import { Producto } from '@/types'
 import { formatPrice } from '@/utils/sanitize'
@@ -23,6 +23,8 @@ export default function CatalogPage() {
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<string[]>([])
   const [cargando, setCargando] = useState(true)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const PRODUCTOS_POR_PAGINA = 24
 
   // Cargar productos del backend
   useEffect(() => {
@@ -65,23 +67,23 @@ export default function CatalogPage() {
 
   const productosFiltrados = useMemo(() => {
     let filtrados = [...productos]
-
-    if (filters.category) {
-      filtrados = filtrados.filter(p => p.categoria === filters.category)
-    }
-
-    if (filters.sortBy === 'price-low') {
-      filtrados.sort((a, b) => a.precio - b.precio)
-    } else if (filters.sortBy === 'price-high') {
-      filtrados.sort((a, b) => b.precio - a.precio)
-    }
-
+    if (filters.category) filtrados = filtrados.filter(p => p.categoria === filters.category)
+    if (filters.sortBy === 'price-low') filtrados.sort((a, b) => a.precio - b.precio)
+    else if (filters.sortBy === 'price-high') filtrados.sort((a, b) => b.precio - a.precio)
+    setPaginaActual(1)
     return filtrados
   }, [productos, filters])
 
   const clearFilters = () => {
     setFilters({ category: '', size: '', color: '', sortBy: 'relevance' })
+    setPaginaActual(1)
   }
+
+  const totalPaginas = Math.ceil(productosFiltrados.length / PRODUCTOS_POR_PAGINA)
+  const productosPagina = useMemo(
+    () => productosFiltrados.slice((paginaActual - 1) * PRODUCTOS_POR_PAGINA, paginaActual * PRODUCTOS_POR_PAGINA),
+    [productosFiltrados, paginaActual]
+  )
 
   return (
     <div className="py-6 sm:py-8 md:py-12 bg-gray-50 min-h-screen">
@@ -134,19 +136,66 @@ export default function CatalogPage() {
         </div>
 
         {cargando ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
+          <SkeletonProductGrid cantidad={24} />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6">
-            {productosFiltrados.map((producto, index) => (
-              <ProductCard
-                key={producto.id || `catalog-producto-${index}`}
-                product={producto}
-                onViewDetails={manejarVerDetalles}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6">
+              {productosPagina.map((producto, index) => (
+                <ProductCard
+                  key={producto.id || `catalog-producto-${index}`}
+                  product={producto}
+                  onViewDetails={manejarVerDetalles}
+                />
+              ))}
+            </div>
+
+            {/* Paginación */}
+            {totalPaginas > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8 flex-wrap">
+                <button
+                  onClick={() => { setPaginaActual(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-40 hover:border-primary hover:text-primary transition-colors"
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+
+                {Array.from({ length: totalPaginas }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPaginas || Math.abs(p - paginaActual) <= 1)
+                  .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                    if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push('...')
+                    acc.push(p)
+                    return acc
+                  }, [])
+                  .map((p, i) =>
+                    p === '...' ? (
+                      <span key={`dots-${i}`} className="px-2 text-gray-400">...</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => { setPaginaActual(p as number); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                          paginaActual === p
+                            ? 'bg-primary text-white'
+                            : 'border border-gray-300 hover:border-primary hover:text-primary'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )
+                }
+
+                <button
+                  onClick={() => { setPaginaActual(p => Math.min(totalPaginas, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-40 hover:border-primary hover:text-primary transition-colors"
+                >
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -47,6 +47,7 @@ import RRHHDashboard from './pages/dashboards/RRHHDashboard'
 // ── Único dashboard de productos con fórmula PVP ──
 import ProductManagerDashboard from './pages/dashboards/ProductManagerDashboard'
 import CrearProductoPage from './pages/admin/CrearProductoPage'
+import ProductoDetallePage from './pages/ProductoDetallePage'
 
 function App() {
   const [showCart, setShowCart] = useState(false)
@@ -69,6 +70,7 @@ function App() {
         <Routes>
           <Route path="/" element={<RoleBasedHome />} />
           <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/producto/:id" element={<ProductoDetallePage />} />
 
           {/* AUTH */}
           <Route path="/login" element={estaAutenticado ? <Navigate to="/" /> : <LoginPage />} />

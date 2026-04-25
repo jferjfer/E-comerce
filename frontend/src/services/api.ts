@@ -1,6 +1,62 @@
 import { API_URL as API_BASE_URL } from '../config/api';
 import type { Producto, Usuario, ItemCarrito } from '../types';
 
+// ============================================
+// FETCH CON AUTO-REFRESH DE TOKEN
+// ============================================
+let _refreshPromise: Promise<string | null> | null = null;
+
+async function refreshToken(): Promise<string | null> {
+  // Evitar múltiples refreshes simultáneos
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    try {
+      const { useAuthStore } = await import('../store/useAuthStore');
+      const token = useAuthStore.getState().token;
+      if (!token) return null;
+
+      const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        useAuthStore.getState().cerrarSesion();
+        return null;
+      }
+
+      const data = await res.json();
+      useAuthStore.setState({ token: data.token });
+      return data.token as string;
+    } catch {
+      return null;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+}
+
+export async function fetchConAuth(url: string, opciones: RequestInit = {}): Promise<Response> {
+  const { useAuthStore } = await import('../store/useAuthStore');
+  const token = useAuthStore.getState().token;
+
+  const headers = { ...opciones.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  let res = await fetch(url, { ...opciones, headers });
+
+  if (res.status === 401 && token) {
+    const nuevoToken = await refreshToken();
+    if (nuevoToken) {
+      const headersNuevos = { ...opciones.headers, Authorization: `Bearer ${nuevoToken}` };
+      res = await fetch(url, { ...opciones, headers: headersNuevos });
+    }
+  }
+
+  return res;
+}
+
 const MICROSERVICES = {
   TRANSACTION: API_BASE_URL,
   SOCIAL: API_BASE_URL,
@@ -179,25 +235,15 @@ export const api = {
 
   async obtenerCarrito(token: string): Promise<{ items: ItemCarrito[] }> {
     try {
-      console.log('🛒 Sincronizando carrito con backend...');
-      const response = await fetch(`${API_BASE_URL}/api/carrito`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
+      const response = await fetchConAuth(`${API_BASE_URL}/api/carrito`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const items = (data.datos?.productos || []).map((item: any) => ({
         ...transformarProducto(item),
         cantidad: item.cantidad || 1
       }));
-
-      console.log(`✅ Carrito sincronizado: ${items.length} items`);
       return { items };
-    } catch (error) {
-      console.error('❌ Error al obtener carrito:', error);
+    } catch {
       return { items: [] };
     }
   },
@@ -264,32 +310,12 @@ export const api = {
 
   async obtenerPedidos(token: string) {
     try {
-      console.log('📦 Obteniendo pedidos del usuario...');
-      const response = await fetch(`${API_BASE_URL}/api/pedidos`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
+      const response = await fetchConAuth(`${API_BASE_URL}/api/pedidos`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      console.log(`✅ ${data.pedidos?.length || 0} pedidos obtenidos`);
-
-      return {
-        exito: true,
-        pedidos: data.pedidos || [],
-        total: data.total || 0
-      };
-    } catch (error) {
-      console.error('❌ Error al obtener pedidos:', error);
-      return {
-        exito: false,
-        pedidos: [],
-        total: 0
-      };
+      return { exito: true, pedidos: data.pedidos || [], total: data.total || 0 };
+    } catch {
+      return { exito: false, pedidos: [], total: 0 };
     }
   },
 

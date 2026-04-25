@@ -28,6 +28,46 @@ router.post('/login-simple', async (req, res) => {
 router.post('/solicitar-recuperacion', ControladorAuth.solicitarRecuperacion);
 router.post('/restablecer-contrasena', ControladorAuth.restablecerContrasena);
 
+// Refresh token — renueva el JWT si aún es válido
+router.post('/refresh', async (req, res) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+  try {
+    const jwt = require('jsonwebtoken');
+    const secret = process.env.JWT_SECRETO;
+    // Verificar sin importar si está expirado (para dar margen de 1h)
+    const decoded = jwt.verify(token, secret, { ignoreExpiration: true });
+
+    // Solo renovar si expiró hace menos de 1 hora
+    const ahora = Math.floor(Date.now() / 1000);
+    if (decoded.exp && ahora - decoded.exp > 3600) {
+      return res.status(401).json({ error: 'Sesión expirada. Inicia sesión nuevamente.' });
+    }
+
+    // Verificar que el usuario sigue activo en BD
+    const pool = require('../config/baseDatos');
+    const resultado = await pool.query(
+      'SELECT id, nombre, email, rol, activo FROM usuarios WHERE id = $1',
+      [decoded.id]
+    );
+    if (!resultado.rows.length || resultado.rows[0].activo === false) {
+      return res.status(401).json({ error: 'Usuario no encontrado o desactivado.' });
+    }
+
+    const usuario = resultado.rows[0];
+    const nuevoToken = jwt.sign(
+      { id: usuario.id, email: usuario.email, rol: usuario.rol, activo: true },
+      secret,
+      { expiresIn: '24h' }
+    );
+
+    res.json({ token: nuevoToken, usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email, rol: usuario.rol } });
+  } catch (e) {
+    res.status(401).json({ error: 'Token inválido.' });
+  }
+});
+
 // Derecho al olvido (Ley 1581)
 router.post('/solicitar-eliminacion', autenticar, async (req, res) => {
   try {

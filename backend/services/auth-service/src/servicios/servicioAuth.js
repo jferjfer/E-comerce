@@ -157,8 +157,6 @@ class ServicioAuth {
 
   generarToken(usuario) {
     const secret = process.env.JWT_SECRETO;
-    console.log('🔑 GENERANDO TOKEN CON SECRETO:', secret.substring(0, 20) + '...');
-
     return jwt.sign(
       {
         id: usuario.id,
