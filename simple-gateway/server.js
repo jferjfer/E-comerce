@@ -1007,7 +1007,7 @@ app.get('/sitemap.xml', async (req, res) => {
   try {
     const respuesta = await axios.get(`${CATALOG_URL}/api/productos?limite=500`, { timeout: 8000 });
     const productos = respuesta.data?.productos || [];
-    const base = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
+    const base = 'https://egoscolombia.com.co';
     const hoy = new Date().toISOString().split('T')[0];
 
     const urls = [
