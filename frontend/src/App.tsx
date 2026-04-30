@@ -8,6 +8,7 @@ import CartModal from './components/CartModal'
 import CheckoutModal from './components/CheckoutModal'
 import NotificationContainer from './components/Notification'
 import AIAssistant from './components/AIAssistant'
+import CookieBanner from './components/CookieBanner'
 import RoleGuard from './components/auth/RoleGuard'
 import RoleBasedHome from './components/routing/RoleBasedHome'
 
@@ -135,6 +136,7 @@ function App() {
         <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} />
         <NotificationContainer />
         <AIAssistant />
+        <CookieBanner />
       </div>
     </Router>
   )
