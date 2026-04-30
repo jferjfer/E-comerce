@@ -46,6 +46,8 @@ export default function AIAssistant() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { usuario, token } = useAuthStore()
+  const cookiePrefs = JSON.parse(localStorage.getItem('egos_cookie_consent') || '{}')
+  const permiteFuncionalidad = cookiePrefs.funcionalidad !== false
 
   const esCliente = usuario?.rol === 'cliente'
 
@@ -88,7 +90,12 @@ export default function AIAssistant() {
       }))
 
       // Llamar al backend AI Service
-      const resultado = await api.chatIA(text.trim(), historial, usuario?.id, token || undefined)
+      const resultado = await api.chatIA(
+        text.trim(),
+        historial,
+        permiteFuncionalidad ? usuario?.id : undefined,
+        permiteFuncionalidad ? token || undefined : undefined
+      )
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),

@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
 import EgosLogo from './EgosLogo'
+import { useCookieConsent } from './CookieBanner'
 
 export default function Footer() {
+  const { guardar } = useCookieConsent()
+
+  const reabrirBanner = () => {
+    localStorage.removeItem('egos_cookie_consent')
+    window.location.reload()
+  }
   return (
     <footer className="bg-black text-white py-10 border-t border-gold/20">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16">
@@ -47,6 +54,11 @@ export default function Footer() {
               <li><Link to="/terminos" className="hover:text-gold transition-colors">Términos y Condiciones</Link></li>
               <li><Link to="/privacidad" className="hover:text-gold transition-colors">Privacidad</Link></li>
               <li><Link to="/cookies" className="hover:text-gold transition-colors">Cookies</Link></li>
+              <li>
+                <button onClick={reabrirBanner} className="hover:text-gold transition-colors text-left">
+                  Gestionar cookies
+                </button>
+              </li>
               <li><Link to="/devoluciones" className="hover:text-gold transition-colors">Devoluciones</Link></li>
             </ul>
           </div>
