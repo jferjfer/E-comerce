@@ -22,10 +22,10 @@ PAQUETE_ALTO   = int(os.getenv("SKYDROPX_ALTO_CM", "5"))
 BODEGA = {
     "name":        os.getenv("SKYDROPX_BODEGA_NOMBRE",    "EGOS Colombia"),
     "company":     os.getenv("SKYDROPX_BODEGA_EMPRESA",   "VERTEL & CATILLO S.A.S"),
-    "street1":     os.getenv("SKYDROPX_BODEGA_DIRECCION", ""),
+    "street1":     os.getenv("SKYDROPX_BODEGA_DIRECCION", "Carrera 107 A Bis 69 B 58"),
     "area_level1": os.getenv("SKYDROPX_BODEGA_DEPTO",     "Cundinamarca"),
-    "area_level2": os.getenv("SKYDROPX_BODEGA_CIUDAD",    "Bogotá"),
-    "postal_code": os.getenv("SKYDROPX_BODEGA_CP",        "110111"),
+    "area_level2": os.getenv("SKYDROPX_BODEGA_CIUDAD",    "Bogota D.C."),
+    "postal_code": os.getenv("SKYDROPX_BODEGA_CP",        "111611"),
     "country_code":"CO",
     "phone":       os.getenv("SKYDROPX_BODEGA_TELEFONO",  "3017879852"),
     "email":       os.getenv("SKYDROPX_BODEGA_EMAIL",     "servicioalcliente@egoscolombia.com"),
@@ -203,13 +203,15 @@ def interpretar_estado_webhook(status: str) -> Optional[str]:
     Retorna None si no hay cambio de estado.
     """
     mapa = {
-        "delivered":          "Entregado",
+        "created":            None,       # guía creada, aún no recogida
+        "picked_up":          "En Camino",
         "in_transit":         "En Camino",
         "out_for_delivery":   "En Camino",
-        "picked_up":          "En Camino",
-        "exception":          None,   # novedad — no cambia estado
+        "delivered":          "Entregado",
+        "exception":          None,
         "failed_attempt":     None,
         "returned":           "Devuelto",
+        "cancelled":          None,
     }
     return mapa.get(status.lower())
 
