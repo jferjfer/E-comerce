@@ -8,7 +8,7 @@ import time
 import asyncio
 from typing import Optional
 
-SKYDROPX_BASE = "https://pro.skydropx.com.co"
+SKYDROPX_BASE = os.getenv("SKYDROPX_BASE_URL", "https://sb-pro.skydropx.com.co")
 CLIENT_ID     = os.getenv("SKYDROPX_CLIENT_ID", "")
 CLIENT_SECRET = os.getenv("SKYDROPX_CLIENT_SECRET", "")
 
