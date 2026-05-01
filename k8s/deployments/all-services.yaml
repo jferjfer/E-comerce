@@ -514,7 +514,7 @@ spec:
         - name: SKYDROPX_BODEGA_DEPTO
           value: "Cundinamarca"
         - name: SKYDROPX_BODEGA_CP
-          value: "110111"
+          value: "11001"
         - name: TRANSACTION_SERVICE_URL
           value: "http://transaction-service:3003"
         resources:

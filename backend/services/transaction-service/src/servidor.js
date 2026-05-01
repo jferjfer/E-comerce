@@ -1124,6 +1124,7 @@ aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
       SELECT
         p.id, p.usuario_id, p.estado, p.total,
         p.fecha_creacion, p.fecha_actualizacion,
+        p.tracking_number, p.carrier,
         json_agg(
           json_build_object(
             'id', pp.id_producto,
@@ -1140,7 +1141,7 @@ aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
       consulta += ' WHERE p.estado = $1';
       params.push(estado);
     }
-    consulta += ' GROUP BY p.id, p.usuario_id, p.estado, p.total, p.fecha_creacion, p.fecha_actualizacion ORDER BY p.fecha_creacion DESC';
+    consulta += ' GROUP BY p.id, p.usuario_id, p.estado, p.total, p.fecha_creacion, p.fecha_actualizacion, p.tracking_number, p.carrier ORDER BY p.fecha_creacion DESC';
 
     const resultado = await pool.query(consulta, params);
 

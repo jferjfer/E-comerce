@@ -303,15 +303,15 @@ async def crear_guia_skydropx(solicitud: SolicitudGuia):
         raise HTTPException(status_code=503, detail="Skydropx no configurado. Agrega SKYDROPX_CLIENT_ID y SKYDROPX_CLIENT_SECRET.")
 
     destinatario = {
-        "name":        solicitud.destinatario_nombre,
-        "street1":     solicitud.destinatario_direccion,
-        "area_level1": solicitud.destinatario_departamento,
-        "area_level2": solicitud.destinatario_ciudad,
-        "postal_code": solicitud.destinatario_codigo_postal or "111611",
-        "country_code":"CO",
-        "phone":       solicitud.destinatario_telefono,
-        "email":       solicitud.destinatario_email,
-        "reference":   solicitud.destinatario_referencia or "",
+        "name":         solicitud.destinatario_nombre,
+        "street1":      solicitud.destinatario_direccion,
+        "area_level1":  solicitud.destinatario_departamento,
+        "area_level2":  solicitud.destinatario_ciudad,
+        "postal_code":  solicitud.destinatario_codigo_postal or "110111",
+        "country_code": "CO",
+        "phone":        solicitud.destinatario_telefono,
+        "email":        solicitud.destinatario_email,
+        "reference":    solicitud.destinatario_referencia or "",
     }
 
     resultado = await crear_guia(solicitud.pedido_id, destinatario, solicitud.valor_declarado)

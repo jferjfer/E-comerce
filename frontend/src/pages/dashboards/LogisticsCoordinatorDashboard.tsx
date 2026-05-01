@@ -15,6 +15,8 @@ interface Pedido {
   productos: any[]
   nombre_cliente: string
   email_cliente: string
+  tracking_number?: string
+  carrier?: string
 }
 
 interface Devolucion {
@@ -232,6 +234,7 @@ export default function LogisticsCoordinatorDashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Productos</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Guía</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
                     </tr>
@@ -249,22 +252,45 @@ export default function LogisticsCoordinatorDashboard() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">{(pedido.productos || []).length} producto(s)</td>
                         <td className="px-6 py-4 text-sm font-bold text-emerald-700">{formatPrice(pedido.total)}</td>
+                        <td className="px-6 py-4 text-sm">
+                          {pedido.tracking_number ? (
+                            <div className="space-y-1">
+                              <p className="font-mono text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded">
+                                {pedido.tracking_number}
+                              </p>
+                              {pedido.carrier && (
+                                <p className="text-xs text-gray-500 capitalize">{pedido.carrier}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Sin guía</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
                         <td className="px-6 py-4">
                           {pedido.estado === 'Confirmado' && (
                             <button onClick={() => cambiarEstado(pedido.id, 'Alistado', 'Pedido alistado por Logística')} disabled={procesando === pedido.id} className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-amber-600 disabled:opacity-50 flex items-center gap-2">
-                              <i className="fas fa-box"></i> Alistar
+                              {procesando === pedido.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-box"></i>} Alistar
                             </button>
                           )}
                           {pedido.estado === 'Alistado' && (
-                            <button onClick={() => cambiarEstado(pedido.id, 'En Camino', 'Pedido despachado por Logística')} disabled={procesando === pedido.id} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2">
-                              <i className="fas fa-truck"></i> Despachar
-                            </button>
+                            <div className="flex flex-col gap-2">
+                              <button onClick={() => cambiarEstado(pedido.id, 'En Camino', 'Pedido despachado por Logística')} disabled={procesando === pedido.id} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2">
+                                {procesando === pedido.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-truck"></i>} Despachar
+                              </button>
+                              {pedido.tracking_number && (
+                                <span className="text-xs text-purple-600 font-mono text-center">
+                                  <i className="fas fa-tag mr-1"></i>{pedido.tracking_number}
+                                </span>
+                              )}
+                            </div>
                           )}
                           {pedido.estado === 'En Camino' && (
-                            <button onClick={() => cambiarEstado(pedido.id, 'Entregado', 'Entregado al cliente')} disabled={procesando === pedido.id} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2">
-                              <i className="fas fa-check-circle"></i> Entregado
-                            </button>
+                            <div className="flex flex-col gap-2">
+                              <button onClick={() => cambiarEstado(pedido.id, 'Entregado', 'Entregado al cliente')} disabled={procesando === pedido.id} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2">
+                                {procesando === pedido.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-check-circle"></i>} Entregado
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
