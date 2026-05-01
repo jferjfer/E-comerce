@@ -95,7 +95,13 @@ export default function LogisticsCoordinatorDashboard() {
       })
       if (response.ok) {
         addNotification(`Pedido ${pedidoId} → ${nuevoEstado}`, 'success')
-        cargarDatos()
+        // Si pasó a Alistado, esperar que Skydropx genere la guía antes de recargar
+        if (nuevoEstado === 'Alistado') {
+          addNotification('Generando guía Skydropx...', 'success')
+          setTimeout(() => cargarDatos(), 8000)
+        } else {
+          cargarDatos()
+        }
       } else {
         const data = await response.json()
         addNotification(data.error || 'Error al actualizar', 'error')
