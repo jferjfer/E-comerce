@@ -229,6 +229,16 @@ export default function ProductoDetallePage() {
             {/* Precio */}
             <p className="text-3xl font-bold text-primary">{formatPrice(producto.precio)}</p>
 
+            {/* Stock badge */}
+            <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full w-fit ${
+              producto.en_stock
+                ? 'text-emerald-600 bg-emerald-50'
+                : 'text-red-600 bg-red-50'
+            }`}>
+              <i className={`fas ${producto.en_stock ? 'fa-check-circle' : 'fa-times-circle'} text-xs`}></i>
+              {producto.en_stock ? 'Disponible' : 'Agotado'}
+            </span>
+
             {/* Descripción */}
             <p className="text-gray-600 text-sm leading-relaxed">{producto.descripcion}</p>
 

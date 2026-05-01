@@ -485,6 +485,38 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: MONGODB_CATALOG_URI
+        - name: SKYDROPX_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SKYDROPX_CLIENT_ID
+              optional: true
+        - name: SKYDROPX_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SKYDROPX_CLIENT_SECRET
+              optional: true
+        - name: SKYDROPX_WEBHOOK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SKYDROPX_WEBHOOK_TOKEN
+              optional: true
+        - name: SKYDROPX_BODEGA_DIRECCION
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SKYDROPX_BODEGA_DIRECCION
+              optional: true
+        - name: SKYDROPX_BODEGA_CIUDAD
+          value: "Bogot\u00e1"
+        - name: SKYDROPX_BODEGA_DEPTO
+          value: "Cundinamarca"
+        - name: SKYDROPX_BODEGA_CP
+          value: "110111"
+        - name: TRANSACTION_SERVICE_URL
+          value: "http://transaction-service:3003"
         resources:
           requests:
             cpu: "100m"

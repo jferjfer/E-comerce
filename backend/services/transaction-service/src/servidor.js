@@ -780,6 +780,35 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       pedidoId, estadoAnterior, estado_nuevo: estado, total: totalPedido
     });
 
+    // Si pasa a Alistado — crear guía en Skydropx automáticamente
+    if (estado === 'Alistado') {
+      const pedidoData = await pool.query(
+        `SELECT cliente_nombre, cliente_email, cliente_telefono, cliente_direccion, cliente_ciudad, total
+         FROM pedido WHERE id = $1`, [pedidoId]
+      );
+      if (pedidoData.rows.length > 0) {
+        const pd = pedidoData.rows[0];
+        axios.post('http://logistics-service:3009/api/envios/guia', {
+          pedido_id: pedidoId,
+          destinatario_nombre:    pd.cliente_nombre || 'Cliente',
+          destinatario_direccion: pd.cliente_direccion || 'Bogotá',
+          destinatario_ciudad:    pd.cliente_ciudad || 'Bogotá',
+          destinatario_departamento: 'Cundinamarca',
+          destinatario_telefono:  pd.cliente_telefono || '3000000000',
+          destinatario_email:     pd.cliente_email || '',
+          valor_declarado:        parseFloat(pd.total) || 50000
+        }, { timeout: 35000 }).then(resGuia => {
+          const guia = resGuia.data;
+          console.log(`🚚 Guía Skydropx creada para pedido ${pedidoId}: ${guia.tracking}`);
+          // Guardar tracking en el pedido
+          pool.query(
+            'UPDATE pedido SET tracking_number = $1, carrier = $2 WHERE id = $3',
+            [guia.tracking, guia.carrier, pedidoId]
+          ).catch(() => {});
+        }).catch(e => console.log(`⚠️ No se pudo crear guía Skydropx: ${e.message}`));
+      }
+    }
+
     // Emitir WebSocket via gateway como respaldo
     axios.post('http://gateway:3000/interno/emitir', {
       evento: 'pedido_actualizado',

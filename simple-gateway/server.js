@@ -893,7 +893,7 @@ app.all('/api/envios*', async (req, res) => {
       url: `${LOGISTICS_URL}${req.url}`,
       data: req.body,
       headers: { Authorization: req.headers.authorization },
-      timeout: 10000
+      timeout: 30000
     });
     res.status(response.status).json(response.data);
   } catch (error) {

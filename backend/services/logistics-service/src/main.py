@@ -1,5 +1,5 @@
-# v2.1.0 — inventario MongoDB + motor async
-from fastapi import FastAPI, HTTPException
+# v2.2.0 — inventario MongoDB + motor async + Skydropx
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -8,7 +8,9 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 import random
+import httpx
 from motor.motor_asyncio import AsyncIOMotorClient
+from skydropx import crear_guia, interpretar_estado_webhook, esta_configurado
 
 # ============================================
 # MONGODB
@@ -275,6 +277,115 @@ async def registrar_domicilio(domicilio: RegistrarDomicilio):
 async def obtener_domicilios(usuario_id: int):
     domicilios_usuario = [d for d in domicilios.values() if d["usuario_id"] == usuario_id]
     return {"domicilios": domicilios_usuario, "total": len(domicilios_usuario)}
+
+
+# ============================================
+# SKYDROPX — Crear guía y webhook
+# ============================================
+
+class SolicitudGuia(BaseModel):
+    pedido_id: str
+    destinatario_nombre: str
+    destinatario_direccion: str
+    destinatario_ciudad: str
+    destinatario_departamento: str
+    destinatario_codigo_postal: Optional[str] = ""
+    destinatario_telefono: str
+    destinatario_email: str
+    destinatario_referencia: Optional[str] = ""
+    valor_declarado: Optional[float] = 50000
+
+
+@app.post("/api/envios/guia")
+async def crear_guia_skydropx(solicitud: SolicitudGuia):
+    """Crea una guía de envío en Skydropx para un pedido confirmado."""
+    if not esta_configurado():
+        raise HTTPException(status_code=503, detail="Skydropx no configurado. Agrega SKYDROPX_CLIENT_ID y SKYDROPX_CLIENT_SECRET.")
+
+    destinatario = {
+        "name":        solicitud.destinatario_nombre,
+        "street1":     solicitud.destinatario_direccion,
+        "area_level1": solicitud.destinatario_departamento,
+        "area_level2": solicitud.destinatario_ciudad,
+        "postal_code": solicitud.destinatario_codigo_postal or "",
+        "country_code":"CO",
+        "phone":       solicitud.destinatario_telefono,
+        "email":       solicitud.destinatario_email,
+        "reference":   solicitud.destinatario_referencia or "",
+    }
+
+    resultado = await crear_guia(solicitud.pedido_id, destinatario, solicitud.valor_declarado)
+
+    if not resultado:
+        raise HTTPException(status_code=500, detail="No se pudo crear la guía en Skydropx")
+
+    return {
+        "mensaje": "Guía creada exitosamente",
+        "pedido_id":     solicitud.pedido_id,
+        "shipment_id":   resultado["shipment_id"],
+        "tracking":      resultado["tracking_number"],
+        "carrier":       resultado["carrier"],
+        "dias_entrega":  resultado["dias_entrega"],
+    }
+
+
+@app.post("/api/envios/skydropx/webhook")
+async def webhook_skydropx(request: Request):
+    """Recibe notificaciones de Skydropx y actualiza el estado del pedido en EGOS."""
+    try:
+        # Verificar token del webhook
+        auth = request.headers.get("Authorization", "")
+        webhook_token = os.getenv("SKYDROPX_WEBHOOK_TOKEN", "")
+        if webhook_token and auth != f"Bearer {webhook_token}":
+            print(f"❌ Webhook Skydropx: token inválido")
+            return {"ok": False}
+        body = await request.json()
+        print(f"📥 Webhook Skydropx recibido: {body}")
+
+        data = body.get("data", {})
+        attrs = data.get("attributes", {})
+        status = attrs.get("status", "")
+        tracking_number = attrs.get("tracking_number", "")
+
+        nuevo_estado = interpretar_estado_webhook(status)
+
+        if not nuevo_estado:
+            print(f"⚠️ Skydropx status '{status}' no mapea a estado EGOS — ignorando")
+            return {"ok": True}
+
+        # Buscar el pedido por tracking_number en transaction-service
+        TRANSACTION_URL = os.getenv("TRANSACTION_SERVICE_URL", "http://transaction-service:3003")
+        async with httpx.AsyncClient(timeout=5) as client:
+            # Buscar pedido por tracking
+            res = await client.get(
+                f"{TRANSACTION_URL}/api/admin/pedidos",
+                params={"tracking": tracking_number}
+            )
+            if res.status_code == 200:
+                pedidos = res.json().get("pedidos", [])
+                for pedido in pedidos:
+                    pedido_id = pedido.get("id")
+                    if pedido_id:
+                        await client.put(
+                            f"{TRANSACTION_URL}/api/pedidos/{pedido_id}/estado",
+                            json={"estado": nuevo_estado, "comentario": f"Skydropx: {status} | Tracking: {tracking_number}"},
+                            headers={"Authorization": f"Bearer {os.getenv('INTERNAL_TOKEN', '')}"}
+                        )
+                        print(f"✅ Pedido {pedido_id} actualizado a '{nuevo_estado}' por Skydropx webhook")
+
+        return {"ok": True}
+    except Exception as e:
+        print(f"❌ Error procesando webhook Skydropx: {e}")
+        return {"ok": True}  # Siempre 200 para que Skydropx no reintente
+
+
+@app.get("/api/envios/skydropx/estado")
+async def estado_skydropx():
+    return {
+        "configurado": esta_configurado(),
+        "sandbox": "pro.skydropx.com.co",
+        "mensaje": "Skydropx listo" if esta_configurado() else "Agrega SKYDROPX_CLIENT_ID y SKYDROPX_CLIENT_SECRET"
+    }
 
 if __name__ == "__main__":
     puerto = int(os.getenv("PUERTO", 3009))
