@@ -1,14 +1,40 @@
-from fastapi import FastAPI, HTTPException, Query, Depends, File, UploadFile
+from fastapi import FastAPI, HTTPException, Query, Depends, File, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import Optional, List
 import uvicorn
 import os
 import time
+import jwt as pyjwt
 from datetime import datetime
 from config.base_datos import conectar_bd, cerrar_bd, obtener_bd
 from config.cloudinary_config import cloudinary
 from servicios.servicio_imagenes import subir_imagen_producto, subir_multiples_imagenes
+
+# Campos sensibles que solo ven roles internos
+CAMPOS_SENSIBLES = {'costo_adquisicion', 'proveedor_id', 'referencia_proveedor', 'precio_manual'}
+ROLES_INTERNOS = {'product_manager', 'category_manager', 'seller_premium', 'ceo', 'contador', 'cfo', 'operations_director'}
+
+def obtener_rol_request(request: Request) -> Optional[str]:
+    """Extrae el rol del JWT sin bloquear si no hay token"""
+    try:
+        auth = request.headers.get('authorization', '')
+        if not auth.startswith('Bearer '):
+            return None
+        token = auth.replace('Bearer ', '')
+        secret = os.getenv('JWT_SECRETO', '')
+        if not secret:
+            return None
+        decoded = pyjwt.decode(token, secret, algorithms=['HS256'])
+        return decoded.get('rol')
+    except Exception:
+        return None
+
+def filtrar_campos_sensibles(producto: dict, rol: Optional[str]) -> dict:
+    """Elimina campos sensibles si el rol no es interno"""
+    if rol in ROLES_INTERNOS:
+        return producto
+    return {k: v for k, v in producto.items() if k not in CAMPOS_SENSIBLES}
 
 # Productos hardcodeados como fallback
 PRODUCTOS_FALLBACK = [
@@ -55,6 +81,7 @@ app.add_middleware(
 # Endpoints de productos
 @app.get("/api/productos")
 async def listar_productos(
+    request: Request,
     categoria: Optional[str] = Query(None, description="Filtrar por categoría"),
     precio_min: Optional[float] = Query(None, description="Precio mínimo"),
     precio_max: Optional[float] = Query(None, description="Precio máximo"),
@@ -64,7 +91,8 @@ async def listar_productos(
     pagina: int = Query(1, description="Página"),
     todos: bool = Query(False, description="Incluir productos inactivos (solo admin)")
 ):
-    print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar}")
+    rol = obtener_rol_request(request)
+    print(f"📦 Obteniendo productos - Categoría: {categoria}, Búsqueda: {buscar} | Rol: {rol}")
     
     db = obtener_bd()
     
@@ -100,13 +128,13 @@ async def listar_productos(
         print(f"✅ Productos hardcodeados: {total}")
         
         return {
-            "productos": productos,
+            "productos": [filtrar_campos_sensibles(p, rol) for p in productos],
             "total": total,
             "pagina": 1,
             "limite": limite,
             "total_paginas": 1
         }
-    
+
     # Si hay BD, usar MongoDB
     try:
         filtro = {}
@@ -162,7 +190,7 @@ async def listar_productos(
                 producto["id"] = f"prod_{i+1}_{int(time.time())}"
         
         return {
-            "productos": productos,
+            "productos": [filtrar_campos_sensibles(p, rol) for p in productos],
             "total": total,
             "pagina": pagina,
             "limite": limite,
@@ -170,10 +198,8 @@ async def listar_productos(
         }
     except Exception as e:
         print(f"❌ Error consultando MongoDB: {e}")
-        # Fallback a productos hardcodeados
-        print("⚠️ Usando productos hardcodeados como fallback")
         return {
-            "productos": PRODUCTOS_FALLBACK,
+            "productos": [filtrar_campos_sensibles(p, rol) for p in PRODUCTOS_FALLBACK],
             "total": len(PRODUCTOS_FALLBACK),
             "pagina": 1,
             "limite": limite,
@@ -227,7 +253,8 @@ async def crear_producto(producto: dict):
         raise HTTPException(status_code=500, detail=f"Error creando producto: {str(e)}")
 
 @app.get("/api/productos/destacados")
-async def productos_destacados():
+async def productos_destacados(request: Request):
+    rol = obtener_rol_request(request)
     print("⭐ Obteniendo productos destacados")
     
     db = obtener_bd()
@@ -238,16 +265,14 @@ async def productos_destacados():
         productos_cursor = db.productos.find({"calificacion": {"$gte": 4}}).limit(6)
         productos = await productos_cursor.to_list(length=6)
         
-        # Limpiar _id de MongoDB y asegurar ID único
         for i, producto in enumerate(productos):
             if "_id" in producto:
                 del producto["_id"]
-            # Asegurar que cada producto tenga un ID único
             if not producto.get("id"):
                 producto["id"] = f"prod_{i+1}_{int(time.time())}"
                 
         print(f"✅ Productos destacados encontrados: {len(productos)}")
-        return {"productos": productos, "total": len(productos)}
+        return {"productos": [filtrar_campos_sensibles(p, rol) for p in productos], "total": len(productos)}
     except Exception as e:
         print(f"❌ Error MongoDB: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo destacados: {str(e)}")
@@ -303,14 +328,14 @@ async def eliminar_producto(producto_id: str):
 
 
 @app.get("/api/productos/{producto_id}")
-async def obtener_producto(producto_id: str):
+async def obtener_producto(producto_id: str, request: Request):
+    rol = obtener_rol_request(request)
     db = obtener_bd()
     if db is None:
-        # Buscar en fallback
         prod = next((p for p in PRODUCTOS_FALLBACK if p["id"] == producto_id), None)
         if not prod:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
-        return {"producto": prod}
+        return {"producto": filtrar_campos_sensibles(prod, rol)}
 
     producto = await db.productos.find_one({"id": producto_id})
     if not producto:
@@ -319,7 +344,7 @@ async def obtener_producto(producto_id: str):
     if "_id" in producto:
         del producto["_id"]
 
-    return {"producto": producto}
+    return {"producto": filtrar_campos_sensibles(producto, rol)}
 
 @app.get("/api/categorias")
 async def listar_categorias():

@@ -145,8 +145,6 @@ const CATEGORIAS = [
   'Formal','Accesorios','Bolsos','Calzado','Ropa Interior',
   'Pijamas','Maternidad','Tallas Grandes','Niños','Hombre'
 ]
-
-// TALLAS_DEFAULT no se usa directamente — las tallas se definen inline en el formulario
 const COLORES_DEFAULT = [
   'Negro','Blanco','Gris','Azul','Rojo','Verde','Beige','Rosa',
   'Amarillo','Morado','Naranja','Café','Vino','Dorado','Plateado',
@@ -212,8 +210,18 @@ export default function ProductManagerDashboard() {
   const POR_PAGINA = 12
   const barcodeCanvasRef = useRef<HTMLCanvasElement>(null)
   const [proveedores, setProveedores] = useState<{id: string, codigo: string, nombre: string}[]>([])
+  const [categorias, setCategorias] = useState<string[]>(CATEGORIAS)
 
-  useEffect(() => { cargarProductos(); cargarProveedores() }, [])
+  useEffect(() => { cargarProductos(); cargarProveedores(); cargarCategorias() }, [])
+
+  const cargarCategorias = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/categorias`)
+      const d = await r.json()
+      const cats = (d.categorias || []).map((c: any) => c.nombre).filter(Boolean)
+      if (cats.length > 0) setCategorias(cats)
+    } catch {}
+  }
 
   const cargarProveedores = async () => {
     try {
@@ -467,7 +475,7 @@ export default function ProductManagerDashboard() {
           <select value={filtroCategoria} onChange={e => { setFiltroCategoria(e.target.value); setPagina(1) }}
             className="border rounded-xl px-4 py-2 text-sm">
             <option value="">Todas las categorías</option>
-            {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+            {categorias.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <span className="text-sm text-gray-500 self-center">{productosFiltrados.length} resultados</span>
         </div>
@@ -881,7 +889,7 @@ export default function ProductManagerDashboard() {
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Categoría *</label>
                   <select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})}
                     className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-                    {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                    {categorias.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
