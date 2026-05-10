@@ -639,22 +639,23 @@ export default function ProductManagerDashboard() {
                             justify-content: center;
                           }
                           .logo-row {
-                            display: flex;
-                            align-items: baseline;
-                            gap: 0;
+                            display: none;
                           }
                           .logo-e {
                             color: #c5a47e;
-                            font-size: 28px;
+                            font-size: 32px;
                             font-weight: 900;
                             line-height: 1;
+                            text-align: center;
+                            margin-bottom: 2px;
                           }
                           .logo-gos {
                             color: #ffffff;
-                            font-size: 22px;
+                            font-size: 18px;
                             font-weight: 900;
-                            letter-spacing: 6px;
+                            letter-spacing: 8px;
                             line-height: 1;
+                            text-align: center;
                           }
                           .slogan {
                             color: rgba(197,164,126,0.7);
@@ -713,10 +714,8 @@ export default function ProductManagerDashboard() {
                       <body>
                         <div class="etiqueta">
                           <div class="header">
-                            <div class="logo-row">
-                              <span class="logo-e">E</span>
-                              <span class="logo-gos">EGOS</span>
-                            </div>
+                            <div class="logo-e">E</div>
+                            <div class="logo-gos">EGOS</div>
                             <div class="slogan">Wear Your Truth</div>
                           </div>
                           <div class="body">
