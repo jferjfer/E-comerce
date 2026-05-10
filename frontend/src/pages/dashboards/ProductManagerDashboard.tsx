@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { API_URL } from '@/config/api'
 import { useAuthStore } from '@/store/useAuthStore'
 import { formatPrice } from '@/utils/sanitize'
@@ -45,8 +45,8 @@ function codificarEAN13(codigo: string): string {
   return bits // 95 bits totales
 }
 
-function BarcodeDisplay({ codigo }: { codigo: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+// Ref único por instancia para capturar el canvas correcto
+function BarcodeDisplay({ codigo, canvasRef }: { codigo: string, canvasRef: React.RefObject<HTMLCanvasElement> }) {
 
   useEffect(() => {
     if (!canvasRef.current || !codigo || codigo.length !== 13) return
@@ -106,13 +106,20 @@ function BarcodeDisplay({ codigo }: { codigo: string }) {
     const centroDer = quietZone + (50 + 91) / 2 * modulo
     ctx.fillText(codigo.slice(7, 13), centroDer, y)
 
-  }, [codigo])
+  }, [codigo, canvasRef])
 
   return (
     <div style={{ background: '#fff', padding: '8px', borderRadius: 6, display: 'inline-block' }}>
       <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%' }} />
     </div>
   )
+}
+
+// SKUs de fallback para productos hardcodeados sin SKU
+const SKU_FALLBACK: Record<string, string> = {
+  '1': '7709051700011', '2': '7709051700029', '3': '7709051700037',
+  '4': '7709051700045', '5': '7709051700052', '6': '7709051700060',
+  '7': '7709051700078', '8': '7709051700086',
 }
 
 // ── Constantes de la fórmula PVP ──
@@ -139,7 +146,7 @@ const CATEGORIAS = [
   'Pijamas','Maternidad','Tallas Grandes','Niños','Hombre'
 ]
 
-const TALLAS_DEFAULT = ['XS','S','M','L','XL','XXL','28','30','32','34','36','38','39','40','41','42','43']
+// TALLAS_DEFAULT no se usa directamente — las tallas se definen inline en el formulario
 const COLORES_DEFAULT = [
   'Negro','Blanco','Gris','Azul','Rojo','Verde','Beige','Rosa',
   'Amarillo','Morado','Naranja','Café','Vino','Dorado','Plateado',
@@ -200,7 +207,7 @@ export default function ProductManagerDashboard() {
   const [mensaje, setMensaje] = useState<{tipo: string, texto: string} | null>(null)
   const [pagina, setPagina] = useState(1)
   const POR_PAGINA = 12
-  const [skuGenerado, setSkuGenerado] = useState('')
+  const barcodeCanvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => { cargarProductos() }, [])
 
@@ -230,12 +237,24 @@ export default function ProductManagerDashboard() {
 
   const utilidadPreview = parseFloat(form.costo_adquisicion) || 0
 
+  // Genera un secuencial único basado en los SKUs existentes para evitar duplicados
+  const generarSkuUnico = (): string => {
+    const skusExistentes = new Set(
+      productos.map(p => (p as any).sku).filter(Boolean)
+    )
+    let seq = productos.length + 1
+    let candidato = generarEAN13(seq)
+    // Si ya existe, incrementar hasta encontrar uno libre
+    while (skusExistentes.has(candidato)) {
+      seq++
+      candidato = generarEAN13(seq)
+    }
+    return candidato
+  }
+
   const abrirCrear = () => {
     setEditando(null)
-    // Generar EAN-13 basado en cantidad actual de productos + 1
-    const secuencial = productos.length + 1
-    const nuevoSku = generarEAN13(secuencial)
-    setSkuGenerado(nuevoSku)
+    const nuevoSku = generarSkuUnico()
     setForm({ ...FORM_INICIAL, sku: nuevoSku })
     setMensaje(null)
     setMostrarForm(true)
@@ -243,8 +262,8 @@ export default function ProductManagerDashboard() {
 
   const abrirEditar = (p: Producto) => {
     setEditando(p)
-    const skuExistente = (p as any).sku || generarEAN13(productos.indexOf(p) + 1)
-    setSkuGenerado(skuExistente)
+    // Si el producto no tiene SKU (ej: hardcodeado), asignar uno del fallback o generar uno
+    const skuExistente = (p as any).sku || SKU_FALLBACK[p.id] || generarSkuUnico()
     setForm({
       nombre: p.nombre,
       sku: skuExistente,
@@ -391,7 +410,10 @@ export default function ProductManagerDashboard() {
   }
 
   const productosFiltrados = productos.filter(p => {
-    const matchBuscar = p.nombre.toLowerCase().includes(buscar.toLowerCase())
+    const sku = (p as any).sku || SKU_FALLBACK[p.id] || ''
+    const matchBuscar =
+      p.nombre.toLowerCase().includes(buscar.toLowerCase()) ||
+      sku.includes(buscar)  // búsqueda por SKU con lector de barras
     const matchCat = !filtroCategoria || p.categoria === filtroCategoria
     return matchBuscar && matchCat
   })
@@ -420,7 +442,7 @@ export default function ProductManagerDashboard() {
         {/* Filtros */}
         <div className="flex gap-3 mb-6 flex-wrap">
           <input
-            type="text" placeholder="🔍 Buscar producto..."
+            type="text" placeholder="🔍 Buscar por nombre o escanear código de barras..."
             value={buscar} onChange={e => { setBuscar(e.target.value); setPagina(1) }}
             className="border rounded-xl px-4 py-2 text-sm flex-1 min-w-[200px]"
           />
@@ -454,8 +476,10 @@ export default function ProductManagerDashboard() {
                     <p className="text-xs font-semibold text-gray-800 truncate">{p.nombre}</p>
                     <p className="text-xs text-gray-400">{p.categoria}</p>
                     <p className="text-sm font-bold text-amber-700 mt-1">{formatPrice(p.precio)}</p>
-                    {(p as any).sku && (
-                      <p className="text-[10px] text-gray-400 font-mono truncate">{(p as any).sku}</p>
+                    {((p as any).sku || SKU_FALLBACK[p.id]) && (
+                      <p className="text-[10px] text-gray-400 font-mono truncate">
+                        {(p as any).sku || SKU_FALLBACK[p.id]}
+                      </p>
                     )}
                     {p.costo_adquisicion && (
                       <p className="text-xs text-gray-400">Costo: {formatPrice(p.costo_adquisicion)}</p>
@@ -571,7 +595,7 @@ export default function ProductManagerDashboard() {
                     <p className="text-xs text-gray-500 mt-1">Prefijo Colombia 770 · NIT EGOS · Secuencial · Dígito verificador</p>
                   </div>
                   <div className="bg-white rounded-lg p-2 flex-shrink-0 flex items-center justify-center" style={{minWidth: 220}}>
-                    <BarcodeDisplay codigo={form.sku} />
+                    <BarcodeDisplay codigo={form.sku} canvasRef={barcodeCanvasRef} />
                   </div>
                 </div>
                 {/* Botón imprimir etiqueta */}
@@ -580,9 +604,10 @@ export default function ProductManagerDashboard() {
                   onClick={() => {
                     const win = window.open('', '_blank', 'width=400,height=300')
                     if (!win) return
-                    // Capturar el canvas como imagen
-                    const canvas = document.querySelector('canvas') as HTMLCanvasElement
-                    const imgSrc = canvas ? canvas.toDataURL('image/png') : ''
+                    // Usar el ref específico del canvas de este formulario
+                    const imgSrc = barcodeCanvasRef.current
+                      ? barcodeCanvasRef.current.toDataURL('image/png')
+                      : ''
                     win.document.write(`
                       <!DOCTYPE html>
                       <html>
