@@ -39,6 +39,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   const total = obtenerPrecioTotal()
   const [montoBono, setMontoBono] = useState(0)
+  const [totalParaEpayco, setTotalParaEpayco] = useState(0)
   const totalConBono = Math.max(0, total - montoBono)
 
   // Al abrir, evaluar crédito y verificar si ePayco está activo
@@ -70,6 +71,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       setPedidoParaEpayco(null)
       setCodigoBonoParaEpayco(null)
       setMontoBono(0)
+      setTotalParaEpayco(0)
     }
   }, [isOpen])
 
@@ -110,8 +112,23 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setPlazoCredito(plazo)
 
     try {
-      // 1. Crear el pedido con descuento del bono si aplica
-      const montoBonoPedido = codigoBono ? (await api.validarBono(codigoBono, usuario.id))?.monto || 0 : 0
+      // 1. Obtener monto del bono PRIMERO antes de cualquier otra cosa
+      let montoBonoPedido = 0
+      if (codigoBono) {
+        const validacion = await api.validarBono(codigoBono, usuario.id)
+        if (validacion.valido) {
+          montoBonoPedido = validacion.monto
+          setMontoBono(montoBonoPedido) // actualizar estado para UI
+        } else {
+          setError(validacion.razon || 'Código de bono no válido')
+          setIsLoading(false)
+          return
+        }
+      }
+
+      const totalFinalCliente = Math.max(0, total - montoBonoPedido)
+
+      // 2. Crear el pedido con el total ya descontado
       const resultado = await api.procesarCheckout(token, {
         metodoPago: selectedMethod,
         direccion_envio: 'Dirección predeterminada',
@@ -135,10 +152,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       // Todos los métodos externos van por ePayco
       if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod)) {
         if (epaycoActivo) {
-          if (codigoBono) {
-            const validacion = await api.validarBono(codigoBono, usuario.id)
-            if (validacion.valido) setMontoBono(validacion.monto)
-          }
+          // totalFinalCliente ya calculado arriba con el descuento del bono
+          setTotalParaEpayco(totalFinalCliente)
           setPedidoParaEpayco(pedidoId)
           setCodigoBonoParaEpayco(codigoBono || null)
           setIsLoading(false)
@@ -268,7 +283,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 </div>
                 <EpaycoWidget
                   pedidoId={pedidoParaEpayco}
-                  total={totalConBono}
+                  total={totalParaEpayco || totalConBono}
                   token={token}
                   metodoPago={selectedMethod}
                   onExito={async () => {
