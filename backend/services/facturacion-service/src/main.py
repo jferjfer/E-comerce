@@ -79,6 +79,8 @@ class SolicitudFactura(BaseModel):
     usuario_id: int
     cliente: ClienteFactura
     productos: List[ProductoFactura]
+    descuento_bono: Optional[float] = 0
+    codigo_bono: Optional[str] = None
 
 class SolicitudNotaCredito(BaseModel):
     factura_numero: str
@@ -187,7 +189,9 @@ async def procesar_factura_background(
     usuario_id: int,
     cliente_data: dict,
     productos_data: list,
-    db_session
+    db_session,
+    descuento_bono: float = 0,
+    codigo_bono: str = None
 ):
     """Procesa la factura en background"""
     db = next(get_db())
@@ -284,7 +288,9 @@ async def procesar_factura_background(
             iva=iva,
             total=total,
             qr_text=qr_text,
-            fecha=fecha
+            fecha=fecha,
+            descuento_bono=descuento_bono,
+            codigo_bono=codigo_bono
         )
 
         # Enviar por email
@@ -357,7 +363,9 @@ async def generar_factura(
         solicitud.usuario_id,
         solicitud.cliente.model_dump(),
         [p.model_dump() for p in solicitud.productos],
-        db
+        db,
+        solicitud.descuento_bono or 0,
+        solicitud.codigo_bono
     )
 
     return {

@@ -750,7 +750,9 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
           nombre: p.nombre || `Producto ${p.id}`,
           precio_unitario: parseFloat(p.precio_unitario),
           cantidad: p.cantidad
-        }))
+        })),
+        descuento_bono: parseFloat(pd.descuento_bono || 0),
+        codigo_bono: pd.codigo_bono || null
       }, { timeout: 5000 }).then(() => {
         console.log(`🧾 Factura generada para pedido confirmado ${pedidoId}`);
       }).catch(e => console.log(`⚠️ Error generando factura: ${e.message}`));
@@ -960,8 +962,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     }
 
     await pool.query(
-      'INSERT INTO pedido (id, usuario_id, estado, total) VALUES ($1, $2, $3, $4)',
-      [pedidoId, parseInt(usuarioId), 'Creado', Math.max(0, carrito.total - descuento_bono)]
+      'INSERT INTO pedido (id, usuario_id, estado, total, descuento_bono, codigo_bono) VALUES ($1, $2, $3, $4, $5, $6)',
+      [pedidoId, parseInt(usuarioId), 'Creado', Math.max(0, carrito.total - descuento_bono), descuento_bono, codigo_bono]
     );
 
     // Copiar productos del carrito al pedido
@@ -1709,7 +1711,9 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
           nombre: p.nombre || `Producto ${p.id}`,
           precio_unitario: parseFloat(p.precio_unitario),
           cantidad: p.cantidad
-        }))
+        })),
+        descuento_bono: parseFloat(pedido.descuento_bono || 0),
+        codigo_bono: pedido.codigo_bono || null
       }, { timeout: 5000 }).then(() => {
         console.log(`🧾 Factura generada por ePayco para pedido ${pedidoId}`);
       }).catch(e => console.log(`⚠️ Error generando factura ePayco: ${e.message}`));

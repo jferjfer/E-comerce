@@ -62,7 +62,9 @@ def generar_pdf_factura(
     iva: float,
     total: float,
     qr_text: str,
-    fecha: datetime = None
+    fecha: datetime = None,
+    descuento_bono: float = 0,
+    codigo_bono: str = None
 ) -> bytes:
 
     if fecha is None:
@@ -258,9 +260,18 @@ def generar_pdf_factura(
          Paragraph(fmt(subtotal), estilo('tv', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT))],
         [Paragraph("IVA 19%:", estilo('tl', fontSize=8, textColor=GRIS_TEXTO, alignment=TA_RIGHT)),
          Paragraph(fmt(iva), estilo('tv', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT))],
-        [Paragraph("Descuentos:", estilo('tl', fontSize=8, textColor=GRIS_TEXTO, alignment=TA_RIGHT)),
-         Paragraph(fmt(0), estilo('tv', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT))],
     ]
+    if descuento_bono and descuento_bono > 0:
+        label_bono = f"Bono {codigo_bono}:" if codigo_bono else "Descuento bono:"
+        tot_rows.append([
+            Paragraph(label_bono, estilo('tl', fontSize=8, textColor=colors.HexColor('#c5a47e'), alignment=TA_RIGHT)),
+            Paragraph(f"-{fmt(descuento_bono)}", estilo('tv', fontSize=8, fontName='Helvetica-Bold', textColor=colors.HexColor('#c5a47e'), alignment=TA_RIGHT))
+        ])
+    else:
+        tot_rows.append([
+            Paragraph("Descuentos:", estilo('tl', fontSize=8, textColor=GRIS_TEXTO, alignment=TA_RIGHT)),
+            Paragraph(fmt(0), estilo('tv', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT))
+        ])
     tot_t = Table(tot_rows, colWidths=[7*cm, 3*cm])
     tot_t.setStyle(TableStyle([
         ('ALIGN',   (0, 0), (-1, -1), 'RIGHT'),
