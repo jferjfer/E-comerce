@@ -632,58 +632,64 @@ export default function ProductManagerDashboard() {
                           }
                           .header {
                             background: #111827;
-                            padding: 10px 16px;
+                            padding: 12px 16px;
                             display: flex;
+                            flex-direction: column;
                             align-items: center;
-                            justify-content: space-between;
+                            justify-content: center;
                           }
-                          .marca {
+                          .logo-row {
+                            display: flex;
+                            align-items: baseline;
+                            gap: 0;
+                          }
+                          .logo-e {
                             color: #c5a47e;
-                            font-size: 18px;
+                            font-size: 28px;
+                            font-weight: 900;
+                            line-height: 1;
+                          }
+                          .logo-gos {
+                            color: #ffffff;
+                            font-size: 22px;
                             font-weight: 900;
                             letter-spacing: 6px;
+                            line-height: 1;
                           }
                           .slogan {
-                            color: rgba(197,164,126,0.6);
+                            color: rgba(197,164,126,0.7);
                             font-size: 7px;
-                            letter-spacing: 2px;
+                            letter-spacing: 3px;
                             text-transform: uppercase;
-                            margin-top: 2px;
+                            margin-top: 4px;
+                            text-align: center;
                           }
                           .body {
-                            padding: 12px 16px;
+                            padding: 14px 16px 10px;
                             background: #fff;
                           }
                           .nombre {
-                            font-size: 13px;
+                            font-size: 12px;
                             font-weight: 700;
                             color: #111;
                             text-align: center;
-                            margin-bottom: 10px;
+                            margin-bottom: 12px;
                             text-transform: uppercase;
-                            letter-spacing: 0.5px;
+                            letter-spacing: 0.8px;
                           }
                           .barcode-wrap {
                             display: flex;
                             justify-content: center;
-                            margin-bottom: 8px;
+                            margin-bottom: 0;
                           }
                           .barcode-wrap img {
-                            width: 240px;
+                            width: 260px;
                             height: auto;
                             display: block;
                           }
-                          .sku {
-                            text-align: center;
-                            font-family: 'Courier New', monospace;
-                            font-size: 11px;
-                            color: #444;
-                            letter-spacing: 2px;
-                            margin-bottom: 10px;
-                          }
                           .footer {
                             border-top: 1px solid #eee;
-                            padding: 8px 16px;
+                            padding: 7px 16px;
                             display: flex;
                             justify-content: space-between;
                             align-items: center;
@@ -699,7 +705,7 @@ export default function ProductManagerDashboard() {
                             color: #888;
                           }
                           @media print {
-                            body { margin: 0; }
+                            body { margin: 0; min-height: unset; }
                             .etiqueta { border: 1.5px solid #111; }
                           }
                         </style>
@@ -707,21 +713,21 @@ export default function ProductManagerDashboard() {
                       <body>
                         <div class="etiqueta">
                           <div class="header">
-                            <div>
-                              <div class="marca">EGOS</div>
-                              <div class="slogan">Wear Your Truth</div>
+                            <div class="logo-row">
+                              <span class="logo-e">E</span>
+                              <span class="logo-gos">EGOS</span>
                             </div>
+                            <div class="slogan">Wear Your Truth</div>
                           </div>
                           <div class="body">
                             <div class="nombre">${form.nombre || 'Producto EGOS'}</div>
                             <div class="barcode-wrap">
                               <img src="${imgSrc}" alt="codigo de barras" />
                             </div>
-                            <div class="sku">${form.sku}</div>
                           </div>
                           <div class="footer">
                             <span class="categoria">${form.categoria}</span>
-                            <span class="hecho">Hecho en Colombia 🇨🇴</span>
+                            <span class="hecho">Hecho en Colombia \uD83C\uDDE8\uD83C\uDDF4</span>
                           </div>
                         </div>
                         <script>window.onload = () => { window.print(); }<\/script>
