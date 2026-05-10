@@ -45,4 +45,20 @@ router.delete('/rrhh/:id', autenticar, soloRRHH, ControladorRRHH.eliminarEmplead
 // GET /api/usuarios/:id
 router.get('/:id', ControladorUsuario.obtenerUsuarioPorId);
 
+// GET /api/usuarios/todos — para credit-service (cron de bonos)
+router.get('/todos/clientes', async (req, res) => {
+  try {
+    const pool = require('../config/baseDatos');
+    const resultado = await pool.query(
+      `SELECT id, nombre, email, rol, fecha_creacion, total_compras_historico, activo
+       FROM usuarios
+       WHERE rol = 'cliente' AND activo = true
+       ORDER BY fecha_creacion ASC`
+    );
+    res.json({ usuarios: resultado.rows, total: resultado.rows.length });
+  } catch (error) {
+    res.status(500).json({ error: 'Error obteniendo usuarios' });
+  }
+});
+
 module.exports = router;

@@ -223,23 +223,25 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
 # CRON - Verificación nocturna de bonos
 # ============================================
 async def verificar_bonos_nocturnos():
-    """Corre cada 24h. Verifica clientes que cumplen condiciones de bono."""
+    """Corre al iniciar y luego cada 24h."""
     while True:
-        await asyncio.sleep(86400)  # 24 horas
-        print("🌙 Iniciando verificación nocturna de bonos...")
+        print("🌙 Iniciando verificación de bonos...")
         try:
             db = next(get_db())
 
-            # Obtener todos los usuarios desde auth-service
+            # Obtener todos los clientes activos desde auth-service
             async with httpx.AsyncClient(timeout=10) as client:
                 try:
-                    res = await client.get(f"{AUTH_SERVICE_URL}/api/usuarios/todos")
+                    res = await client.get(f"{AUTH_SERVICE_URL}/api/usuarios/todos/clientes")
                     if res.status_code != 200:
-                        print("⚠️ No se pudo obtener lista de usuarios")
+                        print(f"⚠️ No se pudo obtener lista de clientes: {res.status_code}")
+                        await asyncio.sleep(86400)
                         continue
                     usuarios = res.json().get("usuarios", [])
+                    print(f"👥 Verificando {len(usuarios)} clientes...")
                 except Exception as e:
                     print(f"⚠️ Error consultando usuarios: {e}")
+                    await asyncio.sleep(86400)
                     continue
 
             for usuario in usuarios:
@@ -311,7 +313,11 @@ async def verificar_bonos_nocturnos():
                 print(f"✅ Bono generado para usuario {usuario_id}: {codigo}")
 
         except Exception as e:
-            print(f"❌ Error en verificación nocturna: {e}")
+            print(f"❌ Error en verificación de bonos: {e}")
+
+        # Esperar 24h antes de la próxima verificación
+        print("🕒 Próxima verificación de bonos en 24 horas")
+        await asyncio.sleep(86400)
 
 # ============================================
 # APP
