@@ -574,6 +574,142 @@ export default function ProductManagerDashboard() {
                     <BarcodeDisplay codigo={form.sku} />
                   </div>
                 </div>
+                {/* Botón imprimir etiqueta */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const win = window.open('', '_blank', 'width=400,height=300')
+                    if (!win) return
+                    // Capturar el canvas como imagen
+                    const canvas = document.querySelector('canvas') as HTMLCanvasElement
+                    const imgSrc = canvas ? canvas.toDataURL('image/png') : ''
+                    win.document.write(`
+                      <!DOCTYPE html>
+                      <html>
+                      <head>
+                        <meta charset="UTF-8">
+                        <title>Etiqueta EGOS</title>
+                        <style>
+                          * { margin: 0; padding: 0; box-sizing: border-box; }
+                          body {
+                            font-family: 'Helvetica Neue', Arial, sans-serif;
+                            background: #fff;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            min-height: 100vh;
+                          }
+                          .etiqueta {
+                            width: 320px;
+                            border: 1.5px solid #111;
+                            border-radius: 8px;
+                            overflow: hidden;
+                          }
+                          .header {
+                            background: #111827;
+                            padding: 10px 16px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                          }
+                          .marca {
+                            color: #c5a47e;
+                            font-size: 18px;
+                            font-weight: 900;
+                            letter-spacing: 6px;
+                          }
+                          .slogan {
+                            color: rgba(197,164,126,0.6);
+                            font-size: 7px;
+                            letter-spacing: 2px;
+                            text-transform: uppercase;
+                            margin-top: 2px;
+                          }
+                          .body {
+                            padding: 12px 16px;
+                            background: #fff;
+                          }
+                          .nombre {
+                            font-size: 13px;
+                            font-weight: 700;
+                            color: #111;
+                            text-align: center;
+                            margin-bottom: 10px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                          }
+                          .barcode-wrap {
+                            display: flex;
+                            justify-content: center;
+                            margin-bottom: 8px;
+                          }
+                          .barcode-wrap img {
+                            width: 240px;
+                            height: auto;
+                            display: block;
+                          }
+                          .sku {
+                            text-align: center;
+                            font-family: 'Courier New', monospace;
+                            font-size: 11px;
+                            color: #444;
+                            letter-spacing: 2px;
+                            margin-bottom: 10px;
+                          }
+                          .footer {
+                            border-top: 1px solid #eee;
+                            padding: 8px 16px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                          }
+                          .categoria {
+                            font-size: 9px;
+                            color: #888;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                          }
+                          .hecho {
+                            font-size: 9px;
+                            color: #888;
+                          }
+                          @media print {
+                            body { margin: 0; }
+                            .etiqueta { border: 1.5px solid #111; }
+                          }
+                        </style>
+                      </head>
+                      <body>
+                        <div class="etiqueta">
+                          <div class="header">
+                            <div>
+                              <div class="marca">EGOS</div>
+                              <div class="slogan">Wear Your Truth</div>
+                            </div>
+                          </div>
+                          <div class="body">
+                            <div class="nombre">${form.nombre || 'Producto EGOS'}</div>
+                            <div class="barcode-wrap">
+                              <img src="${imgSrc}" alt="codigo de barras" />
+                            </div>
+                            <div class="sku">${form.sku}</div>
+                          </div>
+                          <div class="footer">
+                            <span class="categoria">${form.categoria}</span>
+                            <span class="hecho">Hecho en Colombia 🇨🇴</span>
+                          </div>
+                        </div>
+                        <script>window.onload = () => { window.print(); }<\/script>
+                      </body>
+                      </html>
+                    `)
+                    win.document.close()
+                  }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-white border border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <i className="fas fa-print"></i>
+                  Imprimir Etiqueta
+                </button>
               </div>
 
               {/* Costo adquisición + PVP calculado */}

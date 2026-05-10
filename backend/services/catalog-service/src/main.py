@@ -183,31 +183,45 @@ async def listar_productos(
 @app.post("/api/productos")
 async def crear_producto(producto: dict):
     print(f"📦 Creando nuevo producto: {producto.get('nombre')}")
-    
+
     db = obtener_bd()
     if db is None:
         raise HTTPException(status_code=500, detail="Base de datos no disponible")
-    
+
     try:
-        # Generar ID único
+        # Generar ID único basado en timestamp
         producto['id'] = str(int(time.time() * 1000))
-        
-        # Insertar en MongoDB
+        producto['fecha_creacion'] = datetime.now().isoformat()
+
+        # Verificar que el SKU no esté duplicado
+        sku = producto.get('sku')
+        if sku:
+            existente = await db.productos.find_one({"sku": sku})
+            if existente:
+                raise HTTPException(status_code=409, detail=f"Ya existe un producto con el SKU {sku}")
+
+        # Crear índice único en sku si no existe
+        await db.productos.create_index("sku", unique=True, sparse=True)
+
         resultado = await db.productos.insert_one(producto)
-        
+
         if resultado.inserted_id:
-            print(f"✅ Producto creado con ID: {producto['id']}")
+            print(f"✅ Producto creado — ID: {producto['id']} | SKU: {sku}")
             return {
                 "exito": True,
                 "mensaje": "Producto creado exitosamente",
                 "producto": {
                     "id": producto['id'],
-                    "nombre": producto['nombre']
+                    "nombre": producto['nombre'],
+                    "sku": sku,
+                    "precio": producto.get('precio')
                 }
             }
         else:
             raise HTTPException(status_code=500, detail="Error al insertar producto")
-            
+
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"❌ Error creando producto: {e}")
         raise HTTPException(status_code=500, detail=f"Error creando producto: {str(e)}")
