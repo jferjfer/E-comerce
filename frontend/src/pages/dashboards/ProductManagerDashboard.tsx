@@ -1,7 +1,62 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { API_URL } from '@/config/api'
 import { useAuthStore } from '@/store/useAuthStore'
 import { formatPrice } from '@/utils/sanitize'
+
+// ── EAN-13 para EGOS (uso interno) ──
+// Prefijo Colombia 770 + 90517 (NIT 902051708) + 4 dígitos secuencial + dígito verificador
+const EAN_PREFIX = '77090517'
+
+function calcularDigitoVerificadorEAN13(doce: string): number {
+  let suma = 0
+  for (let i = 0; i < 12; i++) {
+    suma += parseInt(doce[i]) * (i % 2 === 0 ? 1 : 3)
+  }
+  return (10 - (suma % 10)) % 10
+}
+
+function generarEAN13(secuencial: number): string {
+  const seq = String(secuencial).padStart(4, '0')
+  const doce = EAN_PREFIX + seq
+  const dv = calcularDigitoVerificadorEAN13(doce)
+  return doce + dv
+}
+
+function BarcodeDisplay({ codigo }: { codigo: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    if (!canvasRef.current || !codigo || codigo.length !== 13) return
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')!
+    const barWidth = 2
+    const height = 60
+    // Patrón EAN-13 simplificado (barras visuales representativas)
+    canvas.width = 200
+    canvas.height = height + 20
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = '#000'
+    // Dibujar barras basadas en los dígitos del código
+    let x = 10
+    for (let i = 0; i < codigo.length; i++) {
+      const d = parseInt(codigo[i])
+      // Alternar barras negras y blancas con ancho variable según dígito
+      const w = barWidth + (d % 3)
+      if (i % 2 === 0) {
+        ctx.fillRect(x, 0, w, height)
+      }
+      x += w + barWidth
+    }
+    // Número debajo
+    ctx.font = '11px monospace'
+    ctx.fillStyle = '#111'
+    ctx.textAlign = 'center'
+    ctx.fillText(codigo, canvas.width / 2, height + 14)
+  }, [codigo])
+
+  return <canvas ref={canvasRef} className="w-full" style={{ imageRendering: 'pixelated' }} />
+}
 
 // ── Constantes de la fórmula PVP ──
 const IVA           = 0.19
@@ -50,7 +105,7 @@ interface Producto {
 
 interface FormProducto {
   nombre: string
-  sku: string
+  sku: string        // EAN-13 generado automáticamente
   marca: string
   material: string
   costo_adquisicion: string
@@ -68,7 +123,7 @@ interface FormProducto {
 }
 
 const FORM_INICIAL: FormProducto = {
-  nombre: '', sku: '', marca: 'EGOS', material: '',
+  nombre: '', sku: generarEAN13(1), marca: 'EGOS', material: '',
   costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
   costo_empaque: String(COSTO_EMPAQUE), precio_manual: '', usar_precio_manual: false,
   categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'],
@@ -88,6 +143,7 @@ export default function ProductManagerDashboard() {
   const [mensaje, setMensaje] = useState<{tipo: string, texto: string} | null>(null)
   const [pagina, setPagina] = useState(1)
   const POR_PAGINA = 12
+  const [skuGenerado, setSkuGenerado] = useState('')
 
   useEffect(() => { cargarProductos() }, [])
 
@@ -119,16 +175,22 @@ export default function ProductManagerDashboard() {
 
   const abrirCrear = () => {
     setEditando(null)
-    setForm(FORM_INICIAL)
+    // Generar EAN-13 basado en cantidad actual de productos + 1
+    const secuencial = productos.length + 1
+    const nuevoSku = generarEAN13(secuencial)
+    setSkuGenerado(nuevoSku)
+    setForm({ ...FORM_INICIAL, sku: nuevoSku })
     setMensaje(null)
     setMostrarForm(true)
   }
 
   const abrirEditar = (p: Producto) => {
     setEditando(p)
+    const skuExistente = (p as any).sku || generarEAN13(productos.indexOf(p) + 1)
+    setSkuGenerado(skuExistente)
     setForm({
       nombre: p.nombre,
-      sku: (p as any).sku || '',
+      sku: skuExistente,
       marca: (p as any).marca || 'EGOS',
       material: (p as any).material || '',
       costo_adquisicion: p.costo_adquisicion ? String(p.costo_adquisicion) : '',
@@ -335,6 +397,9 @@ export default function ProductManagerDashboard() {
                     <p className="text-xs font-semibold text-gray-800 truncate">{p.nombre}</p>
                     <p className="text-xs text-gray-400">{p.categoria}</p>
                     <p className="text-sm font-bold text-amber-700 mt-1">{formatPrice(p.precio)}</p>
+                    {(p as any).sku && (
+                      <p className="text-[10px] text-gray-400 font-mono truncate">{(p as any).sku}</p>
+                    )}
                     {p.costo_adquisicion && (
                       <p className="text-xs text-gray-400">Costo: {formatPrice(p.costo_adquisicion)}</p>
                     )}
@@ -407,18 +472,12 @@ export default function ProductManagerDashboard() {
                 </div>
               )}
 
-              {/* Nombre + SKU + Marca */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-1">
+              {/* Nombre + Marca */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Nombre del producto *</label>
                   <input value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})}
                     placeholder="Ej: Vestido Midi Floral"
-                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 mb-1 block">SKU</label>
-                  <input value={form.sku} onChange={e => setForm({...form, sku: e.target.value})}
-                    placeholder="Ej: VES-001"
                     className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
                 </div>
                 <div>
@@ -426,6 +485,37 @@ export default function ProductManagerDashboard() {
                   <input value={form.marca} onChange={e => setForm({...form, marca: e.target.value})}
                     placeholder="EGOS"
                     className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+              </div>
+
+              {/* SKU / EAN-13 — solo lectura, generado automáticamente */}
+              <div className="bg-gray-900 rounded-xl p-4 border border-gray-700">
+                <p className="text-xs font-bold mb-3" style={{color:'#c5a47e'}}>🏷️ Código de Barras EAN-13 (generado automáticamente)</p>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <div className="flex-1">
+                    <label className="text-xs text-gray-400 mb-1 block">SKU / EAN-13</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={form.sku}
+                        readOnly
+                        className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm font-mono text-white cursor-not-allowed"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(form.sku)
+                        }}
+                        className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 text-xs"
+                        title="Copiar"
+                      >
+                        <i className="fas fa-copy"></i>
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Prefijo Colombia 770 · NIT EGOS · Secuencial · Dígito verificador</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-2 flex-shrink-0" style={{minWidth: 160}}>
+                    <BarcodeDisplay codigo={form.sku} />
+                  </div>
                 </div>
               </div>
 
