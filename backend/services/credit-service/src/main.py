@@ -109,47 +109,103 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "🎁 ¡Tienes un bono de $100.000 disponible! — EGOS"
+        msg["Subject"] = "🎁 ¡Te ganaste un bono de $100.000! — EGOS"
         msg["From"] = f'"EGOS" <{SMTP_USER}>'
         msg["To"] = email
 
         fecha_str = fecha_vencimiento.strftime("%d de %B de %Y")
+        nombre_corto = nombre.split()[0] if nombre else "Cliente"
+
         html = f"""
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9f9f9">
-          <div style="background:#111827;padding:40px 30px;text-align:center">
-            <h1 style="color:white;margin:0;font-size:26px">🎁 ¡Tienes un bono especial!</h1>
-            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0">EGOS — Premio por tu lealtad</p>
-          </div>
-          <div style="background:white;padding:40px 30px">
-            <p style="font-size:16px;color:#333">Hola <strong>{nombre}</strong>,</p>
-            <p style="color:#555;line-height:1.6">
-              ¡Gracias por ser parte de nuestra comunidad! Como reconocimiento a tu lealtad,
-              te hemos generado un bono de <strong style="color:#111827">$100.000 COP</strong>
-              para usar en tu próxima compra con crédito.
-            </p>
-            <div style="background:#f8f8f8;border-radius:12px;padding:24px;margin:24px 0;text-align:center">
-              <p style="margin:0;color:#666;font-size:14px">Tu código de bono</p>
-              <p style="margin:12px 0;font-size:28px;font-weight:bold;color:#111827;font-family:monospace;letter-spacing:4px">{codigo}</p>
-              <p style="margin:0;color:#888;font-size:13px">Válido hasta el <strong>{fecha_str}</strong></p>
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"></head>
+        <body style="margin:0;padding:0;background:#f5f0eb;font-family:'Helvetica Neue',Arial,sans-serif">
+          <div style="max-width:600px;margin:0 auto;background:#ffffff">
+
+            <!-- HEADER -->
+            <div style="background:#111827;padding:36px 40px;text-align:center">
+              <div style="margin-bottom:4px">
+                <span style="font-size:36px;font-weight:900;color:#c5a47e;letter-spacing:-2px">E</span>
+              </div>
+              <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:10px;text-transform:uppercase">EGOS</div>
+              <div style="font-size:10px;color:#c5a47e;letter-spacing:4px;margin-top:2px;text-transform:uppercase">Wear Your Truth</div>
             </div>
-            <p style="color:#555;font-size:14px">
-              <strong>¿Cómo usarlo?</strong><br>
-              Al momento de pagar con "Obtenlo a cuotas", ingresa este código en el campo
-              de bono y se descontarán $100.000 de tu compra automáticamente.
-            </p>
-            <div style="text-align:center;margin:30px 0">
-              <a href="{FRONTEND_URL}" style="background:#111827;color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-size:16px;font-weight:bold;display:inline-block">
-                Ir a la Tienda
-              </a>
+
+            <!-- BANNER MOTIVACIONAL -->
+            <div style="background:linear-gradient(135deg,#c5a47e,#a67c52);padding:40px;text-align:center">
+              <div style="font-size:52px;margin-bottom:12px">🎁</div>
+              <h1 style="color:#111827;margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px">
+                ¡{nombre_corto}, te lo mereces!
+              </h1>
+              <p style="color:#111827;margin:10px 0 0;font-size:14px;opacity:0.8">
+                Tu lealtad con EGOS tiene recompensa
+              </p>
             </div>
+
+            <!-- CUERPO -->
+            <div style="padding:40px">
+
+              <p style="font-size:17px;color:#111827;margin:0 0 16px">
+                Hola <strong>{nombre_corto}</strong> 👋
+              </p>
+
+              <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0 0 28px">
+                Llevas más de <strong>18 meses</strong> siendo parte de la familia EGOS y eso
+                no pasa desapercibido. Tu confianza y fidelidad son lo que nos impulsa a seguir
+                creando moda que te represente. Por eso, hoy queremos darte algo especial.
+              </p>
+
+              <!-- BONO -->
+              <div style="background:#111827;border-radius:16px;padding:32px;text-align:center;margin-bottom:28px">
+                <p style="margin:0 0 8px;font-size:12px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">Tu bono exclusivo</p>
+                <p style="margin:0 0 4px;font-size:42px;font-weight:900;color:#c5a47e">$100.000</p>
+                <p style="margin:0 0 24px;font-size:12px;color:#9ca3af">COP — descuento directo en tu próxima compra</p>
+                <div style="background:#1f2937;border-radius:10px;padding:16px;display:inline-block;min-width:260px">
+                  <p style="margin:0 0 6px;font-size:11px;color:#9ca3af;letter-spacing:2px">CÓDIGO DE BONO</p>
+                  <p style="margin:0;font-size:22px;font-weight:900;color:#ffffff;font-family:monospace;letter-spacing:4px">{codigo}</p>
+                </div>
+                <p style="margin:16px 0 0;font-size:12px;color:#6b7280">
+                  ⏰ Válido hasta el <strong style="color:#c5a47e">{fecha_str}</strong>
+                </p>
+              </div>
+
+              <!-- INSTRUCCIONES -->
+              <div style="background:#faf8f5;border-radius:12px;padding:24px;margin-bottom:28px;border:1px solid #f0ebe4">
+                <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#111827">¿Cómo usar tu bono?</p>
+                <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Elige los productos que quieras en <strong style="color:#111827">egoscolombia.com.co</strong></p>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ve al carrito y selecciona tu método de pago</p>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ingresa el código <strong style="color:#111827;font-family:monospace">{codigo}</strong> en el campo de bono y se descontarán <strong style="color:#111827">$100.000</strong> automáticamente</p>
+                </div>
+              </div>
+
+              <!-- CTA -->
+              <div style="text-align:center">
+                <a href="{FRONTEND_URL}" style="display:inline-block;background:#c5a47e;color:#111827;padding:16px 40px;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:1px">
+                  Ir a la Tienda
+                </a>
+              </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div style="background:#111827;padding:28px 40px;text-align:center">
+              <p style="margin:0 0 8px;font-size:11px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">EGOS — Wear Your Truth</p>
+              <p style="margin:0;font-size:11px;color:#6b7280">Este bono es personal e intransferible · egoscolombia.com.co</p>
+              <p style="margin:8px 0 0;font-size:10px;color:#4b5563">Este es un correo automático, por favor no respondas a este mensaje.</p>
+            </div>
+
           </div>
-          <div style="background:#f0f0f0;padding:20px 30px;text-align:center">
-            <p style="color:#888;font-size:12px;margin:0">
-              Este bono es personal e intransferible.<br>
-              EGOS — Wear Your Truth
-            </p>
-          </div>
-        </div>
+        </body>
+        </html>
         """
 
         msg.attach(MIMEText(html, "html"))
@@ -159,7 +215,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
             server.login(SMTP_USER, SMTP_PASS)
             server.sendmail(SMTP_USER, email, msg.as_string())
 
-        print(f"📧 Correo de bono enviado a {email}")
+        print(f"📧 Correo motivacional de bono enviado a {email}")
     except Exception as e:
         print(f"⚠️ Error enviando correo de bono: {e}")
 
@@ -634,14 +690,16 @@ async def validar_bono(datos: ValidarBono, db: Session = Depends(get_db)):
     if not bono:
         return {"valido": False, "razon": "Código de bono no existe"}
 
+    # Solo el dueño puede usarlo
     if bono.usuario_id != datos.usuario_id:
         return {"valido": False, "razon": "Este bono no pertenece a tu cuenta"}
 
+    # Ya fue usado — muerto para siempre
     if bono.estado == "Usado":
-        return {"valido": False, "razon": "Este bono ya fue utilizado"}
+        return {"valido": False, "razon": "Este bono ya fue utilizado en un pedido anterior"}
 
+    # Vencido
     if bono.estado == "Vencido" or bono.fecha_vencimiento < datetime.now():
-        # Marcar como vencido si no lo estaba
         if bono.estado != "Vencido":
             bono.estado = "Vencido"
             db.commit()
@@ -654,26 +712,51 @@ async def validar_bono(datos: ValidarBono, db: Session = Depends(get_db)):
         "codigo": bono.codigo
     }
 
+
 @app.post("/api/bonos/aplicar")
 async def aplicar_bono(datos: AplicarBono, db: Session = Depends(get_db)):
-    """Aplica un bono a un pedido — lo marca como usado"""
+    """Aplica un bono a un pedido exitoso — lo mata para siempre"""
     bono = db.query(Bono).filter(Bono.codigo == datos.codigo).first()
 
-    if not bono or bono.usuario_id != datos.usuario_id:
+    if not bono:
         raise HTTPException(status_code=404, detail="Bono no encontrado")
 
-    if bono.estado != "Disponible" or bono.fecha_vencimiento < datetime.now():
-        raise HTTPException(status_code=400, detail="Bono no disponible")
+    # Solo el dueño puede usarlo
+    if bono.usuario_id != datos.usuario_id:
+        raise HTTPException(status_code=403, detail="Este bono no pertenece a tu cuenta")
 
+    # Ya fue usado — no se puede usar dos veces
+    if bono.estado == "Usado":
+        raise HTTPException(status_code=400, detail="Este bono ya fue utilizado")
+
+    # Vencido
+    if bono.estado == "Vencido" or bono.fecha_vencimiento < datetime.now():
+        if bono.estado != "Vencido":
+            bono.estado = "Vencido"
+            db.commit()
+        raise HTTPException(status_code=400, detail="Este bono ha vencido")
+
+    # Verificar que el pedido_id no esté ya asociado a otro bono (idempotencia)
+    bono_pedido = db.query(Bono).filter(
+        Bono.pedido_id == datos.pedido_id,
+        Bono.estado == "Usado"
+    ).first()
+    if bono_pedido and bono_pedido.codigo != datos.codigo:
+        raise HTTPException(status_code=400, detail="Este pedido ya tiene un bono aplicado")
+
+    # Aplicar — el bono muere aquí
     bono.estado = "Usado"
     bono.fecha_uso = datetime.now()
     bono.pedido_id = datos.pedido_id
     db.commit()
 
+    print(f"✅ Bono {datos.codigo} aplicado al pedido {datos.pedido_id} — CONSUMIDO")
+
     return {
         "mensaje": "Bono aplicado exitosamente",
         "monto_descontado": bono.monto,
-        "pedido_id": datos.pedido_id
+        "pedido_id": datos.pedido_id,
+        "estado": "Usado"
     }
 
 @app.get("/api/bonos/usuario/{usuario_id}")

@@ -35,6 +35,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [creditoId, setCreditoId] = useState<string | null>(null)
   const [epaycoActivo, setEpaycoActivo] = useState(false)
   const [pedidoParaEpayco, setPedidoParaEpayco] = useState<string | null>(null)
+  const [codigoBonoParaEpayco, setCodigoBonoParaEpayco] = useState<string | null>(null)
 
   const total = obtenerPrecioTotal()
 
@@ -65,6 +66,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       setPlazoCredito(undefined)
       setCreditoId(null)
       setPedidoParaEpayco(null)
+      setCodigoBonoParaEpayco(null)
     }
   }, [isOpen])
 
@@ -125,9 +127,11 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       const pedidoId = resultado.orden.id
 
       // Si es pago en línea o PSE, ePayco debe estar activo
+      // El bono NO se aplica aquí — se aplica solo cuando ePayco confirme el pago exitoso
       if (selectedMethod === 'pago_en_linea' || selectedMethod === 'pse') {
         if (epaycoActivo) {
           setPedidoParaEpayco(pedidoId)
+          setCodigoBonoParaEpayco(codigoBono || null) // guardar para aplicar tras pago exitoso
           setIsLoading(false)
           return
         } else {
@@ -137,9 +141,14 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         }
       }
 
-      // 2. Aplicar bono si existe
+      // 2. Aplicar bono SOLO si el pago es exitoso (no ePayco)
+      // Para ePayco el bono se aplica en onExito
       if (codigoBono) {
-        await api.aplicarBono(codigoBono, usuario.id, pedidoId)
+        const resultadoBono = await api.aplicarBono(codigoBono, usuario.id, pedidoId)
+        if (resultadoBono.error) {
+          setError('El código de bono no es válido o ya fue utilizado')
+          return
+        }
       }
 
       // 3. Si es crédito interno: solicitar crédito y hacer cargo
@@ -253,9 +262,14 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   total={total}
                   token={token}
                   metodoPago={selectedMethod}
-                  onExito={() => {
+                  onExito={async () => {
+                    // Aplicar bono AHORA que el pago ePayco fue exitoso
+                    if (codigoBonoParaEpayco && usuario) {
+                      await api.aplicarBono(codigoBonoParaEpayco, usuario.id, pedidoParaEpayco!)
+                    }
                     setOrderId(pedidoParaEpayco)
                     setPedidoParaEpayco(null)
+                    setCodigoBonoParaEpayco(null)
                     setCurrentStep(3)
                     vaciarCarrito()
                   }}

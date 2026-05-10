@@ -100,43 +100,44 @@ export default function ConfirmationStep({
         </div>
       </div>
 
-      {/* Campo de bono - solo para crédito interno */}
-      {esCredito && (
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-gray-700">¿Tienes un código de bono?</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={codigoBono}
-              onChange={(e) => { setCodigoBono(e.target.value.toUpperCase()); setBonoValidado(null); setErrorBono('') }}
-              placeholder="BONO-21-XXXXXXXX"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-300"
-              disabled={bonoValidado?.valido}
-            />
-            <button
-              onClick={handleValidarBono}
-              disabled={!codigoBono.trim() || validandoBono || bonoValidado?.valido}
-              className="px-4 py-2 bg-gray-800 text-white rounded-xl text-sm font-semibold hover:bg-gray-900 disabled:opacity-40 transition-colors"
-            >
-              {validandoBono ? <i className="fas fa-circle-notch fa-spin"></i> : 'Aplicar'}
+      {/* Campo de bono - disponible para TODOS los métodos de pago */}
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-gray-700">
+          <i className="fas fa-gift text-amber-500 mr-1.5"></i>
+          ¿Tienes un código de bono?
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={codigoBono}
+            onChange={(e) => { setCodigoBono(e.target.value.toUpperCase()); setBonoValidado(null); setErrorBono('') }}
+            placeholder="BONO-46-XXXXXXXX"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
+            disabled={bonoValidado?.valido}
+          />
+          <button
+            onClick={handleValidarBono}
+            disabled={!codigoBono.trim() || validandoBono || bonoValidado?.valido}
+            className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 disabled:opacity-40 transition-colors"
+          >
+            {validandoBono ? <i className="fas fa-circle-notch fa-spin"></i> : 'Aplicar'}
+          </button>
+        </div>
+        {bonoValidado?.valido && (
+          <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+            <i className="fas fa-check-circle text-sm"></i>
+            <span className="text-sm font-semibold">Bono aplicado: -{formatPrice(bonoValidado.monto)}</span>
+            <button onClick={() => { setBonoValidado(null); setCodigoBono('') }} className="ml-auto text-xs text-gray-500 hover:text-gray-700">
+              <i className="fas fa-times"></i>
             </button>
           </div>
-          {bonoValidado?.valido && (
-            <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-              <i className="fas fa-check-circle text-sm"></i>
-              <span className="text-sm font-semibold">Bono aplicado: -{formatPrice(bonoValidado.monto)}</span>
-              <button onClick={() => { setBonoValidado(null); setCodigoBono('') }} className="ml-auto text-xs text-gray-500 hover:text-gray-700">
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-          )}
-          {errorBono && (
-            <p className="text-xs text-red-600 flex items-center gap-1">
-              <i className="fas fa-exclamation-circle"></i> {errorBono}
-            </p>
-          )}
-        </div>
-      )}
+        )}
+        {errorBono && (
+          <p className="text-xs text-red-600 flex items-center gap-1">
+            <i className="fas fa-exclamation-circle"></i> {errorBono}
+          </p>
+        )}
+      </div>
 
       {/* Selector de cuotas para crédito interno */}
       {esCredito && (
