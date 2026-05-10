@@ -8,3 +8,4 @@ python-multipart==0.0.6
 httpx==0.25.2
 cloudinary==1.36.0
 Pillow==10.1.0
+PyJWT==2.8.0
