@@ -95,9 +95,11 @@ def calcular_cuota(monto: float, tasa_mensual: float, plazo_meses: int) -> dict:
     }
 
 def generar_codigo_bono(usuario_id: int) -> str:
-    chars = string.ascii_uppercase + string.digits
-    aleatorio = ''.join(secrets.choice(chars) for _ in range(8))
-    return f"BONO-{usuario_id}-{aleatorio}"
+    # Formato: EGOS + 6 caracteres aleatorios — corto, familiar, sin guiones
+    # 32^6 = 1.073.741.824 combinaciones posibles
+    chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+    aleatorio = ''.join(secrets.choice(chars) for _ in range(6))
+    return f"EGOS{aleatorio}"
 
 # ============================================
 # CORREOS
@@ -109,7 +111,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "🎁 ¡Te ganaste un bono de $100.000! — EGOS"
+        msg["Subject"] = f"🎁 ¡{nombre_corto}, te ganaste un bono de $100.000! — EGOS"
         msg["From"] = f'"EGOS" <{SMTP_USER}>'
         msg["To"] = email
 
@@ -159,7 +161,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
               <!-- BONO -->
               <div style="background:#111827;border-radius:16px;padding:32px;text-align:center;margin-bottom:28px">
                 <p style="margin:0 0 8px;font-size:12px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">Tu bono exclusivo</p>
-                <p style="margin:0 0 4px;font-size:42px;font-weight:900;color:#c5a47e">$100.000</p>
+                <p style="margin:0 0 4px;font-size:42px;font-weight:900;color:#c5a47e">&#36;100.000</p>
                 <p style="margin:0 0 24px;font-size:12px;color:#9ca3af">COP — descuento directo en tu próxima compra</p>
                 <div style="background:#1f2937;border-radius:10px;padding:16px;display:inline-block;min-width:260px">
                   <p style="margin:0 0 6px;font-size:11px;color:#9ca3af;letter-spacing:2px">CÓDIGO DE BONO</p>
@@ -183,7 +185,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
                 </div>
                 <div style="display:flex;align-items:flex-start;gap:12px">
                   <span style="background:#c5a47e;color:#111827;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</span>
-                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ingresa el código <strong style="color:#111827;font-family:monospace">{codigo}</strong> en el campo de bono y se descontarán <strong style="color:#111827">$100.000</strong> automáticamente</p>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ingresa el código <strong style="color:#111827;font-family:monospace">{codigo}</strong> en el campo de bono y se descontarán <strong style="color:#111827">&#36;100.000</strong> automáticamente</p>
                 </div>
               </div>
 
@@ -293,8 +295,16 @@ async def verificar_bonos_nocturnos():
                     print(f"⚠️ Usuario {usuario_id}: solo {num_compras} compras, no califica renovación")
                     continue
 
-                # Generar bono
-                codigo = generar_codigo_bono(usuario_id)
+                # Generar código único — verificar en BD antes de guardar
+                intentos = 0
+                while intentos < 10:
+                    codigo = generar_codigo_bono(usuario_id)
+                    existe = db.query(Bono).filter(Bono.codigo == codigo).first()
+                    if not existe:
+                        break
+                    intentos += 1
+                    print(f"⚠️ Código {codigo} ya existe, generando otro...")
+
                 fecha_vencimiento = datetime.now() + timedelta(days=DIAS_VENCIMIENTO_BONO)
 
                 nuevo_bono = Bono(
@@ -792,7 +802,20 @@ async def obtener_bonos_usuario(usuario_id: int, db: Session = Depends(get_db)):
 @app.post("/api/bonos/generar-manual/{usuario_id}")
 async def generar_bono_manual(usuario_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Solo para testing/admin — genera un bono manualmente"""
-    codigo = generar_codigo_bono(usuario_id)
+    # Generar código único verificando en BD
+    intentos = 0
+    codigo = None
+    while intentos < 10:
+        candidato = generar_codigo_bono(usuario_id)
+        existe = db.query(Bono).filter(Bono.codigo == candidato).first()
+        if not existe:
+            codigo = candidato
+            break
+        intentos += 1
+
+    if not codigo:
+        raise HTTPException(status_code=500, detail="No se pudo generar un código único")
+
     fecha_vencimiento = datetime.now() + timedelta(days=DIAS_VENCIMIENTO_BONO)
     periodo = datetime.now().strftime("%Y-%m")
 
