@@ -22,6 +22,29 @@ function generarEAN13(secuencial: number): string {
   return doce + dv
 }
 
+// ── Tablas de codificación EAN-13 estándar ISO/IEC 15420 ──
+const EAN_L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011']
+const EAN_G = ['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111']
+const EAN_R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100']
+// Paridad del primer dígito determina qué tabla usar para los 6 dígitos izquierda
+const EAN_PARIDAD = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL']
+
+function codificarEAN13(codigo: string): string {
+  if (codigo.length !== 13) return ''
+  const d = codigo.split('').map(Number)
+  const paridad = EAN_PARIDAD[d[0]]
+  let bits = '101' // guarda izquierda
+  for (let i = 0; i < 6; i++) {
+    bits += paridad[i] === 'L' ? EAN_L[d[i + 1]] : EAN_G[d[i + 1]]
+  }
+  bits += '01010' // guarda central
+  for (let i = 7; i < 13; i++) {
+    bits += EAN_R[d[i]]
+  }
+  bits += '101' // guarda derecha
+  return bits // 95 bits totales
+}
+
 function BarcodeDisplay({ codigo }: { codigo: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -29,33 +52,67 @@ function BarcodeDisplay({ codigo }: { codigo: string }) {
     if (!canvasRef.current || !codigo || codigo.length !== 13) return
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')!
-    const barWidth = 2
-    const height = 60
-    // Patrón EAN-13 simplificado (barras visuales representativas)
-    canvas.width = 200
-    canvas.height = height + 20
-    ctx.fillStyle = '#fff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = '#000'
-    // Dibujar barras basadas en los dígitos del código
-    let x = 10
-    for (let i = 0; i < codigo.length; i++) {
-      const d = parseInt(codigo[i])
-      // Alternar barras negras y blancas con ancho variable según dígito
-      const w = barWidth + (d % 3)
-      if (i % 2 === 0) {
-        ctx.fillRect(x, 0, w, height)
+
+    const bits = codificarEAN13(codigo)
+    if (!bits) return
+
+    // Dimensiones proporcionales al estándar EAN-13
+    const modulo = 2          // ancho de 1 módulo en px
+    const totalBits = 95      // siempre 95 módulos en EAN-13
+    const quietZone = 7 * modulo  // zona silenciosa a cada lado
+    const barHeight = 70
+    const guardHeight = barHeight + 8  // guardas más largas
+    const numHeight = 14
+    const W = quietZone * 2 + totalBits * modulo
+    const H = guardHeight + numHeight + 4
+
+    canvas.width = W
+    canvas.height = H
+
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, W, H)
+
+    // Dibujar barras
+    const guardPositions = new Set([0,1,2, 45,46,47,48,49, 92,93,94]) // posiciones de guardas
+    for (let i = 0; i < bits.length; i++) {
+      if (bits[i] === '1') {
+        ctx.fillStyle = '#000000'
+        const x = quietZone + i * modulo
+        const h = guardPositions.has(i) ? guardHeight : barHeight
+        ctx.fillRect(x, 0, modulo, h)
       }
-      x += w + barWidth
     }
-    // Número debajo
-    ctx.font = '11px monospace'
-    ctx.fillStyle = '#111'
+
+    // Número debajo — formato estándar EAN-13
+    // Primer dígito a la izquierda de la guarda izquierda
+    // Dígitos 2-7 centrados bajo la mitad izquierda
+    // Dígitos 8-13 centrados bajo la mitad derecha
+    ctx.fillStyle = '#000000'
+    ctx.font = `bold ${numHeight - 2}px monospace`
+    ctx.textBaseline = 'top'
+    const y = guardHeight + 2
+
+    // Dígito 1 — izquierda de la guarda
     ctx.textAlign = 'center'
-    ctx.fillText(codigo, canvas.width / 2, height + 14)
+    ctx.fillText(codigo[0], quietZone / 2, y)
+
+    // Dígitos 2-7 — mitad izquierda (bits 3 a 44, centro = bit 23.5)
+    const centroIzq = quietZone + (3 + 44) / 2 * modulo
+    ctx.textAlign = 'center'
+    ctx.fillText(codigo.slice(1, 7), centroIzq, y)
+
+    // Dígitos 8-13 — mitad derecha (bits 50 a 91, centro = bit 70.5)
+    const centroDer = quietZone + (50 + 91) / 2 * modulo
+    ctx.fillText(codigo.slice(7, 13), centroDer, y)
+
   }, [codigo])
 
-  return <canvas ref={canvasRef} className="w-full" style={{ imageRendering: 'pixelated' }} />
+  return (
+    <div style={{ background: '#fff', padding: '8px', borderRadius: 6, display: 'inline-block' }}>
+      <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%' }} />
+    </div>
+  )
 }
 
 // ── Constantes de la fórmula PVP ──
@@ -513,7 +570,7 @@ export default function ProductManagerDashboard() {
                     </div>
                     <p className="text-xs text-gray-500 mt-1">Prefijo Colombia 770 · NIT EGOS · Secuencial · Dígito verificador</p>
                   </div>
-                  <div className="bg-white rounded-lg p-2 flex-shrink-0" style={{minWidth: 160}}>
+                  <div className="bg-white rounded-lg p-2 flex-shrink-0 flex items-center justify-center" style={{minWidth: 220}}>
                     <BarcodeDisplay codigo={form.sku} />
                   </div>
                 </div>
