@@ -189,7 +189,17 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
                 </div>
               </div>
 
-              <!-- CTA -->
+              <!-- AVISO IMPORTANTE -->
+              <div style="background:#fff8e1;border-left:4px solid #c5a47e;border-radius:0 8px 8px 0;padding:16px;margin-bottom:28px">
+                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827">⚠️ Importante antes de usar tu bono</p>
+                <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7">
+                  Este bono se consume en su totalidad al realizar una compra, sin importar el valor del pedido.
+                  Si tu compra es menor a <strong style="color:#111827">&#36;100.000</strong>, el saldo restante
+                  <strong style="color:#111827">no se acumula ni se devuelve</strong>.
+                  Te recomendamos usarlo en una compra igual o superior a <strong style="color:#111827">&#36;100.000</strong>
+                  para aprovecharlo al máximo.
+                </p>
+              </div>
               <div style="text-align:center">
                 <a href="{FRONTEND_URL}" style="display:inline-block;background:#c5a47e;color:#111827;padding:16px 40px;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:1px">
                   Ir a la Tienda
