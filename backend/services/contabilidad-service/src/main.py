@@ -17,7 +17,8 @@ import os
 from database import (
     get_db, init_db, AsientoContable, MovimientoContable,
     SaldoCuenta, CuentaPUC, DeclaracionIVA, AnticipoPSIMPLE,
-    get_transaction_db, TransactionSession
+    get_transaction_db, TransactionSession,
+    Proveedor, ContadorProveedor
 )
 from motor_contable import (
     registrar_venta, registrar_pago, registrar_devolucion,
@@ -112,6 +113,25 @@ class RegistrarCompra(BaseModel):
     tipo_factura: str = "Talonario"  # Talonario, Electronica
     plazo_dias: int = 0
     fecha: Optional[str] = None
+
+
+class RegistrarProveedor(BaseModel):
+    nombre: str
+    nit: Optional[str] = None
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+    ciudad: Optional[str] = None
+    contacto: Optional[str] = None
+
+
+class ActualizarProveedor(BaseModel):
+    nombre: Optional[str] = None
+    nit: Optional[str] = None
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+    ciudad: Optional[str] = None
+    contacto: Optional[str] = None
+    activo: Optional[bool] = None
 
 
 # ============================================
@@ -918,6 +938,124 @@ async def informacion_exogena(anio: int, db: Session = Depends(get_db)):
         },
         "nota": "Presentar si ingresos brutos superan 500 millones COP en el año"
     }
+
+
+# ============================================
+# ENDPOINTS — PROVEEDORES
+# ============================================
+
+@app.post("/api/contabilidad/proveedores")
+async def crear_proveedor(
+    datos: RegistrarProveedor,
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
+):
+    """Crea un nuevo proveedor"""
+    # Generar código PRV-XXX
+    contador = db.query(ContadorProveedor).filter(ContadorProveedor.id == 1).with_for_update().first()
+    if not contador:
+        contador = ContadorProveedor(id=1, ultimo_numero=0)
+        db.add(contador)
+    contador.ultimo_numero += 1
+    codigo = f"PRV-{contador.ultimo_numero:03d}"
+    db.commit()
+
+    # Verificar NIT duplicado
+    if datos.nit:
+        existente = db.query(Proveedor).filter(Proveedor.nit == datos.nit).first()
+        if existente:
+            raise HTTPException(status_code=409, detail=f"Ya existe un proveedor con NIT {datos.nit}: {existente.nombre}")
+
+    proveedor = Proveedor(
+        codigo=codigo,
+        nombre=datos.nombre,
+        nit=datos.nit,
+        telefono=datos.telefono,
+        email=datos.email,
+        ciudad=datos.ciudad,
+        contacto=datos.contacto
+    )
+    db.add(proveedor)
+    db.commit()
+    db.refresh(proveedor)
+
+    return {
+        "mensaje": "Proveedor creado exitosamente",
+        "proveedor": {
+            "id": proveedor.id,
+            "codigo": proveedor.codigo,
+            "nombre": proveedor.nombre,
+            "nit": proveedor.nit
+        }
+    }
+
+
+@app.get("/api/contabilidad/proveedores")
+async def listar_proveedores(
+    activo: Optional[bool] = Query(None),
+    buscar: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Lista proveedores — accesible por product_manager también"""
+    query = db.query(Proveedor)
+    if activo is not None:
+        query = query.filter(Proveedor.activo == activo)
+    if buscar:
+        query = query.filter(
+            Proveedor.nombre.ilike(f"%{buscar}%") |
+            Proveedor.codigo.ilike(f"%{buscar}%") |
+            Proveedor.nit.ilike(f"%{buscar}%")
+        )
+    proveedores = query.order_by(Proveedor.codigo).all()
+    return {
+        "proveedores": [{
+            "id": p.id,
+            "codigo": p.codigo,
+            "nombre": p.nombre,
+            "nit": p.nit,
+            "telefono": p.telefono,
+            "email": p.email,
+            "ciudad": p.ciudad,
+            "contacto": p.contacto,
+            "activo": p.activo,
+            "fecha_creacion": p.fecha_creacion.isoformat() if p.fecha_creacion else None
+        } for p in proveedores],
+        "total": len(proveedores)
+    }
+
+
+@app.put("/api/contabilidad/proveedores/{proveedor_id}")
+async def actualizar_proveedor(
+    proveedor_id: str,
+    datos: ActualizarProveedor,
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
+):
+    """Actualiza un proveedor"""
+    proveedor = db.query(Proveedor).filter(Proveedor.id == proveedor_id).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+
+    for campo, valor in datos.model_dump(exclude_none=True).items():
+        setattr(proveedor, campo, valor)
+    db.commit()
+
+    return {"mensaje": "Proveedor actualizado", "codigo": proveedor.codigo, "nombre": proveedor.nombre}
+
+
+@app.delete("/api/contabilidad/proveedores/{proveedor_id}")
+async def eliminar_proveedor(
+    proveedor_id: str,
+    db: Session = Depends(get_db),
+    usuario: dict = Depends(verificar_rol_contabilidad)
+):
+    """Desactiva un proveedor (soft delete)"""
+    proveedor = db.query(Proveedor).filter(Proveedor.id == proveedor_id).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    proveedor.activo = False
+    db.commit()
+    return {"mensaje": f"Proveedor {proveedor.codigo} desactivado"}
 
 
 @app.get("/salud")

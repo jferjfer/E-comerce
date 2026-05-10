@@ -206,6 +206,30 @@ class ContadorCompra(Base):
     id = Column(Integer, primary_key=True, default=1)
     ultimo_numero = Column(Integer, default=0)
 
+
+class Proveedor(Base):
+    """Proveedores registrados por el Contador"""
+    __tablename__ = "proveedor"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    codigo = Column(String(20), unique=True, nullable=False)  # PRV-001, PRV-002...
+    nombre = Column(String(200), nullable=False)
+    nit = Column(String(20), nullable=True)
+    telefono = Column(String(20), nullable=True)
+    email = Column(String(100), nullable=True)
+    ciudad = Column(String(100), nullable=True)
+    contacto = Column(String(100), nullable=True)  # nombre del contacto
+    activo = Column(Boolean, default=True)
+    fecha_creacion = Column(DateTime, default=datetime.now)
+    fecha_actualizacion = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class ContadorProveedor(Base):
+    """Consecutivo de proveedores para generar código PRV-XXX"""
+    __tablename__ = "contador_proveedor"
+    id = Column(Integer, primary_key=True, default=1)
+    ultimo_numero = Column(Integer, default=0)
+
 def get_db():
     db = SessionLocal()
     try:
@@ -223,6 +247,9 @@ def init_db():
             db.commit()
         if not db.query(ContadorCompra).first():
             db.add(ContadorCompra(id=1, ultimo_numero=0))
+            db.commit()
+        if not db.query(ContadorProveedor).first():
+            db.add(ContadorProveedor(id=1, ultimo_numero=0))
             db.commit()
         if db.query(CuentaPUC).count() == 0:
             _poblar_puc(db)

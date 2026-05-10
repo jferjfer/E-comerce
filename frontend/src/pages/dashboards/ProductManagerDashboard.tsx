@@ -169,7 +169,7 @@ interface Producto {
 
 interface FormProducto {
   nombre: string
-  sku: string        // EAN-13 generado automáticamente
+  sku: string
   marca: string
   material: string
   costo_adquisicion: string
@@ -184,6 +184,8 @@ interface FormProducto {
   en_stock: boolean
   stock_cantidad: string
   imagen_url: string
+  proveedor_id: string
+  referencia_proveedor: string
 }
 
 const FORM_INICIAL: FormProducto = {
@@ -191,7 +193,8 @@ const FORM_INICIAL: FormProducto = {
   costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
   costo_empaque: String(COSTO_EMPAQUE), precio_manual: '', usar_precio_manual: false,
   categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'],
-  colores: ['Negro'], en_stock: true, stock_cantidad: '', imagen_url: ''
+  colores: ['Negro'], en_stock: true, stock_cantidad: '', imagen_url: '',
+  proveedor_id: '', referencia_proveedor: ''
 }
 
 export default function ProductManagerDashboard() {
@@ -208,8 +211,19 @@ export default function ProductManagerDashboard() {
   const [pagina, setPagina] = useState(1)
   const POR_PAGINA = 12
   const barcodeCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [proveedores, setProveedores] = useState<{id: string, codigo: string, nombre: string}[]>([])
 
-  useEffect(() => { cargarProductos() }, [])
+  useEffect(() => { cargarProductos(); cargarProveedores() }, [])
+
+  const cargarProveedores = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/contabilidad/proveedores?activo=true`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const d = await r.json()
+      setProveedores(d.proveedores || [])
+    } catch {}
+  }
 
   const cargarProductos = async () => {
     setCargando(true)
@@ -280,7 +294,9 @@ export default function ProductManagerDashboard() {
       colores: p.colores || [],
       en_stock: p.en_stock,
       stock_cantidad: String((p as any).stock || ''),
-      imagen_url: p.imagen || ''
+      imagen_url: p.imagen || '',
+      proveedor_id: (p as any).proveedor_id || '',
+      referencia_proveedor: (p as any).referencia_proveedor || ''
     })
     setMensaje(null)
     setMostrarForm(true)
@@ -333,7 +349,9 @@ export default function ProductManagerDashboard() {
       en_stock: form.en_stock,
       stock: parseInt(form.stock_cantidad) || 0,
       imagen: form.imagen_url || undefined,
-      calificacion: editando?.calificacion || 4.5
+      calificacion: editando?.calificacion || 4.5,
+      proveedor_id: form.proveedor_id || undefined,
+      referencia_proveedor: form.referencia_proveedor || undefined
     }
 
     try {
@@ -566,6 +584,36 @@ export default function ProductManagerDashboard() {
                   <input value={form.marca} onChange={e => setForm({...form, marca: e.target.value})}
                     placeholder="EGOS"
                     className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+              </div>
+
+              {/* Proveedor + Referencia interna del proveedor */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Proveedor</label>
+                  <select
+                    value={form.proveedor_id}
+                    onChange={e => setForm({...form, proveedor_id: e.target.value})}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                  >
+                    <option value="">— Sin proveedor —</option>
+                    {proveedores.map(p => (
+                      <option key={p.id} value={p.id}>{p.codigo} — {p.nombre}</option>
+                    ))}
+                  </select>
+                  {proveedores.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-1">⚠️ No hay proveedores. El Contador debe crearlos en Contabilidad → Proveedores.</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Referencia del proveedor</label>
+                  <input
+                    value={form.referencia_proveedor}
+                    onChange={e => setForm({...form, referencia_proveedor: e.target.value})}
+                    placeholder="Ej: REF-2024-001"
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Código que el proveedor le asigna a este producto en su catálogo</p>
                 </div>
               </div>
 

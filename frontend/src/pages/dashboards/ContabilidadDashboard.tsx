@@ -28,7 +28,7 @@ export default function ContabilidadDashboard() {
   const { token } = useAuthStore()
   const [data, setData] = useState<DashboardData | null>(null)
   const [cargando, setCargando] = useState(true)
-  const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple' | 'capital' | 'facturas'>('dashboard')
+  const [tab, setTab] = useState<'dashboard' | 'compras' | 'diario' | 'mayor' | 'balance' | 'resultados' | 'iva' | 'simple' | 'capital' | 'facturas' | 'proveedores'>('dashboard')
   const [libroDiario, setLibroDiario] = useState<any[]>([])
   const [libroMayor, setLibroMayor] = useState<any[]>([])
   const [balance, setBalance] = useState<any>(null)
@@ -59,6 +59,14 @@ export default function ContabilidadDashboard() {
   const [cargandoFacturas, setCargandoFacturas] = useState(false)
   const [filtroEstadoFactura, setFiltroEstadoFactura] = useState('')
 
+  // Estado proveedores
+  const [proveedores, setProveedores] = useState<any[]>([])
+  const [showFormProveedor, setShowFormProveedor] = useState(false)
+  const [editandoProveedor, setEditandoProveedor] = useState<any>(null)
+  const [formProveedor, setFormProveedor] = useState({ nombre: '', nit: '', telefono: '', email: '', ciudad: '', contacto: '' })
+  const [guardandoProveedor, setGuardandoProveedor] = useState(false)
+  const [mensajeProveedor, setMensajeProveedor] = useState<{tipo: string, texto: string} | null>(null)
+
   const anio = new Date().getFullYear()
   const bimestre = Math.ceil(new Date().getMonth() / 2) + (new Date().getMonth() % 2 === 0 ? 0 : 0)
   const bimestreActual = Math.floor(new Date().getMonth() / 2) + 1
@@ -77,7 +85,59 @@ export default function ContabilidadDashboard() {
     if (tab === 'iva') cargarIVA()
     if (tab === 'simple') cargarSIMPLE()
     if (tab === 'compras') cargarCompras()
+    if (tab === 'proveedores') cargarProveedores()
   }, [tab, periodo])
+
+  const cargarProveedores = async () => {
+    const res = await fetch(`${API_URL}/api/contabilidad/proveedores`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const d = await res.json()
+    setProveedores(d.proveedores || [])
+  }
+
+  const guardarProveedor = async () => {
+    if (!formProveedor.nombre) {
+      setMensajeProveedor({ tipo: 'error', texto: 'El nombre es obligatorio' })
+      return
+    }
+    setGuardandoProveedor(true)
+    setMensajeProveedor(null)
+    try {
+      const url = editandoProveedor
+        ? `${API_URL}/api/contabilidad/proveedores/${editandoProveedor.id}`
+        : `${API_URL}/api/contabilidad/proveedores`
+      const method = editandoProveedor ? 'PUT' : 'POST'
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(formProveedor)
+      })
+      const d = await res.json()
+      if (res.ok) {
+        setMensajeProveedor({ tipo: 'success', texto: editandoProveedor ? '✅ Proveedor actualizado' : `✅ Proveedor creado — Código: ${d.proveedor?.codigo}` })
+        setShowFormProveedor(false)
+        setEditandoProveedor(null)
+        setFormProveedor({ nombre: '', nit: '', telefono: '', email: '', ciudad: '', contacto: '' })
+        cargarProveedores()
+      } else {
+        setMensajeProveedor({ tipo: 'error', texto: d.detail || 'Error guardando proveedor' })
+      }
+    } catch {
+      setMensajeProveedor({ tipo: 'error', texto: 'Error de conexión' })
+    } finally {
+      setGuardandoProveedor(false)
+    }
+  }
+
+  const desactivarProveedor = async (id: string) => {
+    if (!confirm('¿Desactivar este proveedor?')) return
+    await fetch(`${API_URL}/api/contabilidad/proveedores/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    cargarProveedores()
+  }
 
   const cargarDashboard = async () => {
     try {
@@ -289,6 +349,7 @@ export default function ContabilidadDashboard() {
   const maxVenta = data ? Math.max(...data.ventas_historico.map(v => v.ventas), 1) : 1
 
   const TABS = [
+    { id: 'proveedores', label: '🏭 Proveedores' },
     { id: 'dashboard', label: '📊 Dashboard' },
     { id: 'facturas', label: '🧾 Facturas' },
     { id: 'capital', label: '🏦 Capital Inicial' },
@@ -343,6 +404,128 @@ export default function ContabilidadDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
+
+        {/* ── PROVEEDORES ── */}
+        {tab === 'proveedores' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">{proveedores.length} proveedores</span>
+              <button onClick={() => { setShowFormProveedor(true); setEditandoProveedor(null); setFormProveedor({ nombre: '', nit: '', telefono: '', email: '', ciudad: '', contacto: '' }); setMensajeProveedor(null) }}
+                className="bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700">
+                + Nuevo Proveedor
+              </button>
+            </div>
+
+            {mensajeProveedor && (
+              <div className={`p-3 rounded-lg text-sm ${mensajeProveedor.tipo === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                {mensajeProveedor.texto}
+              </div>
+            )}
+
+            {showFormProveedor && (
+              <div className="bg-white rounded-xl shadow-sm border p-5 space-y-4">
+                <h3 className="font-bold text-gray-800">{editandoProveedor ? '✏️ Editar Proveedor' : '➕ Nuevo Proveedor'}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Nombre *</label>
+                    <input value={formProveedor.nombre} onChange={e => setFormProveedor({...formProveedor, nombre: e.target.value})}
+                      placeholder="Nombre del proveedor" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">NIT / CC</label>
+                    <input value={formProveedor.nit} onChange={e => setFormProveedor({...formProveedor, nit: e.target.value})}
+                      placeholder="900123456-1" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Teléfono</label>
+                    <input value={formProveedor.telefono} onChange={e => setFormProveedor({...formProveedor, telefono: e.target.value})}
+                      placeholder="3001234567" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Email</label>
+                    <input value={formProveedor.email} onChange={e => setFormProveedor({...formProveedor, email: e.target.value})}
+                      placeholder="proveedor@email.com" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Ciudad</label>
+                    <input value={formProveedor.ciudad} onChange={e => setFormProveedor({...formProveedor, ciudad: e.target.value})}
+                      placeholder="Bogotá" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Nombre del contacto</label>
+                    <input value={formProveedor.contacto} onChange={e => setFormProveedor({...formProveedor, contacto: e.target.value})}
+                      placeholder="Juan Pérez" className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={guardarProveedor} disabled={guardandoProveedor}
+                    className="bg-gray-900 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700 disabled:opacity-50">
+                    {guardandoProveedor ? 'Guardando...' : editandoProveedor ? 'Actualizar' : 'Crear Proveedor'}
+                  </button>
+                  <button onClick={() => { setShowFormProveedor(false); setMensajeProveedor(null) }}
+                    className="border border-gray-300 text-gray-600 px-5 py-2 rounded-xl text-sm hover:bg-gray-50">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
+                  <thead className="bg-gray-900 text-white">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Código</th>
+                      <th className="px-4 py-3 text-left">Nombre</th>
+                      <th className="px-4 py-3 text-left">NIT</th>
+                      <th className="px-4 py-3 text-left">Contacto</th>
+                      <th className="px-4 py-3 text-left">Ciudad</th>
+                      <th className="px-4 py-3 text-center">Estado</th>
+                      <th className="px-4 py-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {proveedores.map((p, i) => (
+                      <tr key={i} className={`border-b hover:bg-gray-50 ${!p.activo ? 'opacity-50' : ''}`}>
+                        <td className="px-4 py-3 font-mono font-bold text-amber-700">{p.codigo}</td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{p.nombre}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{p.nit || '-'}</td>
+                        <td className="px-4 py-3 text-xs">
+                          {p.contacto && <p className="font-medium">{p.contacto}</p>}
+                          {p.telefono && <p className="text-gray-400">{p.telefono}</p>}
+                          {p.email && <p className="text-gray-400">{p.email}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{p.ciudad || '-'}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                            {p.activo ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex gap-2 justify-center">
+                            <button onClick={() => { setEditandoProveedor(p); setFormProveedor({ nombre: p.nombre, nit: p.nit || '', telefono: p.telefono || '', email: p.email || '', ciudad: p.ciudad || '', contacto: p.contacto || '' }); setShowFormProveedor(true); setMensajeProveedor(null) }}
+                              className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded-lg hover:bg-blue-50">
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            {p.activo && (
+                              <button onClick={() => desactivarProveedor(p.id)}
+                                className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50">
+                                <i className="fas fa-ban"></i>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {proveedores.length === 0 && (
+                      <tr><td colSpan={7} className="text-center py-10 text-gray-400">No hay proveedores registrados</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── DASHBOARD ── */}
         {tab === 'dashboard' && data && (
