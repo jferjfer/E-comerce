@@ -258,7 +258,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         {currentStep === 1 && (
           <PaymentMethodStep
             selectedMethod={selectedMethod}
-            onMethodSelect={(id) => { setSelectedMethod(id); setError(null) }}
+            onMethodSelect={(id) => { setSelectedMethod(id); setError(null); setPedidoParaEpayco(null); setTotalParaEpayco(0); setMontoBono(0) }}
             onNext={() => setCurrentStep(2)}
             evaluacionCredito={evaluacionCredito}
             cargandoCredito={cargandoCredito}
