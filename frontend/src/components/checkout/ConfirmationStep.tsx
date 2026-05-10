@@ -111,7 +111,7 @@ export default function ConfirmationStep({
             type="text"
             value={codigoBono}
             onChange={(e) => { setCodigoBono(e.target.value.toUpperCase()); setBonoValidado(null); setErrorBono('') }}
-            placeholder="BONO-46-XXXXXXXX"
+            placeholder="EGOSXXXXXXX"
             className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
             disabled={bonoValidado?.valido}
           />
