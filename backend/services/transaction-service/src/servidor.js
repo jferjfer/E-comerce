@@ -783,16 +783,19 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
     // Si pasa a Alistado — crear guía en Skydropx automáticamente
     if (estado === 'Alistado') {
       const pedidoData = await pool.query(
-        `SELECT cliente_nombre, cliente_email, cliente_telefono, cliente_direccion, cliente_ciudad, total
+        `SELECT cliente_nombre, cliente_email, cliente_telefono, cliente_direccion, total
          FROM pedido WHERE id = $1`, [pedidoId]
       );
       if (pedidoData.rows.length > 0) {
         const pd = pedidoData.rows[0];
+        // Extraer ciudad de la dirección (ej: "Calle 45 # 23-10, Bogotá" → "Bogotá")
+        const partesDireccion = (pd.cliente_direccion || '').split(',');
+        const ciudadExtraida = partesDireccion.length > 1 ? partesDireccion[partesDireccion.length - 1].trim() : 'Bogotá';
         axios.post('http://logistics-service:3009/api/envios/guia', {
           pedido_id: pedidoId,
           destinatario_nombre:    pd.cliente_nombre || 'Cliente',
           destinatario_direccion: pd.cliente_direccion || 'Bogotá',
-          destinatario_ciudad:    pd.cliente_ciudad || 'Bogotá',
+          destinatario_ciudad:    ciudadExtraida,
           destinatario_departamento: 'Cundinamarca',
           destinatario_telefono:  pd.cliente_telefono || '3000000000',
           destinatario_email:     pd.cliente_email || '',
@@ -842,9 +845,9 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
 aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
-    const { metodo_pago, direccion_envio, items: itemsFrontend } = req.body;
+    const { metodo_pago, direccion_envio, items: itemsFrontend, descuento_bono = 0, codigo_bono = null } = req.body;
 
-    console.log(`💳 Procesando checkout para usuario ${usuarioId}`);
+    console.log(`💳 Procesando checkout para usuario ${usuarioId}${descuento_bono > 0 ? ` | Bono: -$${descuento_bono.toLocaleString('es-CO')}` : ''}`);
 
     let carrito;
 
@@ -937,27 +940,28 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     // Crear pedido con ID personalizado
     const pedidoId = generarId('EM');
 
-    // 🔒 IDEMPOTENCIA: verificar si ya existe un pedido reciente del mismo usuario
-    // con el mismo total en los últimos 30 segundos (evita doble clic)
+    const totalFinal = Math.max(0, carrito.total - descuento_bono);
+
+    // ✓ Idempotencia: verificar pedido reciente
     const pedidoReciente = await pool.query(
       `SELECT id FROM pedido
        WHERE usuario_id = $1
          AND total = $2
          AND fecha_creacion > NOW() - INTERVAL '30 seconds'
        LIMIT 1`,
-      [parseInt(usuarioId), carrito.total]
+      [parseInt(usuarioId), totalFinal]
     );
     if (pedidoReciente.rows.length > 0) {
       console.log(`⚠️ Pedido duplicado detectado para usuario ${usuarioId}, retornando pedido existente`);
       return res.json({
         mensaje: 'Pedido creado exitosamente',
-        orden: { id: pedidoReciente.rows[0].id, usuario_id: usuarioId, total: carrito.total, estado: 'Creado' }
+        orden: { id: pedidoReciente.rows[0].id, usuario_id: usuarioId, total: totalFinal, estado: 'Creado' }
       });
     }
 
     await pool.query(
       'INSERT INTO pedido (id, usuario_id, estado, total) VALUES ($1, $2, $3, $4)',
-      [pedidoId, parseInt(usuarioId), 'Creado', carrito.total]
+      [pedidoId, parseInt(usuarioId), 'Creado', Math.max(0, carrito.total - descuento_bono)]
     );
 
     // Copiar productos del carrito al pedido
@@ -972,7 +976,7 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     const pagoId = generarId('PG');
     await pool.query(
       'INSERT INTO pago (id, id_pedido, tipo_pago, monto, estado, metodo) VALUES ($1, $2, $3, $4, $5, $6)',
-      [pagoId, pedidoId, metodo_pago || 'Tarjeta', carrito.total, 'Aprobado', metodo_pago || 'Tarjeta de Crédito']
+      [pagoId, pedidoId, metodo_pago || 'Tarjeta', totalFinal, 'Aprobado', metodo_pago || 'Tarjeta de Crédito']
     );
 
     // Limpiar carrito del backend
@@ -989,7 +993,10 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       id: pedidoId,
       usuario_id: usuarioId,
       productos: carrito.productos,
-      total: carrito.total,
+      total: totalFinal,
+      total_original: carrito.total,
+      descuento_bono: descuento_bono,
+      codigo_bono: codigo_bono,
       metodo_pago,
       direccion_envio,
       estado: 'Creado',

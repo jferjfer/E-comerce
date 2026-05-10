@@ -38,6 +38,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [codigoBonoParaEpayco, setCodigoBonoParaEpayco] = useState<string | null>(null)
 
   const total = obtenerPrecioTotal()
+  const [montoBono, setMontoBono] = useState(0)
+  const totalConBono = Math.max(0, total - montoBono)
 
   // Al abrir, evaluar crédito y verificar si ePayco está activo
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       setCreditoId(null)
       setPedidoParaEpayco(null)
       setCodigoBonoParaEpayco(null)
+      setMontoBono(0)
     }
   }, [isOpen])
 
@@ -107,10 +110,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setPlazoCredito(plazo)
 
     try {
-      // 1. Crear el pedido
+      // 1. Crear el pedido con descuento del bono si aplica
+      const montoBonoPedido = codigoBono ? (await api.validarBono(codigoBono, usuario.id))?.monto || 0 : 0
       const resultado = await api.procesarCheckout(token, {
         metodoPago: selectedMethod,
         direccion_envio: 'Dirección predeterminada',
+        descuento_bono: montoBonoPedido,
+        codigo_bono: codigoBono || null,
         items: items.map(item => ({
           id: item.id,
           nombre: item.nombre,
@@ -126,16 +132,19 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
-      // Si es pago en línea o PSE, ePayco debe estar activo
-      // El bono NO se aplica aquí — se aplica solo cuando ePayco confirme el pago exitoso
-      if (selectedMethod === 'pago_en_linea' || selectedMethod === 'pse') {
+      // Todos los métodos externos van por ePayco
+      if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod)) {
         if (epaycoActivo) {
+          if (codigoBono) {
+            const validacion = await api.validarBono(codigoBono, usuario.id)
+            if (validacion.valido) setMontoBono(validacion.monto)
+          }
           setPedidoParaEpayco(pedidoId)
-          setCodigoBonoParaEpayco(codigoBono || null) // guardar para aplicar tras pago exitoso
+          setCodigoBonoParaEpayco(codigoBono || null)
           setIsLoading(false)
           return
         } else {
-          setError('La pasarela de pagos no está disponible en este momento. Por favor elige otro método de pago.')
+          setError('La pasarela de pagos no está disponible en este momento. Por favor elige crédito EGOS.')
           setIsLoading(false)
           return
         }
@@ -251,7 +260,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               limiteCredito={evaluacionCredito?.limite_aprobado}
             />
             {/* Widget ePayco — aparece después de crear el pedido */}
-            {pedidoParaEpayco && (selectedMethod === 'pago_en_linea' || selectedMethod === 'pse') && token && (
+            {pedidoParaEpayco && ['pago_en_linea','pse','efectivo','nequi','daviplata'].includes(selectedMethod) && token && (
               <div className="mt-4 space-y-3">
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
                   <i className="fas fa-check-circle text-blue-500 mr-1"></i>
@@ -259,7 +268,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 </div>
                 <EpaycoWidget
                   pedidoId={pedidoParaEpayco}
-                  total={total}
+                  total={totalConBono}
                   token={token}
                   metodoPago={selectedMethod}
                   onExito={async () => {

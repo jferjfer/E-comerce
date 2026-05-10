@@ -68,10 +68,8 @@ export default function PaymentMethodStep({
                       Hasta {formatPrice(evaluacionCredito.limite_aprobado)}
                     </span>
                   )}
-                  {(method.id === 'efectivo') && (
-                    <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                      Próximamente
-                    </span>
+                  {['pse','nequi','daviplata','efectivo'].includes(method.id) && (
+                    <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">ePayco</span>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">{method.descripcion}</p>

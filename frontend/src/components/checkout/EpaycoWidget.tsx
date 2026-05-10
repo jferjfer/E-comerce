@@ -142,8 +142,11 @@ export default function EpaycoWidget({ pedidoId, total, token, metodoPago, onExi
         country:      datos_widget.country,
         lang:         datos_widget.lang,
 
-        // Preseleccionar PSE si el cliente lo eligió
-        ...(metodoPago === 'pse' && { p_type_doc: 'PSE' }),
+        // Preseleccionar método según elección del cliente
+        ...(metodoPago === 'pse'       && { p_type_doc_billing: 'PSE',       p_type_doc: 'PSE' }),
+        ...(metodoPago === 'efectivo'  && { p_type_doc_billing: 'CASH',      p_type_doc: 'CASH' }),
+        ...(metodoPago === 'nequi'     && { p_type_doc_billing: 'NEQUI',     p_type_doc: 'NEQUI' }),
+        ...(metodoPago === 'daviplata' && { p_type_doc_billing: 'DAVIPLATA', p_type_doc: 'DAVIPLATA' }),
 
         // URLs
         response:     datos_widget.response,
@@ -184,7 +187,11 @@ export default function EpaycoWidget({ pedidoId, total, token, metodoPago, onExi
       ) : (
         <>
           <i className="fas fa-lock text-xs"></i>
-          {metodoPago === 'pse' ? 'Pagar con PSE' : 'Pagar con ePayco'}
+          {metodoPago === 'pse' ? 'Pagar con PSE'
+            : metodoPago === 'efectivo' ? 'Generar código Efecty/Baloto'
+            : metodoPago === 'nequi' ? 'Pagar con Nequi'
+            : metodoPago === 'daviplata' ? 'Pagar con Daviplata'
+            : 'Pagar con ePayco'}
         </>
       )}
     </button>
