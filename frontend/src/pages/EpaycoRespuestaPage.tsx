@@ -44,9 +44,26 @@ export default function EpaycoRespuestaPage() {
     } else if (x_response === 'Pendiente' || x_cod_response === '3' || x_cod_response === '7') {
       setEstado('pendiente')
       setDetalle('Tu pago está siendo validado. Te notificaremos pronto.')
-    } else if (x_response === 'Rechazada' || x_response === 'Fallida' || x_cod_response === '2' || x_cod_response === '4' || x_cod_response === '6') {
+    } else if (
+      x_response === 'Rechazada' || 
+      x_response === 'Fallida' || 
+      x_response === 'Cancelada' || 
+      x_response === 'Abandonada' || 
+      x_response === 'Expirada' || 
+      x_response === 'Reversada' ||
+      x_cod_response === '2' || 
+      x_cod_response === '4' || 
+      x_cod_response === '6' ||
+      x_cod_response === '9' || 
+      x_cod_response === '10'
+    ) {
       setEstado('fallido')
-      setDetalle(x_response_reason || `Pago ${x_response.toLowerCase()} — intenta con otro método de pago`)
+      const mensajeEstado = x_response === 'Cancelada' 
+        ? 'Pago cancelado por el usuario'
+        : x_response === 'Abandonada'
+        ? 'Pago abandonado — no se completó el proceso'
+        : x_response_reason || `Pago ${x_response?.toLowerCase() || 'no completado'}`
+      setDetalle(mensajeEstado)
     } else if (x_response) {
       // Cualquier otro valor de x_response no reconocido
       setEstado('fallido')
@@ -74,7 +91,7 @@ export default function EpaycoRespuestaPage() {
         if (pedido.estado === 'Confirmado' || pedido.estado === 'Enviado' || pedido.estado === 'Entregado') {
           setEstado('exitoso')
           setDetalle('Tu pago fue procesado correctamente.')
-        } else if (pedido.estado === 'Cancelado') {
+        } else if (pedido.estado === 'Cancelado' || pedido.estado === 'Rechazado') {
           setEstado('fallido')
           setDetalle('El pago fue rechazado o cancelado.')
         } else if (pedido.estado === 'Creado' && intentos < 4) {
@@ -87,10 +104,12 @@ export default function EpaycoRespuestaPage() {
           setDetalle('Tu pago está siendo validado por ePayco. Recibirás un correo cuando sea confirmado.')
         }
       } else {
-        setEstado('exitoso')
+        setEstado('pendiente')
+        setDetalle('No se encontró el pedido. Verifica en "Mis Pedidos".')
       }
     } catch {
-      setEstado('exitoso')
+      setEstado('pendiente')
+      setDetalle('Error al verificar el pago. Verifica en "Mis Pedidos".')
     }
   }
 
@@ -105,7 +124,7 @@ export default function EpaycoRespuestaPage() {
         if (ultimo.estado === 'Confirmado' || ultimo.estado === 'Enviado' || ultimo.estado === 'Entregado') {
           setEstado('exitoso')
           setDetalle('Tu pago fue procesado correctamente.')
-        } else if (ultimo.estado === 'Cancelado') {
+        } else if (ultimo.estado === 'Cancelado' || ultimo.estado === 'Rechazado') {
           setEstado('fallido')
           setDetalle('El pago fue rechazado o cancelado.')
         } else if (ultimo.estado === 'Creado' && intentos < 4) {
@@ -116,10 +135,12 @@ export default function EpaycoRespuestaPage() {
           setDetalle('Tu pago está siendo validado por ePayco. Recibirás un correo cuando sea confirmado.')
         }
       } else {
-        setEstado('exitoso')
+        setEstado('pendiente')
+        setDetalle('No se encontraron pedidos. Verifica en "Mis Pedidos".')
       }
     } catch {
-      setEstado('exitoso')
+      setEstado('pendiente')
+      setDetalle('Error al verificar el pago. Verifica en "Mis Pedidos".')
     }
   }
 
