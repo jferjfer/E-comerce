@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_URL } from '@/config/api'
 import { useCartStore } from '@/store/useCartStore'
@@ -41,6 +41,14 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const total = obtenerPrecioTotal()
   const montoBono = bonoValidado?.valido ? bonoValidado.monto : 0
   const totalConBono = Math.max(0, total - montoBono)
+
+  // Refs para que processPayment siempre lea valores actuales
+  const bonoValidadoRef = React.useRef(bonoValidado)
+  const codigoBonoRef = React.useRef(codigoBono)
+  const totalRef = React.useRef(total)
+  React.useEffect(() => { bonoValidadoRef.current = bonoValidado }, [bonoValidado])
+  React.useEffect(() => { codigoBonoRef.current = codigoBono }, [codigoBono])
+  React.useEffect(() => { totalRef.current = total }, [total])
 
   useEffect(() => {
     if (isOpen && estaAutenticado && usuario?.rol === 'cliente' && token) {
@@ -114,14 +122,21 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setError(null)
     setPlazoCredito(plazo)
 
+    // Leer valores actuales desde refs para evitar closure stale
+    const bonoActual = bonoValidadoRef.current
+    const codigoActual = codigoBonoRef.current
+    const totalActual = totalRef.current
+    const montoBonoActual = bonoActual?.valido ? bonoActual.monto : 0
+    const totalFinal = Math.max(0, totalActual - montoBonoActual)
+
+    console.log('processPayment — bono:', bonoActual?.valido, 'monto:', montoBonoActual, 'total:', totalFinal)
+
     try {
-      // El bono ya está validado en el estado del modal
-      // totalConBono ya tiene el descuento aplicado
       const resultado = await api.procesarCheckout(token, {
         metodoPago: selectedMethod,
         direccion_envio: 'Dirección predeterminada',
-        descuento_bono: montoBono,
-        codigo_bono: bonoValidado?.valido ? codigoBono.trim().toUpperCase() : null,
+        descuento_bono: montoBonoActual,
+        codigo_bono: bonoActual?.valido ? codigoActual.trim().toUpperCase() : null,
         items: items.map(item => ({
           id: item.id,
           nombre: item.nombre,
@@ -152,12 +167,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       // Crédito interno
       if (selectedMethod === 'credito_interno' && plazo) {
-        const solicitud = await api.solicitarCreditoInterno(token, usuario.id, totalConBono, plazo)
+        const solicitud = await api.solicitarCreditoInterno(token, usuario.id, totalFinal, plazo)
         if (!solicitud.aprobado) {
           setError(solicitud.razon || 'No se pudo aprobar el crédito')
           return
         }
-        const cargo = await api.cargarCredito(token, solicitud.credito_id, pedidoId, totalConBono)
+        const cargo = await api.cargarCredito(token, solicitud.credito_id, pedidoId, totalFinal)
         if (cargo.error) {
           setError('Error al aplicar el crédito')
           return
@@ -166,8 +181,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       }
 
       // Aplicar bono si existe (para métodos no-ePayco)
-      if (bonoValidado?.valido) {
-        await api.aplicarBono(codigoBono.trim().toUpperCase(), usuario.id, pedidoId)
+      if (bonoActual?.valido) {
+        await api.aplicarBono(codigoActual.trim().toUpperCase(), usuario.id, pedidoId)
       }
 
       setOrderId(pedidoId)
@@ -265,12 +280,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 </div>
                 <EpaycoWidget
                   pedidoId={pedidoParaEpayco}
-                  total={totalConBono}
+                  total={Math.max(0, totalRef.current - (bonoValidadoRef.current?.valido ? bonoValidadoRef.current.monto : 0))}
                   token={token}
                   metodoPago={selectedMethod}
                   onExito={async () => {
-                    if (bonoValidado?.valido && usuario) {
-                      await api.aplicarBono(codigoBono.trim().toUpperCase(), usuario.id, pedidoParaEpayco!)
+                    if (bonoValidadoRef.current?.valido && usuario) {
+                      await api.aplicarBono(codigoBonoRef.current.trim().toUpperCase(), usuario.id, pedidoParaEpayco!)
                     }
                     setOrderId(pedidoParaEpayco)
                     setPedidoParaEpayco(null)
