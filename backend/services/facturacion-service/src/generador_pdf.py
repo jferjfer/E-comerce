@@ -262,9 +262,8 @@ def generar_pdf_factura(
          Paragraph(fmt(iva), estilo('tv', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT))],
     ]
     if descuento_bono and descuento_bono > 0:
-        label_bono = f"Bono {codigo_bono}:" if codigo_bono else "Descuento bono:"
         tot_rows.append([
-            Paragraph(label_bono, estilo('tl', fontSize=8, textColor=colors.HexColor('#c5a47e'), alignment=TA_RIGHT)),
+            Paragraph("Descuento bono:", estilo('tl', fontSize=8, textColor=colors.HexColor('#c5a47e'), alignment=TA_RIGHT)),
             Paragraph(f"-{fmt(descuento_bono)}", estilo('tv', fontSize=8, fontName='Helvetica-Bold', textColor=colors.HexColor('#c5a47e'), alignment=TA_RIGHT))
         ])
     else:
