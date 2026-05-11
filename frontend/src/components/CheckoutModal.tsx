@@ -74,6 +74,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     const resultado = await api.validarBono(codigoBono.trim().toUpperCase(), usuario.id)
     if (resultado.valido) {
       setBonoValidado(resultado)
+      // Resetear pedido para que se cree uno nuevo con el descuento
+      setPedidoParaEpayco(null)
     } else {
       setErrorBono(resultado.razon || 'Bono no válido')
       setBonoValidado(null)
@@ -250,7 +252,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               errorBono={errorBono}
               onCodigoBonoChange={(v) => { setCodigoBono(v); setBonoValidado(null); setErrorBono('') }}
               onValidarBono={handleValidarBono}
-              onQuitarBono={() => { setBonoValidado(null); setCodigoBono('') }}
+              onQuitarBono={() => { setBonoValidado(null); setCodigoBono(''); setPedidoParaEpayco(null) }}
               totalConBono={totalConBono}
               montoBono={montoBono}
             />
