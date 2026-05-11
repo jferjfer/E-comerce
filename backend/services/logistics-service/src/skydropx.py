@@ -166,13 +166,41 @@ async def _crear_cotizacion(client: httpx.AsyncClient, destinatario: dict, valor
 # PASO 2 — Esperar cotización completa y elegir rate
 # ============================================================
 
-async def _obtener_mejor_rate(client: httpx.AsyncClient, cotizacion_id: str) -> Optional[dict]:
+async def _obtener_mejor_rate(client: httpx.AsyncClient, cotizacion: dict) -> Optional[dict]:
     """
-    Espera hasta que is_completed sea True y retorna el rate más económico válido.
+    Si la cotización ya viene completa del POST la usa directamente.
+    Si no, hace polling hasta is_completed.
     """
     headers = await _headers()
+    cotizacion_id = cotizacion.get("id")
 
-    for intento in range(12):
+    def _elegir(data: dict) -> Optional[dict]:
+        rates = data.get("rates", [])
+        validos = [
+            r for r in rates
+            if r.get("success") and r.get("status") in (
+                "approved", "price_found_external", "price_found_internal", "coverage_checked"
+            )
+        ]
+        if not validos:
+            print(f"⚠️ Sin rates válidos. Statuses: {[r.get('status') for r in rates]}")
+            return None
+        validos.sort(key=lambda r: float(r.get("total") or r.get("amount") or 9999))
+        mejor = validos[0]
+        print(f"✅ Rate elegido: {mejor.get('provider_display_name')} ${mejor.get('total')} COP — {mejor.get('days')} días")
+        return mejor
+
+    # Si ya vino completa del POST inicial, usarla directamente
+    if cotizacion.get("is_completed"):
+        rate = _elegir(cotizacion)
+        if rate:
+            return rate
+        # Sin rates válidos en el POST, intentar GET una vez
+        await asyncio.sleep(3)
+
+    # Polling
+    for intento in range(15):
+        await asyncio.sleep(3)
         res = await client.get(
             f"{SKYDROPX_BASE}/api/v1/quotations/{cotizacion_id}",
             headers=headers
@@ -180,29 +208,10 @@ async def _obtener_mejor_rate(client: httpx.AsyncClient, cotizacion_id: str) -> 
         if res.status_code != 200:
             print(f"❌ Error consultando cotización: {res.status_code}")
             return None
-
         data = res.json()
-
+        print(f"⏳ Cotización pendiente (intento {intento + 1}/15)...")
         if data.get("is_completed"):
-            rates = data.get("rates", [])
-            rates_validos = [
-                r for r in rates
-                if r.get("success") and r.get("status") in (
-                    "approved", "price_found_external", "price_found_internal", "coverage_checked"
-                )
-            ]
-
-            if not rates_validos:
-                print(f"⚠️ No hay rates válidos. Statuses: {[r.get('status') for r in rates]}")
-                return None
-
-            rates_validos.sort(key=lambda r: float(r.get("total") or r.get("amount") or 9999))
-            mejor = rates_validos[0]
-            print(f"✅ Rate elegido: {mejor.get('provider_display_name')} ${mejor.get('total')} COP — {mejor.get('days')} días")
-            return mejor
-
-        print(f"⏳ Cotización pendiente (intento {intento + 1}/12)...")
-        await asyncio.sleep(2)
+            return _elegir(data)
 
     print("⚠️ Cotización no completó en tiempo esperado")
     return None
@@ -304,13 +313,13 @@ async def crear_guia(pedido_id: str, destinatario: dict, valor_declarado: float 
     valor = max(10000, min(float(valor_declarado), 5000000))
 
     async with httpx.AsyncClient(timeout=60) as client:
-        # Paso 1: Cotizar
-        cotizacion_id = await _crear_cotizacion(client, destinatario, valor)
-        if not cotizacion_id:
+        # Paso 1: Cotizar — retorna dict completo
+        cotizacion = await _crear_cotizacion(client, destinatario, valor)
+        if not cotizacion:
             return None
 
-        # Paso 2: Esperar y elegir rate
-        rate = await _obtener_mejor_rate(client, cotizacion_id)
+        # Paso 2: Elegir rate — recibe dict completo
+        rate = await _obtener_mejor_rate(client, cotizacion)
         if not rate:
             return None
 

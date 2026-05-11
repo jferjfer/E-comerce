@@ -307,7 +307,7 @@ async def crear_guia_skydropx(solicitud: SolicitudGuia):
         "street1":      solicitud.destinatario_direccion,
         "area_level1":  solicitud.destinatario_departamento,
         "area_level2":  solicitud.destinatario_ciudad,
-        "postal_code":  solicitud.destinatario_codigo_postal or "110111",
+        "postal_code":  solicitud.destinatario_codigo_postal or "",
         "country_code": "CO",
         "phone":        solicitud.destinatario_telefono,
         "email":        solicitud.destinatario_email,

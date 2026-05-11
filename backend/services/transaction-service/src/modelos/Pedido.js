@@ -1,13 +1,13 @@
 const pool = require('../config/baseDatos');
 
 class Pedido {
-  static async crear(idUsuario, estado, total) {
+  static async crear(idUsuario, estado, total, descuentoBono = 0, codigoBono = null) {
     const consulta = `
-      INSERT INTO pedido (id_usuario, estado, total)
-      VALUES ($1, $2, $3)
+      INSERT INTO pedido (id_usuario, estado, total, descuento_bono, codigo_bono)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
-    const resultado = await pool.query(consulta, [idUsuario, estado, total]);
+    const resultado = await pool.query(consulta, [idUsuario, estado, total, descuentoBono, codigoBono]);
     return resultado.rows[0];
   }
 

@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS pedido (
     metodo_pago VARCHAR(50) NOT NULL,
     direccion_envio JSONB NOT NULL,
     estado VARCHAR(20) DEFAULT 'procesando',
+    descuento_bono DECIMAL(10,2) DEFAULT 0,
+    codigo_bono VARCHAR(20),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
