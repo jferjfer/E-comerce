@@ -4,6 +4,7 @@ import jwt
 import os
 from config.base_datos import obtener_bd
 
+# v2.0 - Categorías en MongoDB con permisos de Product Manager
 router = APIRouter()
 
 JWT_SECRET = os.getenv("JWT_SECRETO", "secret")
