@@ -154,8 +154,7 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: FRONTEND_URL
-          value: "https://egoscolombia.com.co"
-        - name: EPAYCO_P_CUST_ID
+          value: "https://www.egoscolombia.com.co"
           valueFrom:
             secretKeyRef:
               name: egos-secrets
