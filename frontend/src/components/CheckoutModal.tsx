@@ -28,30 +28,22 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [plazoCredito, setPlazoCredito] = useState<number | undefined>()
-
-  // Evaluación de crédito
-  const [evaluacionCredito, setEvaluacionCredito] = useState<any>(null)
-  const [cargandoCredito, setCargandoCredito] = useState(false)
   const [creditoId, setCreditoId] = useState<string | null>(null)
   const [epaycoActivo, setEpaycoActivo] = useState(false)
   const [pedidoParaEpayco, setPedidoParaEpayco] = useState<string | null>(null)
-  const [codigoBonoParaEpayco, setCodigoBonoParaEpayco] = useState<string | null>(null)
+
+  // ── Estado del bono centralizado en el modal ──
+  const [codigoBono, setCodigoBono] = useState('')
+  const [bonoValidado, setBonoValidado] = useState<any>(null)
+  const [validandoBono, setValidandoBono] = useState(false)
+  const [errorBono, setErrorBono] = useState('')
 
   const total = obtenerPrecioTotal()
-  const [montoBono, setMontoBono] = useState(0)
-  const [totalParaEpayco, setTotalParaEpayco] = useState(0)
+  const montoBono = bonoValidado?.valido ? bonoValidado.monto : 0
   const totalConBono = Math.max(0, total - montoBono)
 
-  // Al abrir, evaluar crédito y verificar si ePayco está activo
   useEffect(() => {
     if (isOpen && estaAutenticado && usuario?.rol === 'cliente' && token) {
-      setCargandoCredito(true)
-      api.evaluarCredito(token, usuario)
-        .then(data => setEvaluacionCredito(data))
-        .catch(() => setEvaluacionCredito({ califica: false }))
-        .finally(() => setCargandoCredito(false))
-
-      // Verificar si ePayco está configurado
       fetch(`${API_URL}/api/pagos/epayco/estado`)
         .then(r => r.json())
         .then(d => setEpaycoActivo(d.configurado))
@@ -59,7 +51,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     }
   }, [isOpen, estaAutenticado, usuario, token])
 
-  // Reset al cerrar
+  // Reset completo al cerrar
   useEffect(() => {
     if (!isOpen) {
       setCurrentStep(1)
@@ -69,13 +61,26 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       setPlazoCredito(undefined)
       setCreditoId(null)
       setPedidoParaEpayco(null)
-      setCodigoBonoParaEpayco(null)
-      setMontoBono(0)
-      setTotalParaEpayco(0)
+      setCodigoBono('')
+      setBonoValidado(null)
+      setErrorBono('')
     }
   }, [isOpen])
 
-  // Prompt login
+  const handleValidarBono = async () => {
+    if (!codigoBono.trim() || !usuario) return
+    setValidandoBono(true)
+    setErrorBono('')
+    const resultado = await api.validarBono(codigoBono.trim().toUpperCase(), usuario.id)
+    if (resultado.valido) {
+      setBonoValidado(resultado)
+    } else {
+      setErrorBono(resultado.razon || 'Bono no válido')
+      setBonoValidado(null)
+    }
+    setValidandoBono(false)
+  }
+
   if (isOpen && !estaAutenticado) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
@@ -88,19 +93,15 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             <p className="text-sm text-gray-500 mt-1">Necesitas una cuenta para completar tu compra</p>
           </div>
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50">
-              Cancelar
-            </button>
-            <button onClick={() => { onClose(); navigate('/login') }} className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary">
-              Iniciar Sesión
-            </button>
+            <button onClick={onClose} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50">Cancelar</button>
+            <button onClick={() => { onClose(); navigate('/login') }} className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary">Iniciar Sesión</button>
           </div>
         </div>
       </Modal>
     )
   }
 
-  const processPayment = async (plazo?: number, codigoBono?: string) => {
+  const processPayment = async (plazo?: number) => {
     if (!token || !usuario) return
     if (usuario.rol !== 'cliente') {
       setError('Solo los clientes pueden realizar compras')
@@ -112,28 +113,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setPlazoCredito(plazo)
 
     try {
-      // 1. Obtener monto del bono PRIMERO antes de cualquier otra cosa
-      let montoBonoPedido = 0
-      if (codigoBono) {
-        const validacion = await api.validarBono(codigoBono, usuario.id)
-        if (validacion.valido) {
-          montoBonoPedido = validacion.monto
-          setMontoBono(montoBonoPedido) // actualizar estado para UI
-        } else {
-          setError(validacion.razon || 'Código de bono no válido')
-          setIsLoading(false)
-          return
-        }
-      }
-
-      const totalFinalCliente = Math.max(0, total - montoBonoPedido)
-
-      // 2. Crear el pedido con el total ya descontado
+      // El bono ya está validado en el estado del modal
+      // totalConBono ya tiene el descuento aplicado
       const resultado = await api.procesarCheckout(token, {
         metodoPago: selectedMethod,
         direccion_envio: 'Dirección predeterminada',
-        descuento_bono: montoBonoPedido,
-        codigo_bono: codigoBono || null,
+        descuento_bono: montoBono,
+        codigo_bono: bonoValidado?.valido ? codigoBono.trim().toUpperCase() : null,
         items: items.map(item => ({
           id: item.id,
           nombre: item.nombre,
@@ -152,52 +138,36 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       // Todos los métodos externos van por ePayco
       if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod)) {
         if (epaycoActivo) {
-          // totalFinalCliente ya calculado arriba con el descuento del bono
-          setTotalParaEpayco(totalFinalCliente)
           setPedidoParaEpayco(pedidoId)
-          setCodigoBonoParaEpayco(codigoBono || null)
           setIsLoading(false)
           return
         } else {
-          setError('La pasarela de pagos no está disponible en este momento. Por favor elige crédito EGOS.')
+          setError('La pasarela de pagos no está disponible.')
           setIsLoading(false)
           return
         }
       }
 
-      // 2. Aplicar bono SOLO si el pago es exitoso (no ePayco)
-      // Para ePayco el bono se aplica en onExito
-      if (codigoBono) {
-        const resultadoBono = await api.aplicarBono(codigoBono, usuario.id, pedidoId)
-        if (resultadoBono.error) {
-          setError('El código de bono no es válido o ya fue utilizado')
-          return
-        }
-      }
-
-      // 3. Si es crédito interno: solicitar crédito y hacer cargo
+      // Crédito interno
       if (selectedMethod === 'credito_interno' && plazo) {
-        const montoFinal = codigoBono && evaluacionCredito?.monto_bono
-          ? Math.max(0, total - evaluacionCredito.monto_bono)
-          : total
-
-        const solicitud = await api.solicitarCreditoInterno(token, usuario.id, montoFinal, plazo)
-
+        const solicitud = await api.solicitarCreditoInterno(token, usuario.id, totalConBono, plazo)
         if (!solicitud.aprobado) {
           setError(solicitud.razon || 'No se pudo aprobar el crédito')
           return
         }
-
-        const cargo = await api.cargarCredito(token, solicitud.credito_id, pedidoId, montoFinal)
+        const cargo = await api.cargarCredito(token, solicitud.credito_id, pedidoId, totalConBono)
         if (cargo.error) {
           setError('Error al aplicar el crédito')
           return
         }
-
         setCreditoId(solicitud.credito_id)
       }
 
-      // 4. Éxito
+      // Aplicar bono si existe (para métodos no-ePayco)
+      if (bonoValidado?.valido) {
+        await api.aplicarBono(codigoBono.trim().toUpperCase(), usuario.id, pedidoId)
+      }
+
       setOrderId(pedidoId)
       setCurrentStep(3)
       vaciarCarrito()
@@ -227,23 +197,24 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     >
       <div className="space-y-5">
 
-        {/* Indicador de pasos (solo en pasos 1 y 2) */}
         {currentStep < 3 && (
           <>
             <CheckoutSteps currentStep={currentStep} totalSteps={2} />
-
-            {/* Resumen total */}
             <div className="flex justify-between items-center px-1">
               <span className="text-sm text-gray-500">
                 <i className="fas fa-shopping-bag mr-1.5"></i>
                 {items.length} producto(s)
               </span>
-              <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
+              <div className="text-right">
+                {bonoValidado?.valido && (
+                  <p className="text-xs text-gray-400 line-through">{formatPrice(total)}</p>
+                )}
+                <span className="text-lg font-bold text-primary">{formatPrice(totalConBono)}</span>
+              </div>
             </div>
           </>
         )}
 
-        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
             <i className="fas fa-exclamation-circle flex-shrink-0 mt-0.5"></i>
@@ -254,14 +225,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           </div>
         )}
 
-        {/* Paso 1: Método de pago */}
         {currentStep === 1 && (
           <PaymentMethodStep
             selectedMethod={selectedMethod}
-            onMethodSelect={(id) => { setSelectedMethod(id); setError(null); setPedidoParaEpayco(null); setTotalParaEpayco(0); setMontoBono(0) }}
+            onMethodSelect={(id) => { setSelectedMethod(id); setError(null); setPedidoParaEpayco(null) }}
             onNext={() => setCurrentStep(2)}
-            evaluacionCredito={evaluacionCredito}
-            cargandoCredito={cargandoCredito}
+            evaluacionCredito={null}
+            cargandoCredito={false}
           />
         )}
 
@@ -271,10 +241,20 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               selectedMethod={selectedMethod}
               isLoading={isLoading}
               onConfirm={processPayment}
-              onBack={() => setCurrentStep(1)}
-              limiteCredito={evaluacionCredito?.limite_aprobado}
+              onBack={() => { setCurrentStep(1); setPedidoParaEpayco(null) }}
+              limiteCredito={undefined}
+              // Props del bono — estado centralizado en el modal
+              codigoBono={codigoBono}
+              bonoValidado={bonoValidado}
+              validandoBono={validandoBono}
+              errorBono={errorBono}
+              onCodigoBonoChange={(v) => { setCodigoBono(v); setBonoValidado(null); setErrorBono('') }}
+              onValidarBono={handleValidarBono}
+              onQuitarBono={() => { setBonoValidado(null); setCodigoBono('') }}
+              totalConBono={totalConBono}
+              montoBono={montoBono}
             />
-            {/* Widget ePayco — aparece después de crear el pedido */}
+
             {pedidoParaEpayco && ['pago_en_linea','pse','efectivo','nequi','daviplata'].includes(selectedMethod) && token && (
               <div className="mt-4 space-y-3">
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
@@ -283,17 +263,15 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 </div>
                 <EpaycoWidget
                   pedidoId={pedidoParaEpayco}
-                  total={totalParaEpayco || totalConBono}
+                  total={totalConBono}
                   token={token}
                   metodoPago={selectedMethod}
                   onExito={async () => {
-                    // Aplicar bono AHORA que el pago ePayco fue exitoso
-                    if (codigoBonoParaEpayco && usuario) {
-                      await api.aplicarBono(codigoBonoParaEpayco, usuario.id, pedidoParaEpayco!)
+                    if (bonoValidado?.valido && usuario) {
+                      await api.aplicarBono(codigoBono.trim().toUpperCase(), usuario.id, pedidoParaEpayco!)
                     }
                     setOrderId(pedidoParaEpayco)
                     setPedidoParaEpayco(null)
-                    setCodigoBonoParaEpayco(null)
                     setCurrentStep(3)
                     vaciarCarrito()
                   }}
@@ -308,13 +286,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           </>
         )}
 
-        {/* Paso 3: Éxito */}
         {currentStep === 3 && (
           <SuccessStep
             orderId={orderId}
             onClose={handleClose}
             metodoPago={selectedMethod}
-            cuotaMensual={plazoCredito ? Math.ceil(total / plazoCredito) : undefined}
+            cuotaMensual={plazoCredito ? Math.ceil(totalConBono / plazoCredito) : undefined}
             plazo={plazoCredito}
           />
         )}

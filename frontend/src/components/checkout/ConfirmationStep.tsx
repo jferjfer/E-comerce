@@ -2,15 +2,23 @@ import { useState } from 'react'
 import { useCartStore } from '@/store/useCartStore'
 import { metodosPago } from '@/data/metodosPago'
 import { formatPrice } from '@/utils/sanitize'
-import { api } from '@/services/api'
-import { useAuthStore } from '@/store/useAuthStore'
 
 interface ConfirmationStepProps {
   selectedMethod: string
   isLoading: boolean
-  onConfirm: (plazo?: number, codigoBono?: string) => void
+  onConfirm: (plazo?: number) => void
   onBack: () => void
   limiteCredito?: number
+  // Bono — estado centralizado en CheckoutModal
+  codigoBono: string
+  bonoValidado: any
+  validandoBono: boolean
+  errorBono: string
+  onCodigoBonoChange: (v: string) => void
+  onValidarBono: () => void
+  onQuitarBono: () => void
+  totalConBono: number
+  montoBono: number
 }
 
 export default function ConfirmationStep({
@@ -18,36 +26,23 @@ export default function ConfirmationStep({
   isLoading,
   onConfirm,
   onBack,
-  limiteCredito
+  codigoBono,
+  bonoValidado,
+  validandoBono,
+  errorBono,
+  onCodigoBonoChange,
+  onValidarBono,
+  onQuitarBono,
+  totalConBono,
+  montoBono,
 }: ConfirmationStepProps) {
   const { items, obtenerPrecioTotal } = useCartStore()
-  const { usuario } = useAuthStore()
   const method = metodosPago.find(m => m.id === selectedMethod)
   const total = obtenerPrecioTotal()
   const [plazoSeleccionado, setPlazoSeleccionado] = useState(6)
-  const [codigoBono, setCodigoBono] = useState('')
-  const [bonoValidado, setBonoValidado] = useState<any>(null)
-  const [validandoBono, setValidandoBono] = useState(false)
-  const [errorBono, setErrorBono] = useState('')
 
   const esCredito = selectedMethod === 'credito_interno'
   const esEfectivo = selectedMethod === 'efectivo'
-  const totalConBono = bonoValidado?.valido ? Math.max(0, total - bonoValidado.monto) : total
-
-  const handleValidarBono = async () => {
-    if (!codigoBono.trim() || !usuario) return
-    setValidandoBono(true)
-    setErrorBono('')
-    const resultado = await api.validarBono(codigoBono.trim().toUpperCase(), usuario.id)
-    if (resultado.valido) {
-      setBonoValidado(resultado)
-    } else {
-      setErrorBono(resultado.razon || 'Bono no válido')
-      setBonoValidado(null)
-    }
-    setValidandoBono(false)
-  }
-
   const calcularCuota = (plazo: number) => Math.ceil(totalConBono / plazo)
 
   return (
@@ -78,13 +73,21 @@ export default function ConfirmationStep({
             </div>
           ))}
         </div>
-        <div className="px-4 py-3 border-t border-gray-200 flex justify-between items-center bg-gray-50">
-          <span className="font-semibold text-gray-700 text-sm">Total</span>
-          <div className="text-right">
-            {bonoValidado?.valido && (
-              <p className="text-xs text-gray-400 line-through">{formatPrice(total)}</p>
-            )}
-            <span className="text-lg font-bold text-primary">{formatPrice(totalConBono)}</span>
+        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+          {bonoValidado?.valido && (
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-500">Descuento bono</span>
+              <span className="text-emerald-600 font-semibold">-{formatPrice(montoBono)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center">
+            <span className="font-semibold text-gray-700 text-sm">Total</span>
+            <div className="text-right">
+              {bonoValidado?.valido && (
+                <p className="text-xs text-gray-400 line-through">{formatPrice(total)}</p>
+              )}
+              <span className="text-lg font-bold text-primary">{formatPrice(totalConBono)}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -100,7 +103,7 @@ export default function ConfirmationStep({
         </div>
       </div>
 
-      {/* Campo de bono - disponible para TODOS los métodos de pago */}
+      {/* Campo de bono */}
       <div className="space-y-2">
         <p className="text-sm font-semibold text-gray-700">
           <i className="fas fa-gift text-amber-500 mr-1.5"></i>
@@ -110,13 +113,13 @@ export default function ConfirmationStep({
           <input
             type="text"
             value={codigoBono}
-            onChange={(e) => { setCodigoBono(e.target.value.toUpperCase()); setBonoValidado(null); setErrorBono('') }}
+            onChange={(e) => onCodigoBonoChange(e.target.value.toUpperCase())}
             placeholder="EGOSXXXXXXX"
             className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
             disabled={bonoValidado?.valido}
           />
           <button
-            onClick={handleValidarBono}
+            onClick={onValidarBono}
             disabled={!codigoBono.trim() || validandoBono || bonoValidado?.valido}
             className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 disabled:opacity-40 transition-colors"
           >
@@ -127,7 +130,7 @@ export default function ConfirmationStep({
           <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
             <i className="fas fa-check-circle text-sm"></i>
             <span className="text-sm font-semibold">Bono aplicado: -{formatPrice(bonoValidado.monto)}</span>
-            <button onClick={() => { setBonoValidado(null); setCodigoBono('') }} className="ml-auto text-xs text-gray-500 hover:text-gray-700">
+            <button onClick={onQuitarBono} className="ml-auto text-xs text-gray-500 hover:text-gray-700">
               <i className="fas fa-times"></i>
             </button>
           </div>
@@ -149,32 +152,13 @@ export default function ConfirmationStep({
                 key={plazo}
                 onClick={() => setPlazoSeleccionado(plazo)}
                 className={`p-3 rounded-xl border-2 text-center transition-all ${
-                  plazoSeleccionado === plazo
-                    ? 'border-primary bg-gray-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                  plazoSeleccionado === plazo ? 'border-primary bg-gray-50' : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <p className="text-sm font-bold text-gray-900">{plazo} cuotas</p>
-                <p className="text-xs text-primary font-semibold mt-0.5">
-                  {formatPrice(calcularCuota(plazo))}/mes
-                </p>
-                {plazo <= 6 && (
-                  <p className="text-[10px] text-amber-600 font-medium mt-0.5">
-                    {plazo === 3 ? 'Tasa 2.5%/mes' : 'Tasa 2.2%/mes'}
-                  </p>
-                )}
+                <p className="text-xs text-primary font-semibold mt-0.5">{formatPrice(calcularCuota(plazo))}/mes</p>
               </button>
             ))}
-          </div>
-          <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Total a pagar</span>
-              <span className="font-bold text-gray-900">{formatPrice(total)}</span>
-            </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-gray-600">Cuota mensual</span>
-              <span className="font-bold text-primary">{formatPrice(calcularCuota(plazoSeleccionado))}</span>
-            </div>
           </div>
         </div>
       )}
@@ -184,7 +168,7 @@ export default function ConfirmationStep({
         <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
           <i className="fas fa-info-circle text-amber-500 mt-0.5 flex-shrink-0"></i>
           <p className="text-xs text-amber-800">
-            Se generará un código de pago en ePayco. Podrás pagarlo en <strong>Efecty o Baloto</strong> con ese código.
+            Se generará un código de pago en ePayco. Podrás pagarlo en <strong>Efecty o Baloto</strong>.
           </p>
         </div>
       )}
@@ -210,26 +194,8 @@ export default function ConfirmationStep({
           Volver
         </button>
         <button
-          onClick={async () => {
-            // Si hay código escrito pero no validado, validar automáticamente antes de confirmar
-            let codigoFinal: string | undefined = undefined
-            if (bonoValidado?.valido) {
-              codigoFinal = codigoBono
-            } else if (codigoBono.trim()) {
-              setValidandoBono(true)
-              const resultado = await api.validarBono(codigoBono.trim().toUpperCase(), usuario!.id)
-              setValidandoBono(false)
-              if (resultado.valido) {
-                setBonoValidado(resultado)
-                codigoFinal = codigoBono.trim().toUpperCase()
-              } else {
-                setErrorBono(resultado.razon || 'Bono no válido')
-                return // No confirmar si el bono es inválido
-              }
-            }
-            onConfirm(esCredito ? plazoSeleccionado : undefined, codigoFinal)
-          }}
-          disabled={isLoading || validandoBono}
+          onClick={() => onConfirm(esCredito ? plazoSeleccionado : undefined)}
+          disabled={isLoading}
           className="flex-1 py-3 bg-primary text-white rounded-xl hover:bg-secondary transition-colors font-bold text-sm disabled:opacity-50"
         >
           {isLoading ? (
@@ -240,7 +206,7 @@ export default function ConfirmationStep({
           ) : (
             <>
               <i className="fas fa-lock mr-2 text-xs"></i>
-              {esCredito ? 'Confirmar y financiar' : esEfectivo ? 'Generar código' : 'Confirmar pedido'}
+              {esCredito ? 'Confirmar y financiar' : 'Confirmar pedido'}
             </>
           )}
         </button>
