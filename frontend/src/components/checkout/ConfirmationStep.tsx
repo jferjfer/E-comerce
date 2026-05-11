@@ -184,7 +184,7 @@ export default function ConfirmationStep({
         <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
           <i className="fas fa-info-circle text-amber-500 mt-0.5 flex-shrink-0"></i>
           <p className="text-xs text-amber-800">
-            Se generará un código de pago. Tu pedido quedará <strong>pendiente</strong> hasta confirmar el pago en Efecty o Baloto.
+            Se generará un código de pago en ePayco. Podrás pagarlo en <strong>Efecty o Baloto</strong> con ese código.
           </p>
         </div>
       )}
@@ -210,8 +210,26 @@ export default function ConfirmationStep({
           Volver
         </button>
         <button
-          onClick={() => onConfirm(esCredito ? plazoSeleccionado : undefined, bonoValidado?.valido ? codigoBono : undefined)}
-          disabled={isLoading}
+          onClick={async () => {
+            // Si hay código escrito pero no validado, validar automáticamente antes de confirmar
+            let codigoFinal: string | undefined = undefined
+            if (bonoValidado?.valido) {
+              codigoFinal = codigoBono
+            } else if (codigoBono.trim()) {
+              setValidandoBono(true)
+              const resultado = await api.validarBono(codigoBono.trim().toUpperCase(), usuario!.id)
+              setValidandoBono(false)
+              if (resultado.valido) {
+                setBonoValidado(resultado)
+                codigoFinal = codigoBono.trim().toUpperCase()
+              } else {
+                setErrorBono(resultado.razon || 'Bono no válido')
+                return // No confirmar si el bono es inválido
+              }
+            }
+            onConfirm(esCredito ? plazoSeleccionado : undefined, codigoFinal)
+          }}
+          disabled={isLoading || validandoBono}
           className="flex-1 py-3 bg-primary text-white rounded-xl hover:bg-secondary transition-colors font-bold text-sm disabled:opacity-50"
         >
           {isLoading ? (
