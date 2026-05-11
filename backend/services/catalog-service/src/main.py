@@ -10,6 +10,7 @@ from datetime import datetime
 from config.base_datos import conectar_bd, cerrar_bd, obtener_bd
 from config.cloudinary_config import cloudinary
 from servicios.servicio_imagenes import subir_imagen_producto, subir_multiples_imagenes
+from controladores import categorias
 
 # Campos sensibles que solo ven roles internos
 CAMPOS_SENSIBLES = {'costo_adquisicion', 'proveedor_id', 'referencia_proveedor', 'precio_manual'}
@@ -77,6 +78,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Incluir routers
+app.include_router(categorias.router, prefix="/api/categorias", tags=["categorias"])
 
 # Endpoints de productos
 @app.get("/api/productos")
@@ -346,27 +350,7 @@ async def obtener_producto(producto_id: str, request: Request):
 
     return {"producto": filtrar_campos_sensibles(producto, rol)}
 
-@app.get("/api/categorias")
-async def listar_categorias():
-    print("📂 Obteniendo categorías")
-    db = obtener_bd()
-    if db is not None:
-        try:
-            productos = await db.productos.find({}, {"categoria": 1}).to_list(length=500)
-            cats = sorted(set(p.get('categoria') for p in productos if p.get('categoria')))
-            categorias = [{"id": str(i+1), "nombre": c, "descripcion": c} for i, c in enumerate(cats)]
-            return {"categorias": categorias}
-        except Exception as e:
-            print(f"❌ Error obteniendo categorías: {e}")
-    # Fallback con todas las categorías conocidas
-    categorias_default = [
-        'Vestidos','Blusas','Jeans','Blazers','Faldas','Conjuntos',
-        'Camisas','Pantalones','Cardigans','Tops','Deportivo',
-        'Sudaderas','Chaquetas','Monos','Shorts','Kimonos','Camisetas',
-        'Formal','Accesorios','Bolsos','Calzado','Ropa Interior',
-        'Pijamas','Maternidad','Tallas Grandes'
-    ]
-    return {"categorias": [{"id": str(i+1), "nombre": c, "descripcion": c} for i, c in enumerate(categorias_default)]}
+
 
 @app.get("/api/buscar")
 async def buscar_productos(q: str = Query(..., description="Término de búsqueda")):
