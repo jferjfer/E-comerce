@@ -1021,9 +1021,10 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
         documento_numero: documento_numero || '',
         direccion: direccion_envio || direccion || ciudad || 'Bogotá D.C'
       };
-      if (email) {
-        enviarConfirmacionCompra(email, nombre || 'Cliente', pedido);
-      }
+      // ❌ NO ENVIAR CORREO AQUÍ - Se enviará cuando ePayco confirme el pago
+      // if (email) {
+      //   enviarConfirmacionCompra(email, nombre || 'Cliente', pedido);
+      // }
     } catch (errCorreo) {
       console.log('⚠️ No se pudo obtener datos del usuario para correo:', errCorreo.message);
     }
@@ -1681,6 +1682,16 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
         datos: { pedidoId, estado_nuevo: estado, total: pedido.total, usuario_id: pedido.usuario_id }
       }, { timeout: 2000 }).catch(() => {});
 
+      // ✅ ENVIAR CORREO DE PAGO EXITOSO
+      axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, nombre } = resU.data.usuario || {};
+          if (email) {
+            enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Confirmado', pedido.total);
+          }
+        })
+        .catch(e => console.log(`⚠️ No se pudo enviar correo de confirmación: ${e.message}`));
+
       // Generar factura electrónica automáticamente
       const productos = await pool.query(
         'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1',
@@ -1737,6 +1748,16 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
 
       console.log(`✅ Pago ePayco confirmado para pedido ${pedidoId}`);
     } else {
+      // ❌ ENVIAR CORREO DE PAGO RECHAZADO/CANCELADO
+      axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, nombre } = resU.data.usuario || {};
+          if (email) {
+            enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Cancelado', pedido.total);
+          }
+        })
+        .catch(e => console.log(`⚠️ No se pudo enviar correo de rechazo: ${e.message}`));
+      
       console.log(`❌ Pago ePayco no exitoso para pedido ${pedidoId}: ${descripcion}`);
     }
 
