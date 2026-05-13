@@ -544,17 +544,17 @@ export default function ProductManagerDashboard() {
           <>
             {/* Filtros */}
             <div className="flex gap-3 mb-6 flex-wrap">
-          <input
-            type="text" placeholder="🔍 Buscar por nombre o escanear código de barras..."
-            value={buscar} onChange={e => { setBuscar(e.target.value); setPagina(1) }}
-            className="border rounded-xl px-4 py-2 text-sm flex-1 min-w-[200px]"
-          />
-          <select value={filtroCategoria} onChange={e => { setFiltroCategoria(e.target.value); setPagina(1) }}
-            className="border rounded-xl px-4 py-2 text-sm">
-            <option value="">Todas las categorías</option>
-            {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <span className="text-sm text-gray-500 self-center">{productosFiltrados.length} resultados</span>
+              <input
+                type="text" placeholder="🔍 Buscar por nombre o escanear código de barras..."
+                value={buscar} onChange={e => { setBuscar(e.target.value); setPagina(1) }}
+                className="border rounded-xl px-4 py-2 text-sm flex-1 min-w-[200px]"
+              />
+              <select value={filtroCategoria} onChange={e => { setFiltroCategoria(e.target.value); setPagina(1) }}
+                className="border rounded-xl px-4 py-2 text-sm">
+                <option value="">Todas las categorías</option>
+                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <span className="text-sm text-gray-500 self-center">{productosFiltrados.length} resultados</span>
             </div>
 
             {/* Grid productos */}
@@ -563,70 +563,72 @@ export default function ProductManagerDashboard() {
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600"></div>
               </div>
             ) : (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
-              {paginados.map(p => (
-                <div key={p.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="aspect-square bg-gray-100 overflow-hidden">
-                    {p.imagen
-                      ? <img src={p.imagen} alt={p.nombre} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center text-gray-300">
-                          <i className="fas fa-image text-2xl"></i>
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+                  {paginados.map(p => (
+                    <div key={p.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="aspect-square bg-gray-100 overflow-hidden">
+                        {p.imagen
+                          ? <img src={p.imagen} alt={p.nombre} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center text-gray-300">
+                              <i className="fas fa-image text-2xl"></i>
+                            </div>
+                        }
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-semibold text-gray-800 truncate">{p.nombre}</p>
+                        <p className="text-xs text-gray-400">{p.categoria}</p>
+                        <p className="text-sm font-bold text-amber-700 mt-1">{formatPrice(p.precio)}</p>
+                        {((p as any).sku || SKU_FALLBACK[p.id]) && (
+                          <p className="text-[10px] text-gray-400 font-mono truncate">
+                            {(p as any).sku || SKU_FALLBACK[p.id]}
+                          </p>
+                        )}
+                        {p.costo_adquisicion && (
+                          <p className="text-xs text-gray-400">Costo: {formatPrice(p.costo_adquisicion)}</p>
+                        )}
+                        <div className="flex items-center justify-between mt-2">
+                          <button
+                            onClick={() => toggleStock(p.id, p.en_stock)}
+                            className={`text-xs px-1.5 py-0.5 rounded-full cursor-pointer transition-colors ${
+                              p.en_stock
+                                ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700'
+                                : 'bg-red-100 text-red-700 hover:bg-green-100 hover:text-green-700'
+                            }`}
+                            title={p.en_stock ? 'Click para desactivar' : 'Click para activar'}>
+                            {p.en_stock ? 'Activo' : 'Inactivo'}
+                          </button>
+                          <div className="flex gap-2">
+                            <button onClick={() => abrirEditar(p)}
+                              className="text-xs text-blue-600 hover:text-blue-800" title="Editar">
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button onClick={() => eliminarProducto(p.id, p.nombre)}
+                              className="text-xs text-red-500 hover:text-red-700" title="Eliminar">
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
-                    }
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-semibold text-gray-800 truncate">{p.nombre}</p>
-                    <p className="text-xs text-gray-400">{p.categoria}</p>
-                    <p className="text-sm font-bold text-amber-700 mt-1">{formatPrice(p.precio)}</p>
-                    {((p as any).sku || SKU_FALLBACK[p.id]) && (
-                      <p className="text-[10px] text-gray-400 font-mono truncate">
-                        {(p as any).sku || SKU_FALLBACK[p.id]}
-                      </p>
-                    )}
-                    {p.costo_adquisicion && (
-                      <p className="text-xs text-gray-400">Costo: {formatPrice(p.costo_adquisicion)}</p>
-                    )}
-                    <div className="flex items-center justify-between mt-2">
-                      <button
-                        onClick={() => toggleStock(p.id, p.en_stock)}
-                        className={`text-xs px-1.5 py-0.5 rounded-full cursor-pointer transition-colors ${
-                          p.en_stock
-                            ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700'
-                            : 'bg-red-100 text-red-700 hover:bg-green-100 hover:text-green-700'
-                        }`}
-                        title={p.en_stock ? 'Click para desactivar' : 'Click para activar'}>
-                        {p.en_stock ? 'Activo' : 'Inactivo'}
-                      </button>
-                      <div className="flex gap-2">
-                        <button onClick={() => abrirEditar(p)}
-                          className="text-xs text-blue-600 hover:text-blue-800" title="Editar">
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button onClick={() => eliminarProducto(p.id, p.nombre)}
-                          className="text-xs text-red-500 hover:text-red-700" title="Eliminar">
-                          <i className="fas fa-trash"></i>
-                        </button>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {/* Paginación */}
-            {totalPaginas > 1 && (
-              <div className="flex items-center justify-center gap-2">
-                <button onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}
-                  className="px-3 py-1 text-sm rounded-lg border disabled:opacity-40 hover:bg-white">
-                  <i className="fas fa-chevron-left"></i>
-                </button>
-                <span className="text-sm text-gray-600">Página {pagina} de {totalPaginas}</span>
-                <button onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))} disabled={pagina === totalPaginas}
-                  className="px-3 py-1 text-sm rounded-lg border disabled:opacity-40 hover:bg-white">
-                  <i className="fas fa-chevron-right"></i>
-                </button>
-              </div>
+                {/* Paginación */}
+                {totalPaginas > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <button onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}
+                      className="px-3 py-1 text-sm rounded-lg border disabled:opacity-40 hover:bg-white">
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <span className="text-sm text-gray-600">Página {pagina} de {totalPaginas}</span>
+                    <button onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))} disabled={pagina === totalPaginas}
+                      className="px-3 py-1 text-sm rounded-lg border disabled:opacity-40 hover:bg-white">
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
