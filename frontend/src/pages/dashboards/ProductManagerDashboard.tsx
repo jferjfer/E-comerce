@@ -212,6 +212,7 @@ export default function ProductManagerDashboard() {
   const [proveedores, setProveedores] = useState<{id: string, codigo: string, nombre: string}[]>([])
   const [tab, setTab] = useState<'productos' | 'categorias'>('productos')
   const [categoriasList, setCategoriasList] = useState<any[]>([])
+  const [categorias, setCategorias] = useState<string[]>(CATEGORIAS)
   const [cargandoCats, setCargandoCats] = useState(false)
   const [showFormCat, setShowFormCat] = useState(false)
   const [editandoCat, setEditandoCat] = useState<any>(null)
