@@ -210,17 +210,71 @@ export default function ProductManagerDashboard() {
   const POR_PAGINA = 12
   const barcodeCanvasRef = useRef<HTMLCanvasElement>(null)
   const [proveedores, setProveedores] = useState<{id: string, codigo: string, nombre: string}[]>([])
-  const [categorias, setCategorias] = useState<string[]>(CATEGORIAS)
+  const [tab, setTab] = useState<'productos' | 'categorias'>('productos')
+  const [categoriasList, setCategoriasList] = useState<any[]>([])
+  const [cargandoCats, setCargandoCats] = useState(false)
+  const [showFormCat, setShowFormCat] = useState(false)
+  const [editandoCat, setEditandoCat] = useState<any>(null)
+  const [formCat, setFormCat] = useState({ nombre: '', descripcion: '', imagen: '' })
+  const [guardandoCat, setGuardandoCat] = useState(false)
+  const [mensajeCat, setMensajeCat] = useState<{tipo: string, texto: string} | null>(null)
 
   useEffect(() => { cargarProductos(); cargarProveedores(); cargarCategorias() }, [])
 
   const cargarCategorias = async () => {
+    setCargandoCats(true)
     try {
       const r = await fetch(`${API_URL}/api/categorias`)
       const d = await r.json()
-      const cats = (d.categorias || []).map((c: any) => c.nombre).filter(Boolean)
-      if (cats.length > 0) setCategorias(cats)
+      const cats = d.categorias || []
+      setCategoriasList(cats)
+      const nombres = cats.map((c: any) => c.nombre).filter(Boolean)
+      if (nombres.length > 0) setCategorias(nombres)
     } catch {}
+    finally { setCargandoCats(false) }
+  }
+
+  const guardarCategoria = async () => {
+    if (!formCat.nombre.trim()) {
+      setMensajeCat({ tipo: 'error', texto: 'El nombre es obligatorio' })
+      return
+    }
+    setGuardandoCat(true)
+    setMensajeCat(null)
+    try {
+      const url = editandoCat
+        ? `${API_URL}/api/categorias/${editandoCat.id}`
+        : `${API_URL}/api/categorias`
+      const method = editandoCat ? 'PUT' : 'POST'
+      const r = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(formCat)
+      })
+      const d = await r.json()
+      if (r.ok) {
+        setMensajeCat({ tipo: 'success', texto: editandoCat ? '✅ Categoría actualizada' : '✅ Categoría creada' })
+        setShowFormCat(false)
+        setEditandoCat(null)
+        setFormCat({ nombre: '', descripcion: '', imagen: '' })
+        cargarCategorias()
+      } else {
+        setMensajeCat({ tipo: 'error', texto: d.detail || d.error || 'Error guardando categoría' })
+      }
+    } catch { setMensajeCat({ tipo: 'error', texto: 'Error de conexión' }) }
+    finally { setGuardandoCat(false) }
+  }
+
+  const eliminarCategoria = async (id: string, nombre: string) => {
+    if (!confirm(`¿Eliminar la categoría "${nombre}"?`)) return
+    try {
+      const r = await fetch(`${API_URL}/api/categorias/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (r.ok) cargarCategorias()
+      else alert('Error al eliminar')
+    } catch { alert('Error de conexión') }
   }
 
   const cargarProveedores = async () => {
@@ -465,6 +519,29 @@ export default function ProductManagerDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-gray-200">
+          <button
+            onClick={() => setTab('productos')}
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'productos' ? 'border-amber-600 text-amber-700' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}>
+            <i className="fas fa-box mr-2"></i>Productos
+            <span className="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{productos.length}</span>
+          </button>
+          <button
+            onClick={() => { setTab('categorias'); cargarCategorias() }}
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'categorias' ? 'border-amber-600 text-amber-700' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}>
+            <i className="fas fa-tags mr-2"></i>Categorías
+            <span className="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{categoriasList.length}</span>
+          </button>
+        </div>
+
+        {/* ── TAB PRODUCTOS ── */}
+        {tab === 'productos' && (
+          <>
         {/* Filtros */}
         <div className="flex gap-3 mb-6 flex-wrap">
           <input
@@ -552,6 +629,129 @@ export default function ProductManagerDashboard() {
               </div>
             )}
           </>
+        )}
+
+        {/* ── TAB CATEGORÍAS ── */}
+        {tab === 'categorias' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">{categoriasList.length} categorías registradas</p>
+              <button
+                onClick={() => { setShowFormCat(true); setEditandoCat(null); setFormCat({ nombre: '', descripcion: '', imagen: '' }); setMensajeCat(null) }}
+                className="bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-amber-700 flex items-center gap-2">
+                <i className="fas fa-plus"></i> Nueva Categoría
+              </button>
+            </div>
+
+            {mensajeCat && (
+              <div className={`p-3 rounded-xl text-sm ${mensajeCat.tipo === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {mensajeCat.texto}
+              </div>
+            )}
+
+            {/* Formulario crear/editar */}
+            {showFormCat && (
+              <div className="bg-white rounded-2xl border shadow-sm p-5 space-y-4">
+                <h3 className="font-bold text-gray-800">
+                  {editandoCat ? '✏️ Editar Categoría' : '➕ Nueva Categoría'}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Nombre *</label>
+                    <input
+                      value={formCat.nombre}
+                      onChange={e => setFormCat({ ...formCat, nombre: e.target.value })}
+                      placeholder="Ej: Vestidos"
+                      className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Descripción</label>
+                    <input
+                      value={formCat.descripcion}
+                      onChange={e => setFormCat({ ...formCat, descripcion: e.target.value })}
+                      placeholder="Ej: Vestidos para toda ocasión"
+                      className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-semibold text-gray-600 mb-1 block">URL de imagen (opcional)</label>
+                    <input
+                      value={formCat.imagen}
+                      onChange={e => setFormCat({ ...formCat, imagen: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={guardarCategoria}
+                    disabled={guardandoCat}
+                    className="bg-gray-900 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                    style={{ color: '#c5a47e' }}>
+                    {guardandoCat ? 'Guardando...' : editandoCat ? 'Actualizar' : 'Crear Categoría'}
+                  </button>
+                  <button
+                    onClick={() => { setShowFormCat(false); setEditandoCat(null); setMensajeCat(null) }}
+                    className="border border-gray-300 text-gray-600 px-6 py-2.5 rounded-xl text-sm hover:bg-gray-50">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Lista de categorías */}
+            {cargandoCats ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {categoriasList.map((cat: any) => (
+                  <div key={cat.id} className="bg-white rounded-xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    {cat.imagen ? (
+                      <img src={cat.imagen} alt={cat.nombre} className="w-full h-32 object-cover" />
+                    ) : (
+                      <div className="w-full h-32 bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center">
+                        <i className="fas fa-tags text-3xl text-amber-300"></i>
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <p className="font-semibold text-gray-800 text-sm">{cat.nombre}</p>
+                      {cat.descripcion && (
+                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{cat.descripcion}</p>
+                      )}
+                      <p className="text-xs text-gray-300 font-mono mt-1">ID: {cat.id}</p>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => {
+                            setEditandoCat(cat)
+                            setFormCat({ nombre: cat.nombre, descripcion: cat.descripcion || '', imagen: cat.imagen || '' })
+                            setShowFormCat(true)
+                            setMensajeCat(null)
+                          }}
+                          className="flex-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 py-1.5 rounded-lg font-medium">
+                          <i className="fas fa-edit mr-1"></i>Editar
+                        </button>
+                        <button
+                          onClick={() => eliminarCategoria(cat.id, cat.nombre)}
+                          className="flex-1 text-xs bg-red-50 text-red-600 hover:bg-red-100 py-1.5 rounded-lg font-medium">
+                          <i className="fas fa-trash mr-1"></i>Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {categoriasList.length === 0 && (
+                  <div className="col-span-4 text-center py-16 text-gray-400">
+                    <i className="fas fa-tags text-4xl mb-3"></i>
+                    <p>No hay categorías. Crea la primera.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
