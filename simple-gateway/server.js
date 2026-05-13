@@ -1109,4 +1109,4 @@ server.on('error', (e) => {
   } else {
     console.error('❌ Error del servidor:', e);
   }
-});
+});// trigger rebuild mié 13 may 2026 16:11:45 -05
