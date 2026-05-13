@@ -542,8 +542,8 @@ export default function ProductManagerDashboard() {
         {/* ── TAB PRODUCTOS ── */}
         {tab === 'productos' && (
           <>
-        {/* Filtros */}
-        <div className="flex gap-3 mb-6 flex-wrap">
+            {/* Filtros */}
+            <div className="flex gap-3 mb-6 flex-wrap">
           <input
             type="text" placeholder="🔍 Buscar por nombre o escanear código de barras..."
             value={buscar} onChange={e => { setBuscar(e.target.value); setPagina(1) }}
@@ -555,14 +555,14 @@ export default function ProductManagerDashboard() {
             {categorias.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <span className="text-sm text-gray-500 self-center">{productosFiltrados.length} resultados</span>
-        </div>
+            </div>
 
-        {/* Grid productos */}
-        {cargando ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600"></div>
-          </div>
-        ) : (
+            {/* Grid productos */}
+            {cargando ? (
+              <div className="flex justify-center py-16">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600"></div>
+              </div>
+            ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
               {paginados.map(p => (
