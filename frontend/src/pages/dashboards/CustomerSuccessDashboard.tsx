@@ -429,7 +429,7 @@ export default function CustomerSuccessDashboard() {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">Pedido</th>
-                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
                         <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Correo</th>
                         <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Productos</th>
                         <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Total</th>
@@ -848,13 +848,10 @@ export default function CustomerSuccessDashboard() {
                     {(pedidoDetalle.productos || []).map((p: any, i: number) => (
                       <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2.5 border">
                         <div>
-                          <p className="text-sm font-medium text-gray-800">Producto #{p.id}</p>
-                          <p className="text-xs text-gray-500">Cantidad: {p.cantidad}</p>
+                          <p className="text-sm font-medium text-gray-800">{p.nombre || `Producto #${p.id}`}</p>
+                          <p className="text-xs text-gray-500">Cantidad: {p.cantidad} • {formatPrice(p.precio_unitario || p.precio)} c/u</p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-emerald-700">{formatPrice(p.subtotal || p.precio * p.cantidad)}</p>
-                          <p className="text-xs text-gray-400">{formatPrice(p.precio)} c/u</p>
-                        </div>
+                        <p className="text-sm font-bold text-emerald-700">{formatPrice(p.subtotal || (p.precio_unitario || p.precio) * p.cantidad)}</p>
                       </div>
                     ))}
                   </div>

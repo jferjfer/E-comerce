@@ -1,5 +1,5 @@
 // v2.1.0 — refresh token + CORS limpio + seguridad
-// build: 2026-04-25
+// build: 2026-05-18
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
