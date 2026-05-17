@@ -1,13 +1,16 @@
 // v2.1.0 — refresh token + CORS limpio + seguridad
 // build: 2026-04-25
 const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+require('dotenv').config();
+const rutasAuth = require('./rutas/rutasAuth');
 const rutasUsuario = require('./rutas/rutasUsuario');
 const manejadorErrores = require('./middleware/manejadorErrores');
 const { sanitizarInputs, validarContentType } = require('./middleware/seguridadInputs');
 
 const aplicacion = express();
-const puerto = process.env.PUERTO || 3012;
-// v2.1.0 — RRHH + verificacion activo
+const puerto = process.env.PUERTO || 3011;
 
 // Middleware de seguridad
 aplicacion.use(helmet());

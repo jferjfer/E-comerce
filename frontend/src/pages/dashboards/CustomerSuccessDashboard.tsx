@@ -205,7 +205,24 @@ export default function CustomerSuccessDashboard() {
     }
   }
 
-  const cargarDatos = async () => {
+  const [pedidoDetalle, setPedidoDetalle] = useState<any | null>(null)
+  const [cargandoDetalle, setCargandoDetalle] = useState(false)
+
+  const verDetallePedido = async (pedido: Pedido) => {
+    setCargandoDetalle(true)
+    setPedidoDetalle(null)
+    try {
+      const res = await fetch(`${API_URL}/api/pedidos/${pedido.id}/historial`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const historial = res.ok ? await res.json() : { historial: [] }
+      setPedidoDetalle({ ...pedido, historial: historial.historial || [] })
+    } catch {
+      setPedidoDetalle({ ...pedido, historial: [] })
+    } finally {
+      setCargandoDetalle(false)
+    }
+  }
     setCargando(true)
     try {
       const [resPedidos, resDevoluciones] = await Promise.all([
@@ -405,43 +422,71 @@ export default function CustomerSuccessDashboard() {
               </div>
             ) : (
               <>
-                <table className="min-w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Productos</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {pedidos.slice((paginaPedidos-1)*POR_PAGINA, paginaPedidos*POR_PAGINA).map((pedido) => (
-                      <tr key={pedido.id} className="hover:bg-gray-100/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <span className="font-mono text-sm font-semibold text-gray-800">#{pedido.id}</span>
-                          <div className="mt-1"><span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Creado</span></div>
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <p className="font-medium text-gray-800">{pedido.nombre_cliente}</p>
-                          <p className="text-gray-500 text-xs">{pedido.email_cliente}</p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{(pedido.productos || []).length} producto(s)</td>
-                        <td className="px-6 py-4 text-sm font-bold text-emerald-700">{formatPrice(pedido.total)}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <button onClick={() => cambiarEstadoPedido(pedido.id, 'Cancelado', 'Cancelado por Customer Success')} disabled={procesando === pedido.id} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-sm hover:bg-red-200 disabled:opacity-50 flex items-center gap-1">
-                              <i className="fas fa-times"></i> Cancelar
-                            </button>
-                          </div>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">Pedido</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Correo</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Productos</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Total</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">Fecha</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Acciones</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {/* Paginación */}
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {pedidos.slice((paginaPedidos-1)*POR_PAGINA, paginaPedidos*POR_PAGINA).map((pedido) => {
+                        const nombreCompleto = pedido.nombre_cliente || ''
+                        const partes = nombreCompleto.trim().split(' ')
+                        const primerNombre = partes[0] || ''
+                        const primerApellido = partes[1] || ''
+                        return (
+                          <tr key={pedido.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3 text-center">
+                              <span className="font-mono text-xs font-bold text-gray-800">#{pedido.id}</span>
+                              <div className="mt-1 flex justify-center">
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Creado</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <p className="text-sm font-semibold text-gray-800">{primerNombre} {primerApellido}</p>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <p className="text-xs text-gray-500">{pedido.email_cliente || 'N/A'}</p>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-600">{(pedido.productos || []).length}</span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm font-bold text-emerald-700">{formatPrice(pedido.total)}</span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-xs text-gray-500">{new Date(pedido.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => verDetallePedido(pedido)}
+                                  className="bg-blue-100 text-blue-700 px-2.5 py-1.5 rounded-lg text-xs hover:bg-blue-200 flex items-center gap-1 font-medium"
+                                >
+                                  <i className="fas fa-eye"></i> Ver
+                                </button>
+                                <button
+                                  onClick={() => cambiarEstadoPedido(pedido.id, 'Cancelado', 'Cancelado por Customer Success')}
+                                  disabled={procesando === pedido.id}
+                                  className="bg-red-100 text-red-700 px-2.5 py-1.5 rounded-lg text-xs hover:bg-red-200 disabled:opacity-50 flex items-center gap-1 font-medium"
+                                >
+                                  <i className="fas fa-times"></i> Cancelar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
                 {pedidos.length > POR_PAGINA && (
                   <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50">
                     <p className="text-xs text-gray-500">Mostrando {Math.min((paginaPedidos-1)*POR_PAGINA+1, pedidos.length)}–{Math.min(paginaPedidos*POR_PAGINA, pedidos.length)} de {pedidos.length}</p>
@@ -693,7 +738,7 @@ export default function CustomerSuccessDashboard() {
                 {/* Botón crear bono desde trazabilidad */}
                 <div className="flex justify-end">
                   <button
-                    onClick={() => setBono(b => ({ ...b, abierto: true, emailBusqueda: clienteSeleccionado.perfil.email, clienteEncontrado: { id: clienteSeleccionado.perfil.id, nombre: clienteSeleccionado.perfil.nombre, email: clienteSeleccionado.perfil.email } }))}
+                    onClick={() => setBono(b => ({ ...b, abierto: true, documentoBusqueda: clienteSeleccionado.perfil.documento_numero || '', clienteEncontrado: { id: clienteSeleccionado.perfil.id, nombre: clienteSeleccionado.perfil.nombre, email: clienteSeleccionado.perfil.email, documento: `${clienteSeleccionado.perfil.documento_tipo}: ${clienteSeleccionado.perfil.documento_numero}` } }))}
                     className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 transition-colors"
                   >
                     <i className="fas fa-gift"></i>
@@ -762,6 +807,104 @@ export default function CustomerSuccessDashboard() {
           </div>
         )}
       </div>
+
+      {/* ── MODAL DETALLE PEDIDO ── */}
+      {pedidoDetalle && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-10">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Pedido <span className="font-mono text-blue-600">#{pedidoDetalle.id}</span></h2>
+                <p className="text-xs text-gray-500">{pedidoDetalle.nombre_cliente} • {pedidoDetalle.email_cliente}</p>
+              </div>
+              <button onClick={() => setPedidoDetalle(null)} className="text-gray-400 hover:text-gray-600 text-xl"><i className="fas fa-times"></i></button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Info general */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-500">Estado</p>
+                  <span className="text-sm font-bold text-blue-700">{pedidoDetalle.estado}</span>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-500">Total</p>
+                  <p className="text-sm font-bold text-emerald-700">{formatPrice(pedidoDetalle.total)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-500">Fecha</p>
+                  <p className="text-xs font-medium text-gray-700">{new Date(pedidoDetalle.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                </div>
+              </div>
+
+              {/* Productos */}
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2 text-sm">Productos del pedido</h3>
+                {(pedidoDetalle.productos || []).length === 0
+                  ? <p className="text-gray-400 text-sm">Sin detalle de productos</p>
+                  : <div className="space-y-2">
+                    {(pedidoDetalle.productos || []).map((p: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2.5 border">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">Producto #{p.id}</p>
+                          <p className="text-xs text-gray-500">Cantidad: {p.cantidad}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-emerald-700">{formatPrice(p.subtotal || p.precio * p.cantidad)}</p>
+                          <p className="text-xs text-gray-400">{formatPrice(p.precio)} c/u</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                }
+              </div>
+
+              {/* Historial de estados */}
+              {pedidoDetalle.historial?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-2 text-sm">Historial de estados</h3>
+                  <div className="space-y-1">
+                    {pedidoDetalle.historial.map((h: any, i: number) => (
+                      <div key={i} className="flex items-center gap-3 text-xs py-1.5 border-b border-gray-50">
+                        <span className="text-gray-400 w-4">{i + 1}</span>
+                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{h.estado_anterior || 'Inicio'}</span>
+                        <i className="fas fa-arrow-right text-gray-300"></i>
+                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">{h.estado_nuevo}</span>
+                        <span className="text-gray-400 ml-auto">{new Date(h.fecha_cambio).toLocaleString('es-CO')}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Gestionar estado */}
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2 text-sm">Gestionar pedido</h3>
+                <div className="flex flex-wrap gap-2">
+                  {['Confirmado','Alistado','En Camino','Entregado','Cancelado'].map(estado => (
+                    <button
+                      key={estado}
+                      onClick={async () => {
+                        await cambiarEstadoPedido(pedidoDetalle.id, estado, `Cambiado a ${estado} por Customer Success`)
+                        setPedidoDetalle(null)
+                      }}
+                      disabled={procesando === pedidoDetalle.id || pedidoDetalle.estado === estado}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-40 transition-colors ${
+                        estado === 'Cancelado' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                        estado === 'Confirmado' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' :
+                        estado === 'Entregado' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                        'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                      }`}
+                    >
+                      {pedidoDetalle.estado === estado ? <><i className="fas fa-check mr-1"></i>{estado}</> : estado}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── MODAL CREAR BONO ── */}
       {bono.abierto && (
