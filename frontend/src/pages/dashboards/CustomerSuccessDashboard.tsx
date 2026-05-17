@@ -28,6 +28,16 @@ interface Devolucion {
   email_cliente: string
 }
 
+interface ModalBonoState {
+  abierto: boolean
+  emailBusqueda: string
+  clienteEncontrado: { id: number; nombre: string; email: string } | null
+  buscando: boolean
+  creando: boolean
+  errorBusqueda: string
+  bonoCreado: { codigo: string; monto: number; fecha_vencimiento: string } | null
+}
+
 export default function CustomerSuccessDashboard() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [devoluciones, setDevoluciones] = useState<Devolucion[]>([])
@@ -40,6 +50,67 @@ export default function CustomerSuccessDashboard() {
   const { token } = useAuthStore()
   const { addNotification } = useNotificationStore()
   const socket = useSocket()
+
+  const [bono, setBono] = useState<ModalBonoState>({
+    abierto: false,
+    emailBusqueda: '',
+    clienteEncontrado: null,
+    buscando: false,
+    creando: false,
+    errorBusqueda: '',
+    bonoCreado: null
+  })
+
+  const resetBono = () => setBono({
+    abierto: false, emailBusqueda: '', clienteEncontrado: null,
+    buscando: false, creando: false, errorBusqueda: '', bonoCreado: null
+  })
+
+  const buscarCliente = async () => {
+    if (!bono.emailBusqueda.trim()) return
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bono.emailBusqueda.trim())) {
+      setBono(b => ({ ...b, errorBusqueda: 'Ingresa un email válido' }))
+      return
+    }
+    setBono(b => ({ ...b, buscando: true, errorBusqueda: '', clienteEncontrado: null }))
+    try {
+      // Buscar en la lista de clientes del auth-service
+      const res = await fetch(`${API_URL}/api/usuarios/todos/clientes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      const cliente = (data.usuarios || []).find(
+        (u: any) => u.email.toLowerCase() === bono.emailBusqueda.trim().toLowerCase()
+      )
+      if (!cliente) {
+        setBono(b => ({ ...b, buscando: false, errorBusqueda: 'No se encontró ningún cliente con ese email' }))
+        return
+      }
+      setBono(b => ({ ...b, buscando: false, clienteEncontrado: { id: cliente.id, nombre: cliente.nombre, email: cliente.email } }))
+    } catch {
+      setBono(b => ({ ...b, buscando: false, errorBusqueda: 'Error de conexión al buscar cliente' }))
+    }
+  }
+
+  const crearBono = async () => {
+    if (!bono.clienteEncontrado) return
+    setBono(b => ({ ...b, creando: true }))
+    try {
+      const res = await fetch(`${API_URL}/api/bonos/generar-manual/${bono.clienteEncontrado.id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setBono(b => ({ ...b, creando: false, errorBusqueda: data.detail || 'Error al crear el bono' }))
+        return
+      }
+      setBono(b => ({ ...b, creando: false, bonoCreado: data }))
+      addNotification(`Bono ${data.codigo} creado para ${bono.clienteEncontrado!.nombre}`, 'success')
+    } catch {
+      setBono(b => ({ ...b, creando: false, errorBusqueda: 'Error de conexión al crear bono' }))
+    }
+  }
 
   const cargarDatos = async () => {
     setCargando(true)
@@ -156,10 +227,19 @@ export default function CustomerSuccessDashboard() {
               <p className="text-gray-600">Gestión de pedidos y devoluciones</p>
             </div>
           </div>
-          <button onClick={cargarDatos} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
-            <i className="fas fa-sync-alt"></i>
-            Actualizar
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setBono(b => ({ ...b, abierto: true }))}
+              className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors font-semibold"
+            >
+              <i className="fas fa-gift"></i>
+              Crear Bono
+            </button>
+            <button onClick={cargarDatos} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
+              <i className="fas fa-sync-alt"></i>
+              Actualizar
+            </button>
+          </div>
         </div>
 
         {/* KPIs */}
@@ -332,6 +412,137 @@ export default function CustomerSuccessDashboard() {
           </div>
         )}
       </div>
+
+      {/* ── MODAL CREAR BONO ── */}
+      {bono.abierto && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                  <i className="fas fa-gift text-amber-600"></i>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Crear Bono de Compensación</h2>
+                  <p className="text-xs text-gray-500">$100.000 COP — válido 30 días</p>
+                </div>
+              </div>
+              <button onClick={resetBono} className="text-gray-400 hover:text-gray-600 text-xl">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+
+              {/* Si ya se creó el bono — mostrar resultado */}
+              {bono.bonoCreado ? (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <i className="fas fa-check text-green-600 text-2xl"></i>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">¡Bono creado exitosamente!</p>
+                    <p className="text-sm text-gray-500 mt-1">Se envió un correo a <strong>{bono.clienteEncontrado?.email}</strong></p>
+                  </div>
+                  <div className="bg-gray-900 rounded-xl p-4 text-center">
+                    <p className="text-xs text-amber-400 tracking-widest mb-1">CÓDIGO DE BONO</p>
+                    <p className="text-2xl font-bold text-white font-mono tracking-widest">{bono.bonoCreado.codigo}</p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Vence: {new Date(bono.bonoCreado.fecha_vencimiento).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <button onClick={resetBono} className="w-full bg-emerald-600 text-white py-2.5 rounded-xl font-semibold hover:bg-emerald-700">
+                    Cerrar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Paso 1: buscar cliente */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email del cliente
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={bono.emailBusqueda}
+                        onChange={e => setBono(b => ({ ...b, emailBusqueda: e.target.value, errorBusqueda: '', clienteEncontrado: null }))}
+                        onKeyDown={e => e.key === 'Enter' && buscarCliente()}
+                        placeholder="cliente@ejemplo.com"
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        disabled={bono.buscando}
+                      />
+                      <button
+                        onClick={buscarCliente}
+                        disabled={bono.buscando || !bono.emailBusqueda.trim()}
+                        className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {bono.buscando
+                          ? <i className="fas fa-spinner fa-spin"></i>
+                          : <i className="fas fa-search"></i>
+                        }
+                        Buscar
+                      </button>
+                    </div>
+                    {bono.errorBusqueda && (
+                      <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
+                        <i className="fas fa-exclamation-circle"></i>
+                        {bono.errorBusqueda}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Paso 2: cliente encontrado */}
+                  {bono.clienteEncontrado && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">
+                            {bono.clienteEncontrado.nombre.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{bono.clienteEncontrado.nombre}</p>
+                          <p className="text-xs text-gray-500">{bono.clienteEncontrado.email}</p>
+                          <p className="text-xs text-gray-400">ID: {bono.clienteEncontrado.id}</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-3 border border-amber-100">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Monto del bono</span>
+                          <span className="font-bold text-amber-600">$100.000 COP</span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-1">
+                          <span className="text-gray-600">Validez</span>
+                          <span className="text-gray-700">30 días</span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-1">
+                          <span className="text-gray-600">Notificación</span>
+                          <span className="text-gray-700">Correo automático</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={crearBono}
+                        disabled={bono.creando}
+                        className="w-full bg-amber-500 text-white py-2.5 rounded-xl font-semibold hover:bg-amber-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {bono.creando
+                          ? <><i className="fas fa-spinner fa-spin"></i> Creando bono...</>
+                          : <><i className="fas fa-gift"></i> Confirmar y crear bono</>
+                        }
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
