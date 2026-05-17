@@ -223,6 +223,8 @@ export default function CustomerSuccessDashboard() {
       setCargandoDetalle(false)
     }
   }
+
+  const cargarDatos = async () => {
     setCargando(true)
     try {
       const [resPedidos, resDevoluciones] = await Promise.all([
