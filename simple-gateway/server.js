@@ -405,6 +405,35 @@ app.put('/api/usuarios/perfil', async (req, res) => {
   }
 });
 
+// Buscar clientes y trazabilidad — customer_success
+app.get('/api/usuarios/buscar/clientes', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `${AUTH_URL}/api/usuarios/buscar/clientes${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '?' + new URLSearchParams(req.query).toString()}`,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 5000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.get('/api/usuarios/cliente/:id/trazabilidad', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `${AUTH_URL}/api/usuarios/cliente/${req.params.id}/trazabilidad`,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 // Rutas RRHH
 app.all('/api/usuarios/rrhh*', async (req, res) => {
   try {

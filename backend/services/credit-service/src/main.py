@@ -399,6 +399,9 @@ class AplicarBono(BaseModel):
     usuario_id: int
     pedido_id: str
 
+class GenerarBonoManual(BaseModel):
+    monto: Optional[float] = 100_000
+
 # ============================================
 # ENDPOINTS CRÉDITO
 # ============================================
@@ -833,11 +836,19 @@ def verificar_customer_success(request: Request):
 @app.post("/api/bonos/generar-manual/{usuario_id}")
 async def generar_bono_manual(
     usuario_id: int,
+    datos: GenerarBonoManual,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     agente: dict = Depends(verificar_customer_success)
 ):
     """Customer Success genera un bono de compensación para un cliente insatisfecho"""
+    monto = datos.monto or MONTO_BONO
+
+    # Validar monto
+    if monto < 10_000:
+        raise HTTPException(status_code=400, detail="El monto mínimo del bono es $10.000")
+    if monto > 200_000:
+        raise HTTPException(status_code=400, detail="El monto máximo del bono es $200.000")
     # Generar código único verificando en BD
     intentos = 0
     codigo = None
@@ -858,7 +869,7 @@ async def generar_bono_manual(
     nuevo_bono = Bono(
         codigo=codigo,
         usuario_id=usuario_id,
-        monto=MONTO_BONO,
+        monto=monto,
         estado="Disponible",
         fecha_vencimiento=fecha_vencimiento,
         periodo=periodo
@@ -866,12 +877,12 @@ async def generar_bono_manual(
     db.add(nuevo_bono)
     db.commit()
 
-    print(f"🎁 Bono de compensación {codigo} generado por customer_success [{agente.get('email')}] para usuario {usuario_id}")
+    print(f"🎁 Bono de compensación {codigo} generado por customer_success [{agente.get('email')}] para usuario {usuario_id} por ${monto:,.0f}")
 
     return {
         "mensaje": "Bono de compensación generado exitosamente",
         "codigo": codigo,
-        "monto": MONTO_BONO,
+        "monto": monto,
         "fecha_vencimiento": fecha_vencimiento.isoformat(),
         "generado_por": agente.get("email")
     }

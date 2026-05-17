@@ -28,10 +28,41 @@ interface Devolucion {
   email_cliente: string
 }
 
+interface ClienteBusqueda {
+  id: number
+  nombre: string
+  apellido: string
+  email: string
+  telefono: string
+  ciudad: string
+  documento_tipo: string
+  documento_numero: string
+  total_compras_historico: number
+  activo: boolean
+  fecha_creacion: string
+}
+
+interface Trazabilidad {
+  perfil: any
+  auditoria: any[]
+  intentos_login: any[]
+  pedidos: any[]
+  devoluciones: any[]
+  bonos: any[]
+  resumen: {
+    total_pedidos: number
+    total_devoluciones: number
+    total_bonos: number
+    bonos_disponibles: number
+    ultimo_login: string | null
+  }
+}
+
 interface ModalBonoState {
   abierto: boolean
-  emailBusqueda: string
-  clienteEncontrado: { id: number; nombre: string; email: string } | null
+  documentoBusqueda: string
+  montoBono: number
+  clienteEncontrado: { id: number; nombre: string; email: string; documento: string } | null
   buscando: boolean
   creando: boolean
   errorBusqueda: string
@@ -43,7 +74,7 @@ export default function CustomerSuccessDashboard() {
   const [devoluciones, setDevoluciones] = useState<Devolucion[]>([])
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState<string | null>(null)
-  const [tab, setTab] = useState<'pedidos' | 'devoluciones'>('pedidos')
+  const [tab, setTab] = useState<'pedidos' | 'devoluciones' | 'clientes'>('pedidos')
   const [paginaPedidos, setPaginaPedidos] = useState(1)
   const [paginaDevoluciones, setPaginaDevoluciones] = useState(1)
   const POR_PAGINA = 8
@@ -51,9 +82,19 @@ export default function CustomerSuccessDashboard() {
   const { addNotification } = useNotificationStore()
   const socket = useSocket()
 
+  // ── Estado búsqueda de clientes ──
+  const [busquedaCliente, setBusquedaCliente] = useState('')
+  const [buscandoCliente, setBuscandoCliente] = useState(false)
+  const [resultadosClientes, setResultadosClientes] = useState<ClienteBusqueda[]>([])
+  const [errorBusquedaCliente, setErrorBusquedaCliente] = useState('')
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Trazabilidad | null>(null)
+  const [cargandoTrazabilidad, setCargandoTrazabilidad] = useState(false)
+  const [tabTrazabilidad, setTabTrazabilidad] = useState<'resumen' | 'pedidos' | 'devoluciones' | 'bonos' | 'auditoria'>('resumen')
+
   const [bono, setBono] = useState<ModalBonoState>({
     abierto: false,
-    emailBusqueda: '',
+    documentoBusqueda: '',
+    montoBono: 100000,
     clienteEncontrado: null,
     buscando: false,
     creando: false,
@@ -62,31 +103,78 @@ export default function CustomerSuccessDashboard() {
   })
 
   const resetBono = () => setBono({
-    abierto: false, emailBusqueda: '', clienteEncontrado: null,
+    abierto: false, documentoBusqueda: '', montoBono: 100000, clienteEncontrado: null,
     buscando: false, creando: false, errorBusqueda: '', bonoCreado: null
   })
 
+  // ── Buscar clientes ──
+  const buscarClientes = async () => {
+    if (!busquedaCliente.trim() || busquedaCliente.trim().length < 2) {
+      setErrorBusquedaCliente('Ingresa al menos 2 caracteres')
+      return
+    }
+    setBuscandoCliente(true)
+    setErrorBusquedaCliente('')
+    setResultadosClientes([])
+    setClienteSeleccionado(null)
+    try {
+      const res = await fetch(`${API_URL}/api/usuarios/buscar/clientes?q=${encodeURIComponent(busquedaCliente.trim())}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrorBusquedaCliente(data.error || 'Error buscando'); return }
+      if (data.clientes.length === 0) { setErrorBusquedaCliente('No se encontraron clientes con ese email o documento') }
+      setResultadosClientes(data.clientes || [])
+    } catch {
+      setErrorBusquedaCliente('Error de conexión')
+    } finally {
+      setBuscandoCliente(false)
+    }
+  }
+
+  const verTrazabilidad = async (clienteId: number) => {
+    setCargandoTrazabilidad(true)
+    setClienteSeleccionado(null)
+    try {
+      const res = await fetch(`${API_URL}/api/usuarios/cliente/${clienteId}/trazabilidad`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) { addNotification(data.error || 'Error obteniendo trazabilidad', 'error'); return }
+      setClienteSeleccionado(data)
+      setTabTrazabilidad('resumen')
+    } catch {
+      addNotification('Error de conexión', 'error')
+    } finally {
+      setCargandoTrazabilidad(false)
+    }
+  }
+
   const buscarCliente = async () => {
-    if (!bono.emailBusqueda.trim()) return
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bono.emailBusqueda.trim())) {
-      setBono(b => ({ ...b, errorBusqueda: 'Ingresa un email válido' }))
+    if (!bono.documentoBusqueda.trim() || bono.documentoBusqueda.trim().length < 5) {
+      setBono(b => ({ ...b, errorBusqueda: 'Ingresa un número de documento válido (mínimo 5 dígitos)' }))
+      return
+    }
+    if (!/^[0-9]{5,12}$/.test(bono.documentoBusqueda.trim())) {
+      setBono(b => ({ ...b, errorBusqueda: 'El documento debe tener entre 5 y 12 dígitos numéricos' }))
+      return
+    }
+    if (bono.montoBono < 10000 || bono.montoBono > 200000) {
+      setBono(b => ({ ...b, errorBusqueda: 'El monto debe estar entre $10.000 y $200.000' }))
       return
     }
     setBono(b => ({ ...b, buscando: true, errorBusqueda: '', clienteEncontrado: null }))
     try {
-      // Buscar en la lista de clientes del auth-service
-      const res = await fetch(`${API_URL}/api/usuarios/todos/clientes`, {
+      const res = await fetch(`${API_URL}/api/usuarios/buscar/clientes?q=${encodeURIComponent(bono.documentoBusqueda.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
-      const cliente = (data.usuarios || []).find(
-        (u: any) => u.email.toLowerCase() === bono.emailBusqueda.trim().toLowerCase()
-      )
+      const cliente = (data.clientes || [])[0]
       if (!cliente) {
-        setBono(b => ({ ...b, buscando: false, errorBusqueda: 'No se encontró ningún cliente con ese email' }))
+        setBono(b => ({ ...b, buscando: false, errorBusqueda: 'No se encontró ningún cliente con ese número de documento' }))
         return
       }
-      setBono(b => ({ ...b, buscando: false, clienteEncontrado: { id: cliente.id, nombre: cliente.nombre, email: cliente.email } }))
+      setBono(b => ({ ...b, buscando: false, clienteEncontrado: { id: cliente.id, nombre: cliente.nombre, email: cliente.email, documento: `${cliente.documento_tipo}: ${cliente.documento_numero}` } }))
     } catch {
       setBono(b => ({ ...b, buscando: false, errorBusqueda: 'Error de conexión al buscar cliente' }))
     }
@@ -94,11 +182,16 @@ export default function CustomerSuccessDashboard() {
 
   const crearBono = async () => {
     if (!bono.clienteEncontrado) return
+    if (bono.montoBono < 10000 || bono.montoBono > 200000) {
+      setBono(b => ({ ...b, errorBusqueda: 'El monto debe estar entre $10.000 y $200.000' }))
+      return
+    }
     setBono(b => ({ ...b, creando: true }))
     try {
       const res = await fetch(`${API_URL}/api/bonos/generar-manual/${bono.clienteEncontrado.id}`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ monto: bono.montoBono })
       })
       const data = await res.json()
       if (!res.ok) {
@@ -106,7 +199,7 @@ export default function CustomerSuccessDashboard() {
         return
       }
       setBono(b => ({ ...b, creando: false, bonoCreado: data }))
-      addNotification(`Bono ${data.codigo} creado para ${bono.clienteEncontrado!.nombre}`, 'success')
+      addNotification(`Bono ${data.codigo} de ${formatPrice(bono.montoBono)} creado para ${bono.clienteEncontrado!.nombre}`, 'success')
     } catch {
       setBono(b => ({ ...b, creando: false, errorBusqueda: 'Error de conexión al crear bono' }))
     }
@@ -288,6 +381,13 @@ export default function CustomerSuccessDashboard() {
             Devoluciones
             {devoluciones.length > 0 && <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{devoluciones.length}</span>}
           </button>
+          <button
+            onClick={() => { setTab('clientes'); setClienteSeleccionado(null); setResultadosClientes([]); setBusquedaCliente(''); setErrorBusquedaCliente('') }}
+            className={`px-5 py-2 rounded-lg font-medium transition-colors ${tab === 'clientes' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border'}`}
+          >
+            <i className="fas fa-user-circle mr-2"></i>
+            Consultar Cliente
+          </button>
         </div>
 
         {cargando ? (
@@ -354,6 +454,256 @@ export default function CustomerSuccessDashboard() {
               </>
             )}
           </div>
+        ) : tab === 'clientes' ? (
+          /* ── CONSULTAR CLIENTE ── */
+          <div className="space-y-6">
+            {!clienteSeleccionado && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">
+                  <i className="fas fa-search text-blue-500 mr-2"></i>
+                  Buscar cliente por email o número de documento
+                </h2>
+                <div className="flex gap-3">
+                  <input type="text" value={busquedaCliente}
+                    onChange={e => { setBusquedaCliente(e.target.value); setErrorBusquedaCliente('') }}
+                    onKeyDown={e => e.key === 'Enter' && buscarClientes()}
+                    placeholder="Ej: cliente@email.com ó 1234567890"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button onClick={buscarClientes} disabled={buscandoCliente}
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                    {buscandoCliente ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>} Buscar
+                  </button>
+                </div>
+                {errorBusquedaCliente && <p className="text-red-500 text-sm mt-2"><i className="fas fa-exclamation-circle mr-1"></i>{errorBusquedaCliente}</p>}
+                {resultadosClientes.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs text-gray-500 font-medium">{resultadosClientes.length} cliente(s) — haz clic para ver trazabilidad completa</p>
+                    {resultadosClientes.map(c => (
+                      <button key={c.id} onClick={() => verTrazabilidad(c.id)} disabled={cargandoTrazabilidad}
+                        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl transition-all text-left group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-bold text-sm">{c.nombre.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{c.nombre} {c.apellido}</p>
+                            <p className="text-xs text-gray-500">{c.email}</p>
+                            <p className="text-xs text-gray-400">{c.documento_tipo}: {c.documento_numero} • {c.ciudad || 'Sin ciudad'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-emerald-600">{formatPrice(c.total_compras_historico)}</p>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${c.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{c.activo ? 'Activo' : 'Inactivo'}</span>
+                        </div>
+                        <i className="fas fa-chevron-right text-gray-400 group-hover:text-blue-500 ml-3"></i>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {cargandoTrazabilidad && (
+                  <div className="flex items-center justify-center py-8 gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-500 text-sm">Cargando trazabilidad completa...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {clienteSeleccionado && (
+              <div className="space-y-4">
+                {/* Header cliente */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center">
+                        <span className="text-white font-bold text-xl">{clienteSeleccionado.perfil.nombre.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">{clienteSeleccionado.perfil.nombre} {clienteSeleccionado.perfil.apellido}</h2>
+                        <p className="text-gray-500 text-sm">{clienteSeleccionado.perfil.email}</p>
+                        <div className="flex gap-2 mt-1">
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{clienteSeleccionado.perfil.documento_tipo}: {clienteSeleccionado.perfil.documento_numero}</span>
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{clienteSeleccionado.perfil.ciudad}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${clienteSeleccionado.perfil.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{clienteSeleccionado.perfil.activo ? 'Activo' : 'Inactivo'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => setClienteSeleccionado(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                  </div>
+                  {/* KPIs */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
+                    {[
+                      { label: 'Total compras', valor: formatPrice(clienteSeleccionado.perfil.total_compras_historico), color: 'emerald' },
+                      { label: 'Pedidos', valor: clienteSeleccionado.resumen.total_pedidos, color: 'blue' },
+                      { label: 'Devoluciones', valor: clienteSeleccionado.resumen.total_devoluciones, color: 'red' },
+                      { label: 'Bonos activos', valor: clienteSeleccionado.resumen.bonos_disponibles, color: 'amber' },
+                      { label: 'Último login', valor: clienteSeleccionado.resumen.ultimo_login ? new Date(clienteSeleccionado.resumen.ultimo_login).toLocaleDateString('es-CO') : 'Nunca', color: 'gray' },
+                    ].map(k => (
+                      <div key={k.label} className={`bg-${k.color}-50 rounded-lg p-3 text-center`}>
+                        <p className={`text-lg font-bold text-${k.color}-700`}>{k.valor}</p>
+                        <p className="text-xs text-gray-500">{k.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sub-tabs trazabilidad */}
+                <div className="flex gap-2 flex-wrap">
+                  {(['resumen','pedidos','devoluciones','bonos','auditoria'] as const).map(t => (
+                    <button key={t} onClick={() => setTabTrazabilidad(t)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${ tabTrazabilidad === t ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border' }`}>
+                      {t === 'resumen' && <i className="fas fa-user mr-1"></i>}
+                      {t === 'pedidos' && <i className="fas fa-shopping-bag mr-1"></i>}
+                      {t === 'devoluciones' && <i className="fas fa-undo mr-1"></i>}
+                      {t === 'bonos' && <i className="fas fa-gift mr-1"></i>}
+                      {t === 'auditoria' && <i className="fas fa-history mr-1"></i>}
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+
+                  {tabTrazabilidad === 'resumen' && (
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="font-semibold text-gray-700 mb-3">Datos personales</h3>
+                        <dl className="space-y-2 text-sm">
+                          {[
+                            ['Teléfono', clienteSeleccionado.perfil.telefono || '—'],
+                            ['Género', clienteSeleccionado.perfil.genero || '—'],
+                            ['Fecha nacimiento', clienteSeleccionado.perfil.fecha_nacimiento || '—'],
+                            ['Dirección', clienteSeleccionado.perfil.direccion || '—'],
+                            ['Ciudad', clienteSeleccionado.perfil.ciudad || '—'],
+                            ['Departamento', clienteSeleccionado.perfil.departamento || '—'],
+                            ['Acepta marketing', clienteSeleccionado.perfil.acepta_marketing ? 'Sí' : 'No'],
+                            ['Miembro desde', new Date(clienteSeleccionado.perfil.fecha_creacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })],
+                          ].map(([k, v]) => (
+                            <div key={k} className="flex justify-between border-b border-gray-50 pb-1">
+                              <dt className="text-gray-500">{k}</dt>
+                              <dd className="font-medium text-gray-800">{v}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-700 mb-3">Intentos de login recientes</h3>
+                        <div className="space-y-1">
+                          {clienteSeleccionado.intentos_login.length === 0
+                            ? <p className="text-gray-400 text-sm">Sin intentos registrados</p>
+                            : clienteSeleccionado.intentos_login.slice(0, 8).map((i: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-gray-50">
+                                <span className={`px-2 py-0.5 rounded-full font-medium ${i.exitoso ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{i.exitoso ? '✓ Exitoso' : '✗ Fallido'}</span>
+                                <span className="text-gray-400">{i.ip_address}</span>
+                                <span className="text-gray-500">{new Date(i.fecha).toLocaleString('es-CO')}</span>
+                              </div>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {tabTrazabilidad === 'pedidos' && (
+                    <div className="overflow-x-auto">
+                      {clienteSeleccionado.pedidos.length === 0 ? <p className="text-center py-10 text-gray-400">Sin pedidos</p> : (
+                        <table className="min-w-full">
+                          <thead className="bg-gray-50"><tr>{['Pedido','Estado','Total','Productos','Fecha'].map(h => <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}</tr></thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {clienteSeleccionado.pedidos.map((p: any) => (
+                              <tr key={p.id} className="hover:bg-gray-50">
+                                <td className="px-5 py-3 font-mono text-sm font-semibold">#{p.id}</td>
+                                <td className="px-5 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${ p.estado === 'Entregado' ? 'bg-green-100 text-green-700' : p.estado === 'Cancelado' ? 'bg-red-100 text-red-700' : p.estado === 'En Camino' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700' }`}>{p.estado}</span></td>
+                                <td className="px-5 py-3 font-bold text-emerald-700 text-sm">{formatPrice(p.total)}</td>
+                                <td className="px-5 py-3 text-sm text-gray-500">{(p.productos || []).length} item(s)</td>
+                                <td className="px-5 py-3 text-sm text-gray-500">{new Date(p.fecha_creacion).toLocaleDateString('es-CO')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
+
+                  {tabTrazabilidad === 'devoluciones' && (
+                    <div className="overflow-x-auto">
+                      {clienteSeleccionado.devoluciones.length === 0 ? <p className="text-center py-10 text-gray-400">Sin devoluciones</p> : (
+                        <table className="min-w-full">
+                          <thead className="bg-gray-50"><tr>{['Pedido','Razón','Estado','Monto','Fecha'].map(h => <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}</tr></thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {clienteSeleccionado.devoluciones.map((d: any) => (
+                              <tr key={d.id} className="hover:bg-gray-50">
+                                <td className="px-5 py-3 font-mono text-sm">{d.id_pedido}</td>
+                                <td className="px-5 py-3 text-sm text-gray-600 max-w-xs truncate">{d.razon}</td>
+                                <td className="px-5 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${ d.estado === 'Completada' ? 'bg-green-100 text-green-700' : d.estado === 'Rechazada' ? 'bg-red-100 text-red-700' : d.estado === 'Aprobada' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700' }`}>{d.estado}</span></td>
+                                <td className="px-5 py-3 font-bold text-red-600 text-sm">{formatPrice(d.monto_pedido)}</td>
+                                <td className="px-5 py-3 text-sm text-gray-500">{new Date(d.fecha_creacion).toLocaleDateString('es-CO')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
+
+                  {tabTrazabilidad === 'bonos' && (
+                    <div className="p-6">
+                      {clienteSeleccionado.bonos.length === 0 ? <p className="text-center py-6 text-gray-400">Sin bonos</p> : (
+                        <div className="space-y-3">
+                          {clienteSeleccionado.bonos.map((b: any) => (
+                            <div key={b.codigo} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border">
+                              <div>
+                                <p className="font-mono font-bold text-gray-900 tracking-widest">{b.codigo}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Generado: {new Date(b.fecha_generacion).toLocaleDateString('es-CO')} • Vence: {new Date(b.fecha_vencimiento).toLocaleDateString('es-CO')}</p>
+                                {b.fecha_uso && <p className="text-xs text-gray-400">Usado: {new Date(b.fecha_uso).toLocaleDateString('es-CO')}</p>}
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-amber-600">{formatPrice(b.monto)}</p>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${ b.estado === 'Disponible' ? 'bg-green-100 text-green-700' : b.estado === 'Usado' ? 'bg-gray-100 text-gray-600' : 'bg-red-100 text-red-600' }`}>{b.estado}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {tabTrazabilidad === 'auditoria' && (
+                    <div className="overflow-x-auto">
+                      {clienteSeleccionado.auditoria.length === 0 ? <p className="text-center py-10 text-gray-400">Sin registros</p> : (
+                        <table className="min-w-full">
+                          <thead className="bg-gray-50"><tr>{['Acción','Detalle','IP','Fecha'].map(h => <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}</tr></thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {clienteSeleccionado.auditoria.map((a: any, idx: number) => (
+                              <tr key={idx} className="hover:bg-gray-50">
+                                <td className="px-5 py-3"><span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{a.accion}</span></td>
+                                <td className="px-5 py-3 text-sm text-gray-600 max-w-xs truncate">{a.entidad_afectada}</td>
+                                <td className="px-5 py-3 text-xs text-gray-400 font-mono">{a.ip_address || '—'}</td>
+                                <td className="px-5 py-3 text-xs text-gray-500">{new Date(a.fecha_hora).toLocaleString('es-CO')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Botón crear bono desde trazabilidad */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setBono(b => ({ ...b, abierto: true, emailBusqueda: clienteSeleccionado.perfil.email, clienteEncontrado: { id: clienteSeleccionado.perfil.id, nombre: clienteSeleccionado.perfil.nombre, email: clienteSeleccionado.perfil.email } }))}
+                    className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 transition-colors"
+                  >
+                    <i className="fas fa-gift"></i>
+                    Crear bono de compensación para este cliente
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
         ) : (
           /* ── DEVOLUCIONES ── */
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
@@ -425,8 +775,8 @@ export default function CustomerSuccessDashboard() {
                   <i className="fas fa-gift text-amber-600"></i>
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Crear Bono de Compensación</h2>
-                  <p className="text-xs text-gray-500">$100.000 COP — válido 30 días</p>
+                    <h2 className="text-lg font-bold text-gray-900">Crear Bono de Compensación</h2>
+                  <p className="text-xs text-gray-500">Máximo $200.000 COP — válido 30 días</p>
                 </div>
               </div>
               <button onClick={resetBono} className="text-gray-400 hover:text-gray-600 text-xl">
@@ -459,30 +809,28 @@ export default function CustomerSuccessDashboard() {
                 </div>
               ) : (
                 <>
-                  {/* Paso 1: buscar cliente */}
+                  {/* Paso 1: buscar cliente por documento */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email del cliente
+                      Número de documento del cliente
                     </label>
                     <div className="flex gap-2">
                       <input
-                        type="email"
-                        value={bono.emailBusqueda}
-                        onChange={e => setBono(b => ({ ...b, emailBusqueda: e.target.value, errorBusqueda: '', clienteEncontrado: null }))}
+                        type="text"
+                        value={bono.documentoBusqueda}
+                        onChange={e => setBono(b => ({ ...b, documentoBusqueda: e.target.value.replace(/\D/g, ''), errorBusqueda: '', clienteEncontrado: null }))}
                         onKeyDown={e => e.key === 'Enter' && buscarCliente()}
-                        placeholder="cliente@ejemplo.com"
+                        placeholder="Ej: 1234567890"
+                        maxLength={12}
                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                         disabled={bono.buscando}
                       />
                       <button
                         onClick={buscarCliente}
-                        disabled={bono.buscando || !bono.emailBusqueda.trim()}
+                        disabled={bono.buscando || bono.documentoBusqueda.trim().length < 5}
                         className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
                       >
-                        {bono.buscando
-                          ? <i className="fas fa-spinner fa-spin"></i>
-                          : <i className="fas fa-search"></i>
-                        }
+                        {bono.buscando ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>}
                         Buscar
                       </button>
                     </div>
@@ -492,6 +840,26 @@ export default function CustomerSuccessDashboard() {
                         {bono.errorBusqueda}
                       </p>
                     )}
+                  </div>
+
+                  {/* Monto del bono */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Monto del bono: <span className="text-amber-600 font-bold">{formatPrice(bono.montoBono)}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={10000}
+                      max={200000}
+                      step={10000}
+                      value={bono.montoBono}
+                      onChange={e => setBono(b => ({ ...b, montoBono: Number(e.target.value) }))}
+                      className="w-full accent-amber-500"
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>$10.000</span>
+                      <span>$200.000</span>
+                    </div>
                   </div>
 
                   {/* Paso 2: cliente encontrado */}
@@ -506,14 +874,14 @@ export default function CustomerSuccessDashboard() {
                         <div>
                           <p className="font-semibold text-gray-900">{bono.clienteEncontrado.nombre}</p>
                           <p className="text-xs text-gray-500">{bono.clienteEncontrado.email}</p>
-                          <p className="text-xs text-gray-400">ID: {bono.clienteEncontrado.id}</p>
+                          <p className="text-xs text-gray-400">{bono.clienteEncontrado.documento}</p>
                         </div>
                       </div>
 
                       <div className="bg-white rounded-lg p-3 border border-amber-100">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Monto del bono</span>
-                          <span className="font-bold text-amber-600">$100.000 COP</span>
+                          <span className="font-bold text-amber-600">{formatPrice(bono.montoBono)}</span>
                         </div>
                         <div className="flex justify-between text-sm mt-1">
                           <span className="text-gray-600">Validez</span>
