@@ -1135,6 +1135,7 @@ aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
         p.id, p.usuario_id, p.estado, p.total,
         p.fecha_creacion, p.fecha_actualizacion,
         p.tracking_number, p.carrier,
+        p.cliente_nombre, p.cliente_email,
         json_agg(
           json_build_object(
             'id', pp.id_producto,
@@ -1151,30 +1152,15 @@ aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
       consulta += ' WHERE p.estado = $1';
       params.push(estado);
     }
-    consulta += ' GROUP BY p.id, p.usuario_id, p.estado, p.total, p.fecha_creacion, p.fecha_actualizacion, p.tracking_number, p.carrier ORDER BY p.fecha_creacion DESC';
+    consulta += ' GROUP BY p.id, p.usuario_id, p.estado, p.total, p.fecha_creacion, p.fecha_actualizacion, p.tracking_number, p.carrier, p.cliente_nombre, p.cliente_email ORDER BY p.fecha_creacion DESC';
 
     const resultado = await pool.query(consulta, params);
 
-    // Enriquecer con datos del cliente desde auth-service
-    const axios = require('axios');
-    const pedidosEnriquecidos = await Promise.all(
-      resultado.rows.map(async (pedido) => {
-        try {
-          const res = await axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 });
-          return {
-            ...pedido,
-            nombre_cliente: res.data.usuario?.nombre || `Usuario ${pedido.usuario_id}`,
-            email_cliente: res.data.usuario?.email || 'N/A'
-          };
-        } catch {
-          return {
-            ...pedido,
-            nombre_cliente: `Usuario ${pedido.usuario_id}`,
-            email_cliente: 'N/A'
-          };
-        }
-      })
-    );
+    const pedidosEnriquecidos = resultado.rows.map((pedido) => ({
+      ...pedido,
+      nombre_cliente: pedido.cliente_nombre || `Usuario ${pedido.usuario_id}`,
+      email_cliente: pedido.cliente_email || 'N/A'
+    }));
 
     res.json({ pedidos: pedidosEnriquecidos, total: pedidosEnriquecidos.length });
   } catch (error) {
