@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -7,6 +7,7 @@ import secrets
 import string
 import httpx
 import json
+import jwt as pyjwt
 from typing import Optional
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -809,9 +810,34 @@ async def obtener_bonos_usuario(usuario_id: int, db: Session = Depends(get_db)):
         "disponibles": sum(1 for b in bonos if b.estado == "Disponible")
     }
 
+def verificar_customer_success(request: Request):
+    """Verifica que el usuario tenga rol customer_success"""
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token requerido")
+    try:
+        token = auth.replace("Bearer ", "")
+        secret = os.getenv("JWT_SECRETO", "")
+        if not secret:
+            raise HTTPException(status_code=500, detail="Error de configuración")
+        decoded = pyjwt.decode(token, secret, algorithms=["HS256"])
+        if decoded.get("rol") != "customer_success":
+            raise HTTPException(status_code=403, detail="Solo Customer Success puede generar bonos de compensación")
+        return decoded
+    except pyjwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Sesión expirada")
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
+
+
 @app.post("/api/bonos/generar-manual/{usuario_id}")
-async def generar_bono_manual(usuario_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """Solo para testing/admin — genera un bono manualmente"""
+async def generar_bono_manual(
+    usuario_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    agente: dict = Depends(verificar_customer_success)
+):
+    """Customer Success genera un bono de compensación para un cliente insatisfecho"""
     # Generar código único verificando en BD
     intentos = 0
     codigo = None
@@ -840,11 +866,14 @@ async def generar_bono_manual(usuario_id: int, background_tasks: BackgroundTasks
     db.add(nuevo_bono)
     db.commit()
 
+    print(f"🎁 Bono de compensación {codigo} generado por customer_success [{agente.get('email')}] para usuario {usuario_id}")
+
     return {
-        "mensaje": "Bono generado exitosamente",
+        "mensaje": "Bono de compensación generado exitosamente",
         "codigo": codigo,
         "monto": MONTO_BONO,
-        "fecha_vencimiento": fecha_vencimiento.isoformat()
+        "fecha_vencimiento": fecha_vencimiento.isoformat(),
+        "generado_por": agente.get("email")
     }
 
 if __name__ == "__main__":
