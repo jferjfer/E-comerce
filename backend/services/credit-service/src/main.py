@@ -112,13 +112,14 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
         return
 
     try:
+        nombre_corto = nombre.split()[0] if nombre else "Cliente"
+        monto_fmt = f"${int(monto):,}".replace(",", ".")
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"🎁 ¡{nombre_corto}, tienes un bono de ${int(monto):,} COP en EGOS!"
+        msg["Subject"] = f"🎁 ¡{nombre_corto}, tienes un bono de {monto_fmt} COP en EGOS!"
         msg["From"] = f'"EGOS" <{SMTP_USER}>'
         msg["To"] = email
 
         fecha_str = fecha_vencimiento.strftime("%d de %B de %Y")
-        monto_fmt = f"${int(monto):,}".replace(",", ".")
 
         html = f"""
         <!DOCTYPE html>
