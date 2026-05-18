@@ -838,7 +838,8 @@ def enviar_correo_bono_compensacion(email: str, nombre: str, codigo: str, fecha_
           <div style="max-width:600px;margin:0 auto;background:#ffffff">
 
             <div style="background:#111827;padding:32px 40px;text-align:center">
-              <div style="font-size:26px;font-weight:900;color:#c5a47e;letter-spacing:10px">EGOS</div>
+              <div style="font-size:36px;font-weight:900;color:#c5a47e;letter-spacing:-2px;margin-bottom:2px">E</div>
+              <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:10px;text-transform:uppercase">EGOS</div>
               <div style="font-size:10px;color:rgba(197,164,126,0.7);letter-spacing:4px;margin-top:4px;text-transform:uppercase">Wear Your Truth</div>
             </div>
 
