@@ -1,3 +1,4 @@
+# v3.1.0 — monto variable en bonos manuales
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel

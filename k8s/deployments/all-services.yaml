@@ -431,6 +431,13 @@ spec:
         env:
         - name: PUERTO
           value: "3008"
+        - name: JWT_SECRETO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3011"
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
