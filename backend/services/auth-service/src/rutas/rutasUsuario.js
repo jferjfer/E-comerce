@@ -171,17 +171,36 @@ router.get('/cliente/:id/trazabilidad', autenticar, async (req, res) => {
 // GET /api/usuarios/:id
 router.get('/:id', ControladorUsuario.obtenerUsuarioPorId);
 
-// GET /api/usuarios/todos — para credit-service (cron de bonos)
+// GET /api/usuarios/todos/clientes — para credit-service (cron de bonos) y customer_success
 router.get('/todos/clientes', async (req, res) => {
   try {
     const pool = require('../config/baseDatos');
+    const { pagina = 1, limite = 20, buscar } = req.query;
+    const offset = (parseInt(pagina) - 1) * parseInt(limite);
+
+    let where = `WHERE rol = 'cliente' AND activo = true`;
+    const params = [];
+    if (buscar) {
+      where += ` AND (nombre ILIKE $1 OR apellido ILIKE $1 OR email ILIKE $1 OR documento_numero ILIKE $1)`;
+      params.push(`%${buscar}%`);
+    }
+
+    const total = await pool.query(`SELECT COUNT(*) FROM usuarios ${where}`, params);
     const resultado = await pool.query(
-      `SELECT id, nombre, email, rol, fecha_creacion, total_compras_historico, activo
-       FROM usuarios
-       WHERE rol = 'cliente' AND activo = true
-       ORDER BY fecha_creacion ASC`
+      `SELECT id, nombre, apellido, email, rol, fecha_creacion, total_compras_historico, activo,
+              telefono, ciudad, documento_tipo, documento_numero
+       FROM usuarios ${where}
+       ORDER BY fecha_creacion DESC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, parseInt(limite), offset]
     );
-    res.json({ usuarios: resultado.rows, total: resultado.rows.length });
+    res.json({
+      usuarios: resultado.rows,
+      total: parseInt(total.rows[0].count),
+      pagina: parseInt(pagina),
+      limite: parseInt(limite),
+      total_paginas: Math.ceil(parseInt(total.rows[0].count) / parseInt(limite))
+    });
   } catch (error) {
     res.status(500).json({ error: 'Error obteniendo usuarios' });
   }

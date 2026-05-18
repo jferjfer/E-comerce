@@ -91,6 +91,14 @@ export default function CustomerSuccessDashboard() {
   const [cargandoTrazabilidad, setCargandoTrazabilidad] = useState(false)
   const [tabTrazabilidad, setTabTrazabilidad] = useState<'resumen' | 'pedidos' | 'devoluciones' | 'bonos' | 'auditoria'>('resumen')
 
+  // ── Lista completa de clientes con paginación ──
+  const [todosClientes, setTodosClientes] = useState<ClienteBusqueda[]>([])
+  const [cargandoClientes, setCargandoClientes] = useState(false)
+  const [paginaClientes, setPaginaClientes] = useState(1)
+  const [totalClientesPaginas, setTotalClientesPaginas] = useState(1)
+  const [totalClientesCount, setTotalClientesCount] = useState(0)
+  const CLIENTES_POR_PAGINA = 15
+
   const [bono, setBono] = useState<ModalBonoState>({
     abierto: false,
     documentoBusqueda: '',
@@ -147,6 +155,26 @@ export default function CustomerSuccessDashboard() {
       addNotification('Error de conexión', 'error')
     } finally {
       setCargandoTrazabilidad(false)
+    }
+  }
+
+  const cargarTodosClientes = async (pagina = 1, buscar = '') => {
+    setCargandoClientes(true)
+    try {
+      const params = new URLSearchParams({ pagina: String(pagina), limite: String(CLIENTES_POR_PAGINA) })
+      if (buscar.trim()) params.append('buscar', buscar.trim())
+      const res = await fetch(`${API_URL}/api/usuarios/todos/clientes?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      setTodosClientes(data.usuarios || [])
+      setTotalClientesPaginas(data.total_paginas || 1)
+      setTotalClientesCount(data.total || 0)
+      setPaginaClientes(pagina)
+    } catch {
+      addNotification('Error cargando clientes', 'error')
+    } finally {
+      setCargandoClientes(false)
     }
   }
 
@@ -401,7 +429,7 @@ export default function CustomerSuccessDashboard() {
             {devoluciones.length > 0 && <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{devoluciones.length}</span>}
           </button>
           <button
-            onClick={() => { setTab('clientes'); setClienteSeleccionado(null); setResultadosClientes([]); setBusquedaCliente(''); setErrorBusquedaCliente('') }}
+            onClick={() => { setTab('clientes'); setClienteSeleccionado(null); setResultadosClientes([]); setBusquedaCliente(''); setErrorBusquedaCliente(''); cargarTodosClientes(1) }}
             className={`px-5 py-2 rounded-lg font-medium transition-colors ${tab === 'clientes' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border'}`}
           >
             <i className="fas fa-user-circle mr-2"></i>
@@ -505,51 +533,133 @@ export default function CustomerSuccessDashboard() {
           /* ── CONSULTAR CLIENTE ── */
           <div className="space-y-6">
             {!clienteSeleccionado && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">
-                  <i className="fas fa-search text-blue-500 mr-2"></i>
-                  Buscar cliente por email o número de documento
-                </h2>
-                <div className="flex gap-3">
-                  <input type="text" value={busquedaCliente}
-                    onChange={e => { setBusquedaCliente(e.target.value); setErrorBusquedaCliente('') }}
-                    onKeyDown={e => e.key === 'Enter' && buscarClientes()}
-                    placeholder="Ej: cliente@email.com ó 1234567890"
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <button onClick={buscarClientes} disabled={buscandoCliente}
-                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-                    {buscandoCliente ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>} Buscar
-                  </button>
-                </div>
-                {errorBusquedaCliente && <p className="text-red-500 text-sm mt-2"><i className="fas fa-exclamation-circle mr-1"></i>{errorBusquedaCliente}</p>}
-                {resultadosClientes.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-xs text-gray-500 font-medium">{resultadosClientes.length} cliente(s) — haz clic para ver trazabilidad completa</p>
-                    {resultadosClientes.map(c => (
-                      <button key={c.id} onClick={() => verTrazabilidad(c.id)} disabled={cargandoTrazabilidad}
-                        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl transition-all text-left group">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-white font-bold text-sm">{c.nombre.charAt(0).toUpperCase()}</span>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{c.nombre} {c.apellido}</p>
-                            <p className="text-xs text-gray-500">{c.email}</p>
-                            <p className="text-xs text-gray-400">{c.documento_tipo}: {c.documento_numero} • {c.ciudad || 'Sin ciudad'}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-emerald-600">{formatPrice(c.total_compras_historico)}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${c.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{c.activo ? 'Activo' : 'Inactivo'}</span>
-                        </div>
-                        <i className="fas fa-chevron-right text-gray-400 group-hover:text-blue-500 ml-3"></i>
+              <div className="space-y-4">
+                {/* Buscador */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                  <div className="flex gap-3">
+                    <input type="text" value={busquedaCliente}
+                      onChange={e => setBusquedaCliente(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          if (busquedaCliente.trim().length >= 2) buscarClientes()
+                          else cargarTodosClientes(1)
+                        }
+                      }}
+                      placeholder="Buscar por email o documento..."
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <button onClick={() => busquedaCliente.trim().length >= 2 ? buscarClientes() : cargarTodosClientes(1)}
+                      disabled={buscandoCliente || cargandoClientes}
+                      className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                      {(buscandoCliente || cargandoClientes) ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>}
+                      Buscar
+                    </button>
+                    {busquedaCliente && (
+                      <button onClick={() => { setBusquedaCliente(''); setResultadosClientes([]); setErrorBusquedaCliente(''); cargarTodosClientes(1) }}
+                        className="bg-gray-100 text-gray-600 px-4 py-2.5 rounded-lg text-sm hover:bg-gray-200">
+                        <i className="fas fa-times"></i>
                       </button>
-                    ))}
+                    )}
                   </div>
-                )}
+                  {errorBusquedaCliente && <p className="text-red-500 text-sm mt-2"><i className="fas fa-exclamation-circle mr-1"></i>{errorBusquedaCliente}</p>}
+                </div>
+
+                {/* Lista de clientes */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  {/* Header */}
+                  <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-700">
+                      {resultadosClientes.length > 0
+                        ? `${resultadosClientes.length} resultado(s) de búsqueda`
+                        : `${totalClientesCount} clientes registrados`
+                      }
+                    </p>
+                    <p className="text-xs text-gray-400">Haz clic en un cliente para ver su trazabilidad completa</p>
+                  </div>
+
+                  {cargandoClientes ? (
+                    <div className="flex justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <table className="min-w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Cliente</th>
+                            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Documento</th>
+                            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ciudad</th>
+                            <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Total compras</th>
+                            <th className="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Estado</th>
+                            <th className="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Miembro desde</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {(resultadosClientes.length > 0 ? resultadosClientes : todosClientes).map(c => (
+                            <tr key={c.id}
+                              onClick={() => verTrazabilidad(c.id)}
+                              className="hover:bg-blue-50 cursor-pointer transition-colors group">
+                              <td className="px-5 py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-white font-bold text-sm">{c.nombre.charAt(0).toUpperCase()}</span>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700">{c.nombre} {c.apellido}</p>
+                                    <p className="text-xs text-gray-500">{c.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-5 py-3 text-sm text-gray-600">{c.documento_tipo} {c.documento_numero || '—'}</td>
+                              <td className="px-5 py-3 text-sm text-gray-600">{c.ciudad || '—'}</td>
+                              <td className="px-5 py-3 text-right text-sm font-bold text-emerald-700">{formatPrice(c.total_compras_historico)}</td>
+                              <td className="px-5 py-3 text-center">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                  {c.activo ? 'Activo' : 'Inactivo'}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3 text-center text-xs text-gray-500">
+                                {new Date(c.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Paginación — solo cuando no hay búsqueda activa */}
+                      {resultadosClientes.length === 0 && totalClientesPaginas > 1 && (
+                        <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+                          <p className="text-xs text-gray-500">
+                            Página {paginaClientes} de {totalClientesPaginas} — {totalClientesCount} clientes
+                          </p>
+                          <div className="flex gap-1">
+                            <button onClick={() => cargarTodosClientes(paginaClientes - 1)} disabled={paginaClientes === 1}
+                              className="px-3 py-1 text-xs rounded-lg border disabled:opacity-40 hover:bg-white">
+                              <i className="fas fa-chevron-left"></i>
+                            </button>
+                            {Array.from({ length: Math.min(5, totalClientesPaginas) }, (_, i) => {
+                              const p = Math.max(1, paginaClientes - 2) + i
+                              if (p > totalClientesPaginas) return null
+                              return (
+                                <button key={p} onClick={() => cargarTodosClientes(p)}
+                                  className={`px-3 py-1 text-xs rounded-lg border ${ p === paginaClientes ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-white' }`}>
+                                  {p}
+                                </button>
+                              )
+                            })}
+                            <button onClick={() => cargarTodosClientes(paginaClientes + 1)} disabled={paginaClientes >= totalClientesPaginas}
+                              className="px-3 py-1 text-xs rounded-lg border disabled:opacity-40 hover:bg-white">
+                              <i className="fas fa-chevron-right"></i>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
                 {cargandoTrazabilidad && (
-                  <div className="flex items-center justify-center py-8 gap-3">
+                  <div className="flex items-center justify-center py-8 gap-3 bg-white rounded-xl border">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     <span className="text-gray-500 text-sm">Cargando trazabilidad completa...</span>
                   </div>

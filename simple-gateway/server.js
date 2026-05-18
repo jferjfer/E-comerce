@@ -405,6 +405,22 @@ app.put('/api/usuarios/perfil', async (req, res) => {
   }
 });
 
+// Listar todos los clientes con paginacion — customer_success
+app.get('/api/usuarios/todos/clientes', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `${AUTH_URL}/api/usuarios/todos/clientes`,
+      params: req.query,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 5000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 // Buscar clientes y trazabilidad — customer_success
 app.get('/api/usuarios/buscar/clientes', async (req, res) => {
   try {
