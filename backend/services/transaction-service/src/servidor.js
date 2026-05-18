@@ -1139,8 +1139,9 @@ aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
         json_agg(
           json_build_object(
             'id', pp.id_producto,
+            'nombre', pp.nombre_producto,
             'cantidad', pp.cantidad,
-            'precio', pp.precio_unitario,
+            'precio_unitario', pp.precio_unitario,
             'subtotal', pp.subtotal
           )
         ) FILTER (WHERE pp.id IS NOT NULL) as productos

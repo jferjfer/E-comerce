@@ -410,7 +410,8 @@ app.get('/api/usuarios/buscar/clientes', async (req, res) => {
   try {
     const response = await axios({
       method: 'GET',
-      url: `${AUTH_URL}/api/usuarios/buscar/clientes${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '?' + new URLSearchParams(req.query).toString()}`,
+      url: `${AUTH_URL}/api/usuarios/buscar/clientes`,
+      params: req.query,
       headers: { Authorization: req.headers.authorization },
       timeout: 5000
     });
