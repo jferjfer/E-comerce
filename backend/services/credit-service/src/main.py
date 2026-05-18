@@ -106,14 +106,14 @@ def generar_codigo_bono(usuario_id: int) -> str:
 # ============================================
 # CORREOS
 # ============================================
-def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: datetime):
+def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: datetime, monto: float = 100_000):
     if not SMTP_USER or not SMTP_PASS:
         print(f"⚠️ SMTP no configurado. Código bono: {codigo}")
         return
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"🎁 ¡{nombre_corto}, te ganaste un bono de $100.000! — EGOS"
+        msg["Subject"] = f"🎁 ¡Tu bono de compensación EGOS está listo! — EGOS"
         msg["From"] = f'"EGOS" <{SMTP_USER}>'
         msg["To"] = email
 
@@ -163,7 +163,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
               <!-- BONO -->
               <div style="background:#111827;border-radius:16px;padding:32px;text-align:center;margin-bottom:28px">
                 <p style="margin:0 0 8px;font-size:12px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">Tu bono exclusivo</p>
-                <p style="margin:0 0 4px;font-size:42px;font-weight:900;color:#c5a47e">&#36;100.000</p>
+                <p style="margin:0 0 4px;font-size:42px;font-weight:900;color:#c5a47e">&#36;{int(monto):,}</p>
                 <p style="margin:0 0 24px;font-size:12px;color:#9ca3af">COP — descuento directo en tu próxima compra</p>
                 <div style="background:#1f2937;border-radius:10px;padding:16px;display:inline-block;min-width:260px">
                   <p style="margin:0 0 6px;font-size:11px;color:#9ca3af;letter-spacing:2px">CÓDIGO DE BONO</p>
@@ -879,6 +879,20 @@ async def generar_bono_manual(
     db.commit()
 
     print(f"🎁 Bono de compensación {codigo} generado por customer_success [{agente.get('email')}] para usuario {usuario_id} por ${monto:,.0f}")
+
+    # Enviar correo al cliente en background
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            res = await client.get(f"{AUTH_SERVICE_URL}/api/usuarios/{usuario_id}")
+            if res.status_code == 200:
+                u = res.json().get("usuario", {})
+                email_cliente = u.get("email", "")
+                nombre_cliente = f"{u.get('nombre', '')} {u.get('apellido', '')}".strip()
+                if email_cliente:
+                    background_tasks.add_task(enviar_correo_bono, email_cliente, nombre_cliente, codigo, fecha_vencimiento, monto)
+                    print(f"📧 Correo de bono programado para {email_cliente}")
+    except Exception as e:
+        print(f"⚠️ No se pudo obtener datos del cliente para correo: {e}")
 
     return {
         "mensaje": "Bono de compensación generado exitosamente",
