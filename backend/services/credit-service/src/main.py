@@ -113,12 +113,12 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"🎁 ¡Tu bono de compensación EGOS está listo! — EGOS"
+        msg["Subject"] = f"🎁 ¡{nombre_corto}, tienes un bono de ${int(monto):,} COP en EGOS!"
         msg["From"] = f'"EGOS" <{SMTP_USER}>'
         msg["To"] = email
 
         fecha_str = fecha_vencimiento.strftime("%d de %B de %Y")
-        nombre_corto = nombre.split()[0] if nombre else "Cliente"
+        monto_fmt = f"${int(monto):,}".replace(",", ".")
 
         html = f"""
         <!DOCTYPE html>
@@ -178,16 +178,16 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
               <div style="background:#faf8f5;border-radius:12px;padding:24px;margin-bottom:28px;border:1px solid #f0ebe4">
                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#111827">¿Cómo usar tu bono?</p>
                 <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
-                  <span style="background:#c5a47e;color:#111827;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</span>
-                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Elige los productos que quieras en <strong style="color:#111827">egoscolombia.com.co</strong></p>
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;min-width:24px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ingresa a <a href="https://www.egoscolombia.com.co" style="color:#c5a47e;font-weight:700">www.egoscolombia.com.co</a> y elige los productos que deseas</p>
                 </div>
                 <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
-                  <span style="background:#c5a47e;color:#111827;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</span>
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;min-width:24px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</span>
                   <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ve al carrito y selecciona tu método de pago</p>
                 </div>
                 <div style="display:flex;align-items:flex-start;gap:12px">
-                  <span style="background:#c5a47e;color:#111827;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</span>
-                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ingresa el código <strong style="color:#111827;font-family:monospace">{codigo}</strong> en el campo de bono y se descontarán <strong style="color:#111827">&#36;100.000</strong> automáticamente</p>
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;min-width:24px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Ingresa el código <strong style="color:#111827;font-family:monospace">{codigo}</strong> en el campo de bono y se descontarán <strong style="color:#111827">{monto_fmt} COP</strong> automáticamente</p>
                 </div>
               </div>
 
@@ -196,9 +196,9 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
                 <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827">⚠️ Importante antes de usar tu bono</p>
                 <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7">
                   Este bono se consume en su totalidad al realizar una compra, sin importar el valor del pedido.
-                  Si tu compra es menor a <strong style="color:#111827">&#36;100.000</strong>, el saldo restante
+                  Si tu compra es menor a <strong style="color:#111827">{monto_fmt}</strong>, el saldo restante
                   <strong style="color:#111827">no se acumula ni se devuelve</strong>.
-                  Te recomendamos usarlo en una compra igual o superior a <strong style="color:#111827">&#36;100.000</strong>
+                  Te recomendamos usarlo en una compra igual o superior a <strong style="color:#111827">{monto_fmt}</strong>
                   para aprovecharlo al máximo.
                 </p>
               </div>
