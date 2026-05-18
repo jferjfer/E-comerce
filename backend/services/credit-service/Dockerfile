@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-
+# v3.1.0 - monto variable bonos
 WORKDIR /app
 
 COPY requirements.txt .
