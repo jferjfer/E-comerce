@@ -847,16 +847,7 @@ export default function CustomerSuccessDashboard() {
                   )}
                 </div>
 
-                {/* Botón crear bono desde trazabilidad */}
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setBono(b => ({ ...b, abierto: true, documentoBusqueda: clienteSeleccionado.perfil.documento_numero || '', clienteEncontrado: { id: clienteSeleccionado.perfil.id, nombre: clienteSeleccionado.perfil.nombre, email: clienteSeleccionado.perfil.email, documento: `${clienteSeleccionado.perfil.documento_tipo}: ${clienteSeleccionado.perfil.documento_numero}` } }))}
-                    className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 transition-colors"
-                  >
-                    <i className="fas fa-gift"></i>
-                    Crear bono de compensación para este cliente
-                  </button>
-                </div>
+
               </div>
             )}
           </div>

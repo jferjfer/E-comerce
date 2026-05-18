@@ -109,14 +109,14 @@ router.get('/cliente/:id/trazabilidad', autenticar, async (req, res) => {
       [perfil.rows[0].email]
     );
 
-    // 4. Pedidos desde transaction-service
+    // 4. Pedidos del cliente desde transaction-service (endpoint admin)
     let pedidos = [];
     try {
       const resPedidos = await axios.get(
-        `${process.env.TRANSACTION_SERVICE_URL || 'http://transaction-service:3003'}/api/pedidos`,
+        `${process.env.TRANSACTION_SERVICE_URL || 'http://transaction-service:3003'}/api/admin/pedidos`,
         { headers: { Authorization: req.headers.authorization }, timeout: 5000 }
       );
-      pedidos = resPedidos.data.pedidos || [];
+      pedidos = (resPedidos.data.pedidos || []).filter(p => String(p.usuario_id) === String(id));
     } catch (e) { console.log('⚠️ No se pudieron obtener pedidos:', e.message); }
 
     // 5. Devoluciones desde transaction-service
