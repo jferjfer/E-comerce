@@ -814,6 +814,124 @@ async def obtener_bonos_usuario(usuario_id: int, db: Session = Depends(get_db)):
         "disponibles": sum(1 for b in bonos if b.estado == "Disponible")
     }
 
+
+def enviar_correo_bono_compensacion(email: str, nombre: str, codigo: str, fecha_vencimiento: datetime, monto: float):
+    """Correo exclusivo para bonos de compensación generados por Customer Success"""
+    if not SMTP_USER or not SMTP_PASS:
+        print(f"⚠️ SMTP no configurado. Código bono compensación: {codigo}")
+        return
+    try:
+        nombre_corto = nombre.split()[0] if nombre else "Cliente"
+        fecha_str = fecha_vencimiento.strftime("%d de %B de %Y")
+        monto_fmt = f"${int(monto):,}".replace(",", ".")
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"🎁 Bono de compensación EGOS — {monto_fmt} COP para ti"
+        msg["From"] = f'"EGOS" <{SMTP_USER}>'
+        msg["To"] = email
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#f5f0eb;font-family:'Helvetica Neue',Arial,sans-serif">
+          <div style="max-width:600px;margin:0 auto;background:#ffffff">
+
+            <div style="background:#111827;padding:32px 40px;text-align:center">
+              <div style="font-size:26px;font-weight:900;color:#c5a47e;letter-spacing:10px">EGOS</div>
+              <div style="font-size:10px;color:rgba(197,164,126,0.7);letter-spacing:4px;margin-top:4px;text-transform:uppercase">Wear Your Truth</div>
+            </div>
+
+            <div style="background:linear-gradient(135deg,#1f2937,#374151);padding:36px 40px;text-align:center">
+              <div style="font-size:44px;margin-bottom:10px">🤝</div>
+              <h1 style="color:#c5a47e;margin:0;font-size:22px;font-weight:800">
+                Queremos compensarte, {nombre_corto}
+              </h1>
+              <p style="color:rgba(255,255,255,0.65);margin:10px 0 0;font-size:13px">
+                Bono de compensación exclusivo para ti
+              </p>
+            </div>
+
+            <div style="padding:40px">
+              <p style="font-size:15px;color:#111827;margin:0 0 12px">Hola <strong>{nombre_corto}</strong>,</p>
+              <p style="font-size:14px;color:#6b7280;line-height:1.8;margin:0 0 28px">
+                En EGOS valoramos profundamente tu confianza y queremos asegurarnos de que
+                tu experiencia siempre sea la mejor. Como gesto de compensación,
+                hemos generado este bono exclusivo para ti.
+              </p>
+
+              <div style="background:#111827;border-radius:16px;padding:32px;text-align:center;margin-bottom:28px">
+                <p style="margin:0 0 6px;font-size:11px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">Tu bono de compensación</p>
+                <p style="margin:0 0 4px;font-size:48px;font-weight:900;color:#c5a47e">{monto_fmt}</p>
+                <p style="margin:0 0 24px;font-size:12px;color:#9ca3af">COP — descuento directo en tu próxima compra</p>
+                <div style="background:#1f2937;border-radius:10px;padding:18px;display:inline-block;min-width:280px">
+                  <p style="margin:0 0 6px;font-size:11px;color:#9ca3af;letter-spacing:2px;text-transform:uppercase">Código de bono</p>
+                  <p style="margin:0;font-size:26px;font-weight:900;color:#ffffff;font-family:monospace;letter-spacing:5px">{codigo}</p>
+                </div>
+                <p style="margin:16px 0 0;font-size:12px;color:#6b7280">
+                  ⏰ Válido hasta el <strong style="color:#c5a47e">{fecha_str}</strong>
+                </p>
+              </div>
+
+              <div style="background:#faf8f5;border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid #f0ebe4">
+                <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#111827">¿Cómo redimir tu bono?</p>
+                <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">1</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6">
+                    Ingresa a <a href="https://www.egoscolombia.com.co" style="color:#c5a47e;font-weight:700">www.egoscolombia.com.co</a> y elige los productos que deseas
+                  </p>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">2</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6">Agrega los productos al carrito y procede al pago</p>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                  <span style="background:#c5a47e;color:#111827;border-radius:50%;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">3</span>
+                  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6">
+                    En el paso de pago ingresa el código <strong style="color:#111827;font-family:monospace">{codigo}</strong>
+                    y se descontarán <strong style="color:#111827">{monto_fmt} COP</strong> automáticamente
+                  </p>
+                </div>
+              </div>
+
+              <div style="background:#fff8e1;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:28px">
+                <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#92400e">⚠️ Condiciones del bono</p>
+                <p style="margin:0;font-size:12px;color:#78350f;line-height:1.7">
+                  Este bono es personal e intransferible. Se consume en su totalidad al realizar una compra.
+                  Si el valor de tu compra es menor a <strong>{monto_fmt}</strong>, el saldo restante
+                  no se acumula ni se devuelve. Válido únicamente en
+                  <strong>www.egoscolombia.com.co</strong>.
+                </p>
+              </div>
+
+              <div style="text-align:center">
+                <a href="https://www.egoscolombia.com.co"
+                   style="display:inline-block;background:#c5a47e;color:#111827;padding:16px 44px;
+                          text-decoration:none;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:1px">
+                  Redimir mi bono en EGOS
+                </a>
+              </div>
+            </div>
+
+            <div style="background:#111827;padding:24px 40px;text-align:center">
+              <p style="margin:0 0 4px;font-size:11px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">EGOS — Wear Your Truth</p>
+              <p style="margin:0;font-size:11px;color:#6b7280">www.egoscolombia.com.co</p>
+              <p style="margin:8px 0 0;font-size:10px;color:#4b5563">Este es un correo automático, por favor no respondas a este mensaje.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html, "html"))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(SMTP_USER, email, msg.as_string())
+        print(f"📧 Correo de compensación enviado a {email} | {codigo} | {monto_fmt}")
+    except Exception as e:
+        print(f"⚠️ Error enviando correo compensación: {e}")
+
+
 def verificar_customer_success(request: Request):
     """Verifica que el usuario tenga rol customer_success"""
     auth = request.headers.get("Authorization", "")
@@ -889,7 +1007,7 @@ async def generar_bono_manual(
                 email_cliente = u.get("email", "")
                 nombre_cliente = f"{u.get('nombre', '')} {u.get('apellido', '')}".strip()
                 if email_cliente:
-                    background_tasks.add_task(enviar_correo_bono, email_cliente, nombre_cliente, codigo, fecha_vencimiento, monto)
+                    background_tasks.add_task(enviar_correo_bono_compensacion, email_cliente, nombre_cliente, codigo, fecha_vencimiento, monto)
                     print(f"📧 Correo de bono programado para {email_cliente}")
     except Exception as e:
         print(f"⚠️ No se pudo obtener datos del cliente para correo: {e}")
