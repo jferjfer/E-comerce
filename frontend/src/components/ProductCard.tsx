@@ -84,12 +84,12 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 group flex flex-col">
 
       {/* Imagen */}
-      <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '118%' }}>
+      <div className="relative overflow-hidden bg-gray-50" style={{ paddingBottom: '133%' }}>
         <Link to={`/producto/${producto.id}`} className="absolute inset-0">
           <img
             src={producto.imagen}
             alt={producto.nombre}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
         </Link>
