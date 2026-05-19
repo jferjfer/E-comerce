@@ -20,6 +20,7 @@ export default function CatalogPage() {
   })
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null)
   const [mostrarModalProducto, setMostrarModalProducto] = useState(false)
+  const [imagenActivaModal, setImagenActivaModal] = useState(0)
   const [mostrarAR, setMostrarAR] = useState(false)
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<string[]>([])
@@ -54,6 +55,7 @@ export default function CatalogPage() {
 
   const manejarVerDetalles = (producto: Producto) => {
     setProductoSeleccionado(producto)
+    setImagenActivaModal(0)
     setMostrarModalProducto(true)
   }
 
@@ -214,13 +216,30 @@ export default function CatalogPage() {
             {/* Content */}
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Imagen */}
-                <div>
-                  <img
-                    src={productoSeleccionado.imagen}
-                    className="w-full h-auto rounded-lg"
-                    alt={productoSeleccionado.nombre}
-                  />
+                {/* Galería */}
+                <div className="space-y-2">
+                  <div className="relative rounded-xl overflow-hidden bg-gray-50" style={{ paddingBottom: '133%' }}>
+                    <img
+                      src={[productoSeleccionado.imagen, ...(productoSeleccionado.imagenes_adicionales || [])][imagenActivaModal]}
+                      className="absolute inset-0 w-full h-full object-cover object-top"
+                      alt={productoSeleccionado.nombre}
+                    />
+                  </div>
+                  {(productoSeleccionado.imagenes_adicionales?.length ?? 0) > 0 && (
+                    <div className="flex gap-2 overflow-x-auto">
+                      {[productoSeleccionado.imagen, ...(productoSeleccionado.imagenes_adicionales || [])].map((img, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setImagenActivaModal(i)}
+                          className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                            imagenActivaModal === i ? 'border-primary' : 'border-transparent'
+                          }`}
+                        >
+                          <img src={img} alt="" className="w-full h-full object-cover object-top" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Detalles */}
