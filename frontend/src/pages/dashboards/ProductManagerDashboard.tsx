@@ -218,6 +218,7 @@ export default function ProductManagerDashboard() {
   const [showFormCat, setShowFormCat] = useState(false)
   const [editandoCat, setEditandoCat] = useState<any>(null)
   const [formCat, setFormCat] = useState({ nombre: '', descripcion: '', imagen: '' })
+  const [guardandoCat, setGuardandoCat] = useState(false)
   const [archivosAdicionalesPendientes, setArchivosAdicionalesPendientes] = useState<File[]>([])
   const [mensajeCat, setMensajeCat] = useState<{tipo: string, texto: string} | null>(null)
 
