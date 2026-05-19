@@ -61,6 +61,7 @@ export default function ProductoDetallePage() {
         calificacion: prod.calificacion || 0,
         en_stock: prod.en_stock !== false,
         es_eco: prod.es_eco || false,
+        ...(prod.imagenes_adicionales ? { imagenes_adicionales: prod.imagenes_adicionales } : {}),
       })
       if (prod.tallas?.length) setTallaSeleccionada(prod.tallas[0])
       if (prod.colores?.length) setColorSeleccionado(prod.colores[0])
