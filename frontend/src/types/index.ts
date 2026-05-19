@@ -3,6 +3,7 @@ export interface Producto {
   nombre: string;
   precio: number;
   imagen: string;
+  imagenes_adicionales?: string[];
   descripcion: string;
   categoria: string;
   tallas?: string[];
