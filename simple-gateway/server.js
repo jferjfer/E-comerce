@@ -190,6 +190,31 @@ app.post('/api/productos/:id/imagen', upload.single('imagen'), async (req, res) 
   }
 });
 
+// Imágenes adicionales — hasta 5 archivos
+app.post('/api/productos/:id/imagenes-adicionales', upload.array('imagenes', 5), async (req, res) => {
+  try {
+    const form = new FormData();
+    req.files.forEach(file => {
+      form.append('imagenes', file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype
+      });
+    });
+    const response = await axios.post(
+      `${CATALOG_URL}/api/productos/${req.params.id}/imagenes-adicionales`,
+      form,
+      {
+        headers: form.getHeaders(),
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
+      }
+    );
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 
 
 // Avatar Virtual 3D - Crear avatar completo
