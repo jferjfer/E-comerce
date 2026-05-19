@@ -70,6 +70,7 @@ const transformarProducto = (productoBackend: any): Producto => ({
   nombre: productoBackend.nombre || '',
   precio: productoBackend.precio || 0,
   imagen: productoBackend.imagen || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
+  imagenes_adicionales: productoBackend.imagenes_adicionales || [],
   descripcion: productoBackend.descripcion || 'Producto de calidad',
   categoria: productoBackend.categoria || 'General',
   tallas: productoBackend.tallas || ['S', 'M', 'L'],
