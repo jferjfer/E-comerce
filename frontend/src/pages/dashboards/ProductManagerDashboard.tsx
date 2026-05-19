@@ -182,6 +182,7 @@ interface FormProducto {
   en_stock: boolean
   stock_cantidad: string
   imagen_url: string
+  imagenes_adicionales: string[]
   proveedor_id: string
   referencia_proveedor: string
 }
@@ -191,7 +192,7 @@ const FORM_INICIAL: FormProducto = {
   costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
   costo_empaque: String(COSTO_EMPAQUE), precio_manual: '', usar_precio_manual: false,
   categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'],
-  colores: ['Negro'], en_stock: true, stock_cantidad: '', imagen_url: '',
+  colores: ['Negro'], en_stock: true, stock_cantidad: '', imagen_url: '', imagenes_adicionales: [],
   proveedor_id: '', referencia_proveedor: ''
 }
 
@@ -358,6 +359,7 @@ export default function ProductManagerDashboard() {
       en_stock: p.en_stock,
       stock_cantidad: String((p as any).stock || ''),
       imagen_url: p.imagen || '',
+      imagenes_adicionales: (p as any).imagenes_adicionales || [],
       proveedor_id: (p as any).proveedor_id || '',
       referencia_proveedor: (p as any).referencia_proveedor || ''
     })
@@ -412,6 +414,7 @@ export default function ProductManagerDashboard() {
       en_stock: form.en_stock,
       stock: parseInt(form.stock_cantidad) || 0,
       imagen: form.imagen_url || undefined,
+      imagenes_adicionales: form.imagenes_adicionales,
       calificacion: editando?.calificacion || 4.5,
       proveedor_id: form.proveedor_id || undefined,
       referencia_proveedor: form.referencia_proveedor || undefined
@@ -1143,6 +1146,70 @@ export default function ProductManagerDashboard() {
                       className="w-20 h-20 object-cover rounded-xl border flex-shrink-0" />
                   )}
                 </div>
+              </div>
+
+              {/* Imágenes adicionales */}
+              <div>
+                <label className="text-xs font-semibold text-gray-600 mb-2 block">
+                  Galería de imágenes adicionales
+                  <span className="ml-2 text-gray-400 font-normal">({form.imagenes_adicionales.length}/5)</span>
+                </label>
+
+                {/* Previews */}
+                {form.imagenes_adicionales.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {form.imagenes_adicionales.map((url, idx) => (
+                      <div key={idx} className="relative group">
+                        <img src={url} alt={`foto ${idx + 1}`}
+                          className="w-20 h-20 object-cover rounded-xl border" />
+                        <button
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, imagenes_adicionales: f.imagenes_adicionales.filter((_, i) => i !== idx) }))}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Subir hasta completar 5 */}
+                {form.imagenes_adicionales.length < 5 && (
+                  <div className="space-y-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || [])
+                        if (!files.length) return
+                        const disponibles = 5 - form.imagenes_adicionales.length
+                        const seleccionados = files.slice(0, disponibles)
+                        const prodId = editando?.id || `temp_${Date.now()}`
+                        setMensaje({ tipo: 'success', texto: `⏳ Subiendo ${seleccionados.length} imagen(es)...` })
+                        try {
+                          const formData = new FormData()
+                          seleccionados.forEach(f => formData.append('imagenes', f))
+                          const r = await fetch(`${API_URL}/api/productos/${prodId}/imagenes-adicionales`, {
+                            method: 'POST', body: formData
+                          })
+                          const d = await r.json()
+                          if (d.urls) {
+                            setForm(f => ({ ...f, imagenes_adicionales: [...f.imagenes_adicionales, ...d.urls].slice(0, 5) }))
+                            setMensaje({ tipo: 'success', texto: `✅ ${d.urls.length} imagen(es) subida(s)` })
+                          } else {
+                            setMensaje({ tipo: 'error', texto: 'Error subiendo imágenes' })
+                          }
+                        } catch {
+                          setMensaje({ tipo: 'error', texto: 'Error de conexión' })
+                        }
+                        e.target.value = ''
+                      }}
+                      className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-900 file:text-white cursor-pointer"
+                    />
+                    <p className="text-xs text-gray-400">Puedes subir varias a la vez. Máx 5MB por imagen. Quedan {5 - form.imagenes_adicionales.length} espacio(s).</p>
+                  </div>
+                )}
               </div>
 
               {/* Descripción */}
