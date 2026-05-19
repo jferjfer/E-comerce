@@ -178,11 +178,11 @@ export default function ProductoDetallePage() {
 
           {/* Galería */}
           <div className="space-y-3">
-            <div className="relative rounded-2xl overflow-hidden bg-gray-50 aspect-square">
+            <div className="relative rounded-2xl overflow-hidden bg-gray-50" style={{ paddingBottom: '133%' }}>
               <img
                 src={imagenes[imagenActiva]}
                 alt={producto.nombre}
-                className="w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover object-top"
               />
               {!producto.en_stock && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
