@@ -218,7 +218,7 @@ export default function ProductManagerDashboard() {
   const [showFormCat, setShowFormCat] = useState(false)
   const [editandoCat, setEditandoCat] = useState<any>(null)
   const [formCat, setFormCat] = useState({ nombre: '', descripcion: '', imagen: '' })
-  const [guardandoCat, setGuardandoCat] = useState(false)
+  const [archivosAdicionalesPendientes, setArchivosAdicionalesPendientes] = useState<File[]>([])
   const [mensajeCat, setMensajeCat] = useState<{tipo: string, texto: string} | null>(null)
 
   useEffect(() => { cargarProductos(); cargarProveedores(); cargarCategorias() }, [])
@@ -335,6 +335,7 @@ export default function ProductManagerDashboard() {
     const nuevoSku = generarSkuUnico()
     setForm({ ...FORM_INICIAL, sku: nuevoSku })
     setMensaje(null)
+    setArchivosAdicionalesPendientes([])
     setMostrarForm(true)
   }
 
@@ -364,6 +365,7 @@ export default function ProductManagerDashboard() {
       referencia_proveedor: (p as any).referencia_proveedor || ''
     })
     setMensaje(null)
+    setArchivosAdicionalesPendientes([])
     setMostrarForm(true)
   }
 
@@ -434,6 +436,30 @@ export default function ProductManagerDashboard() {
       const d = await r.json()
 
       if (r.ok && d.exito !== false) {
+        const productoId = editando ? editando.id : d.producto?.id
+
+        // Subir imágenes adicionales pendientes con el ID real del producto
+        if (archivosAdicionalesPendientes.length > 0 && productoId) {
+          setMensaje({ tipo: 'success', texto: `⏳ Subiendo ${archivosAdicionalesPendientes.length} imagen(es) adicional(es)...` })
+          try {
+            const formData = new FormData()
+            archivosAdicionalesPendientes.forEach(f => formData.append('imagenes', f))
+            const rImg = await fetch(`${API_URL}/api/productos/${productoId}/imagenes-adicionales`, {
+              method: 'POST', body: formData
+            })
+            const dImg = await rImg.json()
+            if (dImg.urls) {
+              // Actualizar el producto con las URLs reales (reemplazar los base64 locales)
+              await fetch(`${API_URL}/api/productos/${productoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ imagenes_adicionales: dImg.urls })
+              })
+            }
+          } catch {}
+          setArchivosAdicionalesPendientes([])
+        }
+
         setMensaje({ tipo: 'success', texto: editando ? '✅ Producto actualizado' : '✅ Producto creado' })
         cargarProductos()
         setTimeout(() => { setMostrarForm(false); setMensaje(null) }, 1500)
@@ -1180,34 +1206,30 @@ export default function ProductManagerDashboard() {
                       type="file"
                       accept="image/*"
                       multiple
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const files = Array.from(e.target.files || [])
                         if (!files.length) return
-                        const disponibles = 5 - form.imagenes_adicionales.length
+                        const disponibles = 5 - form.imagenes_adicionales.length - archivosAdicionalesPendientes.length
                         const seleccionados = files.slice(0, disponibles)
-                        const prodId = editando?.id || `temp_${Date.now()}`
-                        setMensaje({ tipo: 'success', texto: `⏳ Subiendo ${seleccionados.length} imagen(es)...` })
-                        try {
-                          const formData = new FormData()
-                          seleccionados.forEach(f => formData.append('imagenes', f))
-                          const r = await fetch(`${API_URL}/api/productos/${prodId}/imagenes-adicionales`, {
-                            method: 'POST', body: formData
-                          })
-                          const d = await r.json()
-                          if (d.urls) {
-                            setForm(f => ({ ...f, imagenes_adicionales: [...f.imagenes_adicionales, ...d.urls].slice(0, 5) }))
-                            setMensaje({ tipo: 'success', texto: `✅ ${d.urls.length} imagen(es) subida(s)` })
-                          } else {
-                            setMensaje({ tipo: 'error', texto: 'Error subiendo imágenes' })
+                        // Crear previews locales
+                        seleccionados.forEach(file => {
+                          const reader = new FileReader()
+                          reader.onload = (ev) => {
+                            setForm(f => ({ ...f, imagenes_adicionales: [...f.imagenes_adicionales, ev.target!.result as string].slice(0, 5) }))
                           }
-                        } catch {
-                          setMensaje({ tipo: 'error', texto: 'Error de conexión' })
-                        }
+                          reader.readAsDataURL(file)
+                        })
+                        setArchivosAdicionalesPendientes(prev => [...prev, ...seleccionados].slice(0, 5))
                         e.target.value = ''
                       }}
                       className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-900 file:text-white cursor-pointer"
                     />
-                    <p className="text-xs text-gray-400">Puedes subir varias a la vez. Máx 5MB por imagen. Quedan {5 - form.imagenes_adicionales.length} espacio(s).</p>
+                    <p className="text-xs text-gray-400">
+                      {archivosAdicionalesPendientes.length > 0
+                        ? `⏳ ${archivosAdicionalesPendientes.length} imagen(es) se subirán al guardar el producto`
+                        : `Puedes subir varias a la vez. Máx 5MB por imagen. Quedan ${5 - form.imagenes_adicionales.length} espacio(s).`
+                      }
+                    </p>
                   </div>
                 )}
               </div>
