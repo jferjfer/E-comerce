@@ -256,7 +256,20 @@ export default function LogisticsCoordinatorDashboard() {
                           <p className="font-medium text-gray-800">{pedido.nombre_cliente}</p>
                           <p className="text-gray-500 text-xs">{pedido.email_cliente}</p>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{(pedido.productos || []).length} producto(s)</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {(pedido.productos || []).length} producto(s)
+                          {(pedido.productos || []).some((p: any) => p.talla || p.color) && (
+                            <div className="mt-1 space-y-0.5">
+                              {(pedido.productos || []).map((p: any, i: number) => (
+                                <p key={i} className="text-xs text-gray-500">
+                                  {p.nombre || `Prod. ${p.id}`}
+                                  {p.talla && <span className="ml-1 bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-medium">T: {p.talla}</span>}
+                                  {p.color && <span className="ml-1 bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-medium">C: {p.color}</span>}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-sm font-bold text-emerald-700">{formatPrice(pedido.total)}</td>
                         <td className="px-6 py-4 text-sm">
                           {pedido.tracking_number ? (

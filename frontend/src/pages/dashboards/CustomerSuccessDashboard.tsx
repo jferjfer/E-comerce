@@ -487,6 +487,17 @@ export default function CustomerSuccessDashboard() {
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-sm text-gray-600">{(pedido.productos || []).length}</span>
+                              {(pedido.productos || []).some((p: any) => p.talla || p.color) && (
+                                <div className="mt-1 space-y-0.5 text-left">
+                                  {(pedido.productos || []).map((p: any, i: number) => (
+                                    <p key={i} className="text-xs text-gray-500">
+                                      {p.nombre || `Prod. ${p.id}`}
+                                      {p.talla && <span className="ml-1 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-medium">T: {p.talla}</span>}
+                                      {p.color && <span className="ml-1 bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-medium">C: {p.color}</span>}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-sm font-bold text-emerald-700">{formatPrice(pedido.total)}</span>

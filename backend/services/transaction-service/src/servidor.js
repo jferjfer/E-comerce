@@ -608,7 +608,9 @@ aplicacion.get('/api/pedidos', autenticacion, async (req, res) => {
             'id', pp.id_producto,
             'cantidad', pp.cantidad,
             'precio', pp.precio_unitario,
-            'subtotal', pp.subtotal
+            'subtotal', pp.subtotal,
+            'talla', pp.talla,
+            'color', pp.color
           )
         ) as productos
       FROM pedido p
@@ -730,7 +732,7 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       const pd = pedidoCompleto.rows[0];
 
       const productos = await pool.query(
-        'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1',
+        'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad, talla, color FROM pedido_producto WHERE id_pedido = $1',
         [pedidoId]
       );
 
@@ -969,8 +971,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     // Copiar productos del carrito al pedido
     for (const producto of carrito.productos) {
       await pool.query(
-        'INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal, nombre_producto) VALUES ($1, $2, $3, $4, $5, $6)',
-        [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio, producto.nombre || `Producto ${producto.id}`]
+        'INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal, nombre_producto, talla, color) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio, producto.nombre || `Producto ${producto.id}`, producto.talla || null, producto.color || null]
       );
     }
     
@@ -1142,7 +1144,9 @@ aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
             'nombre', pp.nombre_producto,
             'cantidad', pp.cantidad,
             'precio_unitario', pp.precio_unitario,
-            'subtotal', pp.subtotal
+            'subtotal', pp.subtotal,
+            'talla', pp.talla,
+            'color', pp.color
           )
         ) FILTER (WHERE pp.id IS NOT NULL) as productos
       FROM pedido p
@@ -1681,7 +1685,7 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
 
       // Generar factura electrónica automáticamente
       const productos = await pool.query(
-        'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1',
+        'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad, talla, color FROM pedido_producto WHERE id_pedido = $1',
         [pedidoId]
       );
       const pd = await pool.query(

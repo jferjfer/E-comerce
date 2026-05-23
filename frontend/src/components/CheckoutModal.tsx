@@ -141,7 +141,9 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           id: item.id,
           nombre: item.nombre,
           precio: item.precio,
-          cantidad: item.cantidad
+          cantidad: item.cantidad,
+          talla: (item as any).talla || null,
+          color: (item as any).color || null
         }))
       })
 
