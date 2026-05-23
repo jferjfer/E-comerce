@@ -606,6 +606,7 @@ aplicacion.get('/api/pedidos', autenticacion, async (req, res) => {
         json_agg(
           json_build_object(
             'id', pp.id_producto,
+            'nombre', pp.nombre_producto,
             'cantidad', pp.cantidad,
             'precio', pp.precio_unitario,
             'subtotal', pp.subtotal,

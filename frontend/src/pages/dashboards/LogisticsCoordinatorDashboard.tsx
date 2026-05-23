@@ -257,18 +257,28 @@ export default function LogisticsCoordinatorDashboard() {
                           <p className="text-gray-500 text-xs">{pedido.email_cliente}</p>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
-                          {(pedido.productos || []).length} producto(s)
-                          {(pedido.productos || []).some((p: any) => p.talla || p.color) && (
-                            <div className="mt-1 space-y-0.5">
-                              {(pedido.productos || []).map((p: any, i: number) => (
-                                <p key={i} className="text-xs text-gray-500">
-                                  {p.nombre || `Prod. ${p.id}`}
-                                  {p.talla && <span className="ml-1 bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-medium">T: {p.talla}</span>}
-                                  {p.color && <span className="ml-1 bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-medium">C: {p.color}</span>}
-                                </p>
-                              ))}
-                            </div>
-                          )}
+                          <div className="space-y-1.5">
+                            {(pedido.productos || []).length === 0 ? (
+                              <span className="text-gray-400 italic text-xs">Sin detalle</span>
+                            ) : (
+                              (pedido.productos || []).map((p: any, i: number) => (
+                                <div key={i} className="bg-gray-50 rounded-lg px-2 py-1.5 border border-gray-100">
+                                  <p className="font-medium text-gray-800 text-xs">
+                                    {p.nombre || p.nombre_producto || `Producto ${p.id}`}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                    <span className="text-xs text-gray-500">x{p.cantidad}</span>
+                                    {p.talla && (
+                                      <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-semibold">T: {p.talla}</span>
+                                    )}
+                                    {p.color && (
+                                      <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded font-semibold">C: {p.color}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-emerald-700">{formatPrice(pedido.total)}</td>
                         <td className="px-6 py-4 text-sm">
