@@ -913,7 +913,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
           precio: Math.abs(p.precio),
           nombre: p.nombre || `Producto ${p.id}`,
           talla: p.talla || null,
-          color: p.color || null
+          color: p.color || null,
+          sku: p.sku || null
         })),
         total
       };
@@ -974,8 +975,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     // Copiar productos del carrito al pedido
     for (const producto of carrito.productos) {
       await pool.query(
-        'INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal, nombre_producto, talla, color) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-        [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio, producto.nombre || `Producto ${producto.id}`, producto.talla || null, producto.color || null]
+        'INSERT INTO pedido_producto (id_pedido, id_producto, cantidad, precio_unitario, subtotal, nombre_producto, talla, color, sku) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [pedidoId, producto.id, producto.cantidad, producto.precio, producto.cantidad * producto.precio, producto.nombre || `Producto ${producto.id}`, producto.talla || null, producto.color || null, producto.sku || null]
       );
     }
     
@@ -1149,7 +1150,8 @@ aplicacion.get('/api/admin/pedidos', autenticacion, async (req, res) => {
             'precio_unitario', pp.precio_unitario,
             'subtotal', pp.subtotal,
             'talla', pp.talla,
-            'color', pp.color
+            'color', pp.color,
+            'sku', pp.sku
           )
         ) FILTER (WHERE pp.id IS NOT NULL) as productos
       FROM pedido p

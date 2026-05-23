@@ -78,7 +78,8 @@ const transformarProducto = (productoBackend: any): Producto => ({
   calificacion: productoBackend.calificacion || 5,
   en_stock: productoBackend.en_stock !== false,
   es_eco: productoBackend.es_eco || false,
-  compatibilidad: productoBackend.compatibilidad || 95
+  compatibilidad: productoBackend.compatibilidad || 95,
+  ...(productoBackend.sku ? { sku: productoBackend.sku } : {})
 });
 
 export const api = {

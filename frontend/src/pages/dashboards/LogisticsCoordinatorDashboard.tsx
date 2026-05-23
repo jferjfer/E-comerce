@@ -268,6 +268,9 @@ export default function LogisticsCoordinatorDashboard() {
                                   </p>
                                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                     <span className="text-xs text-gray-500">x{p.cantidad}</span>
+                                    {p.sku && (
+                                      <span className="bg-gray-200 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-mono">{p.sku}</span>
+                                    )}
                                     {p.talla && (
                                       <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-semibold">T: {p.talla}</span>
                                     )}
