@@ -911,7 +911,9 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
           id: p.id,
           cantidad: Math.floor(p.cantidad),
           precio: Math.abs(p.precio),
-          nombre: p.nombre || `Producto ${p.id}`
+          nombre: p.nombre || `Producto ${p.id}`,
+          talla: p.talla || null,
+          color: p.color || null
         })),
         total
       };
