@@ -19,6 +19,8 @@ interface Resena {
   verificado: boolean
 }
 
+import { tiktokPixel } from '@/utils/tiktokPixel'
+
 export default function ProductoDetallePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -65,6 +67,7 @@ export default function ProductoDetallePage() {
       })
       if (prod.tallas?.length) setTallaSeleccionada(prod.tallas[0])
       if (prod.colores?.length) setColorSeleccionado(prod.colores[0])
+      tiktokPixel.viewContent({ id: prod.id?.toString() || '', nombre: prod.nombre || '', precio: prod.precio || 0, categoria: prod.categoria || '' })
 
       // Cargar relacionados por categoría
       const dataRel = await api.obtenerProductos()

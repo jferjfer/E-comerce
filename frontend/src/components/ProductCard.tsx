@@ -8,6 +8,8 @@ import { useNotificationStore } from '@/store/useNotificationStore'
 import { formatPrice } from '@/utils/sanitize'
 import { API_URL } from '@/config/api'
 
+import { tiktokPixel } from '@/utils/tiktokPixel'
+
 interface PropsTarjetaProducto {
   product: Producto
   onViewDetails: (producto: Producto) => void
@@ -42,6 +44,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
     setMostrarSelector(false)
     agregarItem({ ...producto, talla: tallaSeleccionada || undefined, color: colorSeleccionado || undefined } as any)
     addNotification(`${producto.nombre}${tallaSeleccionada ? ` (${tallaSeleccionada})` : ''} agregado al carrito`, 'success')
+    tiktokPixel.addToCart({ id: producto.id, nombre: producto.nombre, precio: producto.precio, cantidad: 1 })
     setTimeout(() => setAgregando(false), 600)
   }
 

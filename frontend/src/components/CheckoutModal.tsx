@@ -12,6 +12,8 @@ import ConfirmationStep from './checkout/ConfirmationStep'
 import SuccessStep from './checkout/SuccessStep'
 import EpaycoWidget from './checkout/EpaycoWidget'
 
+import { tiktokPixel } from '@/utils/tiktokPixel'
+
 interface CheckoutModalProps {
   isOpen: boolean
   onClose: () => void
@@ -56,6 +58,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         .then(r => r.json())
         .then(d => setEpaycoActivo(d.configurado))
         .catch(() => setEpaycoActivo(false))
+      tiktokPixel.initiateCheckout(total)
     }
   }, [isOpen, estaAutenticado, usuario, token])
 
@@ -191,6 +194,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       setOrderId(pedidoId)
       setCurrentStep(3)
       vaciarCarrito()
+      tiktokPixel.placeAnOrder(pedidoId, totalFinal)
 
     } catch (err) {
       setError('Ocurrió un error inesperado. Intenta nuevamente.')
