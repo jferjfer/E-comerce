@@ -1247,7 +1247,7 @@ export default function ProductManagerDashboard() {
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-2 block">Tallas disponibles</label>
                 <div className="space-y-2">
-                  <p className="text-xs text-gray-400">Ropa:</p>
+                  <p className="text-xs text-gray-400">Blusas / Vestidos / Camisas / Tops:</p>
                   <div className="flex flex-wrap gap-2">
                     {['XS','S','M','L','XL','XXL'].map(t => (
                       <button key={t} type="button" onClick={() => toggleTalla(t)}
