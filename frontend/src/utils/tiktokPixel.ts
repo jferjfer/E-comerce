@@ -42,7 +42,17 @@ export const tiktokPixel = {
     })
   },
 
-  // Cliente completa la compra
+  // Cliente completa la compra — evento crítico e-commerce TikTok
+  completePayment: (pedidoId: string, total: number) => {
+    ttq()?.track('CompletePayment', {
+      content_type: 'product',
+      order_id: pedidoId,
+      value: total,
+      currency: 'COP'
+    })
+  },
+
+  // Cliente completa la compra (alias legacy)
   placeAnOrder: (pedidoId: string, total: number) => {
     ttq()?.track('PlaceAnOrder', {
       content_type: 'product',

@@ -194,6 +194,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       setOrderId(pedidoId)
       setCurrentStep(3)
       vaciarCarrito()
+      tiktokPixel.completePayment(pedidoId, totalFinal)
       tiktokPixel.placeAnOrder(pedidoId, totalFinal)
 
     } catch (err) {
@@ -298,6 +299,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                     setPedidoParaEpayco(null)
                     setCurrentStep(3)
                     vaciarCarrito()
+                    tiktokPixel.completePayment(pedidoParaEpayco!, totalRef.current)
+                    tiktokPixel.placeAnOrder(pedidoParaEpayco!, totalRef.current)
                   }}
                   onError={(msg) => setError(msg)}
                   onCancelado={() => {
