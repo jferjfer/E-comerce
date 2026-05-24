@@ -1256,18 +1256,18 @@ export default function ProductManagerDashboard() {
                         }`}>{t}</button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-400">Jeans / Pantalones Hombre (cintura):</p>
+                  <p className="text-xs text-gray-400">Pantalones / Jeans Mujer:</p>
                   <div className="flex flex-wrap gap-2">
-                    {['26','28','30','32','34','36','38','40'].map(t => (
+                    {['4','6','8','10','12','14','16'].map(t => (
                       <button key={t} type="button" onClick={() => toggleTalla(t)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                           form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
                         }`}>{t}</button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-400">Jeans / Pantalones Mujer (talla colombiana):</p>
+                  <p className="text-xs text-gray-400">Pantalones / Jeans Hombre:</p>
                   <div className="flex flex-wrap gap-2">
-                    {['4','6','8','10','12','14','16'].map(t => (
+                    {['26','28','30','32','34','36','38','40'].map(t => (
                       <button key={t} type="button" onClick={() => toggleTalla(t)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                           form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
