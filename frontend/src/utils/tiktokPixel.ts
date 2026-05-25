@@ -13,10 +13,13 @@ export const tiktokPixel = {
   // Cliente ve un producto
   viewContent: (producto: { id: string; nombre: string; precio: number; categoria: string }) => {
     ttq()?.track('ViewContent', {
+      contents: [{
+        content_id: producto.id,
+        content_type: 'product',
+        content_name: producto.nombre,
+        price: producto.precio
+      }],
       content_type: 'product',
-      content_id: producto.id,
-      content_name: producto.nombre,
-      content_category: producto.categoria,
       value: producto.precio,
       currency: 'COP'
     })
@@ -25,12 +28,16 @@ export const tiktokPixel = {
   // Cliente agrega al carrito
   addToCart: (producto: { id: string; nombre: string; precio: number; cantidad: number }) => {
     ttq()?.track('AddToCart', {
+      contents: [{
+        content_id: producto.id,
+        content_type: 'product',
+        content_name: producto.nombre,
+        quantity: producto.cantidad,
+        price: producto.precio
+      }],
       content_type: 'product',
-      content_id: producto.id,
-      content_name: producto.nombre,
       value: producto.precio * producto.cantidad,
-      currency: 'COP',
-      quantity: producto.cantidad
+      currency: 'COP'
     })
   },
 
@@ -45,6 +52,12 @@ export const tiktokPixel = {
   // Cliente completa la compra — evento crítico e-commerce TikTok
   completePayment: (pedidoId: string, total: number) => {
     ttq()?.track('CompletePayment', {
+      contents: [{
+        content_id: pedidoId,
+        content_type: 'product',
+        quantity: 1,
+        price: total
+      }],
       content_type: 'product',
       order_id: pedidoId,
       value: total,
@@ -55,6 +68,12 @@ export const tiktokPixel = {
   // Cliente completa la compra (alias legacy)
   placeAnOrder: (pedidoId: string, total: number) => {
     ttq()?.track('PlaceAnOrder', {
+      contents: [{
+        content_id: pedidoId,
+        content_type: 'product',
+        quantity: 1,
+        price: total
+      }],
       content_type: 'product',
       order_id: pedidoId,
       value: total,
