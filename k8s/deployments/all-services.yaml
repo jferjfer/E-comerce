@@ -108,6 +108,11 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: MONGODB_CATALOG_URI
+        - name: JWT_SECRETO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: JWT_SECRETO
         resources:
           requests:
             cpu: "100m"
