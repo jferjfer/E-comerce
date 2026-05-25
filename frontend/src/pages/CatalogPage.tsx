@@ -204,7 +204,7 @@ export default function CatalogPage() {
 
       {productoSeleccionado && mostrarModalProducto && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[9998] p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-auto">
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-2xl font-bold">{productoSeleccionado.nombre}</h3>
@@ -215,9 +215,9 @@ export default function CatalogPage() {
 
             {/* Content */}
             <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Galería */}
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                {/* Galería — 3 columnas */}
+                <div className="md:col-span-3 space-y-2">
                   <div className="relative rounded-xl overflow-hidden bg-gray-50" style={{ paddingBottom: '133%' }}>
                     <img
                       src={[productoSeleccionado.imagen, ...(productoSeleccionado.imagenes_adicionales || [])][imagenActivaModal]}
@@ -242,8 +242,8 @@ export default function CatalogPage() {
                   )}
                 </div>
 
-                {/* Detalles */}
-                <div className="space-y-4">
+                {/* Detalles — 2 columnas */}
+                <div className="md:col-span-2 space-y-4">
                   <p className="text-base text-gray-600">{productoSeleccionado.descripcion}</p>
                   <p className="text-3xl font-bold text-primary">
                     {formatPrice(productoSeleccionado.precio)}

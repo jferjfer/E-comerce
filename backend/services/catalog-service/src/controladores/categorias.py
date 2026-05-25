@@ -130,3 +130,4 @@ async def eliminar_categoria(categoria_id: str, authorization: Optional[str] = H
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+# rebuild dom 24 may 2026 21:56:23 -05

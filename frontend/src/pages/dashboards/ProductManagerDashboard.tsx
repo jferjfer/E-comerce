@@ -262,7 +262,7 @@ export default function ProductManagerDashboard() {
         setFormCat({ nombre: '', descripcion: '', imagen: '' })
         cargarCategorias()
       } else {
-        setMensajeCat({ tipo: 'error', texto: d.detail || d.error || 'Error guardando categoría' })
+        setMensajeCat({ tipo: 'error', texto: d.detail?.[0]?.msg || d.detail || d.error || 'Error guardando categoría' })
       }
     } catch { setMensajeCat({ tipo: 'error', texto: 'Error de conexión' }) }
     finally { setGuardandoCat(false) }
@@ -1249,7 +1249,7 @@ export default function ProductManagerDashboard() {
                 <div className="space-y-2">
                   <p className="text-xs text-gray-400">Blusas / Vestidos / Camisas / Tops:</p>
                   <div className="flex flex-wrap gap-2">
-                    {['XS','S','M','L','XL','XXL'].map(t => (
+                    {['XS','S','M','L','XL','XXL','3XL','4XL'].map(t => (
                       <button key={t} type="button" onClick={() => toggleTalla(t)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                           form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
@@ -1258,7 +1258,7 @@ export default function ProductManagerDashboard() {
                   </div>
                   <p className="text-xs text-gray-400">Pantalones / Jeans Mujer:</p>
                   <div className="flex flex-wrap gap-2">
-                    {['4','6','8','10','12','14','16'].map(t => (
+                    {['4','6','8','10','12','14','16','18','20','22','24','26','28','30'].map(t => (
                       <button key={t} type="button" onClick={() => toggleTalla(t)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                           form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
@@ -1267,7 +1267,7 @@ export default function ProductManagerDashboard() {
                   </div>
                   <p className="text-xs text-gray-400">Pantalones / Jeans Hombre:</p>
                   <div className="flex flex-wrap gap-2">
-                    {['26','28','30','32','34','36','38','40'].map(t => (
+                    {['26','28','30','32','34','36','38','40','42','44','46','48','50','52','54'].map(t => (
                       <button key={t} type="button" onClick={() => toggleTalla(t)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                           form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
@@ -1276,7 +1276,7 @@ export default function ProductManagerDashboard() {
                   </div>
                   <p className="text-xs text-gray-400">Calzado:</p>
                   <div className="flex flex-wrap gap-2">
-                    {['35','36','37','38','39','40','41','42','43'].map(t => (
+                    {['33','34','35','36','37','38','39','40','41','42','43','44','45'].map(t => (
                       <button key={t} type="button" onClick={() => toggleTalla(t)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                           form.tallas.includes(t) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
