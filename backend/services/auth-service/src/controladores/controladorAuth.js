@@ -3,6 +3,7 @@ const ServicioCorreo = require('../servicios/servicioCorreo');
 const ServicioSeguridad = require('../servicios/servicioSeguridad');
 const { validarRegistro, validarInicioSesion, sanitizarEntrada } = require('../utils/validaciones');
 const crypto = require('crypto');
+const tiktok = require('../tiktok');
 
 class ControladorAuth {
   static async registrar(req, res, next) {
@@ -37,6 +38,13 @@ class ControladorAuth {
         token: resultado.token,
         datos: resultado
       });
+
+      // TikTok Events API — CompleteRegistration
+      tiktok.completeRegistration(
+        resultado.usuario?.id,
+        resultado.usuario?.email,
+        { ip: req.ip || '', user_agent: req.headers['user-agent'] || '' }
+      );
     } catch (error) {
       next(error);
     }

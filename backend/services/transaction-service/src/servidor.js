@@ -7,6 +7,7 @@ const manejadorErrores = require('./middleware/manejadorErrores');
 const axios = require('axios');
 const nodemailer = require('nodemailer');
 const epayco = require('./epayco');
+const tiktok = require('./tiktok');
 
 // Transporter de correo (reutiliza config del auth-service via env)
 const transporter = nodemailer.createTransport({
@@ -778,6 +779,16 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
         headers: { Authorization: req.headers.authorization },
         timeout: 3000
       }).catch(e => console.log(`⚠️ No se pudo actualizar total compras: ${e.message}`));
+
+      // TikTok Events API — CompletePay
+      axios.get(`http://auth-service:3011/api/usuarios/${usuarioIdPedido}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, id } = resU.data.usuario || {};
+          const ip = req.ip || req.headers['x-forwarded-for'] || '';
+          const ua = req.headers['user-agent'] || '';
+          tiktok.completePayment(pedidoId, totalPedido, { email, id, ip, user_agent: ua });
+          tiktok.placeAnOrder(pedidoId, totalPedido, { email, id, ip, user_agent: ua });
+        }).catch(() => {});
     }
 
     // Emitir SSE inmediatamente
@@ -1741,6 +1752,14 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
         headers: { Authorization: `Bearer ${process.env.INTERNAL_TOKEN || ''}` },
         timeout: 3000
       }).catch(e => console.log('⚠️ No se pudo actualizar total compras:', e.message));
+
+      // TikTok Events API — ePayco webhook
+      axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, id } = resU.data.usuario || {};
+          tiktok.completePayment(pedidoId, pedido.total, { email, id, ip: '', user_agent: '' });
+          tiktok.placeAnOrder(pedidoId, pedido.total, { email, id, ip: '', user_agent: '' });
+        }).catch(() => {});
 
       console.log(`✅ Pago ePayco confirmado para pedido ${pedidoId}`);
     } else {
