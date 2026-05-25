@@ -7,7 +7,7 @@ from config.base_datos import obtener_bd
 
 router = APIRouter()
 
-JWT_SECRET = os.getenv("JWT_SECRETO", "secret")
+JWT_SECRET = os.getenv("JWT_SECRETO") or os.getenv("JWT_SECRET", "estilo_y_moda_secret_key_2024")
 ROLES_CATEGORIAS = {'product_manager', 'ceo'}
 
 
