@@ -210,4 +210,4 @@ class ControladorAuth {
   }
 }
 
-module.exports = ControladorAuth;
+module.exports = ControladorAuth;// rebuild mié 27 may 2026 03:21:05 -05
