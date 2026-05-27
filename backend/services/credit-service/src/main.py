@@ -12,7 +12,7 @@ import jwt as pyjwt
 from typing import Optional
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from database import get_db, init_db, CreditoInterno, TransaccionCredito, Bono
+from database import get_db, init_db, CreditoInterno, TransaccionCredito, Bono, ConfiguracionBonos
 from contextlib import asynccontextmanager
 import asyncio
 
@@ -722,15 +722,12 @@ async def validar_bono(datos: ValidarBono, db: Session = Depends(get_db)):
     if not bono:
         return {"valido": False, "razon": "Código de bono no existe"}
 
-    # Solo el dueño puede usarlo
     if bono.usuario_id != datos.usuario_id:
         return {"valido": False, "razon": "Este bono no pertenece a tu cuenta"}
 
-    # Ya fue usado — muerto para siempre
     if bono.estado == "Usado":
         return {"valido": False, "razon": "Este bono ya fue utilizado en un pedido anterior"}
 
-    # Vencido
     if bono.estado == "Vencido" or bono.fecha_vencimiento < datetime.now():
         if bono.estado != "Vencido":
             bono.estado = "Vencido"
@@ -740,6 +737,8 @@ async def validar_bono(datos: ValidarBono, db: Session = Depends(get_db)):
     return {
         "valido": True,
         "monto": bono.monto,
+        "tipo": bono.tipo or "fijo",
+        "porcentaje": bono.porcentaje or 0,
         "fecha_vencimiento": bono.fecha_vencimiento.isoformat(),
         "codigo": bono.codigo
     }
@@ -1026,3 +1025,99 @@ if __name__ == "__main__":
     puerto = int(os.getenv("PUERTO", 3008))
     print(f"🚀 Credit Service v3.0 iniciando en puerto {puerto}")
     uvicorn.run(app, host="0.0.0.0", port=puerto)
+
+# ============================================
+# BONO DE BIENVENIDA — 15% primera compra
+# ============================================
+
+class ConfigBienvenida(BaseModel):
+    activo: bool
+    porcentaje: float
+
+@app.get("/api/bonos/configuracion")
+async def obtener_configuracion(db: Session = Depends(get_db)):
+    """Obtiene la configuración del bono de bienvenida"""
+    config = db.query(ConfiguracionBonos).filter(ConfiguracionBonos.id == 1).first()
+    if not config:
+        config = ConfiguracionBonos(id=1, bono_bienvenida_activo=True, bono_bienvenida_porcentaje=15.0)
+        db.add(config)
+        db.commit()
+    return {
+        "bono_bienvenida_activo": config.bono_bienvenida_activo,
+        "bono_bienvenida_porcentaje": config.bono_bienvenida_porcentaje
+    }
+
+@app.put("/api/bonos/configuracion")
+async def actualizar_configuracion(datos: ConfigBienvenida, db: Session = Depends(get_db)):
+    """Activa/desactiva el bono de bienvenida — solo Marketing Manager o CEO"""
+    import jwt as pyjwt
+    config = db.query(ConfiguracionBonos).filter(ConfiguracionBonos.id == 1).first()
+    if not config:
+        config = ConfiguracionBonos(id=1)
+        db.add(config)
+    config.bono_bienvenida_activo = datos.activo
+    config.bono_bienvenida_porcentaje = datos.porcentaje
+    config.fecha_actualizacion = datetime.now()
+    db.commit()
+    estado = "activado" if datos.activo else "desactivado"
+    print(f"{'✅' if datos.activo else '❌'} Bono de bienvenida {estado} — {datos.porcentaje}%")
+    return {
+        "mensaje": f"Bono de bienvenida {estado}",
+        "activo": datos.activo,
+        "porcentaje": datos.porcentaje
+    }
+
+@app.post("/api/bonos/bienvenida/{usuario_id}")
+async def generar_bono_bienvenida(usuario_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Genera bono de bienvenida al registrarse — llamado desde auth-service"""
+    # Verificar configuración
+    config = db.query(ConfiguracionBonos).filter(ConfiguracionBonos.id == 1).first()
+    if not config or not config.bono_bienvenida_activo:
+        return {"mensaje": "Bono de bienvenida desactivado", "generado": False}
+
+    # Verificar que no tenga ya un bono de bienvenida
+    bono_existente = db.query(Bono).filter(
+        Bono.usuario_id == usuario_id,
+        Bono.periodo == "bienvenida"
+    ).first()
+    if bono_existente:
+        return {"mensaje": "Ya tiene bono de bienvenida", "generado": False}
+
+    # Generar código único
+    intentos = 0
+    codigo = None
+    while intentos < 10:
+        candidato = generar_codigo_bono(usuario_id)
+        existe = db.query(Bono).filter(Bono.codigo == candidato).first()
+        if not existe:
+            codigo = candidato
+            break
+        intentos += 1
+
+    if not codigo:
+        return {"mensaje": "Error generando código", "generado": False}
+
+    fecha_vencimiento = datetime.now() + timedelta(days=30)
+    porcentaje = config.bono_bienvenida_porcentaje
+
+    nuevo_bono = Bono(
+        codigo=codigo,
+        usuario_id=usuario_id,
+        monto=0,
+        tipo="porcentaje",
+        porcentaje=porcentaje,
+        estado="Disponible",
+        fecha_vencimiento=fecha_vencimiento,
+        periodo="bienvenida"
+    )
+    db.add(nuevo_bono)
+    db.commit()
+
+    print(f"🎁 Bono bienvenida generado para usuario {usuario_id}: {codigo} ({porcentaje}%)")
+
+    return {
+        "generado": True,
+        "codigo": codigo,
+        "porcentaje": porcentaje,
+        "fecha_vencimiento": fecha_vencimiento.isoformat()
+    }

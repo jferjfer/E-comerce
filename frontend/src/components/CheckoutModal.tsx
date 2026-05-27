@@ -84,8 +84,11 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setErrorBono('')
     const resultado = await api.validarBono(codigoBono.trim().toUpperCase(), usuario.id)
     if (resultado.valido) {
+      // Si es porcentaje, calcular el monto sobre el total actual
+      if (resultado.tipo === 'porcentaje' && resultado.porcentaje > 0) {
+        resultado.monto = Math.round(total * (resultado.porcentaje / 100))
+      }
       setBonoValidado(resultado)
-      // Resetear pedido para que se cree uno nuevo con el descuento
       setPedidoParaEpayco(null)
     } else {
       setErrorBono(resultado.razon || 'Bono no válido')

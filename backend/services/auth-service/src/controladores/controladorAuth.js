@@ -45,6 +45,25 @@ class ControladorAuth {
         resultado.usuario?.email,
         { ip: req.ip || '', user_agent: req.headers['user-agent'] || '' }
       );
+
+      // Generar bono de bienvenida en background
+      const axios = require('axios');
+      axios.post(`http://credit-service:3008/api/bonos/bienvenida/${resultado.usuario?.id}`, {}, { timeout: 5000 })
+        .then(async (resBono) => {
+          if (resBono.data?.generado && resBono.data?.codigo) {
+            const { codigo, porcentaje, fecha_vencimiento } = resBono.data;
+            // Enviar correo con el bono
+            const ServicioCorreo = require('../servicios/servicioCorreo');
+            await ServicioCorreo.enviarBonoBienvenida(
+              resultado.usuario?.email,
+              resultado.usuario?.nombre,
+              codigo,
+              porcentaje,
+              new Date(fecha_vencimiento)
+            ).catch(e => console.log('⚠️ No se pudo enviar correo bono:', e.message));
+          }
+        })
+        .catch(e => console.log('⚠️ No se pudo generar bono bienvenida:', e.message));
     } catch (error) {
       next(error);
     }

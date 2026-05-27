@@ -211,6 +211,73 @@ class ServicioCorreo {
     });
   }
 
+  async enviarBonoBienvenida(email, nombreUsuario, codigo, porcentaje, fechaVencimiento) {
+    const urlTienda = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
+    const fechaStr = fechaVencimiento.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+    const nombreCorto = (nombreUsuario || 'Cliente').split(' ')[0];
+
+    const html = `
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff">
+        <div style="background:#111827;padding:36px 40px;text-align:center">
+          <div style="font-size:36px;font-weight:900;color:#c5a47e;letter-spacing:-2px">E</div>
+          <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:10px;text-transform:uppercase">EGOS</div>
+          <div style="font-size:10px;color:#c5a47e;letter-spacing:4px;margin-top:2px;text-transform:uppercase">Wear Your Truth</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#c5a47e,#a67c52);padding:40px;text-align:center">
+          <div style="font-size:52px;margin-bottom:12px">🎁</div>
+          <h1 style="color:#111827;margin:0;font-size:26px;font-weight:900">
+            ¡Bienvenido ${nombreCorto}!
+          </h1>
+          <p style="color:#111827;margin:10px 0 0;font-size:14px;opacity:0.8">
+            Tienes un regalo esperándote
+          </p>
+        </div>
+        <div style="padding:40px">
+          <p style="font-size:17px;color:#111827;margin:0 0 16px">
+            Hola <strong>${nombreCorto}</strong> 👋
+          </p>
+          <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0 0 28px">
+            Gracias por unirte a la familia EGOS. Para celebrar tu llegada, 
+            te regalamos un <strong>${porcentaje}% de descuento</strong> en tu primera compra.
+          </p>
+          <div style="background:#111827;border-radius:16px;padding:32px;text-align:center;margin-bottom:28px">
+            <p style="margin:0 0 8px;font-size:12px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">Tu bono de bienvenida</p>
+            <p style="margin:0 0 4px;font-size:42px;font-weight:900;color:#c5a47e">${porcentaje}%</p>
+            <p style="margin:0 0 24px;font-size:12px;color:#9ca3af">descuento en tu primera compra</p>
+            <div style="background:#1f2937;border-radius:10px;padding:16px;display:inline-block;min-width:260px">
+              <p style="margin:0 0 6px;font-size:11px;color:#9ca3af;letter-spacing:2px">CÓDIGO DE BONO</p>
+              <p style="margin:0;font-size:22px;font-weight:900;color:#ffffff;font-family:monospace;letter-spacing:4px">${codigo}</p>
+            </div>
+            <p style="margin:16px 0 0;font-size:12px;color:#6b7280">
+              ⏰ Válido hasta el <strong style="color:#c5a47e">${fechaStr}</strong>
+            </p>
+          </div>
+          <div style="background:#faf8f5;border-radius:12px;padding:24px;margin-bottom:28px;border:1px solid #f0ebe4">
+            <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#111827">¿Cómo usar tu bono?</p>
+            <p style="margin:0 0 8px;font-size:13px;color:#6b7280">1. Elige los productos que quieras</p>
+            <p style="margin:0 0 8px;font-size:13px;color:#6b7280">2. Ve al carrito y selecciona tu método de pago</p>
+            <p style="margin:0;font-size:13px;color:#6b7280">3. Ingresa el código <strong style="color:#111827;font-family:monospace">${codigo}</strong> y se descuenta el ${porcentaje}% automáticamente</p>
+          </div>
+          <div style="text-align:center">
+            <a href="${urlTienda}" style="display:inline-block;background:#c5a47e;color:#111827;padding:16px 40px;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:1px">
+              Ir a la Tienda
+            </a>
+          </div>
+        </div>
+        <div style="background:#111827;padding:28px 40px;text-align:center">
+          <p style="margin:0 0 8px;font-size:11px;color:#c5a47e;letter-spacing:3px;text-transform:uppercase">EGOS — Wear Your Truth</p>
+          <p style="margin:0;font-size:11px;color:#6b7280">Este bono es personal e intransferible · egoscolombia.com.co</p>
+        </div>
+      </div>
+    `;
+
+    return await this.enviarCorreo({
+      to: email,
+      subject: `🎁 ¡${nombreCorto}, tienes un ${porcentaje}% de descuento en tu primera compra! — EGOS`,
+      html
+    });
+  }
+
   async enviarRecuperacionContrasena(email, token, nombreUsuario) {
     const enlaceRecuperacion = `${process.env.FRONTEND_URL || 'https://egoscolombia.com.co'}/restablecer-contrasena?token=${token}`;
 

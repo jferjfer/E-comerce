@@ -14,6 +14,11 @@ export default function MarketingManagerDashboard() {
   const [mostrarListaCampanas, setMostrarListaCampanas] = useState(false)
   const [mostrarListaCupones, setMostrarListaCupones] = useState(false)
   const [mostrarReportes, setMostrarReportes] = useState(false)
+  // Bono de bienvenida
+  const [bonoBienvenidaActivo, setBonoBienvenidaActivo] = useState(true)
+  const [bonoPorcentaje, setBonoPorcentaje] = useState(15)
+  const [guardandoBono, setGuardandoBono] = useState(false)
+  const [mensajeBono, setMensajeBono] = useState<{tipo:string,texto:string}|null>(null)
   const [nuevoCupon, setNuevoCupon] = useState({
     codigo: '',
     tipo: 'porcentaje',
@@ -29,6 +34,14 @@ export default function MarketingManagerDashboard() {
 
   useEffect(() => {
     cargarDatos()
+    // Cargar configuración del bono de bienvenida
+    fetch(`${API_URL}/api/bonos/configuracion`)
+      .then(r => r.json())
+      .then(d => {
+        setBonoBienvenidaActivo(d.bono_bienvenida_activo)
+        setBonoPorcentaje(d.bono_bienvenida_porcentaje)
+      }).catch(() => {})
+  }, [])
   }, [])
 
   const cargarDatos = async () => {
@@ -131,6 +144,22 @@ export default function MarketingManagerDashboard() {
     addNotification('Datos exportados exitosamente', 'success')
   }
 
+  const guardarConfigBono = async () => {
+    setGuardandoBono(true)
+    setMensajeBono(null)
+    try {
+      const r = await fetch(`${API_URL}/api/bonos/configuracion`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ activo: bonoBienvenidaActivo, porcentaje: bonoPorcentaje })
+      })
+      const d = await r.json()
+      if (r.ok) setMensajeBono({ tipo: 'success', texto: `✅ Bono de bienvenida ${bonoBienvenidaActivo ? 'activado' : 'desactivado'} — ${bonoPorcentaje}%` })
+      else setMensajeBono({ tipo: 'error', texto: d.detail || 'Error guardando' })
+    } catch { setMensajeBono({ tipo: 'error', texto: 'Error de conexión' }) }
+    finally { setGuardandoBono(false) }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-screen-2xl mx-auto px-4 py-8">
@@ -145,6 +174,62 @@ export default function MarketingManagerDashboard() {
               <p className="text-gray-600">Gestión de Campañas y Promociones</p>
             </div>
           </div>
+        </div>
+
+        {/* Bono de Bienvenida */}
+        <div className="bg-white rounded-xl shadow-sm border p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">🎁</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800">Bono de Bienvenida</h3>
+                <p className="text-xs text-gray-500">Descuento automático para nuevos clientes</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setBonoBienvenidaActivo(!bonoBienvenidaActivo)}
+              className={`relative w-14 h-7 rounded-full transition-colors ${
+                bonoBienvenidaActivo ? 'bg-emerald-500' : 'bg-gray-300'
+              }`}>
+              <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                bonoBienvenidaActivo ? 'translate-x-8' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">Porcentaje de descuento</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" min="1" max="50"
+                  value={bonoPorcentaje}
+                  onChange={e => setBonoPorcentaje(Number(e.target.value))}
+                  className="w-24 border rounded-lg px-3 py-2 text-sm font-bold text-center"
+                />
+                <span className="text-gray-500 text-sm">% sobre el total de la primera compra</span>
+              </div>
+            </div>
+            <button
+              onClick={guardarConfigBono}
+              disabled={guardandoBono}
+              className="bg-gray-900 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+              style={{color:'#c5a47e'}}>
+              {guardandoBono ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+          {mensajeBono && (
+            <p className={`text-xs mt-2 ${mensajeBono.tipo === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+              {mensajeBono.texto}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 mt-2">
+            {bonoBienvenidaActivo
+              ? `✅ Activo — Los nuevos clientes reciben un código de ${bonoPorcentaje}% de descuento al registrarse`
+              : '❌ Desactivado — Los nuevos clientes no recibirán bono de bienvenida'
+            }
+          </p>
         </div>
 
         {/* Métricas */}

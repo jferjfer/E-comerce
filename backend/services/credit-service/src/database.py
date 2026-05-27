@@ -51,13 +51,23 @@ class Bono(Base):
     codigo = Column(String, unique=True, nullable=False)
     usuario_id = Column(Integer, nullable=False)
     monto = Column(Float, default=100_000)
+    tipo = Column(String, default="fijo")  # fijo, porcentaje
+    porcentaje = Column(Float, default=0)
     estado = Column(String, default="Disponible")  # Disponible, Usado, Vencido
     fecha_generacion = Column(DateTime, default=datetime.now)
     fecha_vencimiento = Column(DateTime, nullable=False)
     fecha_uso = Column(DateTime, nullable=True)
     pedido_id = Column(String, nullable=True)
-    # Control de renovación
-    periodo = Column(String, nullable=False)  # ej: "2024-Q1" para evitar duplicados por período
+    periodo = Column(String, nullable=False)
+
+class ConfiguracionBonos(Base):
+    __tablename__ = "configuracion_bonos"
+
+    id = Column(Integer, primary_key=True)
+    bono_bienvenida_activo = Column(Boolean, default=True)
+    bono_bienvenida_porcentaje = Column(Float, default=15.0)
+    actualizado_por = Column(String, nullable=True)
+    fecha_actualizacion = Column(DateTime, default=datetime.now)
 
 def get_db():
     db = SessionLocal()
