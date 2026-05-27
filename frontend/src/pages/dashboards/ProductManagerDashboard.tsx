@@ -170,6 +170,7 @@ interface FormProducto {
   sku: string
   marca: string
   material: string
+  genero: string
   costo_adquisicion: string
   costo_envio: string
   costo_empaque: string
@@ -188,7 +189,7 @@ interface FormProducto {
 }
 
 const FORM_INICIAL: FormProducto = {
-  nombre: '', sku: generarEAN13(1), marca: 'EGOS', material: '',
+  nombre: '', sku: generarEAN13(1), marca: 'EGOS', material: '', genero: 'Mujer',
   costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
   costo_empaque: String(COSTO_EMPAQUE), precio_manual: '', usar_precio_manual: false,
   categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'],
@@ -349,6 +350,7 @@ export default function ProductManagerDashboard() {
       sku: skuExistente,
       marca: (p as any).marca || 'EGOS',
       material: (p as any).material || '',
+      genero: (p as any).genero || 'Mujer',
       costo_adquisicion: p.costo_adquisicion ? String(p.costo_adquisicion) : '',
       costo_envio: String(COSTO_ENVIO),
       costo_empaque: String(COSTO_EMPAQUE),
@@ -407,6 +409,7 @@ export default function ProductManagerDashboard() {
       sku: form.sku,
       marca: form.marca,
       material: form.material,
+      genero: form.genero,
       precio: precioFinal,
       costo_adquisicion: parseFloat(form.costo_adquisicion) || 0,
       precio_manual: form.usar_precio_manual,
@@ -1130,6 +1133,16 @@ export default function ProductManagerDashboard() {
                   <input value={form.material} onChange={e => setForm({...form, material: e.target.value})}
                     placeholder="Ej: 95% algodón, 5% elastano"
                     className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Género</label>
+                  <select value={form.genero} onChange={e => setForm({...form, genero: e.target.value})}
+                    className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
+                    <option value="Mujer">Mujer</option>
+                    <option value="Hombre">Hombre</option>
+                    <option value="Niño/a"> Niño/a</option>
+                    <option value="Unisex">Unisex</option>
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Stock disponible</label>
