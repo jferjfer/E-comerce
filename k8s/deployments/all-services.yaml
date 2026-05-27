@@ -160,6 +160,7 @@ spec:
           value: "production"
         - name: FRONTEND_URL
           value: "https://www.egoscolombia.com.co"
+        - name: EPAYCO_P_CUST_ID
           valueFrom:
             secretKeyRef:
               name: egos-secrets
@@ -810,6 +811,13 @@ metadata:
   namespace: egos
 spec:
   replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
     spec:
       containers:
       - name: gateway

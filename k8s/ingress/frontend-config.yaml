@@ -7,4 +7,3 @@ spec:
   redirectToHttps:
     enabled: true
     responseCodeName: MOVED_PERMANENTLY_DEFAULT
-  quicOverride: DISABLE

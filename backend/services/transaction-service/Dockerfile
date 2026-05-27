@@ -14,3 +14,4 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 CMD ["sh", "-c", "node src/servidor.js"]
+# rebuild mar 26 may 2026 19:43:06 -05

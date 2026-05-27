@@ -26,3 +26,4 @@ EXPOSE 3011
 # Health check removido - usar monitoreo externo
 
 CMD ["node", "src/servidor.js"]
+# rebuild mar 26 may 2026 19:43:06 -05

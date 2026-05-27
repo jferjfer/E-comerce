@@ -14,3 +14,4 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 CMD ["sh", "-c", "cd /app/src && uvicorn main:app --host 0.0.0.0 --port 3008"]
+# rebuild mar 26 may 2026 19:43:06 -05

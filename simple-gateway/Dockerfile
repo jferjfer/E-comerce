@@ -25,4 +25,4 @@ EXPOSE 3000
 
 # Health check removido - usar monitoreo externo
 
-CMD ["node", "server.js"]
+CMD ["node", "server.js"]# rebuild mar 26 may 2026 19:43:06 -05

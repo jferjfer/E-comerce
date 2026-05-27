@@ -15,3 +15,4 @@ USER contabilidad
 EXPOSE 3012
 
 CMD ["sh", "-c", "cd /app/src && uvicorn main:app --host 0.0.0.0 --port 3012"]
+# rebuild mar 26 may 2026 19:43:06 -05

@@ -25,4 +25,4 @@ EXPOSE 3002
 
 # Health check removido - usar monitoreo externo
 
-CMD ["sh", "-c", "cd /app/src && uvicorn main:app --host 0.0.0.0 --port 3002"]
+CMD ["sh", "-c", "cd /app/src && uvicorn main:app --host 0.0.0.0 --port 3002"]# rebuild mar 26 may 2026 19:43:06 -05

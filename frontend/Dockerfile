@@ -28,3 +28,4 @@ RUN echo 'server { \
 EXPOSE 3005
 
 CMD ["nginx", "-g", "daemon off;"]
+# rebuild mar 26 may 2026 19:43:06 -05
