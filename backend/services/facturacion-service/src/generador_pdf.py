@@ -83,23 +83,47 @@ def generar_pdf_factura(
     # ══════════════════════════════════════════
     # ENCABEZADO
     # ══════════════════════════════════════════
-    col_empresa = [
-        Paragraph("<font color='#c5a47e'><b>E</b></font>",
-                  estilo('logo_e', fontSize=32, fontName='Helvetica-Bold', textColor=DORADO, leading=34, alignment=TA_CENTER)),
-        Paragraph("<b>EGOS</b>",
-                  estilo('logo_egos', fontSize=18, fontName='Helvetica-Bold', textColor=NEGRO, leading=20, alignment=TA_CENTER)),
-        Paragraph("WEAR YOUR TRUTH",
-                  estilo('t2', fontSize=7, textColor=DORADO, leading=10, alignment=TA_CENTER)),
-        Spacer(1, 6),
-        Paragraph("<b>Vertel &amp; Catillo S.A.S</b>", estilo('e1', fontSize=8, leading=11)),
-        Spacer(1, 6),
-        Paragraph("<b>Vertel &amp; Catillo S.A.S</b>", estilo('e1', fontSize=8, leading=11)),
+
+    # Logo EGOS — esquina superior izquierda con fondo negro
+    logo_table = Table([
+        [Paragraph("<font color='#c5a47e'><b>E</b></font>",
+                   estilo('logo_e', fontSize=36, fontName='Helvetica-Bold', textColor=DORADO, leading=38, alignment=TA_CENTER))],
+        [Paragraph("<b>EGOS</b>",
+                   estilo('logo_egos', fontSize=16, fontName='Helvetica-Bold', textColor=BLANCO, leading=18, alignment=TA_CENTER))],
+        [Paragraph("WEAR YOUR TRUTH",
+                   estilo('t2', fontSize=6, textColor=DORADO, leading=9, alignment=TA_CENTER))],
+    ], colWidths=[3.5*cm])
+    logo_table.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0), (-1,-1), NEGRO),
+        ('ALIGN',         (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING',    (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('LEFTPADDING',   (0,0), (-1,-1), 6),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 6),
+    ]))
+
+    # Datos empresa — al lado derecho del logo
+    col_datos_empresa = [
+        Spacer(1, 4),
+        Paragraph("<b>VERTEL &amp; CATILLO S.A.S</b>", estilo('e1', fontSize=9, leading=12)),
         Paragraph("NIT: 902.051.708-6", estilo('e2', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
-        Paragraph("CRA 107 A BIS #69B-58, Bogotá D.C", estilo('e3', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
-        Paragraph("hola@egos.com.co", estilo('e4', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
+        Paragraph("CARRERA 107 A BIS 69 B 58, Bogotá D.C.", estilo('e3', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
+        Paragraph("servicioalcliente@egoscolombia.com", estilo('e4', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
         Spacer(1, 4),
         Paragraph("Régimen Simple de Tributación (SIMPLE)", estilo('e5', fontSize=6, textColor=GRIS, leading=9)),
-        Paragraph("Responsable de IVA — CIIU: 4791 / 4771 / 4642", estilo('e6', fontSize=6, textColor=GRIS, leading=9)),
+        Paragraph("Responsable de IVA — CIIU Principal: 4771 | Secundaria: 4642", estilo('e6', fontSize=6, textColor=GRIS, leading=9)),
+    ]
+
+    col_empresa = Table(
+        [[logo_table, col_datos_empresa]],
+        colWidths=[3.8*cm, ANCHO_UTIL * 0.52 - 3.8*cm]
+    )
+    col_empresa.setStyle(TableStyle([
+        ('VALIGN',  (0,0), (-1,-1), 'TOP'),
+        ('PADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (1,0), (1,0), 8),
+    ]))
     ]
 
     col_factura = [
@@ -334,7 +358,7 @@ def generar_pdf_factura(
     ))
     story.append(Spacer(1, 3))
     story.append(Paragraph(
-        f"Generado por EGOS — Wear Your Truth  |  hola@egos.com.co  |  {fecha.strftime('%d/%m/%Y %I:%M %p')} (Hora Colombia)",
+        f"Generado por EGOS — Wear Your Truth  |  servicioalcliente@egoscolombia.com  |  {fecha.strftime('%d/%m/%Y %I:%M %p')} (Hora Colombia)",
         estilo('pie2', fontSize=6, textColor=GRIS, alignment=TA_CENTER, leading=8)
     ))
 
