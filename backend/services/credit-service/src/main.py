@@ -1121,3 +1121,4 @@ async def generar_bono_bienvenida(usuario_id: int, background_tasks: BackgroundT
         "porcentaje": porcentaje,
         "fecha_vencimiento": fecha_vencimiento.isoformat()
     }
+# trigger rebuild mié 27 may 2026 00:39:28 -05
