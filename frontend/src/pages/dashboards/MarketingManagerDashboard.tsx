@@ -42,7 +42,6 @@ export default function MarketingManagerDashboard() {
         setBonoPorcentaje(d.bono_bienvenida_porcentaje)
       }).catch(() => {})
   }, [])
-  }, [])
 
   const cargarDatos = async () => {
     try {
