@@ -30,7 +30,7 @@ export default function ProductRecommendation({ producto, razon, puntuacion }: P
             <h4 className="font-semibold text-sm text-gray-900 truncate hover:text-gray-700 transition-colors">{producto.nombre}</h4>
           </Link>
           <p className="text-gray-700 font-bold text-sm mt-1">
-            ${(producto.precio / 100).toLocaleString('es-CO')}
+            ${producto.precio.toLocaleString('es-CO')}
           </p>
           {razon && (
             <p className="text-xs text-gray-600 mt-1 line-clamp-2">{razon}</p>
