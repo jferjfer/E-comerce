@@ -166,11 +166,9 @@ export default function HomePage() {
               className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-gray-400/20 bg-white"
             >
               <option value="">Todas</option>
-              <option value="Vestidos">Vestidos</option>
-              <option value="Camisas">Camisas</option>
-              <option value="Pantalones">Pantalones</option>
-              <option value="Blazers">Blazers</option>
-              <option value="Calzado">Calzado</option>
+              {[...new Set(productos.map(p => p.categoria).filter(Boolean))].sort().map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
 
             <input
