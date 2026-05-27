@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 
 export default function MarketingManagerDashboard() {
-  const { usuario } = useAuthStore()
+  const { usuario, token } = useAuthStore()
   const { addNotification } = useNotificationStore()
   const [cupones, setCupones] = useState<any[]>([])
   const [campanas, setCampanas] = useState<any[]>([])
