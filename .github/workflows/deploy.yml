@@ -5,9 +5,9 @@ on:
     branches: [main]
 
 env:
-  PROJECT_ID: crypto-topic-492202-q9
+  PROJECT_ID: triple-shift-497623-i0
   REGION: us-central1
-  REGISTRY: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry
+  REGISTRY: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry
   CLUSTER: autopilot-cluster-1
   NAMESPACE: egos
 
@@ -26,8 +26,8 @@ jobs:
       - name: Autenticar en Google Cloud
         uses: google-github-actions/auth@v2.1.8
         with:
-          workload_identity_provider: projects/611253309597/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: github-actions-sa@crypto-topic-492202-q9.iam.gserviceaccount.com
+          workload_identity_provider: projects/1083524657274/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions-sa@triple-shift-497623-i0.iam.gserviceaccount.com
 
       - name: Configurar gcloud
         uses: google-github-actions/setup-gcloud@v2.1.4

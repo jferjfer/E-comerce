@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/auth-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/auth-service:latest
         ports:
         - containerPort: 3011
         env:
@@ -97,7 +97,7 @@ spec:
     spec:
       containers:
       - name: catalog-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/catalog-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/catalog-service:latest
         ports:
         - containerPort: 3002
         env:
@@ -150,7 +150,7 @@ spec:
     spec:
       containers:
       - name: transaction-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/transaction-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/transaction-service:latest
         ports:
         - containerPort: 3003
         env:
@@ -257,7 +257,7 @@ spec:
     spec:
       containers:
       - name: social-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/social-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/social-service:latest
         ports:
         - containerPort: 3004
         env:
@@ -310,7 +310,7 @@ spec:
     spec:
       containers:
       - name: marketing-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/marketing-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/marketing-service:latest
         ports:
         - containerPort: 3006
         env:
@@ -365,7 +365,7 @@ spec:
     spec:
       containers:
       - name: ai-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/ai-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/ai-service:latest
         ports:
         - containerPort: 3007
         env:
@@ -430,7 +430,7 @@ spec:
     spec:
       containers:
       - name: credit-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/credit-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/credit-service:latest
         ports:
         - containerPort: 3008
         env:
@@ -507,7 +507,7 @@ spec:
     spec:
       containers:
       - name: logistics-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/logistics-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/logistics-service:latest
         ports:
         - containerPort: 3009
         env:
@@ -587,7 +587,7 @@ spec:
     spec:
       containers:
       - name: facturacion-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/facturacion-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/facturacion-service:latest
         ports:
         - containerPort: 3010
         env:
@@ -704,7 +704,7 @@ spec:
     spec:
       containers:
       - name: contabilidad-service
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/contabilidad-service:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/contabilidad-service:latest
         ports:
         - containerPort: 3012
         env:
@@ -813,7 +813,7 @@ spec:
     spec:
       containers:
       - name: gateway
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/gateway:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/gateway:latest
         ports:
         - containerPort: 3000
         env:
@@ -877,7 +877,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: us-central1-docker.pkg.dev/crypto-topic-492202-q9/egos-registry/frontend:latest
+        image: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry/frontend:latest
         ports:
         - containerPort: 3005
         resources:
