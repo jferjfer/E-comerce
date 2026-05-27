@@ -805,9 +805,11 @@ async def obtener_bonos_usuario(usuario_id: int, db: Session = Depends(get_db)):
         "bonos": [{
             "codigo": b.codigo,
             "monto": b.monto,
+            "tipo": b.tipo or "fijo",
+            "porcentaje": b.porcentaje or 0,
             "estado": b.estado,
-            "fecha_generacion": b.fecha_generacion.isoformat(),
-            "fecha_vencimiento": b.fecha_vencimiento.isoformat(),
+            "fecha_generacion": b.fecha_generacion.isoformat() if b.fecha_generacion else None,
+            "fecha_vencimiento": b.fecha_vencimiento.isoformat() if b.fecha_vencimiento else None,
             "fecha_uso": b.fecha_uso.isoformat() if b.fecha_uso else None
         } for b in bonos],
         "total": len(bonos),
