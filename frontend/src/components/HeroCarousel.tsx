@@ -113,15 +113,15 @@ export default function HeroCarousel() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/20 overflow-hidden">
+      <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl border border-white/20 overflow-hidden">
         <div className="relative z-10 animate-fadeIn">
           <div className="text-center text-white">
-            <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-1 rounded-full text-sm font-bold mb-4">
+            <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 px-3 py-1 rounded-full text-xs sm:text-sm font-bold mb-2 sm:mb-4">
               🎉 CAMPAÑA ESPECIAL
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-3">{item.nombre}</h2>
-            <p className="text-xl mb-6 opacity-90">{item.descripcion}</p>
-            <div className="inline-block bg-white text-red-600 px-8 py-3 rounded-xl font-bold text-3xl shadow-lg">
+            <h2 className="text-lg sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3 leading-tight">{item.nombre}</h2>
+            <p className="text-xs sm:text-base md:text-xl mb-3 sm:mb-6 opacity-90 px-2">{item.descripcion}</p>
+            <div className="inline-block bg-white text-red-600 px-4 sm:px-8 py-2 sm:py-3 rounded-xl font-bold text-lg sm:text-2xl md:text-3xl shadow-lg">
               {item.descuento ? `HASTA ${item.descuento}% OFF` : item.descripcion}
             </div>
           </div>
