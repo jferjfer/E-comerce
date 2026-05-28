@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 export default function HeroCarousel() {
   const [items, setItems] = useState<any[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [mostrarLogo, setMostrarLogo] = useState(true)
 
   useEffect(() => {
     const cargar = async () => {
@@ -18,6 +19,13 @@ export default function HeroCarousel() {
     return () => clearInterval(interval)
   }, [])
 
+  // Mostrar logo 3.5s luego transicionar a la campaña
+  useEffect(() => {
+    if (items.length === 0) return
+    const timer = setTimeout(() => setMostrarLogo(false), 3500)
+    return () => clearTimeout(timer)
+  }, [items.length])
+
   useEffect(() => {
     if (items.length <= 1) return
     const interval = setInterval(() => {
@@ -26,7 +34,8 @@ export default function HeroCarousel() {
     return () => clearInterval(interval)
   }, [items.length])
 
-  if (items.length === 0) return (
+  // Mostrar logo si no hay campañas O si aún está en la intro
+  if (items.length === 0 || mostrarLogo) return (
     <div className="text-center text-white flex flex-col items-center justify-center">
       <div className="egos-monogram">E</div>
       <div className="egos-brand">EGOS</div>
@@ -113,7 +122,14 @@ export default function HeroCarousel() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl border border-white/20 overflow-hidden">
+      <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl border border-white/20 overflow-hidden"
+           style={{ animation: 'fadeInUp 0.8s ease-out' }}>
+        <style>{`
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
         <div className="relative z-10 animate-fadeIn">
           <div className="text-center text-white">
             <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 px-3 py-1 rounded-full text-xs sm:text-sm font-bold mb-2 sm:mb-4">
