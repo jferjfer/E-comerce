@@ -27,6 +27,9 @@ export default function CatalogPage() {
   const [cargando, setCargando] = useState(true)
   const [paginaActual, setPaginaActual] = useState(1)
   const PRODUCTOS_POR_PAGINA = 24
+  const [mostrarModalAdultos, setMostrarModalAdultos] = useState(false)
+  const [lenceriaConfirmada, setLenceriaConfirmada] = useState(false)
+  const CATEGORIAS_RESTRINGIDAS = ['Lencería']
 
   // Cargar productos del backend
   useEffect(() => {
@@ -70,12 +73,16 @@ export default function CatalogPage() {
 
   const productosFiltrados = useMemo(() => {
     let filtrados = [...productos]
+    // Ocultar categorías restringidas del grid general
+    if (!CATEGORIAS_RESTRINGIDAS.includes(filters.category)) {
+      filtrados = filtrados.filter(p => !CATEGORIAS_RESTRINGIDAS.includes(p.categoria || ''))
+    }
     if (filters.category) filtrados = filtrados.filter(p => p.categoria === filters.category)
     if (filters.sortBy === 'price-low') filtrados.sort((a, b) => a.precio - b.precio)
     else if (filters.sortBy === 'price-high') filtrados.sort((a, b) => b.precio - a.precio)
     setPaginaActual(1)
     return filtrados
-  }, [productos, filters])
+  }, [productos, filters, lenceriaConfirmada])
 
   const clearFilters = () => {
     setFilters({ category: '', size: '', color: '', sortBy: 'relevance' })
@@ -97,7 +104,14 @@ export default function CatalogPage() {
             <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">Filtros:</span>
             <select
               value={filters.category}
-              onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+              onChange={(e) => {
+                const cat = e.target.value
+                if (CATEGORIAS_RESTRINGIDAS.includes(cat) && !lenceriaConfirmada) {
+                  setMostrarModalAdultos(true)
+                } else {
+                  setFilters(prev => ({ ...prev, category: cat }))
+                }
+              }}
               className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
             >
               <option value="">Todas</option>
@@ -310,6 +324,45 @@ export default function CatalogPage() {
         productName={productoSeleccionado?.nombre || ''}
         productImage={productoSeleccionado?.imagen || ''}
       />
+
+      {/* Modal confirmación adultos */}
+      {mostrarModalAdultos && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl">
+            <div className="text-5xl mb-4">🔞</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Contenido para adultos</h3>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              Esta categoría contiene lencería y ropa interior.<br />
+              ¿Confirmas que eres mayor de <strong>18 años</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setMostrarModalAdultos(false)
+                  setFilters(prev => ({ ...prev, category: '' }))
+                }}
+                className="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setLenceriaConfirmada(true)
+                  setMostrarModalAdultos(false)
+                  setFilters(prev => ({ ...prev, category: 'Lencería' }))
+                }}
+                className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700"
+                style={{ color: '#c5a47e' }}
+              >
+                Sí, tengo 18+
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-4">
+              Al confirmar aceptas ver contenido de lencería.
+            </p>
+          </div>
+        </div>
+      )}
 
 
       <Footer />

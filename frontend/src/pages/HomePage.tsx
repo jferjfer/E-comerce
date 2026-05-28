@@ -30,6 +30,9 @@ export default function HomePage() {
   })
   const [paginaActual, setPaginaActual] = useState(1)
   const PRODUCTOS_POR_PAGINA = 24
+  const [mostrarModalAdultos, setMostrarModalAdultos] = useState(false)
+  const [lenceriaConfirmada, setLenceriaConfirmada] = useState(false)
+  const CATEGORIAS_RESTRINGIDAS = ['Lencería']
 
   // Cargar todos los productos del backend
   useEffect(() => {
@@ -66,10 +69,14 @@ export default function HomePage() {
   const productosFiltrados = useMemo(() => {
     let filtrados = [...productos]
 
+    // Ocultar categorías restringidas del grid general
+    if (!CATEGORIAS_RESTRINGIDAS.includes(filtros.categoria)) {
+      filtrados = filtrados.filter(p => !CATEGORIAS_RESTRINGIDAS.includes(p.categoria || ''))
+    }
+
     if (filtros.categoria) {
       filtrados = filtrados.filter(p => p.categoria === filtros.categoria)
     }
-
     if (filtros.precioMin) {
       filtrados = filtrados.filter(p => p.precio >= parseInt(filtros.precioMin))
     }
@@ -162,7 +169,14 @@ export default function HomePage() {
           <div className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide sm:flex-wrap sm:py-3 sm:gap-3">
             <select
               value={filtros.categoria}
-              onChange={(e) => actualizarFiltro({ categoria: e.target.value })}
+              onChange={(e) => {
+                const cat = e.target.value
+                if (CATEGORIAS_RESTRINGIDAS.includes(cat) && !lenceriaConfirmada) {
+                  setMostrarModalAdultos(true)
+                } else {
+                  actualizarFiltro({ categoria: cat })
+                }
+              }}
               className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-gray-400/20 bg-white"
             >
               <option value="">Todas</option>
@@ -347,6 +361,45 @@ export default function HomePage() {
       />
 
       <Footer />
+
+      {/* Modal confirmación adultos */}
+      {mostrarModalAdultos && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl">
+            <div className="text-5xl mb-4">🔞</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Contenido para adultos</h3>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              Esta categoría contiene lencería y ropa interior.<br />
+              ¿Confirmas que eres mayor de <strong>18 años</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setMostrarModalAdultos(false)
+                  actualizarFiltro({ categoria: '' })
+                }}
+                className="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setLenceriaConfirmada(true)
+                  setMostrarModalAdultos(false)
+                  actualizarFiltro({ categoria: 'Lencería' })
+                }}
+                className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700"
+                style={{ color: '#c5a47e' }}
+              >
+                Sí, tengo 18+
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-4">
+              Al confirmar aceptas ver contenido de lencería.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }// rebuild mié 27 may 2026 00:58:37 -05
