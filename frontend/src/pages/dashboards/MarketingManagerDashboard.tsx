@@ -29,7 +29,8 @@ export default function MarketingManagerDashboard() {
     nombre: '',
     descripcion: '',
     tipo: 'descuento',
-    presupuesto: 0
+    presupuesto: 0,
+    descuento: 0
   })
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export default function MarketingManagerDashboard() {
     .then(data => {
       setCampanas([...campanas, data.campana])
       setMostrarModalCampana(false)
-      setNuevaCampana({ nombre: '', descripcion: '', tipo: 'descuento', presupuesto: 0 })
+      setNuevaCampana({ nombre: '', descripcion: '', tipo: 'descuento', presupuesto: 0, descuento: 0 })
       addNotification('Campaña creada exitosamente', 'success')
     })
     .catch(() => addNotification('Error creando campaña', 'error'))
@@ -728,6 +729,17 @@ export default function MarketingManagerDashboard() {
                     placeholder="50000"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descuento (%)</label>
+                  <input
+                    type="number" min="0" max="100"
+                    value={nuevaCampana.descuento}
+                    onChange={(e) => setNuevaCampana({...nuevaCampana, descuento: Number(e.target.value)})}
+                    placeholder="Ej: 15"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Se mostrará en el banner: HASTA X% OFF</p>
                 </div>
               </div>
               <div className="flex space-x-3 mt-6">

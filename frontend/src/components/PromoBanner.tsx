@@ -76,7 +76,7 @@ export default function PromoBanner() {
                   </div>
                   <div className="text-right">
                     <div className="bg-white text-red-600 px-6 py-3 rounded-xl font-bold text-2xl shadow-lg">
-                      HASTA 50% OFF
+                      {campana.descuento ? `HASTA ${campana.descuento}% OFF` : campana.nombre}
                     </div>
                   </div>
                 </div>

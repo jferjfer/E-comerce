@@ -278,17 +278,17 @@ aplicacion.get('/api/campanas', async (req, res) => {
 });
 
 aplicacion.post('/api/campanas', async (req, res) => {
-  const { nombre, descripcion, tipo, presupuesto } = req.body;
+  const { nombre, descripcion, tipo, presupuesto, descuento } = req.body;
   
   console.log(`📢 Creando campaña: ${nombre}`);
   
   try {
     const consulta = `
-      INSERT INTO campana (nombre, descripcion, tipo, presupuesto, estado)
-      VALUES ($1, $2, $3, $4, 'Activa')
+      INSERT INTO campana (nombre, descripcion, tipo, presupuesto, descuento, estado)
+      VALUES ($1, $2, $3, $4, $5, 'Activa')
       RETURNING *
     `;
-    const resultado = await pool.query(consulta, [nombre, descripcion, tipo || 'general', presupuesto || 0]);
+    const resultado = await pool.query(consulta, [nombre, descripcion, tipo || 'general', presupuesto || 0, descuento || 0]);
     
     res.status(201).json({
       mensaje: 'Campaña creada exitosamente',

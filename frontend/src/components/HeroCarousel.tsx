@@ -122,7 +122,7 @@ export default function HeroCarousel() {
             <h2 className="text-4xl md:text-5xl font-bold mb-3">{item.nombre}</h2>
             <p className="text-xl mb-6 opacity-90">{item.descripcion}</p>
             <div className="inline-block bg-white text-red-600 px-8 py-3 rounded-xl font-bold text-3xl shadow-lg">
-              HASTA 50% OFF
+              {item.descuento ? `HASTA ${item.descuento}% OFF` : item.descripcion}
             </div>
           </div>
         </div>
