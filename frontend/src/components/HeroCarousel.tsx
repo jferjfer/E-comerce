@@ -89,8 +89,8 @@ export default function HeroCarousel() {
         .egos-slogan {
           font-family: 'Bodoni Moda', serif;
           font-style: italic;
-          font-size: clamp(11px, 3vw, 18px);
-          letter-spacing: clamp(5px, 2vw, 14px);
+          font-size: clamp(16px, 4vw, 26px);
+          letter-spacing: clamp(6px, 2.5vw, 16px);
           color: #c5a47e;
           text-transform: uppercase;
           opacity: 0;
