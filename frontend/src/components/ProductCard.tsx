@@ -92,7 +92,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
           <img
             src={producto.imagen}
             alt={producto.nombre}
-            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
         </Link>
