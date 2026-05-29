@@ -1070,13 +1070,13 @@ export default function ProductManagerDashboard() {
                       <span className="text-right font-medium">{formatPrice(parseFloat(form.costo_envio) || 0)}</span>
                       <span>Empaque:</span>
                       <span className="text-right font-medium">{formatPrice(parseFloat(form.costo_empaque) || 0)}</span>
+                      <span className="text-gray-400 col-span-2 border-t pt-1 mt-1 font-semibold">Gastos de venta:</span>
                       <span>Fix ePayco:</span>
                       <span className="text-right font-medium">{formatPrice(FIX_EPAYCO)}</span>
-                      <span className="text-gray-400 col-span-2 border-t pt-1 mt-1">Calculado sobre PVP final:</span>
+                      <span>Comisión ePayco:</span>
+                      <span className="text-right font-medium">{formatPrice(Math.round(pvpPreview * COM_EPAYCO))}</span>
                       <span>IVA DIAN (19%):</span>
                       <span className="text-right font-medium text-orange-600">{formatPrice(pvpPreview - Math.round(pvpPreview / 1.19))}</span>
-                      <span>Comisión ePayco:</span>
-                      <span className="text-right font-medium text-orange-600">{formatPrice(Math.round(pvpPreview * COM_EPAYCO))}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between items-center">
                       <span className="font-bold text-gray-800">PVP al cliente:</span>
