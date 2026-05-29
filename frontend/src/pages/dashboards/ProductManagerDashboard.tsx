@@ -1066,7 +1066,7 @@ export default function ProductManagerDashboard() {
                       <span>Tu utilidad:</span><span className="text-right font-medium text-green-600">{formatPrice(utilidadPreview)}</span>
                       <span>Envío + empaque:</span><span className="text-right font-medium">{formatPrice((parseFloat(form.costo_envio)||0) + (parseFloat(form.costo_empaque)||0))}</span>
                       <span>Fix ePayco:</span><span className="text-right font-medium">{formatPrice(FIX_EPAYCO)}</span>
-                      <span>IVA DIAN (19%):</span><span className="text-right font-medium">{formatPrice(pvpPreview * IVA)}</span>
+                      <span>IVA DIAN (19%):</span><span className="text-right font-medium">{formatPrice(pvpPreview - Math.round(pvpPreview / 1.19))}</span>
                       <span>Comisión ePayco:</span><span className="text-right font-medium">{formatPrice(pvpPreview * COM_EPAYCO)}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between items-center">
