@@ -190,8 +190,8 @@ interface FormProducto {
 
 const FORM_INICIAL: FormProducto = {
   nombre: '', sku: generarEAN13(1), marca: 'EGOS', material: '', genero: 'Mujer',
-  costo_adquisicion: '', costo_envio: String(COSTO_ENVIO),
-  costo_empaque: String(COSTO_EMPAQUE), precio_manual: '', usar_precio_manual: false,
+  costo_adquisicion: '', costo_envio: '0',
+  costo_empaque: '0', precio_manual: '', usar_precio_manual: false,
   categoria: 'Vestidos', descripcion: '', tallas: ['S','M','L'],
   colores: ['Negro'], en_stock: true, stock_cantidad: '', imagen_url: '', imagenes_adicionales: [],
   proveedor_id: '', referencia_proveedor: ''
@@ -352,8 +352,8 @@ export default function ProductManagerDashboard() {
       material: (p as any).material || '',
       genero: (p as any).genero || 'Mujer',
       costo_adquisicion: p.costo_adquisicion ? String(p.costo_adquisicion) : '',
-      costo_envio: String(COSTO_ENVIO),
-      costo_empaque: String(COSTO_EMPAQUE),
+      costo_envio: (p as any).costo_envio ? String((p as any).costo_envio) : '0',
+      costo_empaque: (p as any).costo_empaque ? String((p as any).costo_empaque) : '0',
       precio_manual: String(p.precio),
       usar_precio_manual: !p.costo_adquisicion,
       categoria: p.categoria,
@@ -412,6 +412,8 @@ export default function ProductManagerDashboard() {
       genero: form.genero,
       precio: precioFinal,
       costo_adquisicion: parseFloat(form.costo_adquisicion) || 0,
+      costo_envio: parseFloat(form.costo_envio) || 0,
+      costo_empaque: parseFloat(form.costo_empaque) || 0,
       precio_manual: form.usar_precio_manual,
       categoria: form.categoria,
       descripcion: form.descripcion,
