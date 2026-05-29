@@ -185,7 +185,7 @@ export default function ProductoDetallePage() {
               <img
                 src={imagenes[imagenActiva]}
                 alt={producto.nombre}
-                className="absolute inset-0 w-full h-full object-cover object-top"
+                className="absolute inset-0 w-full h-full object-contain"
               />
               {!producto.en_stock && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
