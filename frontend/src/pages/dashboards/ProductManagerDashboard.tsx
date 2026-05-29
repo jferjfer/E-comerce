@@ -310,8 +310,8 @@ export default function ProductManagerDashboard() {
   const pvpPreview = form.costo_adquisicion
     ? calcularPVP(
         parseFloat(form.costo_adquisicion) || 0,
-        parseFloat(form.costo_envio) || COSTO_ENVIO,
-        parseFloat(form.costo_empaque) || COSTO_EMPAQUE
+        parseFloat(form.costo_envio) >= 0 ? parseFloat(form.costo_envio) : COSTO_ENVIO,
+        parseFloat(form.costo_empaque) >= 0 ? parseFloat(form.costo_empaque) : COSTO_EMPAQUE
       )
     : 0
 
@@ -396,8 +396,8 @@ export default function ProductManagerDashboard() {
       }
       precioFinal = calcularPVP(
         costo,
-        parseFloat(form.costo_envio) || COSTO_ENVIO,
-        parseFloat(form.costo_empaque) || COSTO_EMPAQUE
+        parseFloat(form.costo_envio) >= 0 ? parseFloat(form.costo_envio) : COSTO_ENVIO,
+        parseFloat(form.costo_empaque) >= 0 ? parseFloat(form.costo_empaque) : COSTO_EMPAQUE
       )
     }
 
@@ -1062,12 +1062,21 @@ export default function ProductManagerDashboard() {
                 {pvpPreview > 0 && (
                   <div className="bg-white rounded-xl p-3 border border-amber-300">
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
-                      <span>Costo prenda:</span><span className="text-right font-medium">{formatPrice(parseFloat(form.costo_adquisicion))}</span>
-                      <span>Tu utilidad:</span><span className="text-right font-medium text-green-600">{formatPrice(utilidadPreview)}</span>
-                      <span>Envío + empaque:</span><span className="text-right font-medium">{formatPrice((parseFloat(form.costo_envio)||0) + (parseFloat(form.costo_empaque)||0))}</span>
-                      <span>Fix ePayco:</span><span className="text-right font-medium">{formatPrice(FIX_EPAYCO)}</span>
-                      <span>IVA DIAN (19%):</span><span className="text-right font-medium">{formatPrice(pvpPreview - Math.round(pvpPreview / 1.19))}</span>
-                      <span>Comisión ePayco:</span><span className="text-right font-medium">{formatPrice(pvpPreview * COM_EPAYCO)}</span>
+                      <span>Costo prenda:</span>
+                      <span className="text-right font-medium">{formatPrice(parseFloat(form.costo_adquisicion))}</span>
+                      <span>Tu utilidad:</span>
+                      <span className="text-right font-medium text-green-600">{formatPrice(utilidadPreview)}</span>
+                      <span>Envío:</span>
+                      <span className="text-right font-medium">{formatPrice(parseFloat(form.costo_envio) || 0)}</span>
+                      <span>Empaque:</span>
+                      <span className="text-right font-medium">{formatPrice(parseFloat(form.costo_empaque) || 0)}</span>
+                      <span>Fix ePayco:</span>
+                      <span className="text-right font-medium">{formatPrice(FIX_EPAYCO)}</span>
+                      <span className="text-gray-400 col-span-2 border-t pt-1 mt-1">Calculado sobre PVP final:</span>
+                      <span>IVA DIAN (19%):</span>
+                      <span className="text-right font-medium text-orange-600">{formatPrice(pvpPreview - Math.round(pvpPreview / 1.19))}</span>
+                      <span>Comisión ePayco:</span>
+                      <span className="text-right font-medium text-orange-600">{formatPrice(Math.round(pvpPreview * COM_EPAYCO))}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between items-center">
                       <span className="font-bold text-gray-800">PVP al cliente:</span>
