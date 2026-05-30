@@ -705,11 +705,14 @@ async def consultar_zipkeys(db: Session = Depends(get_db)):
 @app.post("/api/dian/set-pruebas")
 async def enviar_set_pruebas(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Envía el set completo de pruebas a la DIAN: 30 facturas + 10 notas crédito + 10 notas débito"""
+    # Limpiar facturas TEST anteriores para poder reenviar números frescos
+    db.query(Factura).filter(Factura.pedido_id.like("TEST-%")).delete(synchronize_session=False)
+    db.commit()
     background_tasks.add_task(procesar_set_pruebas, db)
     return {
         "mensaje": "Set de pruebas iniciado en background",
         "documentos": {"facturas": 30, "notas_credito": 10, "notas_debito": 10, "total": 50},
-        "test_set_id": "c5f5fbef-6621-420b-b986-857b2f1588d5"
+        "test_set_id": "c537ef0b-2eb6-4149-9296-36d19e743ae2"
     }
 
 @app.get("/api/dian/set-pruebas/estado")

@@ -21,7 +21,7 @@ class Factura(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     numero = Column(Integer, nullable=False)  # número secuencial
-    prefijo = Column(String, default="SETG")
+    prefijo = Column(String, default="SETP")
     numero_completo = Column(String, unique=True)  # SETG980000001
     pedido_id = Column(String, nullable=False)
     usuario_id = Column(Integer, nullable=False)
@@ -55,7 +55,7 @@ class ContadorFactura(Base):
     __tablename__ = "contador_factura"
 
     id = Column(Integer, primary_key=True, default=1)
-    ultimo_numero = Column(Integer, default=989999999)  # empieza en 990000000
+    ultimo_numero = Column(Integer, default=989999999)  # siguiente = 990000000
 
 def get_db():
     db = SessionLocal()
@@ -71,7 +71,7 @@ def init_db():
         db = SessionLocal()
         contador = db.query(ContadorFactura).first()
         if not contador:
-            db.add(ContadorFactura(id=1, ultimo_numero=989999999))
+            db.add(ContadorFactura(id=1, ultimo_numero=989999999))  # primer número = 990000000
             db.commit()
         db.close()
         print("✅ Tablas de facturación creadas/verificadas")
