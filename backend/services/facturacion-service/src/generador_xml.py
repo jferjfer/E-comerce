@@ -153,7 +153,8 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     iva      = round(sum(l["iva_linea"]  for l in lineas), 2)   # IVA total
     total    = round(subtotal + iva, 2)                          # total a pagar
 
-    # CUFE: ValFac = subtotal (base gravable), ValTot = total con IVA
+    # CUFE: ValFac=subtotal, ValImp1=IVA, ValImp4=INC(0), ValImp3=ICA(0), ValTot=total
+    # INC e ICA son siempre 0 para comercio de ropa (CIIU 4771)
     cufe = calcular_cufe(
         numero_completo, fecha_str, hora_str,
         subtotal, iva, 0.00, 0.00,
@@ -245,7 +246,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     # ── Campos principales (orden exacto del ejemplo DIAN) ────────────────────
     _sub(root, f"{CBC}UBLVersionID",       "UBL 2.1")
     _sub(root, f"{CBC}CustomizationID",    "10")   # 10 = venta a consumidor final
-    _sub(root, f"{CBC}ProfileID",          "DIAN 2.1")
+    _sub(root, f"{CBC}ProfileID",          "DIAN 2.1: Factura Electr\u00f3nica de Venta")
     _sub(root, f"{CBC}ProfileExecutionID", DIAN["ambiente"])
     _sub(root, f"{CBC}ID",                 numero_completo)
     _sub(root, f"{CBC}UUID",               cufe,
@@ -346,6 +347,19 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     cp_name = _sub(cp, f"{CAC}PartyName")
     _sub(cp_name, f"{CBC}Name", cliente.get("nombre", "Consumidor Final"))
 
+    # FAK61: PhysicalLocation obligatorio cuando AdditionalAccountID=2
+    cp_phys = _sub(cp, f"{CAC}PhysicalLocation")
+    cp_addr = _sub(cp_phys, f"{CAC}Address")
+    _sub(cp_addr, f"{CBC}ID", "11001")
+    _sub(cp_addr, f"{CBC}CityName", "Bogot\u00e1 D.C.")
+    _sub(cp_addr, f"{CBC}CountrySubentity", "Bogot\u00e1")
+    _sub(cp_addr, f"{CBC}CountrySubentityCode", "11")
+    cp_al = _sub(cp_addr, f"{CAC}AddressLine")
+    _sub(cp_al, f"{CBC}Line", cliente.get("direccion", "Bogot\u00e1 D.C."))
+    cp_co = _sub(cp_addr, f"{CAC}Country")
+    _sub(cp_co, f"{CBC}IdentificationCode", "CO")
+    _sub(cp_co, f"{CBC}Name", "Colombia", languageID="es")
+
     cp_tax = _sub(cp, f"{CAC}PartyTaxScheme")
     _sub(cp_tax, f"{CBC}RegistrationName", cliente.get("nombre", "Consumidor Final"))
     # schemeName="13" = Cédula de ciudadanía / consumidor final (sin schemeID)
@@ -365,7 +379,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     _sub(pm, f"{CBC}PaymentMeansCode","10")   # 10 = contado
     _sub(pm, f"{CBC}PaymentDueDate",  fecha_str)
 
-    # ── TaxTotal IVA (01) ─────────────────────────────────────────────────────
+    # ── TaxTotal IVA (01) — ÚNICO TaxTotal, las líneas solo informan IVA ──────
     tt_iva = _sub(root, f"{CAC}TaxTotal")
     _sub(tt_iva, f"{CBC}TaxAmount", f"{iva:.2f}", currencyID="COP")
     ts_iva = _sub(tt_iva, f"{CAC}TaxSubtotal")
@@ -377,29 +391,8 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     _sub(tsc_iva, f"{CBC}ID",   "01")
     _sub(tsc_iva, f"{CBC}Name", "IVA")
 
-    # ── TaxTotal INC (04) — obligatorio, valor 0 ─────────────────────────────
-    tt_inc = _sub(root, f"{CAC}TaxTotal")
-    _sub(tt_inc, f"{CBC}TaxAmount", "0.00", currencyID="COP")
-    ts_inc = _sub(tt_inc, f"{CAC}TaxSubtotal")
-    _sub(ts_inc, f"{CBC}TaxableAmount", "0.00", currencyID="COP")
-    _sub(ts_inc, f"{CBC}TaxAmount",     "0.00", currencyID="COP")
-    tc_inc = _sub(ts_inc, f"{CAC}TaxCategory")
-    _sub(tc_inc, f"{CBC}Percent", "0.00")
-    tsc_inc = _sub(tc_inc, f"{CAC}TaxScheme")
-    _sub(tsc_inc, f"{CBC}ID",   "04")
-    _sub(tsc_inc, f"{CBC}Name", "INC")
-
-    # ── TaxTotal ICA (03) — obligatorio, valor 0 ─────────────────────────────
-    tt_ica = _sub(root, f"{CAC}TaxTotal")
-    _sub(tt_ica, f"{CBC}TaxAmount", "0.00", currencyID="COP")
-    ts_ica = _sub(tt_ica, f"{CAC}TaxSubtotal")
-    _sub(ts_ica, f"{CBC}TaxableAmount", "0.00", currencyID="COP")
-    _sub(ts_ica, f"{CBC}TaxAmount",     "0.00", currencyID="COP")
-    tc_ica = _sub(ts_ica, f"{CAC}TaxCategory")
-    _sub(tc_ica, f"{CBC}Percent", "0.00")
-    tsc_ica = _sub(tc_ica, f"{CAC}TaxScheme")
-    _sub(tsc_ica, f"{CBC}ID",   "03")
-    _sub(tsc_ica, f"{CBC}Name", "ICA")
+    # FAS01a: NO agregar TaxTotal INC/ICA porque las líneas no los informan
+    # La regla exige que el header tenga exactamente los mismos tipos de impuesto que las líneas
 
     # ── LegalMonetaryTotal ────────────────────────────────────────────────────
     lmt = _sub(root, f"{CAC}LegalMonetaryTotal")
