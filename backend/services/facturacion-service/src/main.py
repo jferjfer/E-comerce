@@ -742,11 +742,11 @@ async def procesar_set_pruebas(db_session):
     db = next(get_db())
     resultados = []
 
-    # Clientes de prueba
+    # Clientes de prueba — SOLO consumidor final con NIT 222222222222
     clientes = [
         {"nombre": "Consumidor Final", "email": "test@egoscolombia.com", "nit_cc": "222222222222", "direccion": "Bogotá D.C."},
-        {"nombre": "Empresa Prueba S.A.S", "email": "empresa@test.com", "nit_cc": "900123456", "direccion": "Medellín, Antioquia"},
-        {"nombre": "Juan Pérez", "email": "juan@test.com", "nit_cc": "1234567890", "direccion": "Cali, Valle"},
+        {"nombre": "Consumidor Final", "email": "test2@egoscolombia.com", "nit_cc": "222222222222", "direccion": "Medellín, Antioquia"},
+        {"nombre": "Consumidor Final", "email": "test3@egoscolombia.com", "nit_cc": "222222222222", "direccion": "Cali, Valle"},
     ]
 
     # Productos de prueba
@@ -767,7 +767,14 @@ async def procesar_set_pruebas(db_session):
     for i in range(30):
         try:
             numero = obtener_siguiente_numero(db)
-            fecha = ahora_colombia()
+            # Fechas dentro del rango del set: 2019-03-14 a 2019-06-14
+            fechas_set = [
+                datetime(2019,3,15,9,0,0), datetime(2019,3,20,10,0,0),
+                datetime(2019,4,1,11,0,0), datetime(2019,4,10,14,0,0),
+                datetime(2019,4,20,9,0,0), datetime(2019,5,1,10,0,0),
+                datetime(2019,5,10,11,0,0), datetime(2019,5,20,14,0,0),
+            ]
+            fecha = fechas_set[i % len(fechas_set)]
             cliente = clientes[i % len(clientes)]
             productos = productos_base[i % len(productos_base)]
             pedido_id = f"TEST-FAC-{i+1:03d}"
@@ -811,7 +818,8 @@ async def procesar_set_pruebas(db_session):
     for i in range(10):
         try:
             numero = obtener_siguiente_numero(db)
-            fecha = ahora_colombia()
+            fechas_set = [datetime(2019,3,16,9,0,0),datetime(2019,4,2,10,0,0),datetime(2019,4,21,11,0,0),datetime(2019,5,2,14,0,0),datetime(2019,5,11,9,0,0),datetime(2019,5,21,10,0,0),datetime(2019,6,2,11,0,0),datetime(2019,6,11,14,0,0)]
+            fecha = fechas_set[i % len(fechas_set)]
             ref = facturas_generadas[i] if i < len(facturas_generadas) else facturas_generadas[0]
             cliente = clientes[i % len(clientes)]
             productos = productos_base[i % len(productos_base)]
@@ -853,7 +861,8 @@ async def procesar_set_pruebas(db_session):
     for i in range(10):
         try:
             numero = obtener_siguiente_numero(db)
-            fecha = ahora_colombia()
+            fechas_set = [datetime(2019,3,17,9,0,0),datetime(2019,4,3,10,0,0),datetime(2019,4,22,11,0,0),datetime(2019,5,3,14,0,0),datetime(2019,5,12,9,0,0),datetime(2019,5,22,10,0,0),datetime(2019,6,3,11,0,0),datetime(2019,6,12,14,0,0)]
+            fecha = fechas_set[i % len(fechas_set)]
             ref = facturas_generadas[i] if i < len(facturas_generadas) else facturas_generadas[0]
             cliente = clientes[i % len(clientes)]
             productos = [{"id": "TEST-INT", "nombre": "Intereses por mora", "precio_unitario": 5000.0, "cantidad": 1}]
