@@ -22,7 +22,7 @@ DIAN_URL_PRUEBAS    = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?
 DIAN_URL_PRODUCCION = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
 
 AMBIENTE    = os.getenv("DIAN_AMBIENTE", "2")
-TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "7dbfd362-fad0-4e3a-8983-76a3422e504b")
+TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "c537ef0b-2eb6-4149-9296-36d19e743ae2")
 NIT_EMISOR  = "902051708"
 
 P12_PATH     = os.getenv("DIAN_P12_PATH", "/app/certs/certificado.pfx")
