@@ -29,7 +29,7 @@ EMPRESA = {
 }
 
 DIAN = {
-    "software_id":   os.getenv("DIAN_SOFTWARE_ID",   "a474896f-e364-4f09-bf6a-bc4c30e73ca9"),
+    "software_id":   os.getenv("DIAN_SOFTWARE_ID",   "e366fc5f-eea4-4bc8-8ca9-4dfcd1255eba"),
     "clave_tecnica": os.getenv("DIAN_CLAVE_TECNICA",  "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"),
     "pin":           os.getenv("DIAN_PIN",             "13251"),
     "test_set_id":   os.getenv("DIAN_TEST_SET_ID",     "c537ef0b-2eb6-4149-9296-36d19e743ae2"),
