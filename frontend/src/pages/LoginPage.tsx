@@ -281,37 +281,6 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div className="mt-8">
-          <h3 className="text-sm font-medium text-gray-700 mb-4">Usuarios de Prueba:</h3>
-          <div className="space-y-2">
-            {demoUsers.map((user, index) => (
-              <div
-                key={index}
-                onClick={() => {
-                  console.log('Clic en usuario demo:', user.email);
-                  setTimeout(() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      email: user.email,
-                      password: user.password
-                    }));
-                  }, 0);
-                }}
-                className="p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium">{user.role}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
-                  </div>
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                    Click para usar
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )
