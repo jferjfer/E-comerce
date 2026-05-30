@@ -106,7 +106,7 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
     # Campos principales
     etree.SubElement(root, f"{CBC}UBLVersionID").text = "UBL 2.1"
     etree.SubElement(root, f"{CBC}CustomizationID").text = "20"
-    etree.SubElement(root, f"{CBC}ProfileID").text = "DIAN 2.1"
+    etree.SubElement(root, f"{CBC}ProfileID").text = "DIAN 2.1: Nota Débito de Factura Electrónica de Venta"
     etree.SubElement(root, f"{CBC}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{CBC}ID").text = numero_completo
     etree.SubElement(root, f"{CBC}UUID", schemeID=DIAN_CONFIG["ambiente"], schemeName="CUDE-SHA384").text = cude

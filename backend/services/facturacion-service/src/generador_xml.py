@@ -372,6 +372,15 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     _sub(cp_ts, f"{CBC}ID",   "ZY")
     _sub(cp_ts, f"{CBC}Name", "No causa")
 
+    # FAK61: PartyLegalEntity obligatorio cuando AdditionalAccountID=2
+    cp_legal = _sub(cp, f"{CAC}PartyLegalEntity")
+    _sub(cp_legal, f"{CBC}RegistrationName", cliente.get("nombre", "Consumidor Final"))
+    _sub(cp_legal, f"{CBC}CompanyID",
+         nit_adquiriente,
+         schemeAgencyID="195",
+         schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+         schemeName="13")
+
     # ── PaymentMeans ──────────────────────────────────────────────────────────
     pm = _sub(root, f"{CAC}PaymentMeans")
     _sub(pm, f"{CBC}ID",              "1")
