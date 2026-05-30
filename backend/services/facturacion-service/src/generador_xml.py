@@ -71,10 +71,17 @@ NS = {
     "xades141": "http://uri.etsi.org/01903/v1.4.1#",
     "xsi":      "http://www.w3.org/2001/XMLSchema-instance",
 }
-CBC = "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}"
-CAC = "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}"
-EXT = "{urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2}"
-STS = "{dian:gov:co:facturaelectronica:Structures-2-1}"
+# Namespaces puros (sin llaves) — para usar en nsmap y en f"{{{NS}}}tag"
+NS_CBC = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+NS_CAC = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+NS_EXT = "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
+NS_STS = "dian:gov:co:facturaelectronica:Structures-2-1"
+
+# Prefijos con llaves para lxml — uso: f"{CBC}TagName"
+CBC = f"{{{NS_CBC}}}"
+CAC = f"{{{NS_CAC}}}"
+EXT = f"{{{NS_EXT}}}"
+STS = f"{{{NS_STS}}}"
 
 
 # ── CUFE ──────────────────────────────────────────────────────────────────────
