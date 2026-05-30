@@ -347,19 +347,6 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     cp_name = _sub(cp, f"{CAC}PartyName")
     _sub(cp_name, f"{CBC}Name", cliente.get("nombre", "Consumidor Final"))
 
-    # FAK61: PhysicalLocation obligatorio cuando AdditionalAccountID=2
-    cp_phys = _sub(cp, f"{CAC}PhysicalLocation")
-    cp_addr = _sub(cp_phys, f"{CAC}Address")
-    _sub(cp_addr, f"{CBC}ID", "11001")
-    _sub(cp_addr, f"{CBC}CityName", "Bogot\u00e1 D.C.")
-    _sub(cp_addr, f"{CBC}CountrySubentity", "Bogot\u00e1")
-    _sub(cp_addr, f"{CBC}CountrySubentityCode", "11")
-    cp_al = _sub(cp_addr, f"{CAC}AddressLine")
-    _sub(cp_al, f"{CBC}Line", cliente.get("direccion", "Bogot\u00e1 D.C."))
-    cp_co = _sub(cp_addr, f"{CAC}Country")
-    _sub(cp_co, f"{CBC}IdentificationCode", "CO")
-    _sub(cp_co, f"{CBC}Name", "Colombia", languageID="es")
-
     cp_tax = _sub(cp, f"{CAC}PartyTaxScheme")
     _sub(cp_tax, f"{CBC}RegistrationName", cliente.get("nombre", "Consumidor Final"))
     # schemeName="13" = Cédula de ciudadanía / consumidor final (sin schemeID)
@@ -367,21 +354,11 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
          nit_adquiriente,
          schemeAgencyID="195",
          schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-         schemeID="13",
          schemeName="13")
     _sub(cp_tax, f"{CBC}TaxLevelCode", "R-99-PN", listName="49")
     cp_ts = _sub(cp_tax, f"{CAC}TaxScheme")
-    _sub(cp_ts, f"{CBC}ID",   "ZY")
+    _sub(cp_ts, f"{CBC}ID",   "ZZ")
     _sub(cp_ts, f"{CBC}Name", "No causa")
-
-    # FAK61: PartyLegalEntity obligatorio cuando AdditionalAccountID=2
-    cp_legal = _sub(cp, f"{CAC}PartyLegalEntity")
-    _sub(cp_legal, f"{CBC}RegistrationName", cliente.get("nombre", "Consumidor Final"))
-    _sub(cp_legal, f"{CBC}CompanyID",
-         nit_adquiriente,
-         schemeAgencyID="195",
-         schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-         schemeName="13")
 
     # ── PaymentMeans ──────────────────────────────────────────────────────────
     pm = _sub(root, f"{CAC}PaymentMeans")
