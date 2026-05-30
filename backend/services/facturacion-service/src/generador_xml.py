@@ -56,6 +56,9 @@ DIAN = {
 
 IVA_RATE = 0.19
 
+# Alias para compatibilidad con generador_nota_credito y generador_nota_debito
+DIAN_CONFIG = DIAN
+
 # ── Namespaces ────────────────────────────────────────────────────────────────
 NS = {
     None:       "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
