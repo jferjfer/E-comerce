@@ -124,7 +124,6 @@ def generar_pdf_factura(
         ('PADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (1,0), (1,0), 8),
     ]))
-    ]
 
     col_factura = [
         Paragraph("FACTURA ELECTRÓNICA DE VENTA",
