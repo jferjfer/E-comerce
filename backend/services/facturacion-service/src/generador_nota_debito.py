@@ -97,7 +97,7 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
     etree.SubElement(dian, f"{{{STS_NC}}}QRCode").text = qr_text
 
     etree.SubElement(root, f"{CBC}UBLVersionID").text       = "UBL 2.1"
-    etree.SubElement(root, f"{CBC}CustomizationID").text    = "11"
+    etree.SubElement(root, f"{CBC}CustomizationID").text    = "20"
     etree.SubElement(root, f"{CBC}ProfileID").text          = "DIAN 2.1"
     etree.SubElement(root, f"{CBC}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{CBC}ID").text                 = numero_completo
@@ -134,7 +134,9 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
 
     # Customer igual que nota crédito
     customer = etree.SubElement(root, f"{CAC}AccountingCustomerParty")
-    etree.SubElement(customer, f"{CBC}AdditionalAccountID").text = "1"
+    el_aid = etree.SubElement(customer, f"{CBC}AdditionalAccountID")
+    el_aid.text = "1"
+    el_aid.set("schemeAgencyID", "195")
     cp = etree.SubElement(customer, f"{CAC}Party")
 
     cp_name = etree.SubElement(cp, f"{CAC}PartyName")
@@ -191,21 +193,16 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
     etree.SubElement(pm, f"{CBC}PaymentMeansCode").text = "41"
     etree.SubElement(pm, f"{CBC}PaymentDueDate").text   = fecha_str
 
-    for tid, tname, tpct, tamt, tbase in [
-        ("01", "IVA", "19.00", iva,  subtotal),
-        ("03", "ICA", "0.000", 0.00, 0.00),
-        ("04", "INC", "0.00",  0.00, 0.00),
-    ]:
-        tt = etree.SubElement(root, f"{CAC}TaxTotal")
-        etree.SubElement(tt, f"{CBC}TaxAmount", currencyID="COP").text = f"{tamt:.2f}"
-        ts = etree.SubElement(tt, f"{CAC}TaxSubtotal")
-        etree.SubElement(ts, f"{CBC}TaxableAmount", currencyID="COP").text = f"{tbase:.2f}"
-        etree.SubElement(ts, f"{CBC}TaxAmount",     currencyID="COP").text = f"{tamt:.2f}"
-        tc = etree.SubElement(ts, f"{CAC}TaxCategory")
-        etree.SubElement(tc, f"{CBC}Percent").text = tpct
-        tsc = etree.SubElement(tc, f"{CAC}TaxScheme")
-        etree.SubElement(tsc, f"{CBC}ID").text   = tid
-        etree.SubElement(tsc, f"{CBC}Name").text = tname
+    tt = etree.SubElement(root, f"{CAC}TaxTotal")
+    etree.SubElement(tt, f"{CBC}TaxAmount", currencyID="COP").text = f"{iva:.2f}"
+    ts = etree.SubElement(tt, f"{CAC}TaxSubtotal")
+    etree.SubElement(ts, f"{CBC}TaxableAmount", currencyID="COP").text = f"{subtotal:.2f}"
+    etree.SubElement(ts, f"{CBC}TaxAmount",     currencyID="COP").text = f"{iva:.2f}"
+    tc = etree.SubElement(ts, f"{CAC}TaxCategory")
+    etree.SubElement(tc, f"{CBC}Percent").text = "19.00"
+    tsc = etree.SubElement(tc, f"{CAC}TaxScheme")
+    etree.SubElement(tsc, f"{CBC}ID").text   = "01"
+    etree.SubElement(tsc, f"{CBC}Name").text = "IVA"
 
     # RequestedMonetaryTotal (nota débito usa este, no LegalMonetaryTotal)
     rmt = etree.SubElement(root, f"{CAC}RequestedMonetaryTotal")

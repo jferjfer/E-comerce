@@ -235,7 +235,7 @@ def _customer_consumidor_final(root, nit_adquiriente, nombre="Consumidor Final")
     _sub(cp_tax, f"{CBC}TaxLevelCode", "R-99-PN", listName="49")
     cp_ts = _sub(cp_tax, f"{CAC}TaxScheme")
     _sub(cp_ts, f"{CBC}ID",   "ZY")
-    _sub(cp_ts, f"{CBC}Name", "No causa")
+    _sub(cp_ts, f"{CBC}Name", "No aplica")
 
 
 def _tax_totals_factura(root, subtotal, iva):
