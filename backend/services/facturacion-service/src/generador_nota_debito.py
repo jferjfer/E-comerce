@@ -96,7 +96,7 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
 
     # Campos principales
     etree.SubElement(root, f"{CBC}UBLVersionID").text = "UBL 2.1"
-    etree.SubElement(root, f"{CBC}CustomizationID").text = "11"
+    etree.SubElement(root, f"{CBC}CustomizationID").text = "20"
     etree.SubElement(root, f"{CBC}ProfileID").text = "DIAN 2.1"
     etree.SubElement(root, f"{CBC}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{CBC}ID").text = numero_completo
@@ -193,7 +193,7 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
     etree.SubElement(cp_tax, f"{CBC}CompanyID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID="0", schemeName="13").text = nit_adquiriente
+                     schemeName="13").text = nit_adquiriente
     etree.SubElement(cp_tax, f"{CBC}TaxLevelCode", listName="49").text = "R-99-PN"
     cp_ts = etree.SubElement(cp_tax, f"{CAC}TaxScheme")
     etree.SubElement(cp_ts, f"{CBC}ID").text = "ZY"
@@ -204,7 +204,7 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
     etree.SubElement(cp_legal, f"{CBC}CompanyID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID="0", schemeName="13").text = nit_adquiriente
+                     schemeName="13").text = nit_adquiriente
 
     cp_contact = etree.SubElement(cp, f"{CAC}Contact")
     etree.SubElement(cp_contact, f"{CBC}ElectronicMail").text = cliente.get("email", "")

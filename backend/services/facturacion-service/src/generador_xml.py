@@ -424,6 +424,8 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
         _sub(item, f"{CBC}Description", l["nombre"])
         item_id = _sub(item, f"{CAC}SellersItemIdentification")
         _sub(item_id, f"{CBC}ID", l["id"] or str(i))
+        std_id = _sub(item, f"{CAC}StandardItemIdentification")
+        _sub(std_id, f"{CBC}ID", l["id"] or str(i), schemeAgencyID="10", schemeID="001", schemeName="UNSPSC")
 
         price = _sub(line, f"{CAC}Price")
         _sub(price, f"{CBC}PriceAmount",  f"{l['base_unit']:.2f}", currencyID="COP")
