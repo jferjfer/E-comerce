@@ -197,11 +197,25 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
     cp_name = etree.SubElement(cp, f"{CAC}PartyName")
     etree.SubElement(cp_name, f"{CBC}Name").text = cliente.get("nombre", "Consumidor Final")
 
+    cp_phys = etree.SubElement(cp, f"{CAC}PhysicalLocation")
+    cp_addr = etree.SubElement(cp_phys, f"{CAC}Address")
+    etree.SubElement(cp_addr, f"{CBC}ID").text = "11001"
+    etree.SubElement(cp_addr, f"{CBC}CityName").text = "Bogotá D.C."
+    etree.SubElement(cp_addr, f"{CBC}PostalZone").text = "110111"
+    etree.SubElement(cp_addr, f"{CBC}CountrySubentity").text = "Bogotá"
+    etree.SubElement(cp_addr, f"{CBC}CountrySubentityCode").text = "11"
+    cp_al = etree.SubElement(cp_addr, f"{CAC}AddressLine")
+    etree.SubElement(cp_al, f"{CBC}Line").text = cliente.get("direccion", "Bogotá D.C.")
+    cp_co = etree.SubElement(cp_addr, f"{CAC}Country")
+    etree.SubElement(cp_co, f"{CBC}IdentificationCode").text = "CO"
+    etree.SubElement(cp_co, f"{CBC}Name", languageID="es").text = "Colombia"
+
     cp_tax = etree.SubElement(cp, f"{CAC}PartyTaxScheme")
     etree.SubElement(cp_tax, f"{CBC}RegistrationName").text = cliente.get("nombre", "Consumidor Final")
     etree.SubElement(cp_tax, f"{CBC}CompanyID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+                     schemeID="13",
                      schemeName="13").text = nit_adquiriente
     etree.SubElement(cp_tax, f"{CBC}TaxLevelCode", listName="49").text = "R-99-PN"
     cp_ts = etree.SubElement(cp_tax, f"{CAC}TaxScheme")
