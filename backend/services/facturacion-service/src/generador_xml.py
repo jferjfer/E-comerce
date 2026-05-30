@@ -223,15 +223,15 @@ def _customer_consumidor_final(root, nit_adquiriente, nombre="Consumidor Final")
     _sub(customer, f"{CBC}AdditionalAccountID", "2")
     cp = _sub(customer, f"{CAC}Party")
 
-    cp_name = _sub(cp, f"{CAC}PartyName")
-    _sub(cp_name, f"{CBC}Name", nombre)
-
-    # FAK61: PartyIdentification obligatorio para consumidor final
+    # ZB01: PartyIdentification va PRIMERO segun XSD UBL (antes de PartyName)
     cp_pid = _sub(cp, f"{CAC}PartyIdentification")
     _sub(cp_pid, f"{CBC}ID", nit_adquiriente,
          schemeAgencyID="195",
          schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
          schemeID="13", schemeName="13")
+
+    cp_name = _sub(cp, f"{CAC}PartyName")
+    _sub(cp_name, f"{CBC}Name", nombre)
 
     cp_tax = _sub(cp, f"{CAC}PartyTaxScheme")
     _sub(cp_tax, f"{CBC}RegistrationName", nombre)
@@ -239,7 +239,7 @@ def _customer_consumidor_final(root, nit_adquiriente, nombre="Consumidor Final")
          schemeAgencyID="195",
          schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
          schemeName="13")
-    _sub(cp_tax, f"{CBC}TaxLevelCode", "ZZ", listName="05")
+    # FAK26: Sin TaxLevelCode para consumidor final
     cp_ts = _sub(cp_tax, f"{CAC}TaxScheme")
     _sub(cp_ts, f"{CBC}ID",   "ZY")
     _sub(cp_ts, f"{CBC}Name", "No aplica")
