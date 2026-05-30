@@ -38,7 +38,7 @@ DIAN_CONFIG = {
     "fecha_resolucion": "2019-01-19",
     "rango_desde": "990000000",
     "rango_hasta": "995000000",
-    "ambiente": "2",
+    "ambiente": os.getenv("DIAN_AMBIENTE", "2"),
 }
 
 IVA_RATE = 0.19
@@ -163,7 +163,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
 
     # ── Campos principales (orden exacto del ejemplo) ──
     etree.SubElement(root, f"{{{CBC}}}UBLVersionID").text = "UBL 2.1"
-    etree.SubElement(root, f"{{{CBC}}}CustomizationID").text = "05"
+    etree.SubElement(root, f"{{{CBC}}}CustomizationID").text = "10" if DIAN_CONFIG["ambiente"] == "1" else "05"
     etree.SubElement(root, f"{{{CBC}}}ProfileID").text = "DIAN 2.1: Factura Electrónica de Venta"
     etree.SubElement(root, f"{{{CBC}}}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{{{CBC}}}ID").text = numero_completo
