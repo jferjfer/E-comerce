@@ -226,13 +226,20 @@ def _customer_consumidor_final(root, nit_adquiriente, nombre="Consumidor Final")
     cp_name = _sub(cp, f"{CAC}PartyName")
     _sub(cp_name, f"{CBC}Name", nombre)
 
+    # FAK61: PartyIdentification obligatorio para consumidor final
+    cp_pid = _sub(cp, f"{CAC}PartyIdentification")
+    _sub(cp_pid, f"{CBC}ID", nit_adquiriente,
+         schemeAgencyID="195",
+         schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
+         schemeID="13", schemeName="13")
+
     cp_tax = _sub(cp, f"{CAC}PartyTaxScheme")
     _sub(cp_tax, f"{CBC}RegistrationName", nombre)
     _sub(cp_tax, f"{CBC}CompanyID", nit_adquiriente,
          schemeAgencyID="195",
          schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
          schemeName="13")
-    _sub(cp_tax, f"{CBC}TaxLevelCode", "R-99-PJ", listName="05")
+    _sub(cp_tax, f"{CBC}TaxLevelCode", "ZZ", listName="05")
     cp_ts = _sub(cp_tax, f"{CAC}TaxScheme")
     _sub(cp_ts, f"{CBC}ID",   "ZY")
     _sub(cp_ts, f"{CBC}Name", "No aplica")

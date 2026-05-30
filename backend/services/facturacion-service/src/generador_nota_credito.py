@@ -109,7 +109,7 @@ def generar_nota_credito(numero, factura_referencia, cufe_factura, fecha_factura
     # Campos principales — ProfileID = "DIAN 2.1" (sin sufijo, igual que CreditNote.xml)
     etree.SubElement(root, f"{CBC}UBLVersionID").text       = "UBL 2.1"
     etree.SubElement(root, f"{CBC}CustomizationID").text    = "20"
-    etree.SubElement(root, f"{CBC}ProfileID").text          = "DIAN 2.1"
+    etree.SubElement(root, f"{CBC}ProfileID").text          = "DIAN 2.1: Nota Crédito de Factura Electrónica de Venta"
     etree.SubElement(root, f"{CBC}ProfileExecutionID").text = DIAN_CONFIG["ambiente"]
     etree.SubElement(root, f"{CBC}ID").text                 = numero_completo
     etree.SubElement(root, f"{CBC}UUID",
@@ -176,7 +176,7 @@ def generar_nota_credito(numero, factura_referencia, cufe_factura, fecha_factura
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
                      schemeID="13", schemeName="13").text = nit_adq
-    etree.SubElement(cp_tax, f"{CBC}TaxLevelCode", listName="05").text = "R-99-PJ"
+    etree.SubElement(cp_tax, f"{CBC}TaxLevelCode", listName="05").text = "ZZ"
     cp_ra = etree.SubElement(cp_tax, f"{CAC}RegistrationAddress")
     etree.SubElement(cp_ra, f"{CBC}ID").text                   = "11001"
     etree.SubElement(cp_ra, f"{CBC}CityName").text             = "Bogotá D.C."
