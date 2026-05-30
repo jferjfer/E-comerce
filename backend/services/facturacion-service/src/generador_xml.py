@@ -232,7 +232,7 @@ def _customer_consumidor_final(root, nit_adquiriente, nombre="Consumidor Final")
          schemeAgencyID="195",
          schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
          schemeName="13")
-    _sub(cp_tax, f"{CBC}TaxLevelCode", "R-99-PN", listName="49")
+    _sub(cp_tax, f"{CBC}TaxLevelCode", "R-99-PJ", listName="05")
     cp_ts = _sub(cp_tax, f"{CAC}TaxScheme")
     _sub(cp_ts, f"{CBC}ID",   "ZY")
     _sub(cp_ts, f"{CBC}Name", "No aplica")

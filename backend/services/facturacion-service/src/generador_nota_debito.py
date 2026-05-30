@@ -160,7 +160,7 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
                      schemeID="13", schemeName="13").text = nit_adq
-    etree.SubElement(cp_tax, f"{CBC}TaxLevelCode", listName="49").text = "R-99-PN"
+    etree.SubElement(cp_tax, f"{CBC}TaxLevelCode", listName="05").text = "R-99-PJ"
     cp_ra = etree.SubElement(cp_tax, f"{CAC}RegistrationAddress")
     etree.SubElement(cp_ra, f"{CBC}ID").text                   = "11001"
     etree.SubElement(cp_ra, f"{CBC}CityName").text             = "Bogotá D.C."
