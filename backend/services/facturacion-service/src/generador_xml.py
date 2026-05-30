@@ -30,16 +30,16 @@ EMPRESA = {
 
 DIAN = {
     "software_id":   os.getenv("DIAN_SOFTWARE_ID",   "a474896f-e364-4f09-bf6a-bc4c30e73ca9"),
-    "clave_tecnica": os.getenv("DIAN_CLAVE_TECNICA",  "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"),
+    "clave_tecnica": os.getenv("DIAN_CLAVE_TECNICA",  "acee4ca139e4c09f8e07d537e3d9756218a777b"),
     "pin":           os.getenv("DIAN_PIN",             "13251"),
     "test_set_id":   os.getenv("DIAN_TEST_SET_ID",     "c537ef0b-2eb6-4149-9296-36d19e743ae2"),
     "prefijo":       os.getenv("DIAN_PREFIJO",         "SETP"),
-    "resolucion":    os.getenv("DIAN_RESOLUCION",      "18760000001"),
-    "fecha_desde":   "2019-01-19",
-    "fecha_hasta":   "2030-01-19",
+    "resolucion":    os.getenv("DIAN_RESOLUCION",      "18764108565721"),
+    "fecha_desde":   "2026-04-16",
+    "fecha_hasta":   "2028-04-16",
     "rango_desde":   "990000000",
     "rango_hasta":   "995000000",
-    "ambiente":      os.getenv("DIAN_AMBIENTE",        "2"),
+    "ambiente":      os.getenv("DIAN_AMBIENTE",        "1"),
     "proveedor_nit": "902051708",
     "proveedor_dv":  "6",
 }
