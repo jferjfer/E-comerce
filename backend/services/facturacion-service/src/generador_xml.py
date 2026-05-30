@@ -73,7 +73,9 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
 
     # Precios con IVA incluido — desagregar base gravable
     total = round(sum(p["precio_unitario"] * p["cantidad"] for p in productos), 2)
-    subtotal = round(total / (1 + IVA_RATE), 2)
+    # Calcular subtotal e IVA sumando línea por línea para evitar diferencias de redondeo
+    subtotal_lineas = sum(round(round(p["precio_unitario"] / (1 + IVA_RATE), 2) * p["cantidad"], 2) for p in productos)
+    subtotal = round(subtotal_lineas, 2)
     iva = round(total - subtotal, 2)
     nit_adquiriente = cliente.get("nit_cc", "222222222222")
 
@@ -248,17 +250,10 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     etree.SubElement(sp_contact, f"{{{CBC}}}Telephone").text = EMPRESA["telefono"]
     etree.SubElement(sp_contact, f"{{{CBC}}}ElectronicMail").text = EMPRESA["email"]
 
-    # ── AccountingCustomerParty ──
+    # ── AccountingCustomerParty ── (según ejemplo Consumidor Final DIAN)
     customer = etree.SubElement(root, f"{{{CAC}}}AccountingCustomerParty")
     etree.SubElement(customer, f"{{{CBC}}}AdditionalAccountID").text = "2"
     cp = etree.SubElement(customer, f"{{{CAC}}}Party")
-
-    # PartyIdentification requerido cuando AdditionalAccountID=2
-    cp_pid = etree.SubElement(cp, f"{{{CAC}}}PartyIdentification")
-    etree.SubElement(cp_pid, f"{{{CBC}}}ID",
-                     schemeAgencyID="195",
-                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID="0", schemeName="13").text = nit_adquiriente
 
     cp_name = etree.SubElement(cp, f"{{{CAC}}}PartyName")
     etree.SubElement(cp_name, f"{{{CBC}}}Name").text = cliente.get("nombre", "Consumidor Final")
@@ -268,21 +263,11 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     etree.SubElement(cp_tax, f"{{{CBC}}}CompanyID",
                      schemeAgencyID="195",
                      schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID="0", schemeName="13").text = nit_adquiriente
+                     schemeName="13").text = nit_adquiriente
     etree.SubElement(cp_tax, f"{{{CBC}}}TaxLevelCode", listName="49").text = "R-99-PN"
     cp_ts = etree.SubElement(cp_tax, f"{{{CAC}}}TaxScheme")
     etree.SubElement(cp_ts, f"{{{CBC}}}ID").text = "ZY"
     etree.SubElement(cp_ts, f"{{{CBC}}}Name").text = "No causa"
-
-    cp_legal = etree.SubElement(cp, f"{{{CAC}}}PartyLegalEntity")
-    etree.SubElement(cp_legal, f"{{{CBC}}}RegistrationName").text = cliente.get("nombre", "Consumidor Final")
-    etree.SubElement(cp_legal, f"{{{CBC}}}CompanyID",
-                     schemeAgencyID="195",
-                     schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
-                     schemeID="0", schemeName="13").text = nit_adquiriente
-
-    cp_contact = etree.SubElement(cp, f"{{{CAC}}}Contact")
-    etree.SubElement(cp_contact, f"{{{CBC}}}ElectronicMail").text = cliente.get("email", "")
 
     # ── PaymentMeans ──
     pm = etree.SubElement(root, f"{{{CAC}}}PaymentMeans")
