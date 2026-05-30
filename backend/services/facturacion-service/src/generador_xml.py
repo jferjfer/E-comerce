@@ -368,7 +368,6 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
          schemeAgencyID="195",
          schemeAgencyName="CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)",
          schemeName="13")
-    _sub(cp_tax, f"{CBC}TaxLevelCode", "R-99-PN", listName="49")
     cp_ts = _sub(cp_tax, f"{CAC}TaxScheme")
     _sub(cp_ts, f"{CBC}ID",   "ZY")
     _sub(cp_ts, f"{CBC}Name", "No causa")

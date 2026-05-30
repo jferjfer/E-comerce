@@ -21,10 +21,19 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
     hora_str = fecha.strftime("%H:%M:%S-05:00")
 
     # Precios con IVA incluido — desagregar base gravable
-    total = round(sum(p["precio_unitario"] * p["cantidad"] for p in productos), 2)
-    subtotal = round(total / (1 + IVA_RATE), 2)
-    iva = round(total - subtotal, 2)
+    # Calcular igual que facturas: precio con IVA -> desagregar base por linea
     nit_adquiriente = cliente.get("nit_cc", "222222222222")
+    lineas_calc = []
+    for p in productos:
+        piva = float(p["precio_unitario"])
+        cant = int(p["cantidad"])
+        base_u = round(piva / (1 + IVA_RATE), 2)
+        base_l = round(base_u * cant, 2)
+        iva_l  = round(base_l * IVA_RATE, 2)
+        lineas_calc.append({"base": base_l, "iva": iva_l})
+    subtotal = round(sum(l["base"] for l in lineas_calc), 2)
+    iva      = round(sum(l["iva"]  for l in lineas_calc), 2)
+    total    = round(subtotal + iva, 2)
 
     cadena_cude = (
         f"{numero_completo}{fecha_str}{hora_str}"
@@ -236,9 +245,10 @@ def generar_nota_debito(numero, factura_referencia, cufe_factura, fecha_factura,
 
     # DebitNoteLines
     for i, producto in enumerate(productos, 1):
-        precio_unit = producto["precio_unitario"]
-        cantidad = producto["cantidad"]
-        subtotal_linea = precio_unit * cantidad
+        precio_con_iva = float(producto["precio_unitario"])
+        cantidad = int(producto["cantidad"])
+        precio_unit = round(precio_con_iva / (1 + IVA_RATE), 2)
+        subtotal_linea = round(precio_unit * cantidad, 2)
         iva_linea = round(subtotal_linea * IVA_RATE, 2)
 
         line = etree.SubElement(root, f"{CAC}DebitNoteLine")
