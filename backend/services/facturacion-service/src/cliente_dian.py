@@ -14,6 +14,12 @@ from lxml import etree
 from codeflexDian.Signing import Signing
 from codeflexDian.SOAPSing import SOAPSing
 
+# Aplicar parche para corregir URL hardcodeada en wsa:To
+try:
+    import patch_codeflexdian  # noqa
+except Exception as e:
+    print(f"⚠️ No se pudo aplicar parche codeflexDian: {e}")
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # v1.2.0 - WS-Security con codeflexDian
