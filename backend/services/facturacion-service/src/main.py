@@ -712,7 +712,7 @@ async def enviar_set_pruebas(background_tasks: BackgroundTasks, db: Session = De
     return {
         "mensaje": "Set de pruebas iniciado en background",
         "documentos": {"facturas": 30, "notas_credito": 10, "notas_debito": 10, "total": 50},
-        "test_set_id": "c537ef0b-2eb6-4149-9296-36d19e743ae2"
+        "test_set_id": "8f493ed8-968c-44f3-bee6-fb2c54b4781e"
     }
 
 @app.get("/api/dian/set-pruebas/estado")
