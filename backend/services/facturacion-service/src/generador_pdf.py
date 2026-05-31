@@ -138,11 +138,11 @@ def generar_pdf_factura(
         Paragraph(f"<b>Pedido:</b> #{pedido_id}",
                   estilo('f5', fontSize=8, alignment=TA_RIGHT, textColor=GRIS_TEXTO, leading=11)),
         Spacer(1, 6),
-        Paragraph("Res. DIAN No. 18760000001",
+        Paragraph("Res. DIAN No. 18764108565721",
                   estilo('f6', fontSize=6, alignment=TA_RIGHT, textColor=GRIS, leading=9)),
         Paragraph("Rango autorizado: 990.000.000 – 995.000.000",
                   estilo('f7', fontSize=6, alignment=TA_RIGHT, textColor=GRIS, leading=9)),
-        Paragraph("Vigencia: 19/01/2019 – 19/01/2030",
+        Paragraph("Vigencia: 16/04/2026 – 16/04/2028",
                   estilo('f8', fontSize=6, alignment=TA_RIGHT, textColor=GRIS, leading=9)),
     ]
 
@@ -164,7 +164,11 @@ def generar_pdf_factura(
     story.append(Spacer(1, 3))
 
     tipo_doc = cliente.get('tipo_documento', 'CC')
-    num_doc  = cliente.get('nit_cc', '222222222222')
+    num_doc  = cliente.get('nit_cc', '')
+    # Si el nit_cc es el generico de consumidor final, no mostrarlo
+    if num_doc in ('222222222222', '2222222222', ''):
+        num_doc = 'Consumidor Final'
+        tipo_doc = ''
     nombre_c = cliente.get('nombre', 'Consumidor Final')
     email_c  = cliente.get('email', '')
     dir_c    = cliente.get('direccion', 'No registrada')
@@ -173,7 +177,7 @@ def generar_pdf_factura(
         [
             Paragraph("<b>Nombre / Razón Social:</b>", estilo('cl', fontSize=7, textColor=GRIS)),
             Paragraph(nombre_c, estilo('cv', fontSize=8)),
-            Paragraph(f"<b>{tipo_doc}:</b>", estilo('cl', fontSize=7, textColor=GRIS)),
+            Paragraph(f"<b>{tipo_doc + ':' if tipo_doc else ''}</b>", estilo('cl', fontSize=7, textColor=GRIS)),
             Paragraph(num_doc, estilo('cv', fontSize=8)),
         ],
         [
