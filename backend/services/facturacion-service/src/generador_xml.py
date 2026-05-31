@@ -39,7 +39,7 @@ DIAN = {
     "fecha_hasta":   "2030-01-19",
     "rango_desde":   "990000000",
     "rango_hasta":   "995000000",
-    "ambiente":      os.getenv("DIAN_AMBIENTE",        "2"),
+    "ambiente":      os.getenv("DIAN_AMBIENTE",        "1"),
     "proveedor_nit": "902051708",
     "proveedor_dv":  "6",
 }
