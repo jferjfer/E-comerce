@@ -31,7 +31,7 @@ def generar_nota_credito(numero, factura_referencia, cufe_factura, fecha_factura
     numero_completo = f"{DIAN_CONFIG['prefijo']}{numero}"
     fecha_str = fecha.strftime("%Y-%m-%d")
     hora_str  = fecha.strftime("%H:%M:%S-05:00")
-    nit_adq   = (cliente.get("nit_cc") or "222222222222").strip()
+    nit_adq   = (cliente.get("nit_cc") or "2222222222").strip()
 
     lineas, subtotal, iva, total = _calcular_lineas(productos)
 

@@ -71,7 +71,7 @@ class ProductoFactura(BaseModel):
 class ClienteFactura(BaseModel):
     nombre: str
     email: str
-    nit_cc: Optional[str] = "222222222222"
+    nit_cc: Optional[str] = "2222222222"
     direccion: Optional[str] = ""
 
 class SolicitudFactura(BaseModel):
@@ -744,9 +744,9 @@ async def procesar_set_pruebas(db_session):
 
     # Clientes de prueba — SOLO consumidor final con NIT 222222222222
     clientes = [
-        {"nombre": "Consumidor Final", "email": "test@egoscolombia.com", "nit_cc": "222222222222", "direccion": "Bogotá D.C."},
-        {"nombre": "Consumidor Final", "email": "test2@egoscolombia.com", "nit_cc": "222222222222", "direccion": "Medellín, Antioquia"},
-        {"nombre": "Consumidor Final", "email": "test3@egoscolombia.com", "nit_cc": "222222222222", "direccion": "Cali, Valle"},
+        {"nombre": "Consumidor Final", "email": "test@egoscolombia.com", "nit_cc": "2222222222", "direccion": "Bogotá D.C."},
+        {"nombre": "Consumidor Final", "email": "test2@egoscolombia.com", "nit_cc": "2222222222", "direccion": "Medellín, Antioquia"},
+        {"nombre": "Consumidor Final", "email": "test3@egoscolombia.com", "nit_cc": "2222222222", "direccion": "Cali, Valle"},
     ]
 
     # Productos de prueba
