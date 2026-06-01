@@ -298,15 +298,20 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     numero_completo = f"{DIAN['prefijo']}{numero}"
     fecha_str       = fecha.strftime("%Y-%m-%d")
     hora_str        = fecha.strftime("%H:%M:%S-05:00")
-    # Para consumidor final siempre usar 2222222222 (10 digitos) segun ejemplo oficial DIAN V1.9
+    # Para consumidor final siempre usar 2222222222 (10 digitos) para el CUFE
     nit_adq         = "2222222222"
+    # Documento real del cliente para visualizacion en la DIAN y para el CUFE
+    doc_cliente     = (cliente.get("nit_cc") or "2222222222").strip()
+    # Si el cliente tiene documento real, usarlo tambien en el CUFE
+    nit_para_cufe   = doc_cliente if doc_cliente not in ('222222222222', '2222222222', '') else "2222222222"
+    nombre_cliente  = cliente.get("nombre", "Consumidor Final")
 
     lineas, subtotal, iva, total = _calcular_lineas(productos)
 
     cufe = calcular_cufe(
         numero_completo, fecha_str, hora_str,
         subtotal, iva, 0.00, 0.00,
-        total, EMPRESA["nit"], nit_adq,
+        total, EMPRESA["nit"], nit_para_cufe,
         DIAN["clave_tecnica"], DIAN["ambiente"]
     )
     security_code = hashlib.sha384(
@@ -316,7 +321,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     qr_text = (
         f"NroFactura={numero_completo}\n"
         f"\t\t\t\t\t\t\t\tNitFacturador={EMPRESA['nit']}\n"
-        f"\t\t\t\t\t\t\t\tNitAdquiriente={nit_adq}\n"
+        f"\t\t\t\t\t\t\t\tNitAdquiriente={nit_para_cufe}\n"
         f"\t\t\t\t\t\t\t\tFechaFactura={fecha_str}\n"
         f"\t\t\t\t\t\t\t\tValorTotalFactura={total:.2f}\n"
         f"\t\t\t\t\t\t\t\tCUFE={cufe}\n"
@@ -337,7 +342,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
              "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2     "
              "http://docs.oasis-open.org/ubl/os-UBL-2.1/xsd/maindoc/UBL-Invoice-2.1.xsd")
 
-    _dian_extensions(root, numero_completo, fecha_str, nit_adq,
+    _dian_extensions(root, numero_completo, fecha_str, nit_para_cufe,
                      subtotal, iva, total, security_code, qr_text,
                      con_invoice_control=True)
 
@@ -355,7 +360,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     note = (
         f"{numero_completo}{fecha_str}{hora_str}"
         f"{subtotal:.2f}01{iva:.2f}04{0.00:.2f}03{0.00:.2f}"
-        f"{total:.2f}{EMPRESA['nit']}{nit_adq}{DIAN['clave_tecnica']}{DIAN['ambiente']}"
+        f"{total:.2f}{EMPRESA['nit']}{nit_para_cufe}{DIAN['clave_tecnica']}{DIAN['ambiente']}"
     )
     _sub(root, f"{CBC}Note", note)
     _sub(root, f"{CBC}DocumentCurrencyCode", "COP",
@@ -372,7 +377,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     _sub(order_ref, f"{CBC}ID", pedido_id)
 
     _supplier_party(root)
-    _customer_consumidor_final(root, nit_adq, cliente.get("nombre", "Consumidor Final"))
+    _customer_consumidor_final(root, doc_cliente, nombre_cliente)
 
     pm = _sub(root, f"{CAC}PaymentMeans")
     _sub(pm, f"{CBC}ID",               "1")
