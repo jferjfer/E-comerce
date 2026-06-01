@@ -298,8 +298,11 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     numero_completo = f"{DIAN['prefijo']}{numero}"
     fecha_str       = fecha.strftime("%Y-%m-%d")
     hora_str        = fecha.strftime("%H:%M:%S-05:00")
-    # Para consumidor final siempre usar 2222222222 (10 digitos) segun ejemplo oficial DIAN V1.9
+    # Para consumidor final siempre usar 2222222222 (10 digitos) para el CUFE
     nit_adq         = "2222222222"
+    # Documento real del cliente para visualizacion en la DIAN
+    doc_cliente     = (cliente.get("nit_cc") or "2222222222").strip()
+    nombre_cliente  = cliente.get("nombre", "Consumidor Final")
 
     lineas, subtotal, iva, total = _calcular_lineas(productos)
 
@@ -372,7 +375,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     _sub(order_ref, f"{CBC}ID", pedido_id)
 
     _supplier_party(root)
-    _customer_consumidor_final(root, nit_adq, cliente.get("nombre", "Consumidor Final"))
+    _customer_consumidor_final(root, doc_cliente, nombre_cliente)
 
     pm = _sub(root, f"{CAC}PaymentMeans")
     _sub(pm, f"{CBC}ID",               "1")
