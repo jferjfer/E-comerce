@@ -1,20 +1,14 @@
 import { Tabs } from 'expo-router';
+import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '@/constants';
 import { useCartStore } from '@/store/useCartStore';
-import { Text, View } from 'react-native';
 
 function BadgeCarrito() {
-  const total = useCartStore((s) => s.totalItems());
+  const total = useCartStore(s => s.totalItems());
   if (total === 0) return null;
   return (
-    <View style={{
-      position: 'absolute', top: -4, right: -8,
-      backgroundColor: COLORS.dorado, borderRadius: 10,
-      minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center'
-    }}>
-      <Text style={{ color: COLORS.negro, fontSize: 10, fontWeight: 'bold' }}>
-        {total}
-      </Text>
+    <View style={styles.badge}>
+      <Text style={styles.badgeTxt}>{total > 9 ? '9+' : total}</Text>
     </View>
   );
 }
@@ -23,35 +17,47 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: { backgroundColor: COLORS.negro, borderTopColor: '#1f2937' },
+        tabBarStyle: {
+          backgroundColor: COLORS.negroHeader,
+          borderTopColor: 'rgba(197,164,126,0.2)',
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 4,
+        },
         tabBarActiveTintColor: COLORS.dorado,
         tabBarInactiveTintColor: '#6b7280',
-        headerStyle: { backgroundColor: COLORS.negro },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        headerStyle: { backgroundColor: COLORS.negroHeader },
         headerTintColor: COLORS.dorado,
-        headerTitleStyle: { color: COLORS.dorado, fontWeight: 'bold' },
+        headerTitleStyle: { color: COLORS.dorado, fontWeight: '700' },
+        headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏠</Text>,
+          headerShown: false,
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 18, color }}>🏠</Text>,
         }}
       />
       <Tabs.Screen
         name="catalogo"
         options={{
           title: 'Catálogo',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>👗</Text>,
+          headerTitle: 'Catálogo',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 18, color }}>👗</Text>,
         }}
       />
       <Tabs.Screen
         name="carrito"
         options={{
           title: 'Carrito',
-          tabBarIcon: ({ color, focused }) => (
+          headerTitle: 'Mi Carrito',
+          tabBarIcon: ({ color }) => (
             <View>
-              <Text style={{ fontSize: 20, color }}>🛒</Text>
+              <Text style={{ fontSize: 18, color }}>🛒</Text>
               <BadgeCarrito />
             </View>
           ),
@@ -61,16 +67,38 @@ export default function TabsLayout() {
         name="pedidos"
         options={{
           title: 'Pedidos',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📦</Text>,
+          headerTitle: 'Mis Pedidos',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 18, color }}>📦</Text>,
         }}
       />
       <Tabs.Screen
         name="perfil"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>👤</Text>,
+          headerTitle: 'Mi Perfil',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 18, color }}>👤</Text>,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: COLORS.dorado,
+    borderRadius: 999,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeTxt: {
+    color: COLORS.negro,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+});

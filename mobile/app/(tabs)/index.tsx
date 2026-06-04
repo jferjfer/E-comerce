@@ -1,149 +1,321 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  Image, StyleSheet, ActivityIndicator, RefreshControl
+  View, Text, ScrollView, FlatList,
+  TouchableOpacity, Image, StyleSheet,
+  TextInput, ActivityIndicator, RefreshControl,
+  Dimensions, StatusBar
 } from 'react-native';
 import { router } from 'expo-router';
-import { COLORS } from '@/constants';
+import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Producto } from '@/types';
+import ProductCard from '@/components/ProductCard';
+import EgosLogo from '@/components/EgosLogo';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { usuario, estaAutenticado } = useAuthStore();
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categorias, setCategorias] = useState<string[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
 
-  const cargarProductos = async () => {
+  const cargar = async () => {
     try {
-      const data = await api.getProductos({ limite: 10 });
-      setProductos(data.productos || []);
+      const [dataProd, dataCat] = await Promise.all([
+        api.getProductos({ limite: 50 }),
+        api.getCategorias(),
+      ]);
+      setProductos(dataProd.productos || []);
+      const cats = (dataCat.categorias || []).map((c: any) => c.nombre || c);
+      setCategorias(cats);
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      setCargando(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => { cargarProductos(); }, []);
+  useEffect(() => { cargar(); }, []);
+
+  const productosFiltrados = productos.filter(p => {
+    const matchBusqueda = busqueda === '' ||
+      p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    const matchCategoria = categoriaFiltro === '' || p.categoria === categoriaFiltro;
+    return matchBusqueda && matchCategoria;
+  });
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); cargarProductos(); }} tintColor={COLORS.dorado} />}
-    >
-      {/* Header EGOS */}
-      <View style={styles.header}>
-        <Text style={styles.logoE}>E</Text>
-        <Text style={styles.logoEGOS}>EGOS</Text>
-        <Text style={styles.logoSlogan}>WEAR YOUR TRUTH</Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.negroHeader} />
 
-      {/* Saludo */}
-      {estaAutenticado && (
-        <View style={styles.saludo}>
-          <Text style={styles.saludoTexto}>
-            Hola, <Text style={styles.saludoNombre}>{usuario?.nombre}</Text> 👋
-          </Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); cargar(); }}
+            tintColor={COLORS.dorado}
+          />
+        }
+      >
+        {/* ── HEADER ── */}
+        <View style={styles.header}>
+          <EgosLogo size="md" showSlogan />
+          {estaAutenticado && (
+            <Text style={styles.saludo}>
+              Hola, <Text style={styles.saludoNombre}>{usuario?.nombre}</Text> 👋
+            </Text>
+          )}
         </View>
-      )}
 
-      {/* Banner */}
-      <TouchableOpacity style={styles.banner} onPress={() => router.push('/(tabs)/catalogo')}>
-        <Text style={styles.bannerTitulo}>Nueva Colección</Text>
-        <Text style={styles.bannerSub}>Descubre las últimas tendencias</Text>
-        <View style={styles.bannerBtn}>
-          <Text style={styles.bannerBtnTxt}>Ver catálogo →</Text>
-        </View>
-      </TouchableOpacity>
+        {/* ── HERO BANNER ── */}
+        <TouchableOpacity
+          style={styles.hero}
+          onPress={() => router.push('/(tabs)/catalogo')}
+          activeOpacity={0.95}
+        >
+          <Image
+            source={{ uri: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop' }}
+            style={styles.heroImg}
+            resizeMode="cover"
+          />
+          <View style={styles.heroOverlay}>
+            <Text style={styles.heroTitulo}>Nueva Colección</Text>
+            <Text style={styles.heroSub}>Descubre las últimas tendencias</Text>
+            <View style={styles.heroBtn}>
+              <Text style={styles.heroBtnTxt}>Ver catálogo →</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
 
-      {/* Productos destacados */}
-      <Text style={styles.seccionTitulo}>Productos Destacados</Text>
+        {/* ── BARRA FILTROS ── */}
+        <View style={styles.filtros}>
+          {/* Búsqueda */}
+          <View style={styles.searchBox}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar productos..."
+              placeholderTextColor={COLORS.textoGrisSub}
+              value={busqueda}
+              onChangeText={setBusqueda}
+            />
+            {busqueda !== '' && (
+              <TouchableOpacity onPress={() => setBusqueda('')}>
+                <Text style={styles.clearBtn}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-      {loading ? (
-        <ActivityIndicator color={COLORS.dorado} size="large" style={{ margin: 20 }} />
-      ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.productosH}>
-          {productos.map((p) => (
+          {/* Categorías scroll horizontal */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriasScroll}
+            contentContainerStyle={styles.categoriasContent}
+          >
             <TouchableOpacity
-              key={p.id}
-              style={styles.productoCard}
-              onPress={() => router.push(`/producto/${p.id}`)}
+              style={[styles.catChip, categoriaFiltro === '' && styles.catChipActivo]}
+              onPress={() => setCategoriaFiltro('')}
             >
-              <Image
-                source={{ uri: p.imagen }}
-                style={styles.productoImg}
-                resizeMode="cover"
-              />
-              <Text style={styles.productoNombre} numberOfLines={2}>{p.nombre}</Text>
-              <Text style={styles.productoPrecio}>
-                ${p.precio.toLocaleString('es-CO')}
+              <Text style={[styles.catChipTxt, categoriaFiltro === '' && styles.catChipTxtActivo]}>
+                Todas
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+            {categorias.map(cat => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.catChip, categoriaFiltro === cat && styles.catChipActivo]}
+                onPress={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
+              >
+                <Text style={[styles.catChipTxt, categoriaFiltro === cat && styles.catChipTxtActivo]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-      {/* Acceso rápido */}
-      <Text style={styles.seccionTitulo}>Acceso Rápido</Text>
-      <View style={styles.accesoGrid}>
-        {[
-          { icon: '👗', label: 'Catálogo', ruta: '/(tabs)/catalogo' },
-          { icon: '🛒', label: 'Carrito', ruta: '/(tabs)/carrito' },
-          { icon: '📦', label: 'Pedidos', ruta: '/(tabs)/pedidos' },
-          { icon: '🤖', label: 'Asistente IA', ruta: '/chat' },
-        ].map((item) => (
-          <TouchableOpacity
-            key={item.label}
-            style={styles.accesoBtn}
-            onPress={() => router.push(item.ruta as any)}
-          >
-            <Text style={styles.accesoIcon}>{item.icon}</Text>
-            <Text style={styles.accesoLabel}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          <Text style={styles.contador}>
+            {cargando ? '...' : `${productosFiltrados.length} productos`}
+          </Text>
+        </View>
 
-      <View style={{ height: 20 }} />
-    </ScrollView>
+        {/* ── GRID PRODUCTOS ── */}
+        {cargando ? (
+          <ActivityIndicator color={COLORS.dorado} size="large" style={{ margin: 40 }} />
+        ) : productosFiltrados.length === 0 ? (
+          <View style={styles.vacio}>
+            <Text style={styles.vacioIcon}>🔍</Text>
+            <Text style={styles.vacioTxt}>No se encontraron productos</Text>
+            <TouchableOpacity onPress={() => { setBusqueda(''); setCategoriaFiltro(''); }}>
+              <Text style={styles.vacioLink}>Limpiar filtros</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.grid}>
+            {productosFiltrados.map((p, i) => (
+              <ProductCard
+                key={p.id || i}
+                producto={p}
+                onVerDetalles={(prod) => router.push(`/producto/${prod.id}`)}
+              />
+            ))}
+          </View>
+        )}
+
+        <View style={{ height: 24 }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  header: { backgroundColor: COLORS.negro, alignItems: 'center', paddingVertical: 24 },
-  logoE: { fontSize: 40, fontWeight: '900', color: COLORS.dorado },
-  logoEGOS: { fontSize: 22, fontWeight: '700', color: COLORS.blanco, letterSpacing: 10 },
-  logoSlogan: { fontSize: 10, color: COLORS.dorado, letterSpacing: 4, marginTop: 2 },
-  saludo: { backgroundColor: COLORS.blanco, padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  saludoTexto: { fontSize: 15, color: COLORS.grisTexto },
-  saludoNombre: { fontWeight: 'bold', color: COLORS.negro },
-  banner: {
-    margin: 16, backgroundColor: COLORS.negro, borderRadius: 12,
-    padding: 24, alignItems: 'center'
+  container: { flex: 1, backgroundColor: COLORS.fondoPagina },
+
+  // Header
+  header: {
+    backgroundColor: COLORS.negroHeader,
+    paddingTop: 50,
+    paddingBottom: 16,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(197,164,126,0.2)',
   },
-  bannerTitulo: { fontSize: 22, fontWeight: '900', color: COLORS.dorado, marginBottom: 4 },
-  bannerSub: { fontSize: 13, color: '#9ca3af', marginBottom: 16 },
-  bannerBtn: { backgroundColor: COLORS.dorado, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  bannerBtnTxt: { color: COLORS.negro, fontWeight: '700' },
-  seccionTitulo: { fontSize: 16, fontWeight: '700', color: COLORS.negro, marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
-  productosH: { paddingLeft: 16 },
-  productoCard: {
-    width: 150, marginRight: 12, backgroundColor: COLORS.blanco,
-    borderRadius: 10, overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2
+  saludo: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#9ca3af',
   },
-  productoImg: { width: 150, height: 180 },
-  productoNombre: { fontSize: 12, color: COLORS.grisTexto, padding: 8, paddingBottom: 4 },
-  productoPrecio: { fontSize: 13, fontWeight: '700', color: COLORS.negro, paddingHorizontal: 8, paddingBottom: 8 },
-  accesoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 12 },
-  accesoBtn: {
-    width: '45%', margin: '2.5%', backgroundColor: COLORS.blanco,
-    borderRadius: 10, padding: 16, alignItems: 'center',
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 2
+  saludoNombre: {
+    color: COLORS.dorado,
+    fontWeight: '600',
   },
-  accesoIcon: { fontSize: 28, marginBottom: 6 },
-  accesoLabel: { fontSize: 13, fontWeight: '600', color: COLORS.grisTexto },
+
+  // Hero
+  hero: {
+    margin: SPACING.lg,
+    borderRadius: RADIUS.xl,
+    overflow: 'hidden',
+    height: 180,
+    ...SHADOW.md,
+  },
+  heroImg: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  heroOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    padding: SPACING.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroTitulo: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.dorado,
+    marginBottom: 4,
+  },
+  heroSub: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 16,
+  },
+  heroBtn: {
+    backgroundColor: COLORS.dorado,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+  },
+  heroBtnTxt: {
+    color: COLORS.negro,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+
+  // Filtros
+  filtros: {
+    backgroundColor: COLORS.fondoCard,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.bordeClaro,
+    paddingTop: SPACING.sm,
+    ...SHADOW.sm,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: SPACING.lg,
+    backgroundColor: COLORS.fondoGris,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    marginBottom: SPACING.sm,
+  },
+  searchIcon: { fontSize: 14, marginRight: 6 },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.textoNegro,
+    padding: 0,
+  },
+  clearBtn: { fontSize: 14, color: COLORS.textoGrisSub, paddingLeft: 4 },
+  categoriasScroll: { marginBottom: 6 },
+  categoriasContent: {
+    paddingHorizontal: SPACING.lg,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  catChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.bordeMedio,
+    backgroundColor: COLORS.fondoCard,
+  },
+  catChipActivo: {
+    backgroundColor: COLORS.negro,
+    borderColor: COLORS.negro,
+  },
+  catChipTxt: {
+    fontSize: 12,
+    color: COLORS.textoGris,
+    fontWeight: '500',
+  },
+  catChipTxtActivo: {
+    color: COLORS.dorado,
+    fontWeight: '600',
+  },
+  contador: {
+    fontSize: 11,
+    color: COLORS.textoGrisSub,
+    textAlign: 'right',
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 8,
+  },
+
+  // Grid
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: SPACING.lg,
+    justifyContent: 'space-between',
+    paddingTop: SPACING.md,
+  },
+
+  // Vacío
+  vacio: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  vacioIcon: { fontSize: 40, marginBottom: 12 },
+  vacioTxt: { fontSize: 15, color: COLORS.textoGrisMid, marginBottom: 8 },
+  vacioLink: { fontSize: 14, color: COLORS.negro, fontWeight: '600' },
 });
