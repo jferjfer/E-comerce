@@ -31,8 +31,9 @@ export default function EpaycoRespuestaPage() {
       if (token) {
         consultarUltimoPedido()
       } else {
-        setEstado('exitoso')
-        setDetalle('Tu pedido fue creado. Revisa tus pedidos.')
+        // Sin token no podemos verificar — mostrar pendiente, NO exitoso
+        setEstado('pendiente')
+        setDetalle('Inicia sesión para verificar el estado de tu pedido.')
       }
       return
     }
@@ -69,16 +70,58 @@ export default function EpaycoRespuestaPage() {
       setEstado('fallido')
       setDetalle(x_response_reason || 'El pago no fue completado')
     } else {
-      // Hay parámetros pero sin x_response — consultar pedido
-      if (token && x_id_invoice) {
+      // Hay parámetros pero sin x_response — puede ser solo ref_payco
+      const refPayco = params.get('ref_payco') || ''
+      if (token && refPayco) {
+        // Consultar estado real por ref_payco directamente a ePayco
+        consultarPorRefPayco(refPayco)
+      } else if (token && x_id_invoice) {
         consultarEstadoPedido(x_id_invoice)
       } else if (token) {
         consultarUltimoPedido()
       } else {
-        setEstado('exitoso')
+        setEstado('pendiente')
+        setDetalle('Inicia sesión para verificar el estado de tu pedido.')
       }
     }
   }, [x_response, x_cod_response])
+
+  const consultarPorRefPayco = async (refPayco: string, intentos = 0) => {
+    try {
+      const res = await fetch(`${API_URL}/api/pagos/epayco/consultar/${refPayco}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      const cod = String(data.data?.x_cod_transaction_state || data.x_cod_transaction_state || data.x_response_code_transaction || '')
+      const resp = data.data?.x_transaction_state || data.x_transaction_state || data.x_response || ''
+      const reason = data.data?.x_response_reason_text || data.x_response_reason_text || ''
+
+      if (cod === '1' || resp === 'Aceptada') {
+        setEstado('exitoso')
+        setDetalle('Tu pago fue procesado correctamente.')
+      } else if (cod === '2' || cod === '4' || resp === 'Rechazada' || resp === 'Fallida') {
+        setEstado('fallido')
+        setDetalle(reason || 'El pago fue rechazado. Intenta con otro método.')
+      } else if (cod === '3' || cod === '7' || resp === 'Pendiente') {
+        setEstado('pendiente')
+        setDetalle(reason || 'Tu pago está siendo validado. Recibirás un correo pronto.')
+      } else if (intentos < 4) {
+        setDetalle(`Verificando pago... (${intentos + 1}/4)`)
+        setTimeout(() => consultarPorRefPayco(refPayco, intentos + 1), 3000)
+      } else {
+        setEstado('pendiente')
+        setDetalle('No se pudo confirmar el pago. Verifica en "Mis Pedidos".')
+      }
+    } catch {
+      if (intentos < 3) {
+        setTimeout(() => consultarPorRefPayco(refPayco, intentos + 1), 3000)
+      } else {
+        setEstado('pendiente')
+        setDetalle('Error al verificar el pago. Revisa en "Mis Pedidos".')
+      }
+    }
+  }
 
   const consultarEstadoPedido = async (pedidoId: string, intentos = 0) => {
     try {
