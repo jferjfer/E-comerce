@@ -26,6 +26,7 @@ router.post('/login-simple', async (req, res) => {
 
 // Rutas de recuperación de contraseña
 router.post('/solicitar-recuperacion', ControladorAuth.solicitarRecuperacion);
+router.post('/recuperar-contrasena', ControladorAuth.solicitarRecuperacion); // Alias mobile
 router.post('/restablecer-contrasena', ControladorAuth.restablecerContrasena);
 
 // Refresh token — renueva el JWT si aún es válido
