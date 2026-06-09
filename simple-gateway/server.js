@@ -397,6 +397,7 @@ app.post('/api/auth/login', limiterAuth, (req, res) => manejarAuthDirecto(req, r
 app.get('/api/auth/verificar', (req, res) => manejarAuthDirecto(req, res, 'verificar'));
 app.post('/api/auth/logout', (req, res) => manejarAuthDirecto(req, res, 'logout'));
 app.post('/api/auth/solicitar-recuperacion', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'solicitar-recuperacion'));
+app.post('/api/auth/recuperar-contrasena', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'recuperar-contrasena')); // Alias mobile
 app.post('/api/auth/restablecer-contrasena', limiterAuth, (req, res) => manejarAuthDirecto(req, res, 'restablecer-contrasena'));
 app.post('/api/auth/refresh', (req, res) => manejarAuthDirecto(req, res, 'refresh'));
 
