@@ -77,7 +77,9 @@ class ControladorAuth {
         return next(error);
       }
 
-      const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+      // VULN-004 FIX: Usar solo la IP real de la conexión TCP, ignorar headers manipulables
+      // req.socket.remoteAddress es la IP real, no se puede falsificar desde el cliente
+      const ip = req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
       const email = value.email;
 
       // Verificar si la cuenta está bloqueada

@@ -12,9 +12,41 @@ from config.cloudinary_config import cloudinary
 from servicios.servicio_imagenes import subir_imagen_producto, subir_multiples_imagenes
 from controladores import categorias
 
-# Campos sensibles que solo ven roles internos
-CAMPOS_SENSIBLES = {'costo_adquisicion', 'proveedor_id', 'referencia_proveedor', 'precio_manual'}
-ROLES_INTERNOS = {'product_manager', 'category_manager', 'seller_premium', 'ceo', 'contador', 'cfo', 'operations_director'}
+# Roles permitidos para gestionar productos
+ROLES_GESTION_PRODUCTOS = {'product_manager', 'category_manager', 'seller_premium', 'ceo', 'cfo', 'operations_director'}
+
+def verificar_rol_gestion(request: Request) -> str:
+    """Verifica que el usuario tenga rol para gestionar productos. Lanza 403 si no."""
+    try:
+        auth = request.headers.get('authorization', '')
+        if not auth.startswith('Bearer '):
+            raise HTTPException(status_code=401, detail='Token de autenticación requerido')
+        token = auth.replace('Bearer ', '')
+        secret = os.getenv('JWT_SECRETO', '')
+        if not secret:
+            raise HTTPException(status_code=500, detail='Configuración interna incorrecta')
+        decoded = pyjwt.decode(token, secret, algorithms=['HS256'])
+        rol = decoded.get('rol', '')
+        if rol not in ROLES_GESTION_PRODUCTOS:
+            raise HTTPException(
+                status_code=403,
+                detail=f'Acceso denegado. Rol "{rol}" no tiene permisos para gestionar productos'
+            )
+        return decoded  # retorna el payload completo
+    except HTTPException:
+        raise
+    except pyjwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail='Token expirado')
+    except Exception:
+        raise HTTPException(status_code=401, detail='Token inválido')
+
+def sanitizar_texto(texto: str, max_len: int = 500) -> str:
+    """Elimina caracteres peligrosos y limita longitud"""
+    import re
+    if not texto:
+        return texto
+    limpio = re.sub(r'[<>"\';\\]', '', str(texto))
+    return limpio.strip()[:max_len]
 
 def obtener_rol_request(request: Request) -> Optional[str]:
     """Extrae el rol del JWT sin bloquear si no hay token"""
@@ -31,7 +63,9 @@ def obtener_rol_request(request: Request) -> Optional[str]:
     except Exception:
         return None
 
-def filtrar_campos_sensibles(producto: dict, rol: Optional[str]) -> dict:
+# Campos sensibles que solo ven roles internos
+CAMPOS_SENSIBLES = {'costo_adquisicion', 'proveedor_id', 'referencia_proveedor', 'precio_manual'}
+ROLES_INTERNOS = {'product_manager', 'category_manager', 'seller_premium', 'ceo', 'contador', 'cfo', 'operations_director'}
     """Elimina campos sensibles si el rol no es interno"""
     if rol in ROLES_INTERNOS:
         return producto
@@ -211,8 +245,15 @@ async def listar_productos(
         }
 
 @app.post("/api/productos")
-async def crear_producto(producto: dict):
-    print(f"📦 Creando nuevo producto: {producto.get('nombre')}")
+async def crear_producto(request: Request, producto: dict):
+    # VULN-001 FIX: Verificar rol antes de crear
+    usuario = verificar_rol_gestion(request)
+    print(f"📦 Creando producto: {producto.get('nombre')} | Usuario: {usuario.get('id')} | Rol: {usuario.get('rol')}")
+
+    # Sanitizar campos de texto
+    for campo in ['nombre', 'descripcion', 'categoria']:
+        if campo in producto:
+            producto[campo] = sanitizar_texto(str(producto[campo]))
 
     db = obtener_bd()
     if db is None:
@@ -282,16 +323,26 @@ async def productos_destacados(request: Request):
         raise HTTPException(status_code=500, detail=f"Error obteniendo destacados: {str(e)}")
 
 @app.put("/api/productos/{producto_id}")
-async def actualizar_producto(producto_id: str, datos: dict):
-    print(f"✏️ Actualizando producto {producto_id}")
+async def actualizar_producto(producto_id: str, request: Request, datos: dict):
+    # VULN-001 FIX: Verificar rol
+    usuario = verificar_rol_gestion(request)
+    print(f"✏️ Actualizando producto {producto_id} | Rol: {usuario.get('rol')}")
 
     db = obtener_bd()
     if db is None:
         raise HTTPException(status_code=500, detail="Base de datos no disponible")
 
     try:
-        # Limpiar campos None y vacíos
-        datos_limpios = {k: v for k, v in datos.items() if v is not None and k != '_id'}
+        # Sanitizar campos de texto y evitar modificar campos del sistema
+        campos_protegidos = {'_id', 'id', 'fecha_creacion'}
+        datos_limpios = {}
+        for k, v in datos.items():
+            if k in campos_protegidos or v is None:
+                continue
+            if isinstance(v, str):
+                datos_limpios[k] = sanitizar_texto(v)
+            else:
+                datos_limpios[k] = v
         datos_limpios["fecha_actualizacion"] = datetime.now().isoformat()
 
         resultado = await db.productos.update_one(
@@ -321,7 +372,11 @@ async def actualizar_producto(producto_id: str, datos: dict):
 
 
 @app.delete("/api/productos/{producto_id}")
-async def eliminar_producto(producto_id: str):
+async def eliminar_producto(producto_id: str, request: Request):
+    # VULN-002 FIX: Verificar rol antes de eliminar
+    usuario = verificar_rol_gestion(request)
+    print(f"🗑 Eliminando producto {producto_id} | Usuario: {usuario.get('id')} | Rol: {usuario.get('rol')}")
+
     db = obtener_bd()
     if db is None:
         raise HTTPException(status_code=500, detail="Base de datos no disponible")

@@ -87,16 +87,14 @@ class ServicioAuth {
       // Esperar tiempo mínimo para igualar tiempos
       await esperarTiempoMinimo();
 
-      if (!usuario) {
-        return { exito: false, error: 'No encontramos una cuenta con ese correo. ¿Quieres registrarte?' };
+      // VULN-005 FIX: Mismo mensaje para usuario inexistente y contraseña incorrecta
+      // Evita enumeración de usuarios válidos
+      if (!usuario || !passwordValida) {
+        return { exito: false, error: 'Credenciales inválidas. Verifica tu correo y contraseña.' };
       }
 
       if (usuario.activo === false) {
         return { exito: false, error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.' };
-      }
-
-      if (!passwordValida) {
-        return { exito: false, error: 'La contraseña es incorrecta. ¿Olvidaste tu contraseña?' };
       }
 
       const token = this.generarToken(usuario);
