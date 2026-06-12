@@ -23,10 +23,12 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.hostinger.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
+SMTP_SECURE = os.getenv("SMTP_SECURE", "true").lower() == "true"
+# ventas@ envía bonos de crédito y compensación
+SMTP_USER = os.getenv("SMTP_USER_VENTAS", os.getenv("SMTP_USER", "ventas@egoscolombia.com.co"))
+SMTP_PASS = os.getenv("SMTP_PASS_VENTAS", os.getenv("SMTP_PASS", ""))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://egoscolombia.com.co")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:3011")
 
@@ -116,7 +118,7 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
         monto_fmt = f"${int(monto):,}".replace(",", ".")
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"🎁 ¡{nombre_corto}, tienes un bono de {monto_fmt} COP en EGOS!"
-        msg["From"] = f'"EGOS" <{SMTP_USER}>'
+        msg["From"] = f'"EGOS Colombia" <{SMTP_USER}>'
         msg["To"] = email
 
         fecha_str = fecha_vencimiento.strftime("%d de %B de %Y")
@@ -225,10 +227,17 @@ def enviar_correo_bono(email: str, nombre: str, codigo: str, fecha_vencimiento: 
 
         msg.attach(MIMEText(html, "html"))
 
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, email, msg.as_string())
+        import ssl as _ssl
+        if SMTP_SECURE or SMTP_PORT == 465:
+            _ctx = _ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=_ctx) as server:
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_USER, email, msg.as_string())
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_USER, email, msg.as_string())
 
         print(f"📧 Correo motivacional de bono enviado a {email}")
     except Exception as e:
@@ -829,7 +838,7 @@ def enviar_correo_bono_compensacion(email: str, nombre: str, codigo: str, fecha_
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"🎁 Bono de compensación EGOS — {monto_fmt} COP para ti"
-        msg["From"] = f'"EGOS" <{SMTP_USER}>'
+        msg["From"] = f'"EGOS Colombia" <{SMTP_USER}>'
         msg["To"] = email
 
         html = f"""
@@ -926,10 +935,17 @@ def enviar_correo_bono_compensacion(email: str, nombre: str, codigo: str, fecha_
         </html>
         """
         msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, email, msg.as_string())
+        import ssl as _ssl
+        if SMTP_SECURE or SMTP_PORT == 465:
+            _ctx = _ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=_ctx) as server:
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_USER, email, msg.as_string())
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_USER, email, msg.as_string())
         print(f"📧 Correo de compensación enviado a {email} | {codigo} | {monto_fmt}")
     except Exception as e:
         print(f"⚠️ Error enviando correo compensación: {e}")

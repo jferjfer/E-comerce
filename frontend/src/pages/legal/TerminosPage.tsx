@@ -9,7 +9,7 @@ export default function TerminosPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">1. Identificación del Vendedor</h2>
-            <p>El presente sitio web es operado por <strong>VERTEL & CATILLO S.A.S</strong>, sociedad constituida bajo las leyes de la República de Colombia, identificada con NIT <strong>902.051.708-6</strong>, con domicilio en Carrera 107 A Bis 69 B 58, Bogotá D.C. Correo: servicioalcliente@egoscolombia.com.</p>
+            <p>El presente sitio web es operado por <strong>VERTEL & CATILLO S.A.S</strong>, sociedad constituida bajo las leyes de la República de Colombia, identificada con NIT <strong>902.051.708-6</strong>, con domicilio en Carrera 107 A Bis 69 B 58, Bogotá D.C. Correo: servicioalcliente@egoscolombia.com.co.</p>
           </section>
 
           <section>
@@ -56,7 +56,7 @@ export default function TerminosPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">10. Contacto</h2>
-            <p>📧 servicioalcliente@egoscolombia.com<br />📞 301 787 9852 — 314 811 3593<br />Lunes a viernes, 8:00 AM – 6:00 PM</p>
+            <p>📧 servicioalcliente@egoscolombia.com.co<br />📞 301 787 9852 — 314 811 3593<br />Lunes a viernes, 8:00 AM – 6:00 PM</p>
           </section>
 
         </div>

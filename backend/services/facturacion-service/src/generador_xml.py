@@ -23,7 +23,7 @@ EMPRESA = {
     "municipio_code":   "11001",
     "pais":             "CO",
     "telefono":         "3017879852",
-    "email":            "servicioalcliente@egoscolombia.com",
+    "email":            "servicioalcliente@egoscolombia.com.co",
     "ciiu":             "4771",
     "tipo_persona":     "1",
 }

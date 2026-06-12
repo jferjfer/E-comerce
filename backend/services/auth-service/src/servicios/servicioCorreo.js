@@ -1,21 +1,39 @@
 const nodemailer = require('nodemailer');
 
+// Configuración Hostinger SSL puerto 465
+const crearTransporter = (user, pass) => nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+  port: parseInt(process.env.SMTP_PORT) || 465,
+  secure: true, // Puerto 465 = SSL directo
+  auth: { user, pass }
+});
+
 class ServicioCorreo {
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || 'tu-email@gmail.com',
-        pass: process.env.SMTP_PASS || 'tu-app-password'
-      }
-    });
+  // ventas@ — correos comerciales: bienvenida, bonos, confirmaciones de compra
+  get transporterVentas() {
+    return crearTransporter(
+      process.env.SMTP_USER_VENTAS || 'ventas@egoscolombia.com.co',
+      process.env.SMTP_PASS_VENTAS || ''
+    );
   }
 
-  async enviarCorreo(opciones) {
-    return await this.transporter.sendMail({
-      from: `"EGOS" <${process.env.SMTP_USER}>`,
+  // servicioalcliente@ — correos operativos: facturas, recuperación contraseña, credenciales
+  get transporterServicio() {
+    return crearTransporter(
+      process.env.SMTP_USER || 'servicioalcliente@egoscolombia.com.co',
+      process.env.SMTP_PASS || ''
+    );
+  }
+
+  async enviarCorreo(opciones, tipoRemitente = 'servicio') {
+    const transporter = tipoRemitente === 'ventas'
+      ? this.transporterVentas
+      : this.transporterServicio;
+    const remitente = tipoRemitente === 'ventas'
+      ? (process.env.SMTP_USER_VENTAS || 'ventas@egoscolombia.com.co')
+      : (process.env.SMTP_USER || 'servicioalcliente@egoscolombia.com.co');
+    return await transporter.sendMail({
+      from: `"EGOS Colombia" <${remitente}>`,
       ...opciones
     });
   }
@@ -64,7 +82,7 @@ class ServicioCorreo {
       to: email,
       subject: '¡Bienvenido a EGOS! 🎉',
       html
-    });
+    }, 'ventas'); // ventas@ envía bienvenidas
   }
 
   async enviarConfirmacionCompra(email, nombreUsuario, pedido) {
@@ -154,7 +172,7 @@ class ServicioCorreo {
       to: email,
       subject: `✅ Pedido #${pedido.id} confirmado — EGOS`,
       html
-    });
+    }, 'ventas'); // ventas@ envía confirmaciones de compra
   }
 
   async enviarCredencialesEmpleado(email, nombre, rol, password) {
@@ -208,7 +226,7 @@ class ServicioCorreo {
       to: email,
       subject: `👤 Bienvenido al equipo EGOS — Tus credenciales de acceso`,
       html
-    });
+    }, 'servicio'); // servicioalcliente@ envía credenciales internas
   }
 
   async enviarBonoBienvenida(email, nombreUsuario, codigo, porcentaje, fechaVencimiento) {
@@ -275,7 +293,7 @@ class ServicioCorreo {
       to: email,
       subject: `🎁 ¡${nombreCorto}, tienes un ${porcentaje}% de descuento en tu primera compra! — EGOS`,
       html
-    });
+    }, 'ventas'); // ventas@ envía bonos
   }
 
   async enviarRecuperacionContrasena(email, token, nombreUsuario) {
@@ -317,7 +335,7 @@ class ServicioCorreo {
       to: email,
       subject: 'Recuperación de Contraseña — EGOS',
       html
-    });
+    }, 'servicio'); // servicioalcliente@ envía recuperación
   }
 }
 

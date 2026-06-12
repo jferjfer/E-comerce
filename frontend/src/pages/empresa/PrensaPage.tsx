@@ -8,13 +8,13 @@ export default function PrensaPage() {
           ¿Eres periodista o medio de comunicación y quieres hablar sobre EGOS? Nos encantaría contarte nuestra historia.
         </p>
         <a
-          href="mailto:servicioalcliente@egoscolombia.com?subject=Solicitud%20de%20prensa%20-%20EGOS"
+          href="mailto:servicioalcliente@egoscolombia.com.co?subject=Solicitud%20de%20prensa%20-%20EGOS"
           className="inline-flex items-center gap-2 mt-6 bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors"
         >
           <i className="fas fa-envelope"></i>
           Contactar al equipo
         </a>
-        <p className="mt-3 text-xs text-gray-400">servicioalcliente@egoscolombia.com</p>
+        <p className="mt-3 text-xs text-gray-400">servicioalcliente@egoscolombia.com.co</p>
       </div>
     </div>
   )

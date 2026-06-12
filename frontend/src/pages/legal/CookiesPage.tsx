@@ -42,7 +42,7 @@ export default function CookiesPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Contacto</h2>
-            <p>Para consultas sobre nuestra política de cookies: servicioalcliente@egoscolombia.com</p>
+            <p>Para consultas sobre nuestra política de cookies: servicioalcliente@egoscolombia.com.co</p>
           </section>
 
         </div>

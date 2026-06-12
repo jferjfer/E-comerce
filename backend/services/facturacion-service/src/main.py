@@ -116,10 +116,12 @@ def obtener_siguiente_numero(db: Session) -> int:
     return contador.ultimo_numero
 
 def enviar_email_factura(email: str, nombre: str, numero: str, pdf_bytes: bytes, pedido_id: str):
-    smtp_user = os.getenv("SMTP_USER", "")
+    # servicioalcliente@ envía facturas electrónicas
+    smtp_user = os.getenv("SMTP_USER", "servicioalcliente@egoscolombia.com.co")
     smtp_pass = os.getenv("SMTP_PASS", "")
-    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT") or 587)
+    smtp_host = os.getenv("SMTP_HOST", "smtp.hostinger.com")
+    smtp_port = int(os.getenv("SMTP_PORT") or 465)
+    smtp_secure = os.getenv("SMTP_SECURE", "true").lower() == "true"
     frontend_url = os.getenv("FRONTEND_URL", "https://egoscolombia.com.co")
 
     if not smtp_user or not smtp_pass:
@@ -129,7 +131,7 @@ def enviar_email_factura(email: str, nombre: str, numero: str, pdf_bytes: bytes,
     try:
         msg = MIMEMultipart()
         msg["Subject"] = f"🧾 Tu factura electrónica EGOS - {numero}"
-        msg["From"] = f'"EGOS" <{smtp_user}>'
+        msg["From"] = f'"EGOS Colombia" <{smtp_user}>'
         msg["To"] = email
 
         html = f"""
@@ -175,10 +177,18 @@ def enviar_email_factura(email: str, nombre: str, numero: str, pdf_bytes: bytes,
         pdf_part.add_header("Content-Disposition", f'attachment; filename="{numero}.pdf"')
         msg.attach(pdf_part)
 
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_user, email, msg.as_string())
+        # Puerto 465 = SSL directo (Hostinger)
+        if smtp_secure or smtp_port == 465:
+            import ssl
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ctx) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, email, msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, email, msg.as_string())
 
         print(f"📧 Factura {numero} enviada a {email}")
     except Exception as e:

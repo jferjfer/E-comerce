@@ -9,7 +9,7 @@ export default function PrivacidadPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">1. Responsable del Tratamiento</h2>
-            <p><strong>VERTEL & CATILLO S.A.S</strong> — NIT 902.051.708-6<br />Carrera 107 A Bis 69 B 58, Bogotá D.C., Colombia<br />📧 servicioalcliente@egoscolombia.com</p>
+            <p><strong>VERTEL & CATILLO S.A.S</strong> — NIT 902.051.708-6<br />Carrera 107 A Bis 69 B 58, Bogotá D.C., Colombia<br />📧 servicioalcliente@egoscolombia.com.co</p>
           </section>
 
           <section>
@@ -55,7 +55,7 @@ export default function PrivacidadPage() {
               <li><strong>Revocar</strong> el consentimiento para el tratamiento</li>
               <li><strong>Presentar quejas</strong> ante la Superintendencia de Industria y Comercio (SIC)</li>
             </ul>
-            <p className="mt-2">Para ejercer estos derechos, escríbanos a servicioalcliente@egoscolombia.com con el asunto <em>"Derechos HABEAS DATA"</em>. Responderemos en un plazo máximo de 15 días hábiles.</p>
+            <p className="mt-2">Para ejercer estos derechos, escríbanos a servicioalcliente@egoscolombia.com.co con el asunto <em>"Derechos HABEAS DATA"</em>. Responderemos en un plazo máximo de 15 días hábiles.</p>
           </section>
 
           <section>

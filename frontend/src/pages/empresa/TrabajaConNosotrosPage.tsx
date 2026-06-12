@@ -1,5 +1,5 @@
 export default function TrabajaConNosotrosPage() {
-  const email = 'servicioalcliente@egoscolombia.com'
+  const email = 'servicioalcliente@egoscolombia.com.co'
   const asunto = 'Quiero trabajar en EGOS'
 
   return (

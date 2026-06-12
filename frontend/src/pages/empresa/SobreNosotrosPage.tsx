@@ -71,7 +71,7 @@ export default function SobreNosotrosPage() {
             <p><strong>Domicilio:</strong> Carrera 107 A Bis 69 B 58, Bogotá D.C., Colombia</p>
             <p><strong>Actividad principal:</strong> Comercio al por menor de prendas de vestir (CIIU 4771)</p>
             <p><strong>Régimen tributario:</strong> Régimen Simple de Tributación (SIMPLE)</p>
-            <p><strong>Correo:</strong> servicioalcliente@egoscolombia.com</p>
+            <p><strong>Correo:</strong> servicioalcliente@egoscolombia.com.co</p>
           </div>
         </section>
 

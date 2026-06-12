@@ -30,7 +30,7 @@ EMPRESA = {
     "razon_social": "VERTEL & CATILLO S.A.S",
     "nit": "902.051.708-6",
     "direccion": "Carrera 107 A Bis 69 B 58, Bogotá D.C.",
-    "email": "servicioalcliente@egoscolombia.com",
+    "email": "servicioalcliente@egoscolombia.com.co",
     "regimen": "SIMPLE",
     "ciiu_principal": "4771",
     "rep_legal": "JOSE FERNANDO VERTEL LOBATO"

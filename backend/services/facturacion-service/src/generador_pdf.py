@@ -109,7 +109,7 @@ def generar_pdf_factura(
         Paragraph("<b>VERTEL &amp; CATILLO S.A.S</b>", estilo('e1', fontSize=9, leading=12)),
         Paragraph("NIT: 902.051.708-6", estilo('e2', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
         Paragraph("CARRERA 107 A BIS 69 B 58, Bogotá D.C.", estilo('e3', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
-        Paragraph("servicioalcliente@egoscolombia.com", estilo('e4', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
+        Paragraph("servicioalcliente@egoscolombia.com.co", estilo('e4', fontSize=7, textColor=GRIS_TEXTO, leading=10)),
         Spacer(1, 4),
         Paragraph("Régimen Simple de Tributación (SIMPLE)", estilo('e5', fontSize=6, textColor=GRIS, leading=9)),
         Paragraph("Responsable de IVA — CIIU Principal: 4771 | Secundaria: 4642", estilo('e6', fontSize=6, textColor=GRIS, leading=9)),
@@ -361,7 +361,7 @@ def generar_pdf_factura(
     ))
     story.append(Spacer(1, 3))
     story.append(Paragraph(
-        f"Generado por EGOS — Wear Your Truth  |  servicioalcliente@egoscolombia.com  |  {fecha.strftime('%d/%m/%Y %I:%M %p')} (Hora Colombia)",
+        f"Generado por EGOS — Wear Your Truth  |  servicioalcliente@egoscolombia.com.co  |  {fecha.strftime('%d/%m/%Y %I:%M %p')} (Hora Colombia)",
         estilo('pie2', fontSize=6, textColor=GRIS, alignment=TA_CENTER, leading=8)
     ))
 

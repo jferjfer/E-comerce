@@ -42,7 +42,7 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400 text-xs">
               <li><i className="fas fa-phone mr-1.5 text-gold/60"></i>301 787 9852</li>
               <li><i className="fas fa-phone mr-1.5 text-gold/60"></i>314 811 3593</li>
-              <li><i className="fas fa-envelope mr-1.5 text-gold/60"></i>servicioalcliente@egoscolombia.com</li>
+              <li><i className="fas fa-envelope mr-1.5 text-gold/60"></i>servicioalcliente@egoscolombia.com.co</li>
               <li><i className="fas fa-clock mr-1.5 text-gold/60"></i>Lun-Vie 8AM-6PM</li>
             </ul>
           </div>

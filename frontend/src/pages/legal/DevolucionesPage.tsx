@@ -75,7 +75,7 @@ export default function DevolucionesPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">7. Contacto</h2>
-            <p>Para dudas sobre devoluciones:<br />📧 servicioalcliente@egoscolombia.com<br />📞 301 787 9852 — 314 811 3593<br />Lunes a viernes, 8:00 AM – 6:00 PM</p>
+            <p>Para dudas sobre devoluciones:<br />📧 servicioalcliente@egoscolombia.com.co<br />📞 301 787 9852 — 314 811 3593<br />Lunes a viernes, 8:00 AM – 6:00 PM</p>
           </section>
 
         </div>
