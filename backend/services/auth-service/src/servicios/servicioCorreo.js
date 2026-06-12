@@ -82,7 +82,7 @@ class ServicioCorreo {
       to: email,
       subject: '¡Bienvenido a EGOS! 🎉',
       html
-    }, 'ventas'); // ventas@ envía bienvenidas
+    }, 'servicio'); // servicioalcliente@ envía bienvenidas
   }
 
   async enviarConfirmacionCompra(email, nombreUsuario, pedido) {
@@ -293,7 +293,7 @@ class ServicioCorreo {
       to: email,
       subject: `🎁 ¡${nombreCorto}, tienes un ${porcentaje}% de descuento en tu primera compra! — EGOS`,
       html
-    }, 'ventas'); // ventas@ envía bonos
+    }, 'servicio'); // servicioalcliente@ envía bonos
   }
 
   async enviarRecuperacionContrasena(email, token, nombreUsuario) {

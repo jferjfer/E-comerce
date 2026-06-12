@@ -27,8 +27,8 @@ SMTP_HOST = os.getenv("SMTP_HOST", "smtp.hostinger.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 SMTP_SECURE = os.getenv("SMTP_SECURE", "true").lower() == "true"
 # ventas@ envía bonos de crédito y compensación
-SMTP_USER = os.getenv("SMTP_USER_VENTAS", os.getenv("SMTP_USER", "ventas@egoscolombia.com.co"))
-SMTP_PASS = os.getenv("SMTP_PASS_VENTAS", os.getenv("SMTP_PASS", ""))
+SMTP_USER = os.getenv("SMTP_USER", "servicioalcliente@egoscolombia.com.co")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://egoscolombia.com.co")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:3011")
 

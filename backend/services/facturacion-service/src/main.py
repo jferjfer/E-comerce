@@ -116,9 +116,9 @@ def obtener_siguiente_numero(db: Session) -> int:
     return contador.ultimo_numero
 
 def enviar_email_factura(email: str, nombre: str, numero: str, pdf_bytes: bytes, pedido_id: str):
-    # servicioalcliente@ envía facturas electrónicas
-    smtp_user = os.getenv("SMTP_USER", "servicioalcliente@egoscolombia.com.co")
-    smtp_pass = os.getenv("SMTP_PASS", "")
+    # ventas@ envía facturas electrónicas
+    smtp_user = os.getenv("SMTP_USER_VENTAS", "ventas@egoscolombia.com.co")
+    smtp_pass = os.getenv("SMTP_PASS_VENTAS", "")
     smtp_host = os.getenv("SMTP_HOST", "smtp.hostinger.com")
     smtp_port = int(os.getenv("SMTP_PORT") or 465)
     smtp_secure = os.getenv("SMTP_SECURE", "true").lower() == "true"
