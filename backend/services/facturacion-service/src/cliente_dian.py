@@ -142,7 +142,7 @@ def enviar_factura_dian(xml_string: str, numero_completo: str, nit_emisor: str =
             except Exception:
                 pass
 
-        if "Aceptada" in xml_respuesta or "aceptada" in xml_respuesta:
+        if "Aceptada" in xml_respuesta or "aceptada" in xml_respuesta or "autorizada" in xml_respuesta or "StatusCode>00" in xml_respuesta or "IsValid>true" in xml_respuesta:
             return {"exito": True, "estado": "Aceptada", "mensaje": "Factura aceptada por la DIAN", "xml_respuesta": xml_respuesta}
         elif "Rechazada" in xml_respuesta or "rechazada" in xml_respuesta:
             return {"exito": False, "estado": "Rechazada", "mensaje": f"Rechazada: {xml_respuesta[:300]}", "xml_respuesta": xml_respuesta}
