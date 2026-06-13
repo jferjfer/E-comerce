@@ -27,9 +27,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 DIAN_URL_PRUEBAS    = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
 DIAN_URL_PRODUCCION = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl"
 
-AMBIENTE    = os.getenv("DIAN_AMBIENTE", "2")
-# TestSetId real del portal DIAN habilitación
-TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "c537ef0b-2eb6-4149-9296-36d19e743ae2")
+AMBIENTE    = os.getenv("DIAN_AMBIENTE", "1")  # 1=produccion, 2=habilitacion
+TEST_SET_ID = os.getenv("DIAN_TEST_SET_ID", "8f493ed8-968c-44f3-bee6-fb2c54b4781e")
 NIT_EMISOR  = "902051708"
 
 P12_PATH     = os.getenv("DIAN_P12_PATH", "/app/certs/certificado.pfx")

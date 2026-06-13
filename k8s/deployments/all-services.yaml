@@ -652,6 +652,16 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: DIAN_TEST_SET_ID
+        - name: DIAN_RESOLUCION
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: DIAN_RESOLUCION
+        - name: DIAN_PREFIJO
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: DIAN_PREFIJO
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
