@@ -91,24 +91,23 @@ ai_tokens = Counter('ai_tokens_total', 'AI tokens used', ['type'])
 # ============================================
 PROMPTS = {
     "v3": {
-        "system": """Eres Noa, asesora de moda experta de EGOS Colombia.
+        "system": """Eres Noa, asesora experta de moda de EGOS Colombia. Eres cálida, directa y entusiasta.
 
-PERSONALIDAD: Cálida, directa, entusiasta. Hablas como una amiga experta en moda.
-
-REGLAS IMPORTANTES:
-1. SIEMPRE recomienda 2-3 productos PRIMERO antes de hacer preguntas
-2. Usa los IDs reales de los productos del catálogo
-3. Describe brevemente cada producto recomendado (sin mencionar el ID)
-4. Después de recomendar, haz UNA sola pregunta para afinar más
-5. Si el cliente pregunta por su pedido, responde con la info del pedido
-6. NUNCA digas (ID: X) en la respuesta visible
-7. Usa emojis con moderación ✨
-8. Respuestas cortas y directas — máximo 150 palabras
-9. Al final SIEMPRE incluye: PRODUCTOS_RECOMENDADOS: [id1, id2, id3]
-
-Si el cliente pregunta por su pedido y tienes la info, respóndele directamente.""",
+INSTRUCCIONES CRÍTICAS:
+1. SIEMPRE revisa el catálogo completo antes de responder — tienes TODOS los productos disponibles
+2. Si el cliente pide calzado, busca en la categoría CALZADO del catálogo
+3. Si el cliente pide algo y SÍ existe en el catálogo, recomiéndalo con su ID real
+4. Solo di "no tenemos" si revisaste el catálogo y realmente no hay esa categoría
+5. Recomienda 2-3 productos ESPECÍFICOS con sus IDs reales
+6. Describe brevemente cada producto (color, estilo, para qué ocasión)
+7. Haz UNA sola pregunta para afinar después de recomendar
+8. NUNCA menciones el ID en el texto visible — solo en PRODUCTOS_RECOMENDADOS
+9. Respuestas máximo 180 palabras, usa emojis con moderación ✨
+10. Al final SIEMPRE incluye exactamente: PRODUCTOS_RECOMENDADOS: [id1, id2, id3]
+11. Si preguntan por pedidos, usa la info de PEDIDOS DEL CLIENTE
+12. Habla como amiga experta en moda, no como robot""",
         "temp": 0.7,
-        "tokens": 500
+        "tokens": 600
     }
 }
 
@@ -305,18 +304,28 @@ async def chat_asistente(request: ChatRequest):
         contexto = await obtener_contexto_completo()
         prompt_config = get_prompt("v3")
 
-        # Solo productos EN STOCK con tallas disponibles
+        # TODOS los productos en stock sin límite artificial
         productos_en_stock = [
             p for p in contexto['productos']
-            if p.get('en_stock', True) and p.get('tallas')
-        ][:25]
+            if p.get('en_stock', True)
+        ]
 
-        productos_info = "\n".join([
-            f"ID={p.get('id')}, {p.get('nombre')}, {p.get('categoria')}, "
-            f"${p.get('precio'):,.0f}, Tallas: {','.join(p.get('tallas', []))}, "
-            f"Colores: {','.join(p.get('colores', []))}"
-            for p in productos_en_stock
-        ])
+        # Agrupar por categoría para darle mejor contexto a la IA
+        from collections import defaultdict
+        por_categoria = defaultdict(list)
+        for p in productos_en_stock:
+            por_categoria[p.get('categoria', 'General')].append(p)
+
+        # Formato más rico: categoría → productos
+        productos_info_parts = []
+        for cat, prods in sorted(por_categoria.items()):
+            cat_info = f"\n[{cat.upper()} - {len(prods)} productos]"
+            for p in prods:
+                tallas = ','.join(p.get('tallas', [])) or 'Talla única'
+                colores = ','.join(p.get('colores', [])) or 'Varios'
+                cat_info += f"\n  ID={p.get('id')}, {p.get('nombre')}, ${p.get('precio',0):,.0f}, Tallas:[{tallas}], Colores:[{colores}]"
+            productos_info_parts.append(cat_info)
+        productos_info = ''.join(productos_info_parts)
 
         # Contexto del usuario si está logueado
         contexto_usuario = ""
@@ -342,10 +351,10 @@ async def chat_asistente(request: ChatRequest):
 
         system_prompt = f"""{prompt_config['system']}
 
-PRODUCTOS DISPONIBLES EN STOCK ({len(productos_en_stock)} productos):
+CATÁLOGO COMPLETO EGOS ({len(productos_en_stock)} productos en {len(por_categoria)} categorías):
+Categorías disponibles: {', '.join(sorted(por_categoria.keys()))}
 {productos_info}
-
-CATEGORÍAS: {', '.join(contexto['categorias'])}{contexto_usuario}"""
+{contexto_usuario}"""
 
         # Historial completo para memoria de conversación
         mensajes = [{'role': 'system', 'content': system_prompt}]
