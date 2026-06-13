@@ -66,6 +66,8 @@ def obtener_rol_request(request: Request) -> Optional[str]:
 # Campos sensibles que solo ven roles internos
 CAMPOS_SENSIBLES = {'costo_adquisicion', 'proveedor_id', 'referencia_proveedor', 'precio_manual'}
 ROLES_INTERNOS = {'product_manager', 'category_manager', 'seller_premium', 'ceo', 'contador', 'cfo', 'operations_director'}
+
+def filtrar_campos_sensibles(producto: dict, rol: Optional[str]) -> dict:
     """Elimina campos sensibles si el rol no es interno"""
     if rol in ROLES_INTERNOS:
         return producto
