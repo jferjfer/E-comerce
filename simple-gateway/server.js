@@ -581,6 +581,38 @@ app.all('/api/categorias*', async (req, res) => {
   }
 });
 
+// FIX: Tendencias — catalog-service
+app.all('/api/tendencias*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${CATALOG_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 10000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+// FIX: Estilos IA — ai-service
+app.all('/api/estilos*', async (req, res) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: `${AI_URL}${req.url}`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 15000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 app.all('/api/carrito*', async (req, res) => {
   try {
     const response = await axios({
