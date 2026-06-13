@@ -19,8 +19,8 @@ const crearTransporter = (user, pass) => require('nodemailer').createTransport({
 
 // ventas@ — correos transaccionales de venta
 const transporterVentas = () => crearTransporter(
-  process.env.SMTP_USER_VENTAS || 'ventas@egoscolombia.com.co',
-  process.env.SMTP_PASS_VENTAS || ''
+  process.env.SMTP_USER_VENTAS || process.env.SMTP_USER || 'ventas@egoscolombia.com.co',
+  process.env.SMTP_PASS_VENTAS || process.env.SMTP_PASS || ''
 );
 
 // servicioalcliente@ — notificaciones de estado al cliente
@@ -31,8 +31,8 @@ const transporterServicio = () => crearTransporter(
 
 // FIX 3: Notificación interna a ventas@ cuando se crea un pedido nuevo
 async function notificarNuevoPedidoInterno(pedido, datosCliente) {
-  const smtp = process.env.SMTP_USER_VENTAS;
-  const pass = process.env.SMTP_PASS_VENTAS;
+  const smtp = process.env.SMTP_USER_VENTAS || process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS_VENTAS || process.env.SMTP_PASS;
   if (!smtp || !pass) return;
 
   const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
