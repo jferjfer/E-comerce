@@ -9,16 +9,111 @@ const nodemailer = require('nodemailer');
 const epayco = require('./epayco');
 const tiktok = require('./tiktok');
 
-// Transporter de correo (reutiliza config del auth-service via env)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
+// Transporter de correo — Hostinger SSL puerto 465
+const crearTransporter = (user, pass) => require('nodemailer').createTransport({
+  host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+  port: parseInt(process.env.SMTP_PORT) || 465,
+  secure: true, // Puerto 465 = SSL directo
+  auth: { user, pass }
 });
+
+// ventas@ — correos transaccionales de venta
+const transporterVentas = () => crearTransporter(
+  process.env.SMTP_USER_VENTAS || 'ventas@egoscolombia.com.co',
+  process.env.SMTP_PASS_VENTAS || ''
+);
+
+// servicioalcliente@ — notificaciones de estado al cliente
+const transporterServicio = () => crearTransporter(
+  process.env.SMTP_USER || 'servicioalcliente@egoscolombia.com.co',
+  process.env.SMTP_PASS || ''
+);
+
+// FIX 3: Notificación interna a ventas@ cuando se crea un pedido nuevo
+async function notificarNuevoPedidoInterno(pedido, datosCliente) {
+  const smtp = process.env.SMTP_USER_VENTAS;
+  const pass = process.env.SMTP_PASS_VENTAS;
+  if (!smtp || !pass) return;
+
+  const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
+  const urlAdmin = `${process.env.FRONTEND_URL || 'https://egoscolombia.com.co'}/admin`;
+
+  const productosHtml = (pedido.productos || []).map(p => `
+    <tr>
+      <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#374151">${p.nombre || 'Producto EGOS'}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:13px;color:#6b7280">${p.cantidad}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:13px;font-weight:700;color:#111827">${fmt(p.precio * p.cantidad)}</td>
+    </tr>`).join('');
+
+  const html = `
+  <!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+  <body style="margin:0;padding:0;background:#f3f4f6;font-family:'Helvetica Neue',Arial,sans-serif">
+    <div style="max-width:600px;margin:0 auto;background:#ffffff">
+      <div style="background:#111827;padding:28px 40px;text-align:center">
+        <span style="font-size:28px;font-weight:900;color:#c5a47e;letter-spacing:-2px">E</span>
+        <div style="font-size:16px;font-weight:700;color:#ffffff;letter-spacing:8px;text-transform:uppercase">EGOS</div>
+        <div style="font-size:9px;color:#c5a47e;letter-spacing:3px;margin-top:2px;text-transform:uppercase">Wear Your Truth</div>
+      </div>
+      <div style="background:#f59e0b;padding:20px 40px;text-align:center">
+        <div style="font-size:32px">🛍️</div>
+        <h1 style="color:#111827;margin:8px 0 0;font-size:20px;font-weight:800">¡Nuevo Pedido Recibido!</h1>
+        <p style="color:#111827;margin:4px 0 0;font-size:13px;opacity:0.8">Pedido <strong>#${pedido.id}</strong> — ${new Date().toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' })}</p>
+      </div>
+      <div style="padding:32px 40px">
+        <div style="display:flex;gap:12px;margin-bottom:24px">
+          <div style="flex:1;background:#faf8f5;border-radius:8px;padding:14px;border:1px solid #e5e7eb">
+            <p style="margin:0 0 4px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">Cliente</p>
+            <p style="margin:0;font-size:14px;font-weight:600;color:#111827">${datosCliente.nombre || 'N/A'}</p>
+            <p style="margin:2px 0 0;font-size:12px;color:#6b7280">${datosCliente.email || ''}</p>
+          </div>
+          <div style="flex:1;background:#faf8f5;border-radius:8px;padding:14px;border:1px solid #e5e7eb">
+            <p style="margin:0 0 4px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">Total</p>
+            <p style="margin:0;font-size:20px;font-weight:800;color:#c5a47e">${fmt(pedido.total)}</p>
+          </div>
+          <div style="flex:1;background:#faf8f5;border-radius:8px;padding:14px;border:1px solid #e5e7eb">
+            <p style="margin:0 0 4px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">Método</p>
+            <p style="margin:0;font-size:13px;font-weight:600;color:#111827">${pedido.metodo_pago || 'ePayco'}</p>
+          </div>
+        </div>
+        <div style="background:#faf8f5;border-radius:10px;overflow:hidden;margin-bottom:24px;border:1px solid #e5e7eb">
+          <div style="background:#111827;padding:10px 16px">
+            <p style="margin:0;font-size:11px;font-weight:700;color:#c5a47e;letter-spacing:2px;text-transform:uppercase">Productos del pedido</p>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#f5f0eb">
+              <th style="padding:8px 16px;text-align:left;font-size:10px;color:#9ca3af;text-transform:uppercase">Producto</th>
+              <th style="padding:8px 16px;text-align:center;font-size:10px;color:#9ca3af;text-transform:uppercase">Cant.</th>
+              <th style="padding:8px 16px;text-align:right;font-size:10px;color:#9ca3af;text-transform:uppercase">Subtotal</th>
+            </tr></thead>
+            <tbody>${productosHtml}</tbody>
+            <tfoot><tr style="background:#111827">
+              <td colspan="2" style="padding:12px 16px;font-weight:700;color:#c5a47e;font-size:14px">Total pedido</td>
+              <td style="padding:12px 16px;text-align:right;font-weight:800;color:#c5a47e;font-size:16px">${fmt(pedido.total)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+        <div style="text-align:center">
+          <a href="${urlAdmin}" style="display:inline-block;background:#111827;color:#c5a47e;padding:14px 36px;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:1px">Ver en Dashboard →</a>
+        </div>
+      </div>
+      <div style="background:#111827;padding:20px 40px;text-align:center">
+        <p style="margin:0;font-size:10px;color:#6b7280">EGOS Colombia — Notificación interna de ventas · egoscolombia.com.co</p>
+      </div>
+    </div>
+  </body></html>`;
+
+  try {
+    await transporterVentas().sendMail({
+      from: `"EGOS Ventas" <${smtp}>`,
+      to: smtp, // ventas@egoscolombia.com.co
+      subject: `🛍️ Nuevo pedido #${pedido.id} — ${fmt(pedido.total)} | EGOS`,
+      html
+    });
+    console.log(`📧 Notificación interna de nuevo pedido enviada a ${smtp}`);
+  } catch (err) {
+    console.log(`⚠️ No se pudo enviar notificación interna:`, err.message);
+  }
+}
 
 const MENSAJES_ESTADO = {
   Confirmado: {
@@ -102,8 +197,8 @@ async function enviarNotificacionEstado(email, nombreUsuario, pedidoId, nuevoEst
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"EGOS" <${process.env.SMTP_USER}>`,
+    await transporterVentas().sendMail({
+      from: `"EGOS Colombia" <${process.env.SMTP_USER_VENTAS || 'ventas@egoscolombia.com.co'}>`,
       to: email,
       subject: `${info.emoji} Pedido #${pedidoId} — ${nuevoEstado} | EGOS`,
       html
@@ -244,8 +339,8 @@ async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"EGOS" <${process.env.SMTP_USER}>`,
+    await transporterVentas().sendMail({
+      from: `"EGOS Colombia" <${process.env.SMTP_USER_VENTAS || 'ventas@egoscolombia.com.co'}>`,
       to: email,
       subject: `✨ ¡Tu pedido #${pedido.id} está confirmado! — EGOS`,
       html
@@ -1052,6 +1147,14 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       sala: 'admins',
       datos: { pedidoId, total: carrito.total, usuario_id: usuarioId, estado: 'Creado', metodo_pago }
     }, { timeout: 2000 }).catch(() => {});
+
+    // FIX 3: Notificación interna a ventas@ con los datos del pedido
+    notificarNuevoPedidoInterno({
+      id: pedidoId,
+      productos: carrito.productos,
+      total: totalFinal,
+      metodo_pago
+    }, datosUsuario).catch(() => {});
 
     // Guardar datos del usuario en el pedido para usarlos al confirmar
     // (se usarán cuando el admin cambie el estado a Confirmado)
