@@ -9,7 +9,7 @@ zeep==4.2.1
 lxml==4.9.3
 cryptography==41.0.7
 signxml==3.2.1
-qrcode==7.4.2
+qrcode==8.2
 Pillow==10.1.0
 reportlab==4.0.7
 python-dateutil==2.8.2
