@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
-    "@hookform/resolvers": "^3.3.2",
+    "@hookform/resolvers": "^5.2.2",
     "@types/dompurify": "^3.0.5",
     "@types/jest": "^30.0.0",
     "dompurify": "^3.0.6",
