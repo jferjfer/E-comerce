@@ -67,7 +67,7 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
       
       {items.length > 0 && (
         <div className="border-t pt-4 mt-4">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-3">
             <span className="text-lg font-bold">Total: {formatPrice(obtenerPrecioTotal())}</span>
             <button
               onClick={vaciarCarrito}
@@ -76,7 +76,7 @@ export default function CartModal({ isOpen, onClose, onCheckout }: CartModalProp
               Limpiar carrito
             </button>
           </div>
-          <button 
+<button
             onClick={onCheckout}
             className="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition-colors"
           >

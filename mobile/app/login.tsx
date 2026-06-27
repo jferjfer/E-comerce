@@ -6,22 +6,34 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
+import { sanitize, verificarRateLimit } from '@/utils/security';
 import { COLORS, RADIUS, SPACING, SHADOW } from '@/constants';
 import EgosLogo from '@/components/EgosLogo';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [verPassword, setVerPassword] = useState(false);
+  const [verPass, setVerPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const { iniciarSesion, errorLogin } = useAuthStore();
+  const addNotification = useNotificationStore(s => s.addNotification);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) return;
+    // Rate limiting cliente
+    const rl = verificarRateLimit(email.trim());
+    if (!rl.permitido) {
+      addNotification(`Demasiados intentos. Espera ${rl.esperarSegundos}s`, 'error');
+      return;
+    }
     setLoading(true);
-    const ok = await iniciarSesion(email.trim(), password);
+    const ok = await iniciarSesion(sanitize.email(email), password);
     setLoading(false);
-    if (ok) router.replace('/(tabs)/');
+    if (ok) {
+      addNotification('¡Bienvenido de vuelta!', 'success');
+      router.replace('/(tabs)/');
+    }
   };
 
   return (
@@ -30,30 +42,29 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle="light-content" backgroundColor={COLORS.negroHeader} />
-
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Fondo negro con logo */}
+        {/* Header negro con logo */}
         <View style={styles.logoArea}>
           <EgosLogo size="lg" showSlogan />
         </View>
 
-        {/* Formulario */}
+        {/* Card blanca formulario */}
         <View style={styles.form}>
           <Text style={styles.titulo}>Iniciar Sesión</Text>
           <Text style={styles.subtitulo}>Bienvenido de vuelta</Text>
 
-          {errorLogin && (
+          {errorLogin ? (
             <View style={styles.errorBox}>
               <Text style={styles.errorTxt}>⚠️ {errorLogin}</Text>
             </View>
-          )}
+          ) : null}
 
           {/* Email */}
-          <View style={styles.inputGroup}>
+          <View style={styles.grupo}>
             <Text style={styles.label}>Correo electrónico</Text>
             <View style={styles.inputBox}>
               <Text style={styles.inputIcon}>✉️</Text>
@@ -71,7 +82,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Password */}
-          <View style={styles.inputGroup}>
+          <View style={styles.grupo}>
             <Text style={styles.label}>Contraseña</Text>
             <View style={styles.inputBox}>
               <Text style={styles.inputIcon}>🔒</Text>
@@ -81,20 +92,18 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 placeholder="••••••••"
                 placeholderTextColor={COLORS.textoGrisSub}
-                secureTextEntry={!verPassword}
+                secureTextEntry={!verPass}
               />
-              <TouchableOpacity onPress={() => setVerPassword(!verPassword)}>
-                <Text style={styles.inputIcon}>{verPassword ? '🙈' : '👁️'}</Text>
+              <TouchableOpacity onPress={() => setVerPass(!verPass)}>
+                <Text style={styles.inputIcon}>{verPass ? '🙈' : '👁️'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Link recuperar */}
-          <TouchableOpacity style={styles.olvidaste} onPress={() => {}}>
-            <Text style={styles.olvidasteLink}>¿Olvidaste tu contraseña?</Text>
+          <TouchableOpacity style={styles.olvidaste} onPress={() => router.push('/recuperar-contrasena')}>
+            <Text style={styles.olvidasteTxt}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 
-          {/* Botón login */}
           <TouchableOpacity
             style={[styles.btnLogin, loading && { opacity: 0.7 }]}
             onPress={handleLogin}
@@ -106,14 +115,12 @@ export default function LoginScreen() {
             }
           </TouchableOpacity>
 
-          {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerTxt}>o</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Registro */}
           <TouchableOpacity
             style={styles.btnRegistro}
             onPress={() => router.push('/registro')}
@@ -121,7 +128,6 @@ export default function LoginScreen() {
             <Text style={styles.btnRegistroTxt}>Crear una cuenta</Text>
           </TouchableOpacity>
 
-          {/* Invitado */}
           <TouchableOpacity onPress={() => router.replace('/(tabs)/')}>
             <Text style={styles.linkInvitado}>Continuar como invitado →</Text>
           </TouchableOpacity>
@@ -134,36 +140,22 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.negroHeader },
   scroll: { flexGrow: 1 },
-
   logoArea: {
     backgroundColor: COLORS.negroHeader,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 44,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-
   form: {
     flex: 1,
     backgroundColor: COLORS.fondoCard,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: SPACING.xxl,
-    minHeight: 500,
+    minHeight: 520,
   },
-
-  titulo: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: COLORS.textoNegro,
-    marginBottom: 4,
-  },
-  subtitulo: {
-    fontSize: 14,
-    color: COLORS.textoGrisMid,
-    marginBottom: 24,
-  },
-
+  titulo: { fontSize: 24, fontWeight: '800', color: COLORS.textoNegro, marginBottom: 4 },
+  subtitulo: { fontSize: 14, color: COLORS.textoGrisMid, marginBottom: 24 },
   errorBox: {
     backgroundColor: '#fef2f2',
     borderRadius: RADIUS.md,
@@ -172,18 +164,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fecaca',
   },
-  errorTxt: {
-    color: '#ef4444',
-    fontSize: 13,
-  },
-
-  inputGroup: { marginBottom: 16 },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textoGris,
-    marginBottom: 6,
-  },
+  errorTxt: { color: '#ef4444', fontSize: 13 },
+  grupo: { marginBottom: 16 },
+  label: { fontSize: 13, fontWeight: '600', color: COLORS.textoGris, marginBottom: 6 },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -196,19 +179,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inputIcon: { fontSize: 16 },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: COLORS.textoNegro,
-    padding: 0,
-  },
-
+  input: { flex: 1, fontSize: 15, color: COLORS.textoNegro, padding: 0 },
   olvidaste: { alignItems: 'flex-end', marginBottom: 20, marginTop: -4 },
-  olvidasteLink: {
-    fontSize: 13,
-    color: COLORS.textoGrisMid,
-  },
-
+  olvidasteTxt: { fontSize: 13, color: COLORS.textoGrisMid },
   btnLogin: {
     backgroundColor: COLORS.dorado,
     borderRadius: RADIUS.md,
@@ -216,28 +189,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...SHADOW.sm,
   },
-  btnLoginTxt: {
-    color: COLORS.negro,
-    fontWeight: '700',
-    fontSize: 16,
-  },
-
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.bordeClaro,
-  },
-  dividerTxt: {
-    fontSize: 13,
-    color: COLORS.textoGrisSub,
-  },
-
+  btnLoginTxt: { color: COLORS.negro, fontWeight: '700', fontSize: 16 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.bordeClaro },
+  dividerTxt: { fontSize: 13, color: COLORS.textoGrisSub },
   btnRegistro: {
     borderWidth: 1.5,
     borderColor: COLORS.negro,
@@ -246,16 +201,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  btnRegistroTxt: {
-    color: COLORS.negro,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-
-  linkInvitado: {
-    textAlign: 'center',
-    fontSize: 13,
-    color: COLORS.textoGrisMid,
-    padding: 8,
-  },
+  btnRegistroTxt: { color: COLORS.negro, fontWeight: '600', fontSize: 15 },
+  linkInvitado: { textAlign: 'center', fontSize: 13, color: COLORS.textoGrisMid, padding: 8 },
 });

@@ -1,6 +1,24 @@
 // Constantes de diseño EGOS — idénticos al frontend web
 export const API_URL = 'https://api.egoscolombia.com.co';
 
+export const FONTS = {
+  bold: 'System',
+  regular: 'System',
+};
+
+// Responsive helpers
+import { Dimensions } from 'react-native';
+const { width, height } = Dimensions.get('window');
+export const SCREEN = { width, height };
+export const isSmall = width < 375;  // iPhone SE, pequeños
+export const isMedium = width >= 375 && width < 414; // iPhone estándar
+export const isLarge = width >= 414;  // iPhone Plus, grandes
+// Escalar fuente según pantalla
+export const rf = (size: number) => {
+  const scale = width / 390; // base iPhone 14
+  return Math.round(size * Math.min(Math.max(scale, 0.85), 1.15));
+};
+
 export const COLORS = {
   // Colores principales
   negro:        '#111827',

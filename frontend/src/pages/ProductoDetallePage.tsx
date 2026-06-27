@@ -233,6 +233,26 @@ export default function ProductoDetallePage() {
             {/* Precio */}
             <p className="text-3xl font-bold text-primary">{formatPrice(producto.precio)}</p>
 
+            {/* Addi — cuotas informativas (banner estático hasta aprobación) */}
+            {producto.en_stock && producto.precio >= 50000 && (
+              <div className="flex items-center gap-2.5 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
+                <span className="text-sm text-gray-600">
+                  3 cuotas de{' '}
+                  <span className="font-bold text-gray-900">
+                    {formatPrice(Math.ceil(producto.precio / 3))}
+                  </span>
+                  {' '}desde 0% con
+                </span>
+                <img
+                  src="https://addi.com/assets/images/addi-logo.svg"
+                  alt="Addi"
+                  className="h-4 w-auto"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+                <span className="text-xs text-gray-400 ml-auto">Próximamente</span>
+              </div>
+            )}
+
             {/* Stock badge */}
             <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full w-fit ${
               producto.en_stock

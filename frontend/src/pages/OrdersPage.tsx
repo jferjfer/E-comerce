@@ -21,6 +21,9 @@ interface Pedido {
   total: number
   fecha_creacion: string
   productos: ProductoPedido[]
+  tracking_number?: string
+  carrier?: string
+  metodo_pago?: string
 }
 
 export default function OrdersPage() {
@@ -249,6 +252,29 @@ export default function OrdersPage() {
                       <i className="fas fa-history mr-2"></i>
                       Ver seguimiento
                     </button>
+                    {/* Tracking Skydropx */}
+                    {pedido.tracking_number && (
+                      <a
+                        href={`https://skydropx.com/tracking/${pedido.tracking_number}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-purple-600 hover:text-purple-700 font-semibold text-sm"
+                      >
+                        <i className="fas fa-truck mr-2"></i>
+                        Rastrear envío ({pedido.carrier || 'Courier'})
+                      </a>
+                    )}
+                    {/* Descargar factura */}
+                    <a
+                      href={`${API_URL}/api/facturas/pedido/${pedido.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 hover:text-gray-900 font-semibold text-sm"
+                      title="Ver factura electrónica"
+                    >
+                      <i className="fas fa-file-invoice mr-2"></i>
+                      Factura
+                    </a>
                     {!devoluciones[pedido.id] && pedido.estado !== 'Cancelado' && (
                       <button
                         onClick={() => solicitarDevolucion(pedido.id)}

@@ -9,19 +9,34 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#111827"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.egoscolombia.app"
+      "bundleIdentifier": "com.egoscolombia.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "EGOS necesita acceso a la cámara para el probador virtual de ropa.",
+        "NSPhotoLibraryUsageDescription": "EGOS necesita acceso a tus fotos para el probador virtual de ropa.",
+        "NSFaceIDUsageDescription": "EGOS usa Face ID para proteger tu cuenta."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#111827"
       },
-      "package": "com.egoscolombia.app"
+      "package": "com.egoscolombia.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +44,13 @@
     "scheme": "egos",
     "plugins": [
       "expo-router",
-      "expo-font"
-    ]
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "egos-colombia"
+      }
+    }
   }
 }

@@ -28,11 +28,18 @@ export default function HomePage() {
     busqueda: '',
     ordenar: 'relevancia'
   })
+  const [busquedaInput, setBusquedaInput] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
   const PRODUCTOS_POR_PAGINA = 24
   const [mostrarModalAdultos, setMostrarModalAdultos] = useState(false)
   const [lenceriaConfirmada, setLenceriaConfirmada] = useState(false)
   const CATEGORIAS_RESTRINGIDAS = ['Lencería']
+
+  // Debounce búsqueda 300ms
+  useEffect(() => {
+    const t = setTimeout(() => actualizarFiltro({ busqueda: busquedaInput }), 300)
+    return () => clearTimeout(t)
+  }, [busquedaInput])
 
   // Cargar todos los productos del backend
   useEffect(() => {
@@ -114,6 +121,7 @@ export default function HomePage() {
       busqueda: '',
       ordenar: 'relevancia'
     })
+    setBusquedaInput('')
     setPaginaActual(1)
   }
 
@@ -188,8 +196,8 @@ export default function HomePage() {
             <input
               type="text"
               placeholder="Buscar..."
-              value={filtros.busqueda}
-              onChange={(e) => actualizarFiltro({ busqueda: e.target.value })}
+              value={busquedaInput}
+              onChange={(e) => { setBusquedaInput(e.target.value); setPaginaActual(1); }}
               className="flex-shrink-0 border border-gray-300 rounded-lg px-2 py-1.5 text-xs sm:text-sm w-28 sm:w-40 focus:ring-2 focus:ring-gray-400/20"
             />
 

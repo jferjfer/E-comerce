@@ -10,6 +10,7 @@ export default function EpaycoRespuestaPage() {
   const { token } = useAuthStore()
   const [estado, setEstado] = useState<'cargando' | 'exitoso' | 'pendiente' | 'fallido'>('cargando')
   const [detalle, setDetalle] = useState('')
+  const [pedidoData, setPedidoData] = useState<any>(null)
 
   // Parámetros que envía ePayco
   const x_response          = params.get('x_response') || ''
@@ -132,6 +133,7 @@ export default function EpaycoRespuestaPage() {
       const pedido = data.pedidos?.find((p: any) => p.id === pedidoId)
       if (pedido) {
         if (pedido.estado === 'Confirmado' || pedido.estado === 'Enviado' || pedido.estado === 'Entregado') {
+          setPedidoData(pedido)
           setEstado('exitoso')
           setDetalle('Tu pago fue procesado correctamente.')
         } else if (pedido.estado === 'Cancelado' || pedido.estado === 'Rechazado') {
@@ -243,7 +245,7 @@ export default function EpaycoRespuestaPage() {
             )}
             {parseFloat(x_amount) > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Total</span>
+                <span className="text-gray-500">Total pagado</span>
                 <span className="font-bold text-gray-800">{formatPrice(parseFloat(x_amount))}</span>
               </div>
             )}
@@ -253,6 +255,29 @@ export default function EpaycoRespuestaPage() {
                 <span className="font-mono text-xs text-gray-600">{x_ref_payco}</span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Resumen de productos del pedido */}
+        {estado === 'exitoso' && pedidoData?.productos && pedidoData.productos.length > 0 && (
+          <div className="text-left border border-gray-100 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Productos comprados</p>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {pedidoData.productos.slice(0, 4).map((p: any, i: number) => (
+                <div key={i} className="flex justify-between items-center px-4 py-2.5">
+                  <span className="text-sm text-gray-700 truncate max-w-[60%]">{p.nombre || `Producto #${p.id}`}</span>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-xs text-gray-400">x{p.cantidad}</span>
+                    <span className="text-sm font-semibold text-gray-800 ml-2">{formatPrice(p.precio_unitario * p.cantidad)}</span>
+                  </div>
+                </div>
+              ))}
+              {pedidoData.productos.length > 4 && (
+                <p className="px-4 py-2 text-xs text-gray-400">+{pedidoData.productos.length - 4} productos más</p>
+              )}
+            </div>
           </div>
         )}
 

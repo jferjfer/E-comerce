@@ -1,0 +1,13 @@
+# Ignorar archivos innecesarios en el build de EAS
+.git
+.github
+node_modules
+*.test.ts
+*.test.tsx
+*.spec.ts
+**/__tests__/**
+**/test/**
+.env.local
+.env.development
+Captura desde*
+test-mobile.sh

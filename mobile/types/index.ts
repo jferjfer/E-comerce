@@ -11,6 +11,8 @@ export interface Producto {
   colores?: string[];
   calificacion: number;
   en_stock: boolean;
+  es_eco?: boolean;
+  compatibilidad?: number;
   sku?: string;
 }
 
@@ -40,13 +42,4 @@ export interface Pedido {
   total: number;
   fecha_creacion: string;
   productos?: any[];
-}
-
-export interface Factura {
-  id: string;
-  numero: string;
-  total: number;
-  estado: string;
-  fecha: string;
-  cufe: string;
 }

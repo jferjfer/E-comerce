@@ -1,6 +1,7 @@
 import { API_URL } from '@/config/api';
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import EgosLogo from '@/components/EgosLogo';
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -8,57 +9,44 @@ const ResetPasswordPage = () => {
   const [token, setToken] = useState('');
   const [nuevaContrasena, setNuevaContrasena] = useState('');
   const [confirmarContrasena, setConfirmarContrasena] = useState('');
+  const [verPass, setVerPass] = useState(false);
+  const [verConfirmar, setVerConfirmar] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
   const [exito, setExito] = useState(false);
 
   useEffect(() => {
     const tokenUrl = searchParams.get('token');
-    if (tokenUrl) {
-      setToken(tokenUrl);
-    } else {
-      setMensaje('Token de recuperación no válido');
-    }
+    if (tokenUrl) setToken(tokenUrl);
+    else setMensaje('El enlace de recuperación no es válido o ha expirado.');
   }, [searchParams]);
 
   const manejarEnvio = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCargando(true);
-    setMensaje('');
-
     if (nuevaContrasena !== confirmarContrasena) {
       setMensaje('Las contraseñas no coinciden');
-      setCargando(false);
       return;
     }
-
-    if (nuevaContrasena.length < 6) {
-      setMensaje('La contraseña debe tener al menos 6 caracteres');
-      setCargando(false);
+    if (nuevaContrasena.length < 8) {
+      setMensaje('La contraseña debe tener al menos 8 caracteres');
       return;
     }
-
+    setCargando(true);
+    setMensaje('');
     try {
       const respuesta = await fetch(`${API_URL}/api/auth/restablecer-contrasena`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, nuevaContrasena }),
       });
-
       const datos = await respuesta.json();
-
       if (respuesta.ok) {
-        setMensaje(datos.mensaje);
         setExito(true);
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
+        setTimeout(() => navigate('/login'), 3000);
       } else {
         setMensaje(datos.error || 'Error al restablecer la contraseña');
       }
-    } catch (error) {
+    } catch {
       setMensaje('Error de conexión. Intenta de nuevo.');
     } finally {
       setCargando(false);
@@ -67,28 +55,23 @@ const ResetPasswordPage = () => {
 
   if (exito) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 text-green-600">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-10">
+            <EgosLogo size="md" showSlogan />
+          </div>
+          <div className="bg-white rounded-2xl p-8 text-center space-y-4 shadow-xl">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <i className="fas fa-check text-emerald-600 text-2xl"></i>
             </div>
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Contraseña Restablecida
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              {mensaje}
-            </p>
-            <p className="mt-4 text-sm text-gray-500">
-              Serás redirigido al login en unos segundos...
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900">¡Contraseña actualizada!</h2>
+            <p className="text-gray-500 text-sm">Serás redirigido al inicio de sesión en unos segundos...</p>
             <Link
               to="/login"
-              className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="block w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors text-sm"
+              style={{ color: '#c5a47e' }}
             >
-              Ir al Login
+              Ir al inicio de sesión
             </Link>
           </div>
         </div>
@@ -96,22 +79,25 @@ const ResetPasswordPage = () => {
     );
   }
 
-  if (!token) {
+  if (!token && mensaje) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Token Inválido
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              El enlace de recuperación no es válido o ha expirado.
-            </p>
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-10">
+            <EgosLogo size="md" showSlogan />
+          </div>
+          <div className="bg-white rounded-2xl p-8 text-center space-y-4 shadow-xl">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <i className="fas fa-times text-red-500 text-2xl"></i>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Enlace inválido</h2>
+            <p className="text-gray-500 text-sm">{mensaje}</p>
             <Link
               to="/recuperar-contrasena"
-              className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="block w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors text-sm"
+              style={{ color: '#c5a47e' }}
             >
-              Solicitar Nuevo Enlace
+              Solicitar nuevo enlace
             </Link>
           </div>
         </div>
@@ -120,75 +106,74 @@ const ResetPasswordPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Restablecer Contraseña
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Ingresa tu nueva contraseña
-          </p>
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-10">
+          <EgosLogo size="md" showSlogan />
         </div>
-        <form className="mt-8 space-y-6" onSubmit={manejarEnvio}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="nuevaContrasena" className="sr-only">
-                Nueva Contraseña
-              </label>
-              <input
-                id="nuevaContrasena"
-                name="nuevaContrasena"
-                type="password"
-                required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Nueva contraseña"
-                value={nuevaContrasena}
-                onChange={(e) => setNuevaContrasena(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmarContrasena" className="sr-only">
-                Confirmar Contraseña
-              </label>
-              <input
-                id="confirmarContrasena"
-                name="confirmarContrasena"
-                type="password"
-                required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Confirmar contraseña"
-                value={confirmarContrasena}
-                onChange={(e) => setConfirmarContrasena(e.target.value)}
-              />
-            </div>
+        <div className="bg-white rounded-2xl p-8 shadow-xl space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900">Nueva contraseña</h2>
+            <p className="text-gray-500 text-sm mt-1">Crea una contraseña segura para tu cuenta</p>
           </div>
 
-          {mensaje && (
-            <div className={`text-sm text-center ${mensaje.includes('Error') || mensaje.includes('coinciden') || mensaje.includes('caracteres') ? 'text-red-600' : 'text-green-600'}`}>
-              {mensaje}
+          <form onSubmit={manejarEnvio} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
+              <div className="relative">
+                <input
+                  type={verPass ? 'text' : 'password'}
+                  required
+                  value={nuevaContrasena}
+                  onChange={(e) => setNuevaContrasena(e.target.value)}
+                  placeholder="Mín. 8 caracteres"
+                  className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+                <button type="button" onClick={() => setVerPass(!verPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <i className={`fas ${verPass ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                </button>
+              </div>
             </div>
-          )}
 
-          <div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+              <div className="relative">
+                <input
+                  type={verConfirmar ? 'text' : 'password'}
+                  required
+                  value={confirmarContrasena}
+                  onChange={(e) => setConfirmarContrasena(e.target.value)}
+                  placeholder="Repite tu contraseña"
+                  className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+                <button type="button" onClick={() => setVerConfirmar(!verConfirmar)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <i className={`fas ${verConfirmar ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                </button>
+              </div>
+            </div>
+
+            {mensaje && (
+              <p className="text-red-600 text-sm text-center">{mensaje}</p>
+            )}
+
             <button
               type="submit"
               disabled={cargando}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm"
+              style={{ color: '#c5a47e' }}
             >
-              {cargando ? 'Restableciendo...' : 'Restablecer Contraseña'}
+              {cargando ? 'Guardando...' : 'Guardar nueva contraseña'}
             </button>
-          </div>
+          </form>
 
           <div className="text-center">
-            <Link
-              to="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              Volver al Login
+            <Link to="/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              ← Volver al inicio de sesión
             </Link>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
