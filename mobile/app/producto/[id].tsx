@@ -496,14 +496,18 @@ export default function ProductoDetallePage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.fondoCard },
-  galeria: { width, height: width * 1.2, position: 'relative', backgroundColor: COLORS.fondoGris, overflow: 'hidden' },
-  imgPrincipal: { width, height: width * 1.2 },
+  galeria: { width, height: width * 1.333, position: 'relative', backgroundColor: '#f5f0eb', overflow: 'hidden' },
+  imgPrincipal: {
+    width,
+    height: width * 1.333,
+    backgroundColor: '#f5f0eb',
+  },
   dotsRow: {
     position: 'absolute', bottom: 12, left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'center', gap: 6,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
   },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)' },
-  dotActivo: { width: 20, backgroundColor: COLORS.blanco },
+  dot: { width: 20, height: 2, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.35)' },
+  dotActivo: { width: 32, height: 2.5, borderRadius: 1.5, backgroundColor: COLORS.dorado },
   imgCounter: {
     position: 'absolute', top: 12, right: 12,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -575,7 +579,7 @@ const styles = StyleSheet.create({
   resenaFecha: { fontSize: 11, color: COLORS.textoGrisSub },
   resenaComentario: { fontSize: 13, color: COLORS.textoGrisMid, lineHeight: 18 },
   relCard: { width: 140, backgroundColor: COLORS.fondoCard, borderRadius: RADIUS.lg, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.bordeClaro, ...SHADOW.sm },
-  relImg: { width: '100%', height: 140 },
+  relImg: { width: '100%', height: 180, backgroundColor: '#f5f0eb' },
   seccionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   btnSeccion: { backgroundColor: COLORS.fondoGris, paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.bordeClaro },
   btnSeccionTxt: { fontSize: 12, color: COLORS.negro, fontWeight: '600' },
