@@ -435,6 +435,8 @@ aplicacion.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 aplicacion.use(express.json({ limit: '10mb' }));
+// BUG-01 FIX: ePayco envía el webhook como application/x-www-form-urlencoded
+aplicacion.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging middleware detallado
 aplicacion.use((req, res, next) => {
@@ -469,15 +471,16 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error(`   └─ Reason:`, reason);
 });
 
-// Función para generar IDs personalizados
+// BUG-06 FIX: generarId con crypto para evitar colisiones
 function generarId(prefijo) {
   const ahora = new Date();
   const año = ahora.getFullYear().toString().slice(-2);
   const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
   const dia = ahora.getDate().toString().padStart(2, '0');
   const fecha = `${año}${mes}${dia}`;
-  const secuencial = Math.floor(Math.random() * 99999).toString().padStart(5, '0');
-  return `${prefijo}${fecha}${secuencial}`;
+  // 4 bytes = 8 hex chars → 4.294.967.296 combinaciones, colisión prácticamente imposible
+  const aleatorio = require('crypto').randomBytes(4).toString('hex').toUpperCase();
+  return `${prefijo}${fecha}${aleatorio}`;
 }
 
 // Funciones de base de datos
@@ -1086,11 +1089,11 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       );
     }
     
-    // Crear pago con ID personalizado
+    // BUG-04 FIX: pago nace en Pendiente, no Aprobado — se actualiza cuando ePayco confirma
     const pagoId = generarId('PG');
     await pool.query(
       'INSERT INTO pago (id, id_pedido, tipo_pago, monto, estado, metodo) VALUES ($1, $2, $3, $4, $5, $6)',
-      [pagoId, pedidoId, metodo_pago || 'Tarjeta', totalFinal, 'Aprobado', metodo_pago || 'Tarjeta de Crédito']
+      [pagoId, pedidoId, metodo_pago || 'Tarjeta', totalFinal, 'Pendiente', metodo_pago || 'Tarjeta de Crédito']
     );
 
     // Limpiar carrito del backend
@@ -1754,20 +1757,42 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
     console.log(`💳 ePayco — Pedido ${pedidoId}: ${descripcion} (código: ${codigoRespuesta})`);
 
     // Actualizar estado del pedido
-    const pedidoActual = await pool.query('SELECT id, estado, usuario_id, total FROM pedido WHERE id = $1', [pedidoId]);
+    // BUG-05 FIX: SELECT FOR UPDATE dentro de transacción para evitar race condition
+    const client = await pool.connect();
+    let pedido;
+    try {
+      await client.query('BEGIN');
+      const pedidoActual = await client.query(
+        'SELECT id, estado, usuario_id, total, descuento_bono, codigo_bono FROM pedido WHERE id = $1 FOR UPDATE',
+        [pedidoId]
+      );
+      if (pedidoActual.rows.length === 0) {
+        await client.query('ROLLBACK');
+        client.release();
+        console.error(`❌ Pedido ${pedidoId} no encontrado en webhook ePayco`);
+        return res.status(404).json({ error: 'Pedido no encontrado' });
+      }
+      pedido = pedidoActual.rows[0];
 
-    if (pedidoActual.rows.length === 0) {
-      console.error(`❌ Pedido ${pedidoId} no encontrado en webhook ePayco`);
-      return res.status(404).json({ error: 'Pedido no encontrado' });
+      // BUG-05 FIX: idempotencia — si ya está Confirmado o Cancelado, no procesar de nuevo
+      if (pedido.estado === 'Confirmado' || pedido.estado === 'Cancelado') {
+        await client.query('ROLLBACK');
+        client.release();
+        console.log(`⚠️ Webhook duplicado ignorado para pedido ${pedidoId} (estado: ${pedido.estado})`);
+        return res.json({ ok: true, estado: pedido.estado, pedido_id: pedidoId, duplicado: true });
+      }
+
+      await client.query(
+        'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
+        [estado, pedidoId]
+      );
+      await client.query('COMMIT');
+    } catch (txError) {
+      await client.query('ROLLBACK');
+      client.release();
+      throw txError;
     }
-
-    const pedido = pedidoActual.rows[0];
-
-    // Actualizar estado del pedido — el trigger registra en historial automáticamente
-    await pool.query(
-      'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
-      [estado, pedidoId]
-    );
+    client.release();
 
     // Actualizar comentario del registro del trigger con info de ePayco
     await pool.query(
@@ -1848,11 +1873,20 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
         fecha: new Date().toISOString()
       }, { timeout: 3000 }).catch(e => console.log(`⚠️ Error asiento contable ePayco: ${e.message}`));
 
-      // Actualizar total de compras del usuario
+      // BUG-09 FIX: usar JWT_SECRETO para generar token interno si INTERNAL_TOKEN no existe
+      const tokenInterno = process.env.INTERNAL_TOKEN || (() => {
+        try {
+          return require('jsonwebtoken').sign(
+            { id: 0, rol: 'sistema', email: 'sistema@egos.internal' },
+            process.env.JWT_SECRETO,
+            { expiresIn: '5m' }
+          );
+        } catch { return ''; }
+      })();
       axios.put('http://auth-service:3011/api/usuarios/total-compras', {
         nuevoTotal: parseFloat(pedido.total)
       }, {
-        headers: { Authorization: `Bearer ${process.env.INTERNAL_TOKEN || ''}` },
+        headers: { Authorization: `Bearer ${tokenInterno}` },
         timeout: 3000
       }).catch(e => console.log('⚠️ No se pudo actualizar total compras:', e.message));
 

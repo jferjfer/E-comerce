@@ -164,7 +164,14 @@ export default function EpaycoRespuestaPage() {
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
-      const ultimo = data.pedidos?.[0]
+      // BUG-13 FIX: solo considerar pedidos creados en los últimos 30 minutos
+      const ahora = Date.now()
+      const TREINTA_MIN = 30 * 60 * 1000
+      const pedidosRecientes = (data.pedidos || []).filter((p: any) => {
+        const creado = new Date(p.fecha_creacion).getTime()
+        return ahora - creado < TREINTA_MIN
+      })
+      const ultimo = pedidosRecientes[0]
       if (ultimo) {
         if (ultimo.estado === 'Confirmado' || ultimo.estado === 'Enviado' || ultimo.estado === 'Entregado') {
           setEstado('exitoso')
@@ -181,7 +188,7 @@ export default function EpaycoRespuestaPage() {
         }
       } else {
         setEstado('pendiente')
-        setDetalle('No se encontraron pedidos. Verifica en "Mis Pedidos".')
+        setDetalle('No se encontraron pedidos recientes. Verifica en "Mis Pedidos".')
       }
     } catch {
       setEstado('pendiente')

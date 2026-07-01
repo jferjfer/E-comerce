@@ -35,10 +35,11 @@ const estaConfigurado = () => {
 
 // ============================================
 // GENERAR FIRMA DE SEGURIDAD
-// Fórmula: MD5(p_cust_id + p_key + x_ref_payco + x_transaction_id + x_amount + x_currency_code)
+// Fórmula oficial ePayco: MD5(p_cust_id^p_key^x_ref_payco^x_transaction_id^x_amount^x_currency_code)
+// Separador ^ obligatorio entre cada campo
 // ============================================
 const generarFirma = (refPayco, transactionId, amount, currencyCode) => {
-  const cadena = `${EPAYCO_CONFIG.p_cust_id}${EPAYCO_CONFIG.p_key}${refPayco}${transactionId}${amount}${currencyCode}`;
+  const cadena = `${EPAYCO_CONFIG.p_cust_id}^${EPAYCO_CONFIG.p_key}^${refPayco}^${transactionId}^${amount}^${currencyCode}`;
   return crypto.createHash('md5').update(cadena).digest('hex');
 };
 
@@ -47,11 +48,14 @@ const generarFirma = (refPayco, transactionId, amount, currencyCode) => {
 // ============================================
 const verificarFirmaWebhook = (datos) => {
   const { x_ref_payco, x_transaction_id, x_amount, x_currency_code, x_signature } = datos;
+  if (!x_ref_payco || !x_transaction_id || !x_amount || !x_currency_code || !x_signature) {
+    console.error('❌ Webhook ePayco: faltan campos para verificar firma');
+    return false;
+  }
   const firmaEsperada = generarFirma(x_ref_payco, x_transaction_id, x_amount, x_currency_code);
-  console.log(`🔐 Firma esperada: ${firmaEsperada} | Firma recibida: ${x_signature}`);
-  // En modo test, aceptar siempre
-  if (EPAYCO_CONFIG.test) return true;
-  return firmaEsperada === x_signature;
+  const coincide = firmaEsperada === x_signature;
+  console.log(`🔐 Firma esperada: ${firmaEsperada} | Firma recibida: ${x_signature} | Válida: ${coincide}`);
+  return coincide;
 };
 
 // ============================================
@@ -73,8 +77,9 @@ const generarDatosWidget = (pedido, cliente) => {
     invoice:      pedido.id,
     currency:     EPAYCO_CONFIG.currency,
     amount:       monto,
-    tax_base:     (parseFloat(monto) / 1.19).toFixed(2),  // Base sin IVA
-    tax:          (parseFloat(monto) - parseFloat(monto) / 1.19).toFixed(2), // IVA 19%
+    // Ropa colombiana: IVA 0% cuando precio < 4 UVT (~$185.000 COP) — Art. 468-1 ET
+    tax_base:     monto,
+    tax:          '0',
     country:      EPAYCO_CONFIG.country,
     lang:         EPAYCO_CONFIG.lang,
     

@@ -26,12 +26,12 @@ export default function SuccessStep({ orderId, onClose, metodoPago, cuotaMensual
       {/* Título */}
       <div>
         <h3 className="text-2xl font-bold text-gray-900">
-          {esEfectivo ? '¡Pedido creado!' : '¡Pago exitoso!'}
+          {esEfectivo ? '¡Pedido creado!' : '¡Pedido recibido!'}
         </h3>
         <p className="text-gray-500 mt-1 text-sm">
           {esEfectivo
             ? 'Realiza el pago en Efecty o Baloto para confirmar tu pedido'
-            : 'Tu pedido ha sido confirmado y está siendo preparado'}
+            : 'Tu pedido fue recibido. Recibirás un correo cuando el pago sea confirmado.'}
         </p>
       </div>
 

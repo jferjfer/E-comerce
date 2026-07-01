@@ -5,7 +5,8 @@ import {
   Image, Modal
 } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
+import BtnVolver from '@/components/BtnVolver';
 import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -50,6 +51,19 @@ const step = StyleSheet.create({
   linea: { flex: 1, height: 2, backgroundColor: COLORS.bordeMedio, maxWidth: 60 },
   lineaActivo: { backgroundColor: COLORS.dorado },
 });
+
+// BUG-16 FIX: escapar strings para interpolación segura en HTML/JS
+function escJS(s: any): string {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")  // comillas simples
+    .replace(/"/g, '\\"')  // comillas dobles
+    .replace(/\n/g, '\\n') // saltos de línea
+    .replace(/\r/g, '\\r')
+    .replace(/`/g, '\\`')  // backticks
+    .replace(/<\/script>/gi, '<\/script>'); // cierre de script
+}
 
 // ── Widget ePayco en WebView ─────────────────────────────────
 function EpaycoWebView({
@@ -115,21 +129,22 @@ function EpaycoWebView({
     function abrir() {
       if (!window.ePayco || !window.ePayco.checkout) { err('ePayco no carg\u00f3. Verifica tu conexi\u00f3n.'); return; }
       try {
-        var h = window.ePayco.checkout.configure({ key:'${datosWidget.public_key}', test:${datosWidget.test} });
+        // BUG-16 FIX: todos los valores ya vienen escapados con escJS()
+        var h = window.ePayco.checkout.configure({ key:'${escJS(datosWidget.public_key)}', test:${datosWidget.test} });
         document.getElementById('loading').style.display='none';
         log('Abriendo widget...');
         var params = {
-          name:'${datosWidget.name}',description:'${datosWidget.description}',
-          invoice:'${datosWidget.invoice}',currency:'${datosWidget.currency}',
-          amount:'${datosWidget.amount}',tax_base:'${datosWidget.tax_base}',tax:'${datosWidget.tax}',
-          country:'${datosWidget.country}',lang:'${datosWidget.lang}',
-          response:'${datosWidget.response}',confirmation:'${datosWidget.confirmation}',
-          name_billing:'${datosWidget.name_billing}',address_billing:'${datosWidget.address_billing}',
-          type_doc_billing:'${datosWidget.type_doc_billing}',mobilephone_billing:'${datosWidget.mobilephone_billing}',
-          number_doc_billing:'${datosWidget.number_doc_billing}',email_billing:'${datosWidget.email_billing}',
-          extra1:'${datosWidget.extra1}',extra2:'${datosWidget.extra2}',extra3:'${datosWidget.extra3}'
+          name:'${escJS(datosWidget.name)}',description:'${escJS(datosWidget.description)}',
+          invoice:'${escJS(datosWidget.invoice)}',currency:'${escJS(datosWidget.currency)}',
+          amount:'${escJS(datosWidget.amount)}',tax_base:'${escJS(datosWidget.tax_base)}',tax:'${escJS(datosWidget.tax)}',
+          country:'${escJS(datosWidget.country)}',lang:'${escJS(datosWidget.lang)}',
+          response:'${escJS(datosWidget.response)}',confirmation:'${escJS(datosWidget.confirmation)}',
+          name_billing:'${escJS(datosWidget.name_billing)}',address_billing:'${escJS(datosWidget.address_billing)}',
+          type_doc_billing:'${escJS(datosWidget.type_doc_billing)}',mobilephone_billing:'${escJS(datosWidget.mobilephone_billing)}',
+          number_doc_billing:'${escJS(datosWidget.number_doc_billing)}',email_billing:'${escJS(datosWidget.email_billing)}',
+          extra1:'${escJS(datosWidget.extra1)}',extra2:'${escJS(datosWidget.extra2)}',extra3:'${escJS(datosWidget.extra3)}'
         };
-        var metodo = '${metodoPago}';
+        var metodo = '${escJS(metodoPago)}';
         if(metodo==='pse')       { params.p_type_doc_billing='PSE';       params.p_type_doc='PSE'; }
         if(metodo==='efectivo')  { params.p_type_doc_billing='CASH';      params.p_type_doc='CASH'; }
         if(metodo==='nequi')     { params.p_type_doc_billing='NEQUI';     params.p_type_doc='NEQUI'; }
@@ -514,13 +529,14 @@ export default function CheckoutScreen() {
 
   const onPagoExitoso = async () => {
     setDatosEpayco(null);
-    // Aplicar bono si existe
+    // BUG-17 FIX: aplicar bono y vaciar carrito después de que ePayco confirma
+    // El webhook del backend confirmará el pedido de forma independiente
     if (bonoValidado?.valido && usuario && orderId) {
       await api.aplicarBono(codigoBono.trim().toUpperCase(), usuario.id, orderId).catch(() => {});
     }
     vaciarCarrito();
     haptic.checkoutExito();
-    addNotification('¡Pedido realizado con éxito! 🎉', 'success');
+    addNotification('¡Pedido recibido! Recibirás confirmación por correo 📧', 'success');
     setStep(3);
   };
 
@@ -539,6 +555,7 @@ export default function CheckoutScreen() {
   if (step === 1) {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <BtnVolver titulo="FINALIZAR COMPRA" />
         <StepIndicator current={1} total={2} />
         <Text style={styles.titulo}>¿Cómo quieres pagar?</Text>
         <Text style={styles.subtitulo}>Selecciona un método de pago</Text>
@@ -736,8 +753,8 @@ export default function CheckoutScreen() {
       <View style={styles.exitoIconWrap}>
         <Text style={{ fontSize: 36, color: COLORS.blanco }}>✓</Text>
       </View>
-      <Text style={styles.exitoTitulo}>¡Pago exitoso!</Text>
-      <Text style={styles.exitoSub}>Tu pedido ha sido confirmado y está siendo preparado</Text>
+      <Text style={styles.exitoTitulo}>¡Pedido recibido!</Text>
+      <Text style={styles.exitoSub}>Tu pedido fue recibido. Recibirás un correo cuando el pago sea confirmado.</Text>
 
       {orderId && (
         <View style={styles.exitoOrden}>

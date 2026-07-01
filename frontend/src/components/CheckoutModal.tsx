@@ -124,6 +124,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       return
     }
 
+    // BUG-10 FIX: verificar ePayco ANTES de crear el pedido
+    if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod) && !epaycoActivo) {
+      setError('La pasarela de pagos no está disponible en este momento. Intenta más tarde.')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     setPlazoCredito(plazo)
@@ -163,15 +169,9 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       // Todos los métodos externos van por ePayco
       if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod)) {
-        if (epaycoActivo) {
-          setPedidoParaEpayco(pedidoId)
-          setIsLoading(false)
-          return
-        } else {
-          setError('La pasarela de pagos no está disponible.')
-          setIsLoading(false)
-          return
-        }
+        setPedidoParaEpayco(pedidoId)
+        setIsLoading(false)
+        return
       }
 
       // Crédito interno
@@ -295,6 +295,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   token={token}
                   metodoPago={selectedMethod}
                   onExito={async () => {
+                    // BUG-14 FIX: aplicar bono DESPUÉS de que ePayco confirma, no antes
+                    // El bono se aplica aquí solo como registro — la confirmación real viene del webhook
                     if (bonoValidadoRef.current?.valido && usuario) {
                       await api.aplicarBono(codigoBonoRef.current.trim().toUpperCase(), usuario.id, pedidoParaEpayco!)
                     }

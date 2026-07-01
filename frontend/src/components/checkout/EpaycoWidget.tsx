@@ -57,36 +57,45 @@ export default function EpaycoWidget({ pedidoId, total, token, metodoPago, onExi
 
   // Escuchar respuesta de ePayco via postMessage
   useEffect(() => {
+    // BUG-12 FIX: flag para evitar que onExito se llame más de una vez
+    let procesado = false
+
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== 'https://checkout.epayco.co') return
-
       const { data } = event
       if (!data) return
+      if (procesado) return  // ignorar mensajes duplicados
 
       console.log('📩 Respuesta ePayco:', data)
-
       const motivo = data.x_response_reason_text || ''
       const codigo = String(data.x_response_code_transaction || '')
 
       if (data.x_response === 'Aceptada' || codigo === '1') {
+        procesado = true
         onExito()
       } else if (data.x_response === 'Cancelada') {
+        procesado = true
         onCancelado()
       } else if (data.x_response === 'Pendiente' || codigo === '3' || codigo === '7') {
+        procesado = true
         onError(`Tu pago está pendiente de confirmación. ${motivo ? motivo + '.' : 'Recibirás un correo cuando sea aprobado.'}`)
       } else if (data.x_response === 'Rechazada' || codigo === '2') {
-        const mensajeRechazo = motivo || 'Pago rechazado'
-        onError(`Pago rechazado: ${mensajeRechazo}. Verifica los datos de tu tarjeta o intenta con otro método.`)
+        procesado = true
+        onError(`Pago rechazado: ${motivo || 'Pago rechazado'}. Verifica los datos de tu tarjeta o intenta con otro método.`)
       } else if (data.x_response === 'Fallida' || codigo === '4') {
-        const mensajeFalla = motivo || 'Error en la transacción'
-        onError(`Pago fallido: ${mensajeFalla}. Intenta de nuevo o usa otro método de pago.`)
+        procesado = true
+        onError(`Pago fallido: ${motivo || 'Error en la transacción'}. Intenta de nuevo o usa otro método de pago.`)
       } else if (codigo === '6') {
+        procesado = true
         onError(`Pago reversado: ${motivo || 'La transacción fue reversada'}. Contacta a tu banco si tienes dudas.`)
       }
     }
 
     window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
+    return () => {
+      window.removeEventListener('message', handleMessage)
+      procesado = true  // al desmontar, bloquear cualquier mensaje tardío
+    }
   }, [onExito, onError, onCancelado])
 
   const abrirWidget = async () => {
