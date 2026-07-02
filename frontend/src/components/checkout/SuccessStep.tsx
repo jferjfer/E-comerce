@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice } from '@/utils/sanitize'
+import { API_URL } from '@/config/api'
 
 interface SuccessStepProps {
   orderId: string | null
@@ -9,10 +11,172 @@ interface SuccessStepProps {
   plazo?: number
 }
 
+// ADDI_TEMP: formulario de datos de envío post-pago para flujo sin login
+// Revertir cuando ADDI apruebe: eliminar FormularioEnvio y mostrar directamente los botones
+function FormularioEnvio({ orderId, onGuardado }: { orderId: string; onGuardado: () => void }) {
+  const [nombre, setNombre] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [direccion, setDireccion] = useState('')
+  const [ciudad, setCiudad] = useState('')
+  const [departamento, setDepartamento] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+
+  const guardar = async () => {
+    if (!nombre.trim() || !telefono.trim() || !direccion.trim() || !ciudad.trim()) {
+      setError('Nombre, teléfono, dirección y ciudad son obligatorios')
+      return
+    }
+    setGuardando(true)
+    setError('')
+    try {
+      const res = await fetch(`${API_URL}/api/pedidos/${orderId}/datos-envio`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, telefono, direccion, ciudad, departamento })
+      })
+      if (res.ok) {
+        onGuardado()
+      } else {
+        const d = await res.json()
+        setError(d.error || 'Error guardando datos')
+      }
+    } catch {
+      setError('Error de conexión. Intenta de nuevo.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4 text-left">
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 text-center">¿A dónde enviamos tu pedido?</h3>
+        <p className="text-sm text-gray-500 text-center mt-1">Ingresa tus datos para coordinar la entrega</p>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Nombre completo *</label>
+          <input
+            type="text"
+            value={nombre}
+            onChange={e => setNombre(e.target.value)}
+            placeholder="Tu nombre completo"
+            className="w-full mt-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="tu@email.com (para confirmación)"
+            className="w-full mt-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Teléfono / WhatsApp *</label>
+          <input
+            type="tel"
+            value={telefono}
+            onChange={e => setTelefono(e.target.value)}
+            placeholder="3XX XXX XXXX"
+            className="w-full mt-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Dirección de entrega *</label>
+          <input
+            type="text"
+            value={direccion}
+            onChange={e => setDireccion(e.target.value)}
+            placeholder="Calle, carrera, número, barrio"
+            className="w-full mt-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Ciudad *</label>
+            <input
+              type="text"
+              value={ciudad}
+              onChange={e => setCiudad(e.target.value)}
+              placeholder="Bogotá"
+              className="w-full mt-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Departamento</label>
+            <input
+              type="text"
+              value={departamento}
+              onChange={e => setDepartamento(e.target.value)}
+              placeholder="Cundinamarca"
+              className="w-full mt-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <p className="text-xs text-red-600 flex items-center gap-1">
+          <i className="fas fa-exclamation-circle"></i> {error}
+        </p>
+      )}
+
+      <button
+        onClick={guardar}
+        disabled={guardando}
+        className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm hover:bg-secondary transition-colors disabled:opacity-50"
+      >
+        {guardando
+          ? <><i className="fas fa-circle-notch fa-spin mr-2"></i>Guardando...</>
+          : <><i className="fas fa-truck mr-2"></i>Confirmar datos de envío</>
+        }
+      </button>
+    </div>
+  )
+}
+// FIN ADDI_TEMP
+
 export default function SuccessStep({ orderId, onClose, metodoPago, cuotaMensual, plazo }: SuccessStepProps) {
   const navigate = useNavigate()
   const esCredito = metodoPago === 'credito_interno'
   const esEfectivo = metodoPago === 'efectivo'
+
+  // ADDI_TEMP: estado para controlar si ya se guardaron los datos de envío
+  // Revertir cuando ADDI apruebe: eliminar este estado y el condicional de abajo
+  const [envioGuardado, setEnvioGuardado] = useState(false)
+
+  // ADDI_TEMP: mostrar formulario de envío antes de la pantalla de éxito final
+  if (orderId && !envioGuardado) {
+    return (
+      <div className="py-4 space-y-4">
+        {/* Icono de pago exitoso */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
+            <i className="fas fa-check text-white text-2xl"></i>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-gray-900">¡Pago recibido!</p>
+            <p className="text-xs text-gray-500">Pedido <span className="font-mono font-bold">#{orderId}</span></p>
+          </div>
+        </div>
+
+        <div className="border-t pt-4">
+          <FormularioEnvio orderId={orderId} onGuardado={() => setEnvioGuardado(true)} />
+        </div>
+      </div>
+    )
+  }
+  // FIN ADDI_TEMP
 
   return (
     <div className="text-center py-6 space-y-6">

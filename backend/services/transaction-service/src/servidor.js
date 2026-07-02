@@ -956,7 +956,21 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
   }
 });
 
-aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
+// ADDI_TEMP: checkout sin autenticación obligatoria
+// Cuando ADDI apruebe, revertir a: aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
+const checkoutMiddleware = async (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (token) {
+    try {
+      const decoded = require('jsonwebtoken').verify(token, JWT_SECRET);
+      req.usuario = { id: decoded.id, email: decoded.email, rol: decoded.rol };
+    } catch {}
+  }
+  // Sin token: usuario invitado con id 0
+  if (!req.usuario) req.usuario = { id: 0, email: '', rol: 'cliente' };
+  next();
+};
+aplicacion.post('/api/checkout', checkoutMiddleware, async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
     const { metodo_pago, direccion_envio, items: itemsFrontend, descuento_bono = 0, codigo_bono = null } = req.body;
@@ -1671,7 +1685,20 @@ aplicacion.get('/api/pagos/epayco/estado', (req, res) => {
 });
 
 // Obtener datos del widget para un pedido
-aplicacion.post('/api/pagos/epayco/widget', autenticacion, async (req, res) => {
+// ADDI_TEMP: acepta token opcional para invitados
+// Revertir a autenticacion cuando ADDI apruebe
+const widgetMiddleware = async (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (token) {
+    try {
+      const decoded = require('jsonwebtoken').verify(token, JWT_SECRET);
+      req.usuario = { id: decoded.id, email: decoded.email, rol: decoded.rol };
+    } catch {}
+  }
+  if (!req.usuario) req.usuario = { id: 0, email: '', rol: 'cliente' };
+  next();
+};
+aplicacion.post('/api/pagos/epayco/widget', widgetMiddleware, async (req, res) => {
   try {
     const { pedido_id } = req.body;
     const usuarioId = req.usuario.id;
@@ -1683,11 +1710,14 @@ aplicacion.post('/api/pagos/epayco/widget', autenticacion, async (req, res) => {
       });
     }
 
-    // Obtener pedido
-    const pedidoResult = await pool.query(
-      'SELECT * FROM pedido WHERE id = $1 AND usuario_id = $2',
-      [pedido_id, parseInt(usuarioId)]
-    );
+    // ADDI_TEMP: invitados tienen usuario_id=0, buscar solo por pedido_id
+    const condicionPedido = req.usuario.id === 0
+      ? 'SELECT * FROM pedido WHERE id = $1'
+      : 'SELECT * FROM pedido WHERE id = $1 AND usuario_id = $2';
+    const paramsPedido = req.usuario.id === 0
+      ? [pedido_id]
+      : [pedido_id, parseInt(req.usuario.id)];
+    const pedidoResult = await pool.query(condicionPedido, paramsPedido);
 
     if (pedidoResult.rows.length === 0) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -1917,6 +1947,45 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
   } catch (error) {
     console.error('Error procesando webhook ePayco:', error.message);
     res.status(500).json({ error: 'Error procesando confirmación' });
+  }
+});
+
+// ============================================
+// ADDI_TEMP: Endpoint para guardar datos de envío sin auth
+// Usado en flujo de pago sin login para ADDI
+// Revertir cuando ADDI apruebe: eliminar este endpoint
+// ============================================
+aplicacion.put('/api/pedidos/:pedidoId/datos-envio', async (req, res) => {
+  try {
+    const { pedidoId } = req.params;
+    const { nombre, email, telefono, direccion, ciudad, departamento } = req.body;
+
+    if (!nombre || !telefono || !direccion || !ciudad) {
+      return res.status(400).json({ error: 'Nombre, teléfono, dirección y ciudad son obligatorios' });
+    }
+
+    await pool.query(
+      `UPDATE pedido SET
+        cliente_nombre = $1,
+        cliente_email = $2,
+        cliente_telefono = $3,
+        cliente_direccion = $4,
+        fecha_actualizacion = CURRENT_TIMESTAMP
+       WHERE id = $5`,
+      [
+        nombre.trim(),
+        email?.trim() || '',
+        telefono.trim(),
+        `${direccion.trim()}, ${ciudad.trim()}${departamento ? ', ' + departamento.trim() : ''}`,
+        pedidoId
+      ]
+    );
+
+    console.log(`📦 Datos de envío guardados para pedido ${pedidoId}`);
+    res.json({ mensaje: 'Datos de envío guardados exitosamente' });
+  } catch (error) {
+    console.error('Error guardando datos de envío:', error.message);
+    res.status(500).json({ error: 'Error guardando datos de envío' });
   }
 });
 

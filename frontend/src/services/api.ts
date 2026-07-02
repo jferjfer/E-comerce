@@ -580,6 +580,26 @@ export const api = {
   },
 
   // ============================================
+  // ADDI_TEMP: guardar datos de envío sin auth
+  // Revertir cuando ADDI apruebe: eliminar este método
+  // ============================================
+  async guardarDatosEnvio(pedidoId: string, datos: {
+    nombre: string; email?: string; telefono: string;
+    direccion: string; ciudad: string; departamento?: string
+  }) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoId}/datos-envio`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      })
+      return res.ok ? { exito: true } : { exito: false, error: 'Error guardando datos' }
+    } catch {
+      return { exito: false, error: 'Error de conexión' }
+    }
+  },
+
+  // ============================================
   // BONOS
   // ============================================
 

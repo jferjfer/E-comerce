@@ -53,14 +53,14 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   React.useEffect(() => { totalRef.current = total }, [total])
 
   useEffect(() => {
-    if (isOpen && estaAutenticado && usuario?.rol === 'cliente' && token) {
+    if (isOpen) {
       fetch(`${API_URL}/api/pagos/epayco/estado`)
         .then(r => r.json())
         .then(d => setEpaycoActivo(d.configurado))
         .catch(() => setEpaycoActivo(false))
       tiktokPixel.initiateCheckout(total)
     }
-  }, [isOpen, estaAutenticado, usuario, token])
+  }, [isOpen])
 
   // Reset completo al cerrar
   useEffect(() => {
@@ -97,6 +97,9 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setValidandoBono(false)
   }
 
+  // ADDI_TEMP: bloqueo de login comentado para flujo sin registro
+  // Revertir cuando ADDI apruebe: descomentar el bloque de abajo
+  /*
   if (isOpen && !estaAutenticado) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
@@ -116,13 +119,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       </Modal>
     )
   }
+  */
 
   const processPayment = async (plazo?: number) => {
-    if (!token || !usuario) return
-    if (usuario.rol !== 'cliente') {
-      setError('Solo los clientes pueden realizar compras')
-      return
-    }
+    // ADDI_TEMP: no requerir token ni usuario para pago como invitado
+    // Revertir cuando ADDI apruebe:
+    // if (!token || !usuario) return
+    // if (usuario.rol !== 'cliente') { setError('Solo los clientes pueden realizar compras'); return }
 
     // BUG-10 FIX: verificar ePayco ANTES de crear el pedido
     if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod) && !epaycoActivo) {
@@ -144,9 +147,10 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     console.log('processPayment — bono:', bonoActual?.valido, 'monto:', montoBonoActual, 'total:', totalFinal)
 
     try {
-      const resultado = await api.procesarCheckout(token, {
+      // ADDI_TEMP: token opcional para invitados
+      const resultado = await api.procesarCheckout(token || '', {
         metodoPago: selectedMethod,
-        direccion_envio: 'Dirección predeterminada',
+        direccion_envio: 'Por confirmar',
         descuento_bono: montoBonoActual,
         codigo_bono: bonoActual?.valido ? codigoActual.trim().toUpperCase() : null,
         items: items.map(item => ({
@@ -283,7 +287,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               montoBono={montoBono}
             />
 
-            {pedidoParaEpayco && ['pago_en_linea','pse','efectivo','nequi','daviplata'].includes(selectedMethod) && token && (
+            {pedidoParaEpayco && ['pago_en_linea','pse','efectivo','nequi','daviplata'].includes(selectedMethod) && (
               <div className="mt-4 space-y-3">
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
                   <i className="fas fa-check-circle text-blue-500 mr-1"></i>
@@ -292,11 +296,10 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 <EpaycoWidget
                   pedidoId={pedidoParaEpayco}
                   total={Math.max(0, totalRef.current - (bonoValidadoRef.current?.valido ? bonoValidadoRef.current.monto : 0))}
-                  token={token}
+                  token={token || ''}
                   metodoPago={selectedMethod}
                   onExito={async () => {
-                    // BUG-14 FIX: aplicar bono DESPUÉS de que ePayco confirma, no antes
-                    // El bono se aplica aquí solo como registro — la confirmación real viene del webhook
+                    // BUG-14 FIX: aplicar bono DESPUÉS de que ePayco confirma
                     if (bonoValidadoRef.current?.valido && usuario) {
                       await api.aplicarBono(codigoBonoRef.current.trim().toUpperCase(), usuario.id, pedidoParaEpayco!)
                     }
