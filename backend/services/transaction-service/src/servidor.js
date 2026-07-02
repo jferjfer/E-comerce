@@ -353,7 +353,7 @@ async function enviarConfirmacionCompra(email, nombreUsuario, pedido) {
 
 const aplicacion = express();
 const puerto = process.env.PUERTO || 3003;
-// v2.2.0 — WebSocket fix + historial sin duplicados
+// v2.3.0 — fix ePayco: urlencoded, firma, idempotencia, crypto IDs
 
 // Crear tabla pedido_historial si no existe
 async function inicializarBaseDatos() {
