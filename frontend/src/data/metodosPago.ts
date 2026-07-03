@@ -7,5 +7,12 @@ export const metodosPago: MetodoPago[] = [
     tipo: 'externo',
     descripcion: 'Tarjeta, PSE, Nequi, Daviplata, Efecty — procesado por ePayco',
     icono: 'fas fa-credit-card'
+  },
+  {
+    id: 'sistecredito',
+    nombre: 'Sistecredito',
+    tipo: 'externo',
+    descripcion: 'Paga a cuotas con tu crédito Sistecredito',
+    icono: 'fas fa-hand-holding-usd'
   }
 ]

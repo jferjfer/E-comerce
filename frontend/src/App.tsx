@@ -27,6 +27,7 @@ import CreditPage from './pages/CreditPage'
 import StyleAnalysisPage from './pages/StyleAnalysisPage'
 import VirtualTryOnPage from './pages/VirtualTryOnPage'
 import EpaycoRespuestaPage from './pages/EpaycoRespuestaPage'
+import SistecreditoRespuestaPage from './pages/SistecreditoRespuestaPage'
 
 import TerminosPage from './pages/legal/TerminosPage'
 import PrivacidadPage from './pages/legal/PrivacidadPage'
@@ -118,6 +119,7 @@ function App() {
 
           {/* PAGOS */}
           <Route path="/pago/respuesta" element={<EpaycoRespuestaPage />} />
+          <Route path="/pago/sistecredito/respuesta" element={<SistecreditoRespuestaPage />} />
 
           {/* LEGAL */}
           <Route path="/terminos" element={<TerminosPage />} />

@@ -6,6 +6,7 @@ const pool = require('./config/baseDatos');
 const manejadorErrores = require('./middleware/manejadorErrores');
 const axios = require('axios');
 const nodemailer = require('nodemailer');
+const sistecredito = require('./sistecredito');
 const epayco = require('./epayco');
 const tiktok = require('./tiktok');
 
@@ -1666,6 +1667,274 @@ aplicacion.post('/api/pedidos/:pedidoId/simular-cambio', autenticacion, async (r
   } catch (error) {
     console.error('Error simulando cambio:', error.message);
     res.status(500).json({ error: 'Error simulando cambio' });
+  }
+});
+
+// ============================================
+// ENDPOINTS SISTECREDITO
+// ============================================
+
+// Verificar si Sistecredito está configurado
+aplicacion.get('/api/pagos/sistecredito/estado', (req, res) => {
+  res.json({
+    configurado: sistecredito.estaConfigurado(),
+    ambiente: sistecredito.getConfig().ambiente,
+    mensaje: sistecredito.estaConfigurado()
+      ? 'Sistecredito configurado y listo'
+      : 'Sistecredito pendiente — agrega SISTECREDITO_SUBSCRIPTION_KEY, SISTECREDITO_APPLICATION_KEY y SISTECREDITO_APPLICATION_TOKEN'
+  });
+});
+
+// Iniciar pago con Sistecredito — crea transacción y devuelve URL de redirect
+aplicacion.post('/api/pagos/sistecredito/iniciar', async (req, res) => {
+  try {
+    const { pedido_id } = req.body;
+
+    if (!sistecredito.estaConfigurado()) {
+      return res.status(503).json({ error: 'Sistecredito no configurado' });
+    }
+
+    // Obtener pedido — sin auth obligatoria (flujo invitado compatible)
+    const pedidoResult = await pool.query(
+      'SELECT * FROM pedido WHERE id = $1',
+      [pedido_id]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    const pedido = pedidoResult.rows[0];
+
+    // Datos del cliente (puede ser invitado)
+    let cliente = {
+      nombre: pedido.cliente_nombre || 'Cliente EGOS',
+      email: pedido.cliente_email || '',
+      documento_tipo: pedido.cliente_tipo_doc || 'CC',
+      documento_numero: pedido.cliente_documento || '999999999',
+      telefono: pedido.cliente_telefono || '3000000000',
+      direccion: pedido.cliente_direccion || 'Bogota D.C.',
+      ciudad: 'Bogota',
+      ip: req.ip || '0.0.0.0',
+    };
+
+    // Si hay token, enriquecer con datos reales del usuario
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) {
+      try {
+        const decoded = require('jsonwebtoken').verify(token, JWT_SECRET);
+        if (decoded.id && decoded.id !== 0) {
+          const resU = await axios.get(`http://auth-service:3011/api/usuarios/${decoded.id}`, { timeout: 3000 });
+          const u = resU.data.usuario || {};
+          cliente = {
+            nombre: `${u.nombre || ''} ${u.apellido || ''}`.trim() || cliente.nombre,
+            email: u.email || cliente.email,
+            documento_tipo: u.documento_tipo || cliente.documento_tipo,
+            documento_numero: u.documento_numero || cliente.documento_numero,
+            telefono: u.telefono || cliente.telefono,
+            direccion: u.direccion || u.ciudad || cliente.direccion,
+            ciudad: u.ciudad || 'Bogota',
+            ip: req.ip || '0.0.0.0',
+          };
+        }
+      } catch {}
+    }
+
+    // Paso 1: Crear transacción en Sistecredito
+    const respuestaCreacion = await sistecredito.crearTransaccion(pedido, cliente);
+    const transactionId = respuestaCreacion?.data?._id;
+
+    if (!transactionId) {
+      console.error('❌ Sistecredito no devolvio _id:', JSON.stringify(respuestaCreacion));
+      return res.status(500).json({ error: 'Error creando transacción en Sistecredito' });
+    }
+
+    console.log(`💳 Sistecredito transacción creada: ${transactionId} para pedido ${pedido_id}`);
+
+    // Guardar transactionId en el pedido para usarlo en el webhook
+    await pool.query(
+      'UPDATE pedido SET tracking_number = $1 WHERE id = $2',
+      [`SC-${transactionId}`, pedido_id]
+    ).catch(() => {});
+
+    // Paso 2: Polling hasta obtener paymentRedirectUrl
+    const resultado = await sistecredito.esperarRedirectUrl(transactionId);
+
+    if (!resultado.exito) {
+      console.error(`❌ Sistecredito no obtuvo redirect URL: ${resultado.status}`);
+      return res.status(400).json({
+        error: resultado.descripcion || 'No se pudo iniciar el pago con Sistecredito',
+        status: resultado.status
+      });
+    }
+
+    console.log(`✅ Sistecredito redirect URL obtenida para pedido ${pedido_id}`);
+
+    res.json({
+      redirect_url: resultado.redirectUrl,
+      transaction_id: transactionId,
+      pedido_id
+    });
+
+  } catch (error) {
+    console.error('Error iniciando pago Sistecredito:', error.message);
+    res.status(500).json({ error: 'Error iniciando pago con Sistecredito' });
+  }
+});
+
+// Webhook de confirmación — Sistecredito llama este endpoint cuando cambia el estado
+aplicacion.post('/api/pagos/sistecredito/confirmar', async (req, res) => {
+  try {
+    const datos = req.body;
+    console.log('📥 Webhook Sistecredito recibido:', JSON.stringify(datos).slice(0, 300));
+
+    const txData = datos?.data || datos;
+    const transactionId = txData?._id;
+    const invoice = txData?.invoice;
+    const transactionStatus = txData?.transactionStatus;
+
+    if (!transactionId && !invoice) {
+      return res.status(400).json({ error: 'Datos insuficientes en webhook' });
+    }
+
+    // Verificar autenticidad comparando con GET
+    const esValido = await sistecredito.verificarNotificacion(datos);
+    if (!esValido) {
+      console.error('❌ Sistecredito webhook no verificado');
+      return res.status(400).json({ error: 'Notificación no verificada' });
+    }
+
+    // Buscar pedido por invoice (= pedido_id) o por tracking_number
+    const pedidoId = invoice;
+    const pedidoResult = await pool.connect().then(async client => {
+      try {
+        await client.query('BEGIN');
+        const r = await client.query(
+          'SELECT id, estado, usuario_id, total FROM pedido WHERE id = $1 FOR UPDATE',
+          [pedidoId]
+        );
+        if (r.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return null;
+        }
+        const pedido = r.rows[0];
+
+        // Idempotencia
+        if (pedido.estado === 'Confirmado' || pedido.estado === 'Cancelado') {
+          await client.query('ROLLBACK');
+          console.log(`⚠️ Sistecredito webhook duplicado ignorado para pedido ${pedidoId}`);
+          return { duplicado: true, pedido };
+        }
+
+        const { estado, exitoso } = sistecredito.interpretarEstado(transactionStatus);
+
+        await client.query(
+          'UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2',
+          [estado, pedidoId]
+        );
+        await client.query('COMMIT');
+        return { pedido, estado, exitoso };
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      } finally {
+        client.release();
+      }
+    });
+
+    if (!pedidoResult) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    if (pedidoResult.duplicado) {
+      return res.json({ ok: true, duplicado: true });
+    }
+
+    const { pedido, estado, exitoso } = pedidoResult;
+
+    if (exitoso) {
+      console.log(`✅ Sistecredito pago aprobado para pedido ${pedidoId}`);
+
+      // Notificar por WebSocket
+      axios.post('http://gateway:3000/interno/emitir', {
+        evento: 'pedido_actualizado',
+        usuarioId: String(pedido.usuario_id),
+        sala: 'admins',
+        datos: { pedidoId, estado_nuevo: estado, total: pedido.total }
+      }, { timeout: 2000 }).catch(() => {});
+
+      // Correo de confirmación
+      axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, nombre } = resU.data.usuario || {};
+          if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Confirmado', pedido.total);
+        }).catch(() => {});
+
+      // Factura DIAN
+      const productos = await pool.query(
+        'SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1',
+        [pedidoId]
+      );
+      const pd = await pool.query(
+        `SELECT COALESCE(cliente_nombre,'Consumidor Final') as cliente_nombre,
+                COALESCE(cliente_email,'') as cliente_email,
+                COALESCE(cliente_documento,'222222222222') as cliente_documento,
+                COALESCE(cliente_tipo_doc,'CC') as cliente_tipo_doc,
+                COALESCE(cliente_direccion,'Bogotá D.C') as cliente_direccion
+         FROM pedido WHERE id = $1`, [pedidoId]
+      );
+      axios.post('http://facturacion-service:3010/api/facturas/generar', {
+        pedido_id: pedidoId,
+        usuario_id: pedido.usuario_id,
+        cliente: {
+          nombre: pd.rows[0]?.cliente_nombre,
+          email: pd.rows[0]?.cliente_email,
+          nit_cc: pd.rows[0]?.cliente_documento,
+          tipo_documento: pd.rows[0]?.cliente_tipo_doc,
+          direccion: pd.rows[0]?.cliente_direccion
+        },
+        productos: productos.rows.map(p => ({
+          id: p.id, nombre: p.nombre || `Producto ${p.id}`,
+          precio_unitario: parseFloat(p.precio_unitario), cantidad: p.cantidad
+        }))
+      }, { timeout: 5000 }).catch(e => console.log(`⚠️ Factura Sistecredito: ${e.message}`));
+
+      // Asiento contable
+      axios.post('http://contabilidad-service:3012/api/contabilidad/eventos/venta', {
+        pedido_id: pedidoId, total: pedido.total,
+        usuario_id: pedido.usuario_id, metodo_pago: 'sistecredito',
+        fecha: new Date().toISOString()
+      }, { timeout: 3000 }).catch(() => {});
+
+    } else {
+      console.log(`❌ Sistecredito pago no exitoso para pedido ${pedidoId}: ${transactionStatus}`);
+      axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, nombre } = resU.data.usuario || {};
+          if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Cancelado', pedido.total);
+        }).catch(() => {});
+    }
+
+    // Siempre responder 200 para que Sistecredito no reintente
+    res.json({ ok: true, estado, pedido_id: pedidoId });
+
+  } catch (error) {
+    console.error('Error procesando webhook Sistecredito:', error.message);
+    res.status(500).json({ error: 'Error procesando confirmación' });
+  }
+});
+
+// Consultar estado de una transacción Sistecredito
+aplicacion.get('/api/pagos/sistecredito/consultar/:transactionId', async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    if (!sistecredito.estaConfigurado()) {
+      return res.status(503).json({ error: 'Sistecredito no configurado' });
+    }
+    const resultado = await sistecredito.consultarTransaccion(transactionId);
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ error: 'Error consultando transacción' });
   }
 });
 

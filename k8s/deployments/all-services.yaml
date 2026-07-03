@@ -221,6 +221,30 @@ spec:
             secretKeyRef:
               name: egos-secrets
               key: POSTGRES_TRANSACTION_URL
+        - name: SISTECREDITO_SUBSCRIPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SISTECREDITO_SUBSCRIPTION_KEY
+              optional: true
+        - name: SISTECREDITO_APPLICATION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SISTECREDITO_APPLICATION_KEY
+              optional: true
+        - name: SISTECREDITO_APPLICATION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SISTECREDITO_APPLICATION_TOKEN
+              optional: true
+        - name: SISTECREDITO_AMBIENTE
+          valueFrom:
+            secretKeyRef:
+              name: egos-secrets
+              key: SISTECREDITO_AMBIENTE
+              optional: true
         resources:
           requests:
             cpu: "100m"

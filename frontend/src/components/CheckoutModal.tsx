@@ -171,6 +171,31 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
+      // Sistecredito — flujo redirect
+      if (selectedMethod === 'sistecredito') {
+        try {
+          setError(null)
+          const resSiste = await fetch(`${API_URL}/api/pagos/sistecredito/iniciar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ pedido_id: pedidoId })
+          })
+          const dataSiste = await resSiste.json()
+          if (!resSiste.ok || !dataSiste.redirect_url) {
+            setError(dataSiste.error || 'No se pudo iniciar el pago con Sistecredito')
+            setIsLoading(false)
+            return
+          }
+          // Redirigir al cliente a la experiencia de Sistecredito
+          window.location.href = dataSiste.redirect_url
+          return
+        } catch {
+          setError('Error de conexión con Sistecredito. Intenta de nuevo.')
+          setIsLoading(false)
+          return
+        }
+      }
+
       // Todos los métodos externos van por ePayco
       if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod)) {
         setPedidoParaEpayco(pedidoId)
