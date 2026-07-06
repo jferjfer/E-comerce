@@ -433,6 +433,8 @@ export default function CheckoutScreen() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [datosEpayco, setDatosEpayco] = useState<any>(null);
   const [epaycoActivo, setEpaycoActivo] = useState<boolean | null>(null);
+  const [sistecreditoUrl, setSistecreditoUrl] = useState<string | null>(null);
+  const [sistecreditoTxId, setSistecreditoTxId] = useState<string | null>(null);
 
   // Bono
   const [codigoBono, setCodigoBono] = useState('');
@@ -516,7 +518,56 @@ export default function CheckoutScreen() {
         }
       }
 
-      // 3. ePayco no disponible — mostrar error (no completar sin pago)
+      // 3. Sistecredito
+      if (metodo === 'sistecredito') {
+        try {
+          const resSiste = await fetch(`${API_URL}/api/pagos/sistecredito/iniciar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ pedido_id: pedidoId }),
+          });
+          const dataSiste = await resSiste.json();
+          if (!resSiste.ok || !dataSiste.transaction_id) {
+            setError(dataSiste.error || 'No se pudo iniciar el pago con Sistecredito');
+            setLoading(false);
+            return;
+          }
+          // Polling hasta obtener paymentRedirectUrl (máx 12 x 5s = 60s)
+          const txId = dataSiste.transaction_id;
+          setSistecreditoTxId(txId);
+          let redirectUrl = null;
+          for (let i = 0; i < 12; i++) {
+            await new Promise(r => setTimeout(r, 5000));
+            try {
+              const resC = await fetch(`${API_URL}/api/pagos/sistecredito/consultar/${txId}`);
+              const dataC = await resC.json();
+              const tx = dataC?.data;
+              const status = tx?.transactionStatus;
+              redirectUrl = tx?.paymentMethodResponse?.paymentRedirectUrl;
+              if (['Rejected','Cancelled','Expired','Abandoned','Failed'].includes(status)) {
+                setError(`Pago rechazado: ${tx?.paymentMethodResponse?.description || status}`);
+                setLoading(false);
+                return;
+              }
+              if (redirectUrl) break;
+            } catch {}
+          }
+          if (!redirectUrl) {
+            setError('Sistecredito no respondió a tiempo. Intenta de nuevo.');
+            setLoading(false);
+            return;
+          }
+          setSistecreditoUrl(redirectUrl);
+          setLoading(false);
+          return;
+        } catch {
+          setError('Error de conexión con Sistecredito. Intenta de nuevo.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 4. ePayco no disponible — mostrar error (no completar sin pago)
       setError('La pasarela de pagos no está disponible en este momento. Intenta más tarde.');
       setLoading(false);
 
@@ -553,6 +604,21 @@ export default function CheckoutScreen() {
 
   // ── PASO 1: Método de pago ───────────────────────────────
   if (step === 1) {
+    const metodos = [
+      {
+        id: 'pago_en_linea',
+        nombre: 'Pagar en línea',
+        desc: 'Tarjeta, PSE, Nequi, Daviplata, Efecty — procesado por ePayco',
+        emoji: '💳',
+      },
+      {
+        id: 'sistecredito',
+        nombre: 'Sistecredito — Paga a cuotas',
+        desc: 'Financia tu compra en cuotas sin tarjeta de crédito',
+        emoji: '🏦',
+      },
+    ];
+
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <BtnVolver titulo="FINALIZAR COMPRA" />
@@ -560,27 +626,29 @@ export default function CheckoutScreen() {
         <Text style={styles.titulo}>¿Cómo quieres pagar?</Text>
         <Text style={styles.subtitulo}>Selecciona un método de pago</Text>
 
-        <TouchableOpacity
-          style={[styles.metodoCard, metodo === 'pago_en_linea' && styles.metodoCardActivo]}
-          onPress={() => { setMetodo('pago_en_linea'); haptic.tap(); }}
-        >
-          <View style={[styles.metodoRadio, metodo === 'pago_en_linea' && styles.metodoRadioActivo]}>
-            {metodo === 'pago_en_linea' && <View style={styles.metodoRadioPunto} />}
-          </View>
-          <View style={styles.metodoIconWrap}>
-            <Text style={{ fontSize: 20 }}>💳</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.metodoNombre}>Pagar en línea</Text>
-            <Text style={styles.metodoDesc}>Tarjeta, PSE, Nequi, Daviplata, Efecty — procesado por ePayco</Text>
-          </View>
-        </TouchableOpacity>
+        {metodos.map(m => (
+          <TouchableOpacity
+            key={m.id}
+            style={[styles.metodoCard, metodo === m.id && styles.metodoCardActivo]}
+            onPress={() => { setMetodo(m.id); haptic.tap(); }}
+          >
+            <View style={[styles.metodoRadio, metodo === m.id && styles.metodoRadioActivo]}>
+              {metodo === m.id && <View style={styles.metodoRadioPunto} />}
+            </View>
+            <View style={styles.metodoIconWrap}>
+              <Text style={{ fontSize: 20 }}>{m.emoji}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.metodoNombre}>{m.nombre}</Text>
+              <Text style={styles.metodoDesc}>{m.desc}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
 
-        {/* Aviso de seguridad igual al web */}
         <View style={styles.avisoSeguridad}>
           <Text style={{ fontSize: 14 }}>🛡️</Text>
           <Text style={styles.avisoTxt}>
-            Pago seguro procesado por <Text style={{ fontWeight: '700' }}>ePayco</Text>. Acepta tarjetas, PSE, Nequi, Daviplata, Efecty y más.
+            Pago seguro. ePayco acepta tarjetas, PSE, Nequi, Daviplata y más. Sistecredito permite pagar a cuotas sin tarjeta.
           </Text>
         </View>
 
@@ -648,11 +716,15 @@ export default function CheckoutScreen() {
           {/* Método seleccionado */}
           <View style={styles.metodoResumen}>
             <View style={styles.metodoResumenIcon}>
-              <Text style={{ fontSize: 16 }}>💳</Text>
+              <Text style={{ fontSize: 16 }}>{metodo === 'sistecredito' ? '🏦' : '💳'}</Text>
             </View>
             <View>
-              <Text style={styles.metodoResumenNombre}>Pagar en línea</Text>
-              <Text style={styles.metodoResumenDesc}>Tarjeta, PSE, Nequi, Daviplata, Efecty</Text>
+              <Text style={styles.metodoResumenNombre}>
+                {metodo === 'sistecredito' ? 'Sistecredito' : 'Pagar en línea'}
+              </Text>
+              <Text style={styles.metodoResumenDesc}>
+                {metodo === 'sistecredito' ? 'Pago a cuotas sin tarjeta de crédito' : 'Tarjeta, PSE, Nequi, Daviplata, Efecty'}
+              </Text>
             </View>
           </View>
 
@@ -742,6 +814,55 @@ export default function CheckoutScreen() {
             onCancelado={onPagoCancelado}
             onCerrar={() => { setDatosEpayco(null); setError('Pago cancelado.'); }}
           />
+        )}
+
+        {/* Sistecredito en WebView */}
+        {sistecreditoUrl && (
+          <Modal visible animationType="slide" onRequestClose={() => { setSistecreditoUrl(null); setError('Pago cancelado.'); }}>
+            <View style={epaycoStyles.container}>
+              <View style={epaycoStyles.header}>
+                <Text style={epaycoStyles.headerTxt}>🏦 Sistecredito — Pago a cuotas</Text>
+                <TouchableOpacity
+                  onPress={() => { setSistecreditoUrl(null); setError('Pago cancelado. Puedes intentarlo de nuevo.'); }}
+                  style={epaycoStyles.cerrarBtn}
+                >
+                  <Text style={epaycoStyles.cerrarTxt}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <WebView
+                source={{ uri: sistecreditoUrl }}
+                onNavigationStateChange={async (navState) => {
+                  const url = navState.url || '';
+                  // Detectar retorno exitoso — Sistecredito redirige a la redirectionUrl
+                  if (url.includes('egoscolombia.com.co') || url.includes('pago/respuesta')) {
+                    // Consultar estado del pedido
+                    if (orderId && token) {
+                      for (let i = 0; i < 5; i++) {
+                        await new Promise(r => setTimeout(r, 3000));
+                        try {
+                          const res = await fetch(`${API_URL}/api/pedidos`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          const data = await res.json();
+                          const pedido = (data.pedidos || []).find((p: any) => p.id === orderId);
+                          if (pedido?.estado === 'Confirmado') {
+                            setSistecreditoUrl(null);
+                            onPagoExitoso();
+                            return;
+                          }
+                        } catch {}
+                      }
+                    }
+                    setSistecreditoUrl(null);
+                    setError('Tu pago está siendo procesado. Revisa en "Mis Pedidos".');
+                  }
+                }}
+                javaScriptEnabled
+                domStorageEnabled
+                style={epaycoStyles.webview}
+              />
+            </View>
+          </Modal>
         )}
       </>
     );
@@ -849,7 +970,7 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 13, color: COLORS.textoGrisMid },
   totalValor: { fontSize: 13, fontWeight: '600', color: COLORS.textoNegro },
 
-  // Método resumen
+  // Método resumen — texto dinámico según método
   metodoResumen: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     padding: 12, backgroundColor: COLORS.fondoGris,
