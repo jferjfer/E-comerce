@@ -1,4 +1,4 @@
-import { metodosPago } from '@/data/metodosPago'
+import { metodosPago, SISTECREDITO_LOGO } from '@/data/metodosPago'
 import { useEffect } from 'react'
 
 interface PaymentMethodStepProps {
@@ -42,10 +42,20 @@ export default function PaymentMethodStep({
                   : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                seleccionado ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden ${
+                seleccionado ? 'bg-primary' : 'bg-gray-100'
               }`}>
-                <i className={`${method.icono} text-sm`}></i>
+                {method.id === 'sistecredito' ? (
+                  <img
+                    src={SISTECREDITO_LOGO}
+                    alt="Sistecredito"
+                    className="w-9 h-9 object-contain p-0.5"
+                  />
+                ) : (
+                  <i className={`${method.icono} text-sm ${
+                    seleccionado ? 'text-white' : 'text-gray-500'
+                  }`}></i>
+                )}
               </div>
 
               <div className="flex-1 min-w-0">

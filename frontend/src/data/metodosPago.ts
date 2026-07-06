@@ -1,5 +1,8 @@
 import { MetodoPago } from '@/types'
 
+// Logo oficial de Sistecredito
+export const SISTECREDITO_LOGO = 'https://importaexpertos.com/compras/img/cms/logo-sistecredito-transparente.png'
+
 export const metodosPago: MetodoPago[] = [
   {
     id: 'pago_en_linea',
@@ -10,9 +13,9 @@ export const metodosPago: MetodoPago[] = [
   },
   {
     id: 'sistecredito',
-    nombre: 'Sistecredito',
+    nombre: 'Sistecredito — Paga a cuotas',
     tipo: 'externo',
-    descripcion: 'Paga a cuotas con tu crédito Sistecredito',
+    descripcion: 'Financia tu compra en cuotas sin tarjeta de crédito',
     icono: 'fas fa-hand-holding-usd'
   }
 ]

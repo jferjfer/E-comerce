@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCartStore } from '@/store/useCartStore'
-import { metodosPago } from '@/data/metodosPago'
+import { metodosPago, SISTECREDITO_LOGO } from '@/data/metodosPago'
 import { formatPrice } from '@/utils/sanitize'
 
 interface ConfirmationStepProps {
@@ -43,6 +43,7 @@ export default function ConfirmationStep({
 
   const esCredito = selectedMethod === 'credito_interno'
   const esEfectivo = selectedMethod === 'efectivo'
+  const esSistecredito = selectedMethod === 'sistecredito'
   const calcularCuota = (plazo: number) => Math.ceil(totalConBono / plazo)
 
   return (
@@ -94,8 +95,12 @@ export default function ConfirmationStep({
 
       {/* Método seleccionado */}
       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-          <i className={`${method?.icono} text-white text-xs`}></i>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-primary">
+          {esSistecredito ? (
+            <img src={SISTECREDITO_LOGO} alt="Sistecredito" className="w-8 h-8 object-contain p-0.5" />
+          ) : (
+            <i className={`${method?.icono} text-white text-xs`}></i>
+          )}
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-800">{method?.nombre}</p>
@@ -183,6 +188,17 @@ export default function ConfirmationStep({
         </div>
       )}
 
+      {/* Aviso Sistecredito */}
+      {esSistecredito && (
+        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+          <i className="fas fa-info-circle text-green-600 mt-0.5 flex-shrink-0"></i>
+          <div className="text-xs text-green-800 space-y-1">
+            <p><strong>Serás redirigido a Sistecredito</strong> para completar el pago a cuotas.</p>
+            <p>Necesitas tener una cuenta activa y crédito aprobado en Sistecredito.</p>
+          </div>
+        </div>
+      )}
+
       {/* Botones */}
       <div className="flex gap-3">
         <button
@@ -201,12 +217,12 @@ export default function ConfirmationStep({
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
               <i className="fas fa-circle-notch fa-spin text-xs"></i>
-              Procesando...
+              {esSistecredito ? 'Conectando con Sistecredito...' : 'Procesando...'}
             </span>
           ) : (
             <>
-              <i className="fas fa-lock mr-2 text-xs"></i>
-              {esCredito ? 'Confirmar y financiar' : 'Confirmar pedido'}
+              <i className={`fas ${esSistecredito ? 'fa-external-link-alt' : 'fa-lock'} mr-2 text-xs`}></i>
+              {esCredito ? 'Confirmar y financiar' : esSistecredito ? 'Continuar con Sistecredito' : 'Confirmar pedido'}
             </>
           )}
         </button>
