@@ -171,7 +171,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
-      // Sistecredito — flujo redirect
+      // Sistecredito — flujo: crear transacción + polling frontend + redirect
       if (selectedMethod === 'sistecredito') {
         try {
           setError(null)
@@ -181,13 +181,41 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             body: JSON.stringify({ pedido_id: pedidoId })
           })
           const dataSiste = await resSiste.json()
-          if (!resSiste.ok || !dataSiste.redirect_url) {
+          if (!resSiste.ok || !dataSiste.transaction_id) {
             setError(dataSiste.error || 'No se pudo iniciar el pago con Sistecredito')
             setIsLoading(false)
             return
           }
+
+          // Polling hasta obtener paymentRedirectUrl (máx 12 intentos x 5s = 60s)
+          const transactionId = dataSiste.transaction_id
+          let redirectUrl = null
+          for (let i = 0; i < 12; i++) {
+            await new Promise(r => setTimeout(r, 5000))
+            try {
+              const resConsulta = await fetch(`${API_URL}/api/pagos/sistecredito/consultar/${transactionId}`)
+              const dataConsulta = await resConsulta.json()
+              const tx = dataConsulta?.data
+              const status = tx?.transactionStatus
+              redirectUrl = tx?.paymentMethodResponse?.paymentRedirectUrl
+              if (['Rejected','Cancelled','Expired','Abandoned','Failed'].includes(status)) {
+                setError(`Pago rechazado por Sistecredito: ${tx?.paymentMethodResponse?.description || status}`)
+                setIsLoading(false)
+                return
+              }
+              if (redirectUrl) break
+            } catch {}
+          }
+
+          if (!redirectUrl) {
+            setError('Sistecredito no respondió a tiempo. Intenta de nuevo.')
+            setIsLoading(false)
+            return
+          }
+
           // Redirigir al cliente a la experiencia de Sistecredito
-          window.location.href = dataSiste.redirect_url
+          vaciarCarrito()
+          window.location.href = redirectUrl
           return
         } catch {
           setError('Error de conexión con Sistecredito. Intenta de nuevo.')

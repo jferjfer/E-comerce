@@ -1671,7 +1671,8 @@ aplicacion.get('/api/pagos/sistecredito/estado', (req, res) => {
   });
 });
 
-// Iniciar pago con Sistecredito — crea transacción y devuelve URL de redirect
+// Iniciar pago con Sistecredito — crea transacción y devuelve _id inmediatamente
+// El frontend hace el polling con /consultar/:transactionId para obtener la redirect URL
 aplicacion.post('/api/pagos/sistecredito/iniciar', async (req, res) => {
   try {
     const { pedido_id } = req.body;
@@ -1680,19 +1681,13 @@ aplicacion.post('/api/pagos/sistecredito/iniciar', async (req, res) => {
       return res.status(503).json({ error: 'Sistecredito no configurado' });
     }
 
-    // Obtener pedido — sin auth obligatoria (flujo invitado compatible)
-    const pedidoResult = await pool.query(
-      'SELECT * FROM pedido WHERE id = $1',
-      [pedido_id]
-    );
-
+    const pedidoResult = await pool.query('SELECT * FROM pedido WHERE id = $1', [pedido_id]);
     if (pedidoResult.rows.length === 0) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
-
     const pedido = pedidoResult.rows[0];
 
-    // Datos del cliente (puede ser invitado)
+    // Datos del cliente
     let cliente = {
       nombre: pedido.cliente_nombre || 'Cliente EGOS',
       email: pedido.cliente_email || '',
@@ -1701,10 +1696,10 @@ aplicacion.post('/api/pagos/sistecredito/iniciar', async (req, res) => {
       telefono: pedido.cliente_telefono || '3000000000',
       direccion: pedido.cliente_direccion || 'Bogota D.C.',
       ciudad: 'Bogota',
-      ip: req.ip || '0.0.0.0',
+      ip: req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '127.0.0.1',
     };
 
-    // Si hay token, enriquecer con datos reales del usuario
+    // Enriquecer con datos reales si hay token
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (token) {
       try {
@@ -1720,76 +1715,46 @@ aplicacion.post('/api/pagos/sistecredito/iniciar', async (req, res) => {
             telefono: u.telefono || cliente.telefono,
             direccion: u.direccion || u.ciudad || cliente.direccion,
             ciudad: u.ciudad || 'Bogota',
-            ip: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || '127.0.0.1',
+            ip: req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '127.0.0.1',
           };
         }
       } catch {}
     }
 
-    // Paso 1: Crear transacción en Sistecredito
+    // Crear transacción en Sistecredito
     let respuestaCreacion;
     try {
       respuestaCreacion = await sistecredito.crearTransaccion(pedido, cliente);
     } catch (axiosError) {
-      const respError = axiosError.response?.data;
-      const errorCode = respError?.errorCode || respError?.statusCode;
-      const errorMsg  = respError?.message || axiosError.message;
+      const errorMsg = axiosError.response?.data?.message || axiosError.message;
 
-      // Error 738: ya existe transacción activa para este invoice
-      // Buscar el _id de la transacción existente y continuar con polling
-      if (String(errorMsg).includes('738') || String(errorMsg).includes('activa')) {
-        console.log(`⚠️ Sistecredito error 738 — ya existe transacción para pedido ${pedido_id}, buscando _id existente...`);
-        // El tracking_number guarda el _id previo
+      // Error 738: invoice ya tiene transacción activa — reutilizar _id guardado
+      if (String(errorMsg).includes('738') || String(errorMsg).includes('AlreadyInStatus')) {
         const trackingRow = await pool.query('SELECT tracking_number FROM pedido WHERE id = $1', [pedido_id]);
         const trackingNum = trackingRow.rows[0]?.tracking_number;
         if (trackingNum && trackingNum.startsWith('SC-')) {
           const existingId = trackingNum.replace('SC-', '');
-          console.log(`🔄 Reutilizando transacción existente: ${existingId}`);
-          const resultado = await sistecredito.esperarRedirectUrl(existingId);
-          if (!resultado.exito) {
-            return res.status(400).json({ error: resultado.descripcion || 'No se pudo obtener URL de pago', status: resultado.status });
-          }
-          return res.json({ redirect_url: resultado.redirectUrl, transaction_id: existingId, pedido_id });
+          console.log(`⚠️ Sistecredito 738 — reutilizando transacción: ${existingId}`);
+          return res.json({ transaction_id: existingId, pedido_id, reutilizado: true });
         }
       }
-
-      console.error(`❌ Sistecredito error al crear transacción: ${errorMsg}`);
+      console.error(`❌ Sistecredito error: ${errorMsg}`);
       return res.status(500).json({ error: `Error Sistecredito: ${errorMsg}` });
     }
 
     const transactionId = respuestaCreacion?.data?._id;
-
     if (!transactionId) {
-      console.error('❌ Sistecredito no devolvio _id:', JSON.stringify(respuestaCreacion));
-      return res.status(500).json({ error: 'Error creando transacción en Sistecredito' });
+      return res.status(500).json({ error: 'Sistecredito no devolvio _id' });
     }
 
-    console.log(`💳 Sistecredito transacción creada: ${transactionId} para pedido ${pedido_id}`);
+    // Guardar _id en pedido para idempotencia
+    await pool.query('UPDATE pedido SET tracking_number = $1 WHERE id = $2',
+      [`SC-${transactionId}`, pedido_id]).catch(() => {});
 
-    // Guardar transactionId en el pedido para usarlo en el webhook
-    await pool.query(
-      'UPDATE pedido SET tracking_number = $1 WHERE id = $2',
-      [`SC-${transactionId}`, pedido_id]
-    ).catch(() => {});
+    console.log(`✅ Sistecredito transacción creada: ${transactionId} para pedido ${pedido_id}`);
 
-    // Paso 2: Polling hasta obtener paymentRedirectUrl
-    const resultado = await sistecredito.esperarRedirectUrl(transactionId);
-
-    if (!resultado.exito) {
-      console.error(`❌ Sistecredito no obtuvo redirect URL: ${resultado.status}`);
-      return res.status(400).json({
-        error: resultado.descripcion || 'No se pudo iniciar el pago con Sistecredito',
-        status: resultado.status
-      });
-    }
-
-    console.log(`✅ Sistecredito redirect URL obtenida para pedido ${pedido_id}`);
-
-    res.json({
-      redirect_url: resultado.redirectUrl,
-      transaction_id: transactionId,
-      pedido_id
-    });
+    // Devolver _id inmediatamente — el frontend hace el polling con /consultar/:id
+    res.json({ transaction_id: transactionId, pedido_id });
 
   } catch (error) {
     console.error('Error iniciando pago Sistecredito:', error.message);
