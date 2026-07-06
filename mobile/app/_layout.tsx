@@ -1,11 +1,12 @@
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState, useEffect } from 'react';
-import { View } from 'react-native';
+import { View, TouchableOpacity, Text, Platform, StatusBar as RNStatusBar } from 'react-native';
 import * as Font from 'expo-font';
 import { COLORS } from '@/constants';
+
+const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 44;
 import Notifications from '@/components/Notifications';
-import ChatIA from '@/components/ChatIA';
 import OfflineBanner from '@/components/OfflineBanner';
 import CookieBanner from '@/components/CookieBanner';
 import SplashScreen from '@/components/SplashScreen';
@@ -30,15 +31,17 @@ export default function RootLayout() {
     cargarTokenSeguro();
   }, []);
   useEffect(() => {
-    const originalHandler = ErrorUtils.getGlobalHandler();
-    ErrorUtils.setGlobalHandler((error, isFatal) => {
-      if (__DEV__) {
-        console.error(`🔴 ${isFatal ? 'FATAL' : 'ERROR'}:`, error?.message || error);
-        console.error('Stack:', error?.stack?.slice(0, 300));
-      }
-      originalHandler(error, isFatal);
-    });
-    return () => ErrorUtils.setGlobalHandler(originalHandler);
+    if (typeof ErrorUtils !== 'undefined') {
+      const originalHandler = ErrorUtils.getGlobalHandler();
+      ErrorUtils.setGlobalHandler((error, isFatal) => {
+        if (__DEV__) {
+          console.error(`🔴 ${isFatal ? 'FATAL' : 'ERROR'}:`, error?.message || error);
+          console.error('Stack:', error?.stack?.slice(0, 300));
+        }
+        originalHandler(error, isFatal);
+      });
+      return () => ErrorUtils.setGlobalHandler(originalHandler);
+    }
   }, []);
 
   useEffect(() => {
@@ -63,32 +66,27 @@ export default function RootLayout() {
         <AppWrapper />
         <Stack
           screenOptions={{
-            headerStyle: { backgroundColor: COLORS.negroHeader },
-            headerTintColor: COLORS.dorado,
-            headerTitleStyle: { fontWeight: 'bold', color: COLORS.dorado, fontFamily: 'Prata-Regular' },
-            headerTitleAlign: 'center',
-            animation: 'fade_from_bottom',
-            headerShadowVisible: false,
+            headerShown: false,
+            animation: 'slide_from_right',
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="registro" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="producto/[id]" options={{ title: 'Producto', headerBackTitle: '', animation: 'slide_from_right' }} />
-          <Stack.Screen name="checkout" options={{ title: 'Finalizar compra', headerBackTitle: '', animation: 'slide_from_right' }} />
-          <Stack.Screen name="favoritos" options={{ title: 'Mis Favoritos', headerBackTitle: '', animation: 'slide_from_right' }} />
-          <Stack.Screen name="credito" options={{ title: 'Crédito EGOS', headerBackTitle: '', animation: 'slide_from_right' }} />
+          <Stack.Screen name="producto/[id]" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: '#f5f0eb', paddingTop: 0 } }} />
+          <Stack.Screen name="checkout" options={{ title: 'Finalizar compra', animation: 'slide_from_right', headerLeft: () => <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text style={{ color: COLORS.dorado, fontSize: 28, lineHeight: 32 }}>←</Text></TouchableOpacity> }} />
+          <Stack.Screen name="favoritos" options={{ title: 'Mis Favoritos', animation: 'slide_from_right', headerLeft: () => <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text style={{ color: COLORS.dorado, fontSize: 28, lineHeight: 32 }}>←</Text></TouchableOpacity> }} />
+          <Stack.Screen name="credito" options={{ title: 'Crédito EGOS', animation: 'slide_from_right', headerLeft: () => <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text style={{ color: COLORS.dorado, fontSize: 28, lineHeight: 32 }}>←</Text></TouchableOpacity> }} />
           <Stack.Screen name="recuperar-contrasena" options={{ headerShown: false }} />
-          <Stack.Screen name="pagos" options={{ title: 'Métodos de Pago', headerBackTitle: '', animation: 'slide_from_right' }} />
-          <Stack.Screen name="estilo" options={{ title: 'Descubre Tu Estilo', headerBackTitle: '', animation: 'slide_from_right' }} />
-          <Stack.Screen name="webview" options={{ title: '', headerBackTitle: '', animation: 'slide_from_right' }} />
+          <Stack.Screen name="pagos" options={{ title: 'Métodos de Pago', animation: 'slide_from_right', headerLeft: () => <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text style={{ color: COLORS.dorado, fontSize: 28, lineHeight: 32 }}>←</Text></TouchableOpacity> }} />
+          <Stack.Screen name="estilo" options={{ title: 'Descubre Tu Estilo', animation: 'slide_from_right', headerLeft: () => <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text style={{ color: COLORS.dorado, fontSize: 28, lineHeight: 32 }}>←</Text></TouchableOpacity> }} />
+          <Stack.Screen name="webview" options={{ title: '', animation: 'slide_from_right', headerLeft: () => <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text style={{ color: COLORS.dorado, fontSize: 28, lineHeight: 32 }}>←</Text></TouchableOpacity> }} />
         </Stack>
       </View>
 
       <Notifications />
       <OfflineBanner />
-      <ChatIA />
       <CookieBanner />
 
       {/* Capa negra que tapa el Home durante splash y welcome */}
