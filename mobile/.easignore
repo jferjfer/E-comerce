@@ -11,3 +11,11 @@ node_modules
 .env.development
 Captura desde*
 test-mobile.sh
+# Binarios generados
+*.aab
+*.apk
+*.ipa
+# Assets pesados innecesarios
+assets/fonts/*.woff2
+STORE_LISTING.md
+google-service-account.json
