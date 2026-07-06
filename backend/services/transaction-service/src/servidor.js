@@ -1720,14 +1720,43 @@ aplicacion.post('/api/pagos/sistecredito/iniciar', async (req, res) => {
             telefono: u.telefono || cliente.telefono,
             direccion: u.direccion || u.ciudad || cliente.direccion,
             ciudad: u.ciudad || 'Bogota',
-            ip: req.ip || '0.0.0.0',
+            ip: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || '127.0.0.1',
           };
         }
       } catch {}
     }
 
     // Paso 1: Crear transacción en Sistecredito
-    const respuestaCreacion = await sistecredito.crearTransaccion(pedido, cliente);
+    let respuestaCreacion;
+    try {
+      respuestaCreacion = await sistecredito.crearTransaccion(pedido, cliente);
+    } catch (axiosError) {
+      const respError = axiosError.response?.data;
+      const errorCode = respError?.errorCode || respError?.statusCode;
+      const errorMsg  = respError?.message || axiosError.message;
+
+      // Error 738: ya existe transacción activa para este invoice
+      // Buscar el _id de la transacción existente y continuar con polling
+      if (String(errorMsg).includes('738') || String(errorMsg).includes('activa')) {
+        console.log(`⚠️ Sistecredito error 738 — ya existe transacción para pedido ${pedido_id}, buscando _id existente...`);
+        // El tracking_number guarda el _id previo
+        const trackingRow = await pool.query('SELECT tracking_number FROM pedido WHERE id = $1', [pedido_id]);
+        const trackingNum = trackingRow.rows[0]?.tracking_number;
+        if (trackingNum && trackingNum.startsWith('SC-')) {
+          const existingId = trackingNum.replace('SC-', '');
+          console.log(`🔄 Reutilizando transacción existente: ${existingId}`);
+          const resultado = await sistecredito.esperarRedirectUrl(existingId);
+          if (!resultado.exito) {
+            return res.status(400).json({ error: resultado.descripcion || 'No se pudo obtener URL de pago', status: resultado.status });
+          }
+          return res.json({ redirect_url: resultado.redirectUrl, transaction_id: existingId, pedido_id });
+        }
+      }
+
+      console.error(`❌ Sistecredito error al crear transacción: ${errorMsg}`);
+      return res.status(500).json({ error: `Error Sistecredito: ${errorMsg}` });
+    }
+
     const transactionId = respuestaCreacion?.data?._id;
 
     if (!transactionId) {

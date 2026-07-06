@@ -55,16 +55,10 @@ const crearTransaccion = async (pedido, cliente) => {
     paymentMethod: {
       paymentMethodId: PAYMENT_METHOD_ID,
       bankCode: 1,
-      userType: 0, // 0 = persona natural
+      userType: 0,
     },
     currency: 'COP',
     value:    Math.round(parseFloat(pedido.total)),
-    tax:      0,    // Ropa colombiana IVA 0%
-    taxBase:  Math.round(parseFloat(pedido.total)),
-    sandbox: {
-      isActive: getConfig().ambiente === 'Staging',
-      status: 'Approved',
-    },
     urlResponse:        `${frontendUrl}/pago/sistecredito/respuesta`,
     urlConfirmation:    `${backendUrl}/api/pagos/sistecredito/confirmar`,
     methodConfirmation: 'POST',
@@ -79,7 +73,7 @@ const crearTransaccion = async (pedido, cliente) => {
       country:    'co',
       city:       cliente.ciudad || 'Bogota',
       address:    cliente.direccion || 'Bogota D.C.',
-      ipAddress:  cliente.ip || '0.0.0.0',
+      ipAddress:  cliente.ip || '127.0.0.1',
     },
   };
 
@@ -87,7 +81,7 @@ const crearTransaccion = async (pedido, cliente) => {
 
   const response = await axios.post(`${BASE_URL}/pay/create`, body, {
     headers: getHeaders(),
-    timeout: 15000,
+    timeout: 30000,
   });
 
   return response.data;
@@ -95,46 +89,50 @@ const crearTransaccion = async (pedido, cliente) => {
 
 // ============================================
 // CONSULTAR TRANSACCIÓN (polling)
-// GET /pay/GetTransactionResponse
+// GET /pay/GetTransaction  ← endpoint correcto según docs
 // ============================================
 const consultarTransaccion = async (transactionId) => {
-  const response = await axios.get(`${BASE_URL}/pay/GetTransactionResponse`, {
+  const response = await axios.get(`${BASE_URL}/pay/GetTransaction`, {
     headers: getHeaders(),
     params: { transactionId },
-    timeout: 10000,
+    timeout: 15000,
   });
   return response.data;
 };
 
 // ============================================
 // POLLING — esperar hasta tener paymentRedirectUrl
-// Máximo 10 intentos cada 2 segundos = 20 segundos
+// Máximo 12 intentos cada 5 segundos = 60 segundos
 // ============================================
-const esperarRedirectUrl = async (transactionId, maxIntentos = 10) => {
+const esperarRedirectUrl = async (transactionId, maxIntentos = 12) => {
   for (let i = 0; i < maxIntentos; i++) {
-    await new Promise(r => setTimeout(r, 2000));
-    const data = await consultarTransaccion(transactionId);
-    const tx = data?.data;
+    await new Promise(r => setTimeout(r, 5000)); // 5s entre intentos según docs
+    try {
+      const data = await consultarTransaccion(transactionId);
+      const tx = data?.data;
 
-    if (!tx) continue;
+      if (!tx) continue;
 
-    const status = tx.transactionStatus;
-    const redirectUrl = tx.paymentMethodResponse?.paymentRedirectUrl;
+      const status = tx.transactionStatus;
+      const redirectUrl = tx.paymentMethodResponse?.paymentRedirectUrl;
 
-    console.log(`🔄 Sistecredito polling ${i + 1}/${maxIntentos} — status: ${status}`);
+      console.log(`🔄 Sistecredito polling ${i + 1}/${maxIntentos} — status: ${status} | url: ${redirectUrl ? 'SI' : 'NO'}`);
 
-    // Estados terminales negativos — no seguir esperando
-    if (['Rejected', 'Cancelled', 'Expired', 'Abandoned', 'Failed'].includes(status)) {
-      return { exito: false, status, descripcion: tx.paymentMethodResponse?.description || status };
-    }
+      // Estados terminales negativos — no seguir esperando
+      if (['Rejected', 'Cancelled', 'Expired', 'Abandoned', 'Failed'].includes(status)) {
+        return { exito: false, status, descripcion: tx.paymentMethodResponse?.description || status };
+      }
 
-    // Tenemos URL de redirect — éxito
-    if (status === 'Pending' && redirectUrl) {
-      return { exito: true, redirectUrl, transactionId, status };
+      // Tenemos URL de redirect — éxito (puede llegar en Pending o PendingForPaymentMethod)
+      if (redirectUrl) {
+        return { exito: true, redirectUrl, transactionId, status };
+      }
+    } catch (e) {
+      console.log(`⚠️ Sistecredito polling error intento ${i + 1}: ${e.message}`);
     }
   }
 
-  return { exito: false, status: 'Timeout', descripcion: 'Tiempo de espera agotado' };
+  return { exito: false, status: 'Timeout', descripcion: 'Tiempo de espera agotado. Intenta de nuevo.' };
 };
 
 // ============================================
