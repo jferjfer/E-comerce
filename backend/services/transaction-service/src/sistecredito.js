@@ -89,10 +89,10 @@ const crearTransaccion = async (pedido, cliente) => {
 
 // ============================================
 // CONSULTAR TRANSACCIÓN (polling)
-// GET /pay/GetTransaction  ← endpoint correcto según docs
+// GET /pay/GetTransactionResponse ← endpoint correcto en Production
 // ============================================
 const consultarTransaccion = async (transactionId) => {
-  const response = await axios.get(`${BASE_URL}/pay/GetTransaction`, {
+  const response = await axios.get(`${BASE_URL}/pay/GetTransactionResponse`, {
     headers: getHeaders(),
     params: { transactionId },
     timeout: 15000,
