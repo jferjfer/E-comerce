@@ -1769,9 +1769,10 @@ aplicacion.post('/api/pagos/sistecredito/confirmar', async (req, res) => {
     console.log('📥 Webhook Sistecredito recibido:', JSON.stringify(datos).slice(0, 300));
 
     const txData = datos?.data || datos;
-    const transactionId = txData?._id;
-    const invoice = txData?.invoice;
-    const transactionStatus = txData?.transactionStatus;
+    // Sistecredito envía PascalCase en webhook — normalizar
+    const transactionId   = txData?._id       || txData?.Id;
+    const invoice         = txData?.invoice   || txData?.Invoice;
+    const transactionStatus = txData?.transactionStatus || txData?.TransactionStatus;
 
     if (!transactionId && !invoice) {
       return res.status(400).json({ error: 'Datos insuficientes en webhook' });

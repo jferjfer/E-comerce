@@ -153,22 +153,25 @@ const interpretarEstado = (transactionStatus) => {
 
 // ============================================
 // VERIFICAR NOTIFICACIÓN (seguridad)
-// Comparar webhook con GET para evitar fraude
+// Sistecredito envía PascalCase en webhook, camelCase en GET
 // ============================================
 const verificarNotificacion = async (datosWebhook) => {
   try {
-    const transactionId = datosWebhook?._id || datosWebhook?.data?._id;
+    // Normalizar: soportar tanto PascalCase (webhook) como camelCase (GET)
+    const txWebhook = datosWebhook?.data || datosWebhook;
+    const transactionId = txWebhook?._id || txWebhook?.Id;
     if (!transactionId) return false;
 
     const respuestaGet = await consultarTransaccion(transactionId);
     const txGet = respuestaGet?.data;
-    const txWebhook = datosWebhook?.data || datosWebhook;
 
-    // Comparar _id y transactionStatus entre webhook y GET
-    const idCoincide = txGet?._id === (txWebhook?._id || transactionId);
-    const statusCoincide = txGet?.transactionStatus === txWebhook?.transactionStatus;
+    const idCoincide = txGet?._id === transactionId;
+    // Comparar status normalizando a minúsculas
+    const statusWebhook = (txWebhook?.transactionStatus || txWebhook?.TransactionStatus || '').toLowerCase();
+    const statusGet     = (txGet?.transactionStatus || '').toLowerCase();
+    const statusCoincide = statusWebhook === statusGet;
 
-    console.log(`🔐 Sistecredito verificación: id=${idCoincide} status=${statusCoincide}`);
+    console.log(`🔐 Sistecredito verificación: id=${idCoincide} status=${statusCoincide} (webhook:${statusWebhook} get:${statusGet})`);
     return idCoincide && statusCoincide;
   } catch (e) {
     console.error('⚠️ Error verificando notificación Sistecredito:', e.message);
