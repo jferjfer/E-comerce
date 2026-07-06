@@ -19,3 +19,9 @@ test-mobile.sh
 assets/fonts/*.woff2
 STORE_LISTING.md
 google-service-account.json
+# Cache y temporales
+.expo
+dist
+web-build
+.cache
+*.log
