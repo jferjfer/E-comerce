@@ -610,12 +610,13 @@ export default function CheckoutScreen() {
         nombre: 'Pagar en línea',
         desc: 'Tarjeta, PSE, Nequi, Daviplata, Efecty — procesado por ePayco',
         emoji: '💳',
+        logo: null,
       },
       {
         id: 'sistecredito',
         nombre: 'Sistecredito — Paga a cuotas',
         desc: 'Financia tu compra en cuotas sin tarjeta de crédito',
-        emoji: '🏦',
+        logo: require('../assets/sistecredito-logo.png'),
       },
     ];
 
@@ -636,7 +637,11 @@ export default function CheckoutScreen() {
               {metodo === m.id && <View style={styles.metodoRadioPunto} />}
             </View>
             <View style={styles.metodoIconWrap}>
-              <Text style={{ fontSize: 20 }}>{m.emoji}</Text>
+              {m.id === 'sistecredito' ? (
+                <Image source={m.logo} style={{ width: 36, height: 20 }} resizeMode="contain" />
+              ) : (
+                <Text style={{ fontSize: 20 }}>{m.emoji}</Text>
+              )}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.metodoNombre}>{m.nombre}</Text>
@@ -716,7 +721,11 @@ export default function CheckoutScreen() {
           {/* Método seleccionado */}
           <View style={styles.metodoResumen}>
             <View style={styles.metodoResumenIcon}>
-              <Text style={{ fontSize: 16 }}>{metodo === 'sistecredito' ? '🏦' : '💳'}</Text>
+              {metodo === 'sistecredito' ? (
+                <Image source={require('../assets/sistecredito-logo.png')} style={{ width: 36, height: 20 }} resizeMode="contain" />
+              ) : (
+                <Text style={{ fontSize: 16 }}>💳</Text>
+              )}
             </View>
             <View>
               <Text style={styles.metodoResumenNombre}>
