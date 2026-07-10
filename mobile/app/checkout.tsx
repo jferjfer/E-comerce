@@ -503,22 +503,7 @@ export default function CheckoutScreen() {
       const pedidoId = resultado.orden?.id || resultado.id;
       setOrderId(pedidoId);
 
-      // 2. Intentar abrir ePayco
-      if (epaycoActivo) {
-        const resWidget = await fetch(`${API_URL}/api/pagos/epayco/widget`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ pedido_id: pedidoId }),
-        });
-        const widgetData = await resWidget.json();
-        if (resWidget.ok && widgetData.datos_widget) {
-          setDatosEpayco(widgetData.datos_widget);
-          setLoading(false);
-          return; // EpaycoWebView se abre y maneja el resto
-        }
-      }
-
-      // 3. Sistecredito
+      // 2. Sistecredito — va ANTES de ePayco
       if (metodo === 'sistecredito') {
         try {
           const resSiste = await fetch(`${API_URL}/api/pagos/sistecredito/iniciar`, {
@@ -562,6 +547,21 @@ export default function CheckoutScreen() {
           return;
         } catch {
           setError('Error de conexión con Sistecredito. Intenta de nuevo.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 3. ePayco — solo si el método es pago_en_linea
+      if (metodo === 'pago_en_linea' && epaycoActivo) {
+        const resWidget = await fetch(`${API_URL}/api/pagos/epayco/widget`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ pedido_id: pedidoId }),
+        });
+        const widgetData = await resWidget.json();
+        if (resWidget.ok && widgetData.datos_widget) {
+          setDatosEpayco(widgetData.datos_widget);
           setLoading(false);
           return;
         }
