@@ -286,9 +286,8 @@ export default function ChatIA() {
   const hora = (d: Date) =>
     d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-  // Solo visible para clientes autenticados o cualquier usuario
-  // (Noa ayuda a todos, autenticados o no)
-  if (usuario && usuario.rol !== 'cliente') return null;
+  // Solo visible para clientes autenticados
+  if (!usuario || usuario.rol !== 'cliente') return null;
 
   return (
     <>
