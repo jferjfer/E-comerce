@@ -1,7 +1,7 @@
 import { MetodoPago } from '@/types'
 
-// Logo oficial de Sistecredito
 export const SISTECREDITO_LOGO = 'https://importaexpertos.com/compras/img/cms/logo-sistecredito-transparente.png'
+export const ADDI_LOGO = 'https://www.addi.com/favicon.ico'
 
 export const metodosPago: MetodoPago[] = [
   {
@@ -17,5 +17,12 @@ export const metodosPago: MetodoPago[] = [
     tipo: 'externo',
     descripcion: 'Financia tu compra en cuotas sin tarjeta de crédito',
     icono: 'fas fa-hand-holding-usd'
+  },
+  {
+    id: 'addi',
+    nombre: 'ADDI — Compra ahora, paga después',
+    tipo: 'externo',
+    descripcion: 'Paga en cuotas quincenales sin tarjeta de crédito',
+    icono: 'fas fa-calendar-alt'
   }
 ]

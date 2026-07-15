@@ -435,6 +435,7 @@ export default function CheckoutScreen() {
   const [epaycoActivo, setEpaycoActivo] = useState<boolean | null>(null);
   const [sistecreditoUrl, setSistecreditoUrl] = useState<string | null>(null);
   const [sistecreditoTxId, setSistecreditoTxId] = useState<string | null>(null);
+  const [addiUrl, setAddiUrl] = useState<string | null>(null);
 
   // Bono
   const [codigoBono, setCodigoBono] = useState('');
@@ -503,7 +504,31 @@ export default function CheckoutScreen() {
       const pedidoId = resultado.orden?.id || resultado.id;
       setOrderId(pedidoId);
 
-      // 2. Sistecredito — va ANTES de ePayco
+      // 2. ADDI — va antes de Sistecredito y ePayco
+      if (metodo === 'addi') {
+        try {
+          const resAddi = await fetch(`${API_URL}/api/pagos/addi/iniciar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ pedido_id: pedidoId }),
+          });
+          const dataAddi = await resAddi.json();
+          if (!resAddi.ok || !dataAddi.checkout_url) {
+            setError(dataAddi.error || 'No se pudo iniciar el pago con ADDI');
+            setLoading(false);
+            return;
+          }
+          setAddiUrl(dataAddi.checkout_url);
+          setLoading(false);
+          return;
+        } catch {
+          setError('Error de conexión con ADDI. Intenta de nuevo.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 3. Sistecredito — va ANTES de ePayco
       if (metodo === 'sistecredito') {
         try {
           const resSiste = await fetch(`${API_URL}/api/pagos/sistecredito/iniciar`, {
@@ -552,7 +577,7 @@ export default function CheckoutScreen() {
         }
       }
 
-      // 3. ePayco — solo si el método es pago_en_linea
+      // 4. ePayco — solo si el método es pago_en_linea
       if (metodo === 'pago_en_linea' && epaycoActivo) {
         const resWidget = await fetch(`${API_URL}/api/pagos/epayco/widget`, {
           method: 'POST',
@@ -567,7 +592,7 @@ export default function CheckoutScreen() {
         }
       }
 
-      // 4. ePayco no disponible — mostrar error (no completar sin pago)
+      // 5. ePayco no disponible — mostrar error (no completar sin pago)
       setError('La pasarela de pagos no está disponible en este momento. Intenta más tarde.');
       setLoading(false);
 
@@ -610,6 +635,13 @@ export default function CheckoutScreen() {
         nombre: 'Pagar en línea',
         desc: 'Tarjeta, PSE, Nequi, Daviplata, Efecty — procesado por ePayco',
         emoji: '💳',
+        logo: null,
+      },
+      {
+        id: 'addi',
+        nombre: 'ADDI — Compra ahora, paga después',
+        desc: 'Paga en cuotas quincenales sin tarjeta de crédito',
+        emoji: '📅',
         logo: null,
       },
       {
@@ -721,7 +753,9 @@ export default function CheckoutScreen() {
           {/* Método seleccionado */}
           <View style={styles.metodoResumen}>
             <View style={styles.metodoResumenIcon}>
-              {metodo === 'sistecredito' ? (
+              {metodo === 'addi' ? (
+                <Text style={{ fontSize: 20 }}>📅</Text>
+              ) : metodo === 'sistecredito' ? (
                 <Image source={require('../assets/sistecredito-logo.png')} style={{ width: 36, height: 20 }} resizeMode="contain" />
               ) : (
                 <Text style={{ fontSize: 16 }}>💳</Text>
@@ -729,10 +763,10 @@ export default function CheckoutScreen() {
             </View>
             <View>
               <Text style={styles.metodoResumenNombre}>
-                {metodo === 'sistecredito' ? 'Sistecredito' : 'Pagar en línea'}
+                {metodo === 'addi' ? 'ADDI' : metodo === 'sistecredito' ? 'Sistecredito' : 'Pagar en línea'}
               </Text>
               <Text style={styles.metodoResumenDesc}>
-                {metodo === 'sistecredito' ? 'Pago a cuotas sin tarjeta de crédito' : 'Tarjeta, PSE, Nequi, Daviplata, Efecty'}
+                {metodo === 'addi' ? 'Pago en cuotas quincenales sin tarjeta' : metodo === 'sistecredito' ? 'Pago a cuotas sin tarjeta de crédito' : 'Tarjeta, PSE, Nequi, Daviplata, Efecty'}
               </Text>
             </View>
           </View>
@@ -823,6 +857,39 @@ export default function CheckoutScreen() {
             onCancelado={onPagoCancelado}
             onCerrar={() => { setDatosEpayco(null); setError('Pago cancelado.'); }}
           />
+        )}
+
+        {/* ADDI en WebView */}
+        {addiUrl && (
+          <Modal visible animationType="slide" onRequestClose={() => { setAddiUrl(null); setError('Pago cancelado.'); }}>
+            <View style={epaycoStyles.container}>
+              <View style={epaycoStyles.header}>
+                <Text style={epaycoStyles.headerTxt}>📅 ADDI — Compra ahora, paga después</Text>
+                <TouchableOpacity
+                  onPress={() => { setAddiUrl(null); setError('Pago cancelado. Puedes intentarlo de nuevo.'); }}
+                  style={epaycoStyles.cerrarBtn}
+                >
+                  <Text style={epaycoStyles.cerrarTxt}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <WebView
+                source={{ uri: addiUrl }}
+                onNavigationStateChange={async (navState) => {
+                  const url = navState.url || '';
+                  if (url.includes('estado=aprobado')) {
+                    setAddiUrl(null);
+                    onPagoExitoso();
+                  } else if (url.includes('estado=rechazado') || url.includes('estado=cancelado')) {
+                    setAddiUrl(null);
+                    setError('Pago con ADDI no completado. Puedes intentarlo de nuevo.');
+                  }
+                }}
+                javaScriptEnabled
+                domStorageEnabled
+                style={epaycoStyles.webview}
+              />
+            </View>
+          </Modal>
         )}
 
         {/* Sistecredito en WebView */}

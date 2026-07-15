@@ -8,6 +8,7 @@ const axios = require('axios');
 const nodemailer = require('nodemailer');
 const sistecredito = require('./sistecredito');
 const epayco = require('./epayco');
+const addi = require('./addi');
 const tiktok = require('./tiktok');
 
 // Transporter de correo — Hostinger SSL puerto 465
@@ -1916,6 +1917,128 @@ aplicacion.get('/api/pagos/sistecredito/consultar/:transactionId', async (req, r
     res.json(resultado);
   } catch (error) {
     res.status(500).json({ error: 'Error consultando transacción' });
+  }
+});
+
+// ============================================
+// ENDPOINTS ADDI
+// ============================================
+
+aplicacion.post('/api/pagos/addi/iniciar', autenticacion, async (req, res) => {
+  try {
+    const { pedido_id } = req.body;
+    const usuarioId = req.usuario.id;
+
+    const pedidoResult = await pool.query(
+      'SELECT p.*, json_agg(json_build_object(\'id\',pp.id_producto,\'nombre\',pp.nombre_producto,\'precio\',pp.precio_unitario,\'cantidad\',pp.cantidad)) as productos FROM pedido p LEFT JOIN pedido_producto pp ON p.id = pp.id_pedido WHERE p.id = $1 AND p.usuario_id = $2 GROUP BY p.id',
+      [pedido_id, parseInt(usuarioId)]
+    );
+    if (pedidoResult.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
+    const pedido = pedidoResult.rows[0];
+
+    let cliente = { nombre: 'Cliente', email: '', documento_tipo: 'CC', documento_numero: '', telefono: '', direccion: 'Bogotá D.C.', ciudad: 'Bogotá' };
+    try {
+      const resU = await axios.get(`http://auth-service:3011/api/usuarios/${usuarioId}`, { timeout: 3000 });
+      const u = resU.data.usuario || {};
+      cliente = {
+        nombre: `${u.nombre || ''} ${u.apellido || ''}`.trim() || cliente.nombre,
+        email: u.email || '',
+        documento_tipo: u.documento_tipo || 'CC',
+        documento_numero: u.documento_numero || '',
+        telefono: u.telefono || '',
+        direccion: u.direccion || u.ciudad || 'Bogotá D.C.',
+        ciudad: u.ciudad || 'Bogotá',
+      };
+    } catch {}
+
+    const urlBase = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
+    const orden = await addi.crearOrden(pedido, cliente, urlBase);
+    const checkoutUrl = orden.checkoutUrl || orden.url || orden.redirectUrl;
+    if (!checkoutUrl) return res.status(500).json({ error: 'ADDI no devolvió URL de checkout' });
+
+    // Guardar referencia ADDI en el pedido
+    await pool.query('UPDATE pedido SET tracking_number = $1 WHERE id = $2', [`ADDI-${orden.id || pedido_id}`, pedido_id]).catch(() => {});
+
+    console.log(`✅ ADDI orden creada para pedido ${pedido_id}: ${checkoutUrl}`);
+    res.json({ checkout_url: checkoutUrl, pedido_id });
+  } catch (error) {
+    console.error('Error iniciando pago ADDI:', error.response?.data || error.message);
+    res.status(500).json({ error: error.response?.data?.message || 'Error iniciando pago con ADDI' });
+  }
+});
+
+// Webhook ADDI — Basic Auth
+aplicacion.post('/api/pagos/addi/webhook', async (req, res) => {
+  try {
+    if (!addi.verificarWebhook(req)) {
+      console.error('❌ ADDI webhook: autenticación inválida');
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    const datos = req.body;
+    console.log('📥 Webhook ADDI recibido:', JSON.stringify(datos).slice(0, 300));
+
+    const pedidoId = datos.orderId || datos.order_id;
+    const addiStatus = datos.status || datos.orderStatus;
+    if (!pedidoId || !addiStatus) return res.status(400).json({ error: 'Datos insuficientes' });
+
+    const { estado, exitoso } = addi.interpretarEstado(addiStatus);
+
+    const client = await pool.connect();
+    let pedido;
+    try {
+      await client.query('BEGIN');
+      const r = await client.query('SELECT id, estado, usuario_id, total FROM pedido WHERE id = $1 FOR UPDATE', [pedidoId]);
+      if (r.rows.length === 0) { await client.query('ROLLBACK'); client.release(); return res.status(404).json({ error: 'Pedido no encontrado' }); }
+      pedido = r.rows[0];
+      if (pedido.estado === 'Confirmado' || pedido.estado === 'Cancelado') {
+        await client.query('ROLLBACK'); client.release();
+        return res.json({ ok: true, duplicado: true });
+      }
+      await client.query('UPDATE pedido SET estado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2', [estado, pedidoId]);
+      await client.query('COMMIT');
+    } catch (e) { await client.query('ROLLBACK'); client.release(); throw e; }
+    client.release();
+
+    if (exitoso) {
+      console.log(`✅ ADDI pago aprobado para pedido ${pedidoId}`);
+      axios.post('http://gateway:3000/interno/emitir', {
+        evento: 'pedido_actualizado', usuarioId: String(pedido.usuario_id), sala: 'admins',
+        datos: { pedidoId, estado_nuevo: estado, total: pedido.total }
+      }, { timeout: 2000 }).catch(() => {});
+
+      axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, nombre } = resU.data.usuario || {};
+          if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Confirmado', pedido.total);
+        }).catch(() => {});
+
+      // Factura DIAN
+      const productos = await pool.query('SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1', [pedidoId]);
+      const pd = await pool.query(`SELECT COALESCE(cliente_nombre,'Consumidor Final') as cliente_nombre, COALESCE(cliente_email,'') as cliente_email, COALESCE(cliente_documento,'222222222222') as cliente_documento, COALESCE(cliente_tipo_doc,'CC') as cliente_tipo_doc, COALESCE(cliente_direccion,'Bogotá D.C') as cliente_direccion FROM pedido WHERE id = $1`, [pedidoId]);
+      axios.post('http://facturacion-service:3010/api/facturas/generar', {
+        pedido_id: pedidoId, usuario_id: pedido.usuario_id,
+        cliente: { nombre: pd.rows[0]?.cliente_nombre, email: pd.rows[0]?.cliente_email, nit_cc: pd.rows[0]?.cliente_documento, tipo_documento: pd.rows[0]?.cliente_tipo_doc, direccion: pd.rows[0]?.cliente_direccion },
+        productos: productos.rows.map(p => ({ id: p.id, nombre: p.nombre || `Producto ${p.id}`, precio_unitario: parseFloat(p.precio_unitario), cantidad: p.cantidad }))
+      }, { timeout: 5000 }).catch(e => console.log(`⚠️ Factura ADDI: ${e.message}`));
+
+      axios.post('http://contabilidad-service:3012/api/contabilidad/eventos/venta', {
+        pedido_id: pedidoId, total: pedido.total, usuario_id: pedido.usuario_id,
+        metodo_pago: 'addi', fecha: new Date().toISOString()
+      }, { timeout: 3000 }).catch(() => {});
+    } else {
+      console.log(`❌ ADDI pago no aprobado para pedido ${pedidoId}: ${addiStatus}`);
+      axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
+        .then(resU => {
+          const { email, nombre } = resU.data.usuario || {};
+          if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Cancelado', pedido.total);
+        }).catch(() => {});
+    }
+
+    res.json({ ok: true, estado, pedido_id: pedidoId });
+  } catch (error) {
+    console.error('Error procesando webhook ADDI:', error.message);
+    res.status(500).json({ error: 'Error procesando webhook' });
   }
 });
 

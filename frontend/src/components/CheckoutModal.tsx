@@ -171,6 +171,30 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       const pedidoId = resultado.orden.id
 
+      // ADDI — crear orden y redirigir al checkout de ADDI
+      if (selectedMethod === 'addi') {
+        try {
+          const resAddi = await fetch(`${API_URL}/api/pagos/addi/iniciar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ pedido_id: pedidoId })
+          })
+          const dataAddi = await resAddi.json()
+          if (!resAddi.ok || !dataAddi.checkout_url) {
+            setError(dataAddi.error || 'No se pudo iniciar el pago con ADDI')
+            setIsLoading(false)
+            return
+          }
+          vaciarCarrito()
+          window.location.href = dataAddi.checkout_url
+          return
+        } catch {
+          setError('Error de conexión con ADDI. Intenta de nuevo.')
+          setIsLoading(false)
+          return
+        }
+      }
+
       // Sistecredito — flujo: crear transacción + polling frontend + redirect
       if (selectedMethod === 'sistecredito') {
         try {
