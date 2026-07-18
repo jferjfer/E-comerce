@@ -81,7 +81,15 @@ aplicacion.get('/salud', (req, res) => {
 // Manejador de errores
 aplicacion.use(manejadorErrores);
 
-aplicacion.listen(puerto, () => {
+aplicacion.listen(puerto, async () => {
+  // Migrar columna push_token si no existe
+  try {
+    const pool = require('./config/baseDatos');
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS push_token TEXT`);
+    console.log('✅ Columna push_token verificada');
+  } catch (e) {
+    console.log('⚠️ push_token migration:', e.message);
+  }
   console.log(`🚀 Auth Service v2.0 ejecutándose en puerto ${puerto}`);
   console.log(`📋 Endpoints disponibles:`);
   console.log(`   • POST /api/auth/login`);

@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "EGOS",
+    "name": "EGOS Colombia",
     "slug": "egos-colombia",
+    "owner": "fercho1997",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.egoscolombia.app",
@@ -35,8 +38,11 @@
         "WRITE_EXTERNAL_STORAGE",
         "INTERNET",
         "ACCESS_NETWORK_STATE",
-        "VIBRATE"
-      ]
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,8 +55,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "egos-colombia"
+        "projectId": "16f267b9-bcd5-4485-b21e-a1dc7adbf953"
       }
-    }
+    },
+    "owner": "fercho1997"
   }
 }

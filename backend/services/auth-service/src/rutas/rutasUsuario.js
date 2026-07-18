@@ -23,6 +23,33 @@ router.put('/perfil', autenticar, ControladorUsuario.actualizarPerfil);
 // PUT /api/usuarios/total-compras
 router.put('/total-compras', autenticar, ControladorUsuario.actualizarTotalCompras);
 
+// POST /api/usuarios/push-token — guardar token de notificaciones push
+router.post('/push-token', autenticar, async (req, res) => {
+  try {
+    const { push_token } = req.body;
+    if (!push_token) return res.status(400).json({ error: 'push_token requerido' });
+    const pool = require('../config/baseDatos');
+    await pool.query(
+      'UPDATE usuarios SET push_token = $1 WHERE id = $2',
+      [push_token, req.usuario.id]
+    );
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error guardando push token' });
+  }
+});
+
+// GET /api/usuarios/push-token/:id — obtener token de un usuario (interno)
+router.get('/push-token/:id', async (req, res) => {
+  try {
+    const pool = require('../config/baseDatos');
+    const r = await pool.query('SELECT push_token FROM usuarios WHERE id = $1', [req.params.id]);
+    res.json({ push_token: r.rows[0]?.push_token || null });
+  } catch {
+    res.json({ push_token: null });
+  }
+});
+
 // ============================================
 // RUTAS RRHH
 // ============================================

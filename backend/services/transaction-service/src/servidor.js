@@ -938,13 +938,23 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       console.log(`📡 WebSocket emitido a usuario_${usuarioIdPedido}`);
     }).catch(e => console.log(`⚠️ WebSocket error: ${e.message}`));
 
-    // Enviar correo en background
+    // Enviar correo + push en background
     axios.get(`http://auth-service:3011/api/usuarios/${usuarioIdPedido}`, { timeout: 2000 })
       .then(resU => {
         const { email, nombre } = resU.data.usuario || {};
         if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, estado, totalPedido || 0);
       })
       .catch(e => console.log(`⚠️ No se pudo enviar correo: ${e.message}`));
+
+    // Push notification
+    const infoEstado = MENSAJES_ESTADO[estado];
+    if (infoEstado) {
+      enviarPushNotificacion(
+        usuarioIdPedido,
+        `${infoEstado.emoji} ${infoEstado.titulo}`,
+        `Pedido #${pedidoId} — ${infoEstado.mensaje.slice(0, 80)}`
+      );
+    }
 
     res.json({
       mensaje: 'Estado actualizado exitosamente',
@@ -1185,6 +1195,25 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     res.status(500).json({ error: 'Error procesando pedido' });
   }
 });
+
+// Helper: enviar notificación push al cliente
+async function enviarPushNotificacion(usuarioId, titulo, cuerpo) {
+  try {
+    const resToken = await axios.get(`http://auth-service:3011/api/usuarios/push-token/${usuarioId}`, { timeout: 2000 });
+    const pushToken = resToken.data?.push_token;
+    if (!pushToken || !pushToken.startsWith('ExponentPushToken')) return;
+    await axios.post('https://exp.host/--/api/v2/push/send', {
+      to: pushToken,
+      title: titulo,
+      body: cuerpo,
+      sound: 'default',
+      channelId: 'pedidos',
+    }, { timeout: 5000 });
+    console.log(`📣 Push enviado a usuario ${usuarioId}: ${titulo}`);
+  } catch (e) {
+    console.log(`⚠️ Push no enviado a ${usuarioId}: ${e.message}`);
+  }
+}
 
 // Helper: aplicar bono cuando el pago es confirmado por webhook
 async function aplicarBonoSiExiste(pedidoId) {
@@ -1862,12 +1891,13 @@ aplicacion.post('/api/pagos/sistecredito/confirmar', async (req, res) => {
         datos: { pedidoId, estado_nuevo: estado, total: pedido.total }
       }, { timeout: 2000 }).catch(() => {});
 
-      // Correo de confirmación
+      // Correo + push de confirmación (Sistecredito)
       axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
         .then(resU => {
           const { email, nombre } = resU.data.usuario || {};
           if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Confirmado', pedido.total);
         }).catch(() => {});
+      enviarPushNotificacion(pedido.usuario_id, '✅ ¡Pago confirmado!', `Tu pedido #${pedidoId} fue aprobado por Sistecredito.`);
 
       // Factura DIAN
       const productos = await pool.query(
@@ -2032,6 +2062,7 @@ aplicacion.post('/api/pagos/addi/webhook', async (req, res) => {
           const { email, nombre } = resU.data.usuario || {};
           if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Confirmado', pedido.total);
         }).catch(() => {});
+      enviarPushNotificacion(pedido.usuario_id, '✅ ¡Pago confirmado!', `Tu pedido #${pedidoId} fue aprobado por ADDI.`);
 
       // Factura DIAN
       const productos = await pool.query('SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1', [pedidoId]);

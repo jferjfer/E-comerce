@@ -13,11 +13,13 @@ import SplashScreen from '@/components/SplashScreen';
 import WelcomeOverlay from '@/components/WelcomeOverlay';
 import { useSocketNotificaciones } from '@/hooks/useSocket';
 import { useAuthStore } from '@/store/useAuthStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 type Fase = 'splash' | 'welcome' | 'app';
 
 function AppWrapper() {
   useSocketNotificaciones();
+  usePushNotifications();
   return null;
 }
 
