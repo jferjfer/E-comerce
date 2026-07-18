@@ -1953,7 +1953,7 @@ aplicacion.post('/api/pagos/addi/iniciar', autenticacion, async (req, res) => {
 
     const urlBase = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
     const orden = await addi.crearOrden(pedido, cliente, urlBase);
-    const checkoutUrl = orden.checkoutUrl || orden.url || orden.redirectUrl;
+    const checkoutUrl = orden.checkoutUrl;
     if (!checkoutUrl) return res.status(500).json({ error: 'ADDI no devolvió URL de checkout' });
 
     // Guardar referencia ADDI en el pedido

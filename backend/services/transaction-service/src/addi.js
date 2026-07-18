@@ -30,42 +30,56 @@ async function crearOrden(pedido, cliente, urlBase) {
   const token = await getToken();
   const payload = {
     orderId: pedido.id,
-    totalAmount: Math.round(pedido.total),
+    totalAmount: `${Math.round(pedido.total)}.0`,
+    shippingAmount: '0.0',
     currency: 'COP',
     items: (pedido.productos || []).map(p => ({
       sku: String(p.id),
       name: p.nombre || `Producto ${p.id}`,
-      quantity: p.cantidad,
-      unitPrice: Math.round(p.precio),
+      quantity: String(p.cantidad),
+      unitPrice: `${Math.round(p.precio)}.0`,
       pictureUrl: p.imagen || '',
       category: p.categoria || 'Ropa',
     })),
     client: {
-      idType: cliente.documento_tipo || 'CC',
+      idType: 'CC',
       idNumber: cliente.documento_numero || '',
       firstName: cliente.nombre?.split(' ')[0] || '',
       lastName: cliente.nombre?.split(' ').slice(1).join(' ') || '',
       email: cliente.email || '',
       cellphone: cliente.telefono || '',
+      cellphoneCountryCode: '+57',
       address: {
         lineOne: cliente.direccion || 'Bogotá D.C.',
         city: cliente.ciudad || 'Bogotá',
         country: 'CO',
       },
     },
-    redirectionUrls: {
-      approved: `${urlBase}/pago/respuesta?metodo=addi&estado=aprobado&pedido=${pedido.id}`,
-      rejected: `${urlBase}/pago/respuesta?metodo=addi&estado=rechazado&pedido=${pedido.id}`,
-      cancelled: `${urlBase}/pago/respuesta?metodo=addi&estado=cancelado&pedido=${pedido.id}`,
+    shippingAddress: {
+      lineOne: cliente.direccion || 'Bogotá D.C.',
+      city: cliente.ciudad || 'Bogotá',
+      country: 'CO',
+    },
+    allyUrlRedirection: {
+      logoUrl: 'https://egoscolombia.com.co/logo.png',
+      callbackUrl: `${process.env.API_URL || 'https://api.egoscolombia.com.co'}/api/pagos/addi/webhook`,
+      redirectionUrl: `${urlBase}/pago/respuesta?metodo=addi&pedido=${pedido.id}`,
     },
   };
 
+  // ADDI responde 301 con header Location — desactivar follow redirect
   const res = await axios.post(
-    `${ADDI_CONFIG.base_url}/v1/allies/${ADDI_CONFIG.ally_slug}/orders`,
+    `${ADDI_CONFIG.base_url}/v1/online-applications`,
     payload,
-    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      maxRedirects: 0,
+      validateStatus: s => s === 301,
+    }
   );
-  return res.data;
+  const checkoutUrl = res.headers['location'];
+  if (!checkoutUrl) throw new Error('ADDI no devolvió header Location');
+  return { checkoutUrl };
 }
 
 function verificarWebhook(req) {
