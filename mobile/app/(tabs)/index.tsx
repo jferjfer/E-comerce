@@ -16,8 +16,65 @@ import ProductCard, { CARD_WIDTH } from '@/components/ProductCard';
 import EgosLogo from '@/components/EgosLogo';
 import { networkCache } from '@/hooks/useNetwork';
 import { useFadeIn } from '@/hooks/useAnimations';
+import ChatIA from '@/components/ChatIA';
 
 const { width } = Dimensions.get('window');
+
+// ── Fila de 2 productos con altura uniforme basada en ratio promedio ──────────
+function FilaProductos({ izq, der }: { izq: Producto; der?: Producto }) {
+  const [alturaIzq, setAlturaIzq] = useState(CARD_WIDTH * 1.3);
+  const [alturaDer, setAlturaDer] = useState(CARD_WIDTH * 1.3);
+  const [alturaFinal, setAlturaFinal] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    let ratioIzq = 1.3;
+    let ratioDer = 1.3;
+    let cargados = 0;
+    const total = der ? 2 : 1;
+
+    const calcular = () => {
+      cargados++;
+      if (cargados === total) {
+        // Promedio de ambos ratios → altura uniforme para la fila
+        const promedio = der ? (ratioIzq + ratioDer) / 2 : ratioIzq;
+        setAlturaFinal(Math.round(CARD_WIDTH * promedio));
+      }
+    };
+
+    Image.getSize(
+      izq.imagen,
+      (w, h) => { if (w > 0 && h > 0) ratioIzq = h / w; calcular(); },
+      () => calcular()
+    );
+
+    if (der) {
+      Image.getSize(
+        der.imagen,
+        (w, h) => { if (w > 0 && h > 0) ratioDer = h / w; calcular(); },
+        () => calcular()
+      );
+    }
+  }, [izq.imagen, der?.imagen]);
+
+  return (
+    <View style={{ flexDirection: 'row', paddingHorizontal: SPACING.lg, justifyContent: 'space-between', marginBottom: SPACING.lg }}>
+      <ProductCard
+        producto={izq}
+        onVerDetalles={p => router.push(`/producto/${p.id}`)}
+        alturaForzada={alturaFinal}
+      />
+      {der ? (
+        <ProductCard
+          producto={der}
+          onVerDetalles={p => router.push(`/producto/${p.id}`)}
+          alturaForzada={alturaFinal}
+        />
+      ) : (
+        <View style={{ width: CARD_WIDTH }} />
+      )}
+    </View>
+  );
+}
 
 // ── Mini HeroCarousel inline ──────────────────────────────────────────────────
 function HeroCarousel() {
@@ -197,6 +254,14 @@ export default function HomeScreen() {
   const visibles = filtrados.slice(0, pagina * POR_PAGINA);
   const hayMas = visibles.length < filtrados.length;
 
+  // Agrupar de 2 en 2 para altura uniforme por fila
+  const filas = useMemo(() => {
+    const r: { izq: Producto; der?: Producto }[] = [];
+    for (let i = 0; i < visibles.length; i += 2)
+      r.push({ izq: visibles[i], der: visibles[i + 1] });
+    return r;
+  }, [visibles]);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.negroHeader} />
@@ -228,10 +293,8 @@ export default function HomeScreen() {
       {/* Bienvenida — manejada desde _layout.tsx */}
 
       <FlatList
-        data={visibles}
-        keyExtractor={(item, i) => item.id || String(i)}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+        data={filas}
+        keyExtractor={(_, i) => String(i)}
         contentContainerStyle={styles.grid}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -324,15 +387,13 @@ export default function HomeScreen() {
             <View style={{ height: 24 }} />
           </>
         }
-        renderItem={({ item }) => (
-          <ProductCard
-            producto={item}
-            onVerDetalles={p => router.push(`/producto/${p.id}`)}
-          />
-        )}
+        renderItem={({ item }) => <FilaProductos izq={item.izq} der={item.der} />}
       />
 
-      {/* Modal adultos — igual que el web */}
+      {/* Chat IA Noa — solo en Home */}
+      <ChatIA />
+
+      {/* Modal adultos */}
       <Modal visible={modalAdultos} transparent animationType="fade" onRequestClose={() => setModalAdultos(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>

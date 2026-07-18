@@ -3,8 +3,9 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator, Animated
 } from 'react-native';
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { COLORS, SPACING, RADIUS, SHADOW, rf } from '@/constants';
+import BtnVolver from '@/components/BtnVolver';
 import { api } from '@/services/api';
 import { useScalePress } from '@/hooks/useAnimations';
 import { haptic } from '@/hooks/useHaptics';
@@ -204,6 +205,7 @@ export default function EstiloScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <BtnVolver titulo="DESCUBRE TU ESTILO" />
 
       {/* Header */}
       <View style={styles.header}>

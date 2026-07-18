@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { COLORS } from '@/constants';
+import BtnVolver from '@/components/BtnVolver';
 
 export default function WebViewScreen() {
   const { url } = useLocalSearchParams<{ url: string }>();
@@ -10,6 +11,7 @@ export default function WebViewScreen() {
 
   return (
     <View style={styles.container}>
+      <BtnVolver />
       {loading && (
         <View style={styles.loader}>
           <ActivityIndicator color={COLORS.dorado} size="large" />

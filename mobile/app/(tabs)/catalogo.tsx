@@ -1,18 +1,51 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity,
+  View, Text, FlatList, TouchableOpacity, Image,
   StyleSheet, TextInput, ActivityIndicator, RefreshControl, ScrollView, Modal
 } from 'react-native';
 import { router } from 'expo-router';
 import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
 import { api } from '@/services/api';
 import { Producto } from '@/types';
-import ProductCard from '@/components/ProductCard';
+import ProductCard, { CARD_WIDTH } from '@/components/ProductCard';
 import { useAppPrefs } from '@/store/useAppPrefs';
 import { networkCache } from '@/hooks/useNetwork';
 
 const POR_PAGINA = 20;
 const CAT_RESTRINGIDA = 'Lencería';
+
+// ── Fila de 2 productos con altura uniforme ──────────────────────────────
+function FilaProductos({ izq, der }: { izq: Producto; der?: Producto }) {
+  const [alturaFinal, setAlturaFinal] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    let ratioIzq = 1.3;
+    let ratioDer = 1.3;
+    let cargados = 0;
+    const total = der ? 2 : 1;
+
+    const calcular = () => {
+      cargados++;
+      if (cargados === total) {
+        const promedio = der ? (ratioIzq + ratioDer) / 2 : ratioIzq;
+        setAlturaFinal(Math.round(CARD_WIDTH * promedio));
+      }
+    };
+
+    Image.getSize(izq.imagen, (w, h) => { if (w > 0 && h > 0) ratioIzq = h / w; calcular(); }, () => calcular());
+    if (der) Image.getSize(der.imagen, (w, h) => { if (w > 0 && h > 0) ratioDer = h / w; calcular(); }, () => calcular());
+  }, [izq.imagen, der?.imagen]);
+
+  return (
+    <View style={{ flexDirection: 'row', paddingHorizontal: SPACING.lg, justifyContent: 'space-between', marginBottom: SPACING.lg }}>
+      <ProductCard producto={izq} onVerDetalles={p => router.push(`/producto/${p.id}`)} alturaForzada={alturaFinal} />
+      {der
+        ? <ProductCard producto={der} onVerDetalles={p => router.push(`/producto/${p.id}`)} alturaForzada={alturaFinal} />
+        : <View style={{ width: CARD_WIDTH }} />
+      }
+    </View>
+  );
+}
 
 export default function CatalogoScreen() {
   const { lenceriaConfirmada, confirmarLenceria } = useAppPrefs();
@@ -72,6 +105,14 @@ export default function CatalogoScreen() {
     setCategoria(cat);
     setPagina(1);
   };
+
+  // Agrupar de 2 en 2
+  const filas = useMemo(() => {
+    const r: { izq: Producto; der?: Producto }[] = [];
+    for (let i = 0; i < paginaItems.length; i += 2)
+      r.push({ izq: paginaItems[i], der: paginaItems[i + 1] });
+    return r;
+  }, [paginaItems]);
 
   const confirmar18 = () => {
     confirmarLenceria();
@@ -144,10 +185,8 @@ export default function CatalogoScreen() {
         <ActivityIndicator color={COLORS.dorado} size="large" style={{ flex: 1 }} />
       ) : (
         <FlatList
-          data={paginaItems}
-          keyExtractor={(item, i) => item.id || String(i)}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
+          data={filas}
+          keyExtractor={(_, i) => String(i)}
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -157,9 +196,7 @@ export default function CatalogoScreen() {
               tintColor={COLORS.dorado}
             />
           }
-          renderItem={({ item }) => (
-            <ProductCard producto={item} onVerDetalles={p => router.push(`/producto/${p.id}`)} />
-          )}
+          renderItem={({ item }) => <FilaProductos izq={item.izq} der={item.der} />}
           ListEmptyComponent={
             <View style={styles.vacio}>
               <Text style={{ fontSize: 40, marginBottom: 12 }}>🔍</Text>

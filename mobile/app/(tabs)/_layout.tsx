@@ -1,5 +1,5 @@
-import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
+import { Tabs, router } from 'expo-router';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants';
 import { useCartStore } from '@/store/useCartStore';
@@ -93,6 +93,14 @@ export default function TabsLayout() {
         },
         headerShadowVisible: false,
         headerTitleAlign: 'center',
+        headerLeft: () => (
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+          >
+            <Text style={{ color: COLORS.dorado, fontSize: 22, fontWeight: '300' }}>‹</Text>
+          </TouchableOpacity>
+        ),
       }}
     >
       {TABS.map(tab => (

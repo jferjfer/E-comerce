@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
+import BtnVolver from '@/components/BtnVolver';
 
 const METODOS = [
   {
@@ -31,6 +32,7 @@ const METODOS = [
 export default function PagosScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <BtnVolver titulo="MÉTODOS DE PAGO" />
 
       {/* Métodos disponibles */}
       <View style={styles.seccion}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, Image, TouchableOpacity,
   StyleSheet, Dimensions, Modal, Animated,
@@ -17,10 +17,25 @@ import { rf, SCREEN } from '@/constants';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.lg * 2 - 10) / 2;
 
+// Hook para obtener ratio real de una imagen
+function useImageRatio(uri: string): number {
+  const [ratio, setRatio] = useState(4 / 3); // portrait por defecto
+  useEffect(() => {
+    if (!uri) return;
+    Image.getSize(
+      uri,
+      (w, h) => { if (w > 0 && h > 0) setRatio(h / w); },
+      () => {}
+    );
+  }, [uri]);
+  return ratio;
+}
+
 interface Props {
   producto: Producto;
   onVerDetalles?: (p: Producto) => void;
   index?: number;
+  alturaForzada?: number;
 }
 
 const fmt = (n: number) => '$' + n.toLocaleString('es-CO');
@@ -154,11 +169,14 @@ function BottomSheetAgregar({
 }
 
 // ── ProductCard luxury ────────────────────────────────────────
-export default function ProductCard({ producto, onVerDetalles, index = 0 }: Props) {
+export default function ProductCard({ producto, onVerDetalles, index = 0, alturaForzada }: Props) {
   const { isFavorite, addToFavorites, removeFromFavorites } = useUserStore();
   const { scale, onPressIn, onPressOut } = useScalePress();
   const [showSheet, setShowSheet] = useState(false);
   const esFav = isFavorite(producto.id);
+  const imgRatio = useImageRatio(producto.imagen);
+  // Si viene altura forzada desde afuera la usamos, sino calculamos con ratio real
+  const imgHeight = alturaForzada ?? Math.round(CARD_WIDTH * imgRatio);
 
   const handleFav = (e: any) => {
     e.stopPropagation?.();
@@ -181,9 +199,13 @@ export default function ProductCard({ producto, onVerDetalles, index = 0 }: Prop
           onPressOut={onPressOut}
           activeOpacity={1}
         >
-          {/* Imagen portrait 2:3 */}
-          <View style={styles.imgWrap}>
-            <Image source={{ uri: producto.imagen }} style={styles.img} resizeMode="cover" />
+          {/* Imagen — ratio real, sin recorte */}
+          <View style={[styles.imgWrap, { height: imgHeight }]}>
+            <Image
+              source={{ uri: producto.imagen }}
+              style={{ width: '100%', height: imgHeight }}
+              resizeMode="cover"
+            />
 
             {/* Gradiente inferior sutil */}
             <View style={styles.imgGradient} />
@@ -272,11 +294,9 @@ const styles = StyleSheet.create({
   },
   imgWrap: {
     width: '100%',
-    aspectRatio: 2 / 3,  // Portrait 2:3 — fashion
-    backgroundColor: COLORS.fondoGris,
-    position: 'relative',
+    backgroundColor: '#f5f0eb',
+    overflow: 'hidden',
   },
-  img: { width: '100%', height: '100%' },
   imgGradient: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     height: 60,
@@ -361,8 +381,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: COLORS.bordeClaro,
   },
   sheetImg: {
-    width: 70, height: 90,
-    borderRadius: RADIUS.md, backgroundColor: COLORS.fondoGris,
+    width: 70,
+    height: 90,
+    borderRadius: RADIUS.md,
+    backgroundColor: '#f5f0eb',
+    overflow: 'hidden',
   },
   sheetNombre: { fontSize: 14, fontWeight: '700', color: COLORS.textoNegro, lineHeight: 20, marginBottom: 6 },
   sheetPrecio: { fontSize: 18, fontWeight: '800', color: COLORS.negro },

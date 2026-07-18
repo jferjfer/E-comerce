@@ -3,7 +3,9 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator, Modal
 } from 'react-native';
+import { Stack, router } from 'expo-router';
 import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
+import BtnVolver from '@/components/BtnVolver';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { API_URL } from '@/constants';
@@ -90,6 +92,7 @@ export default function CreditoScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <BtnVolver titulo="CRÉDITO EGOS" />
 
       {/* Header info */}
       <View style={styles.headerCard}>

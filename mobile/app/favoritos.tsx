@@ -3,8 +3,9 @@ import {
   View, Text, FlatList, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator
 } from 'react-native';
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
+import BtnVolver from '@/components/BtnVolver';
 import { useUserStore } from '@/store/useUserStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCartStore } from '@/store/useCartStore';
@@ -56,12 +57,14 @@ export default function FavoritosScreen() {
   }
 
   return (
-    <FlatList
-      data={productos}
-      keyExtractor={p => p.id}
-      numColumns={2}
-      contentContainerStyle={styles.grid}
-      columnWrapperStyle={{ gap: 12, paddingHorizontal: SPACING.lg }}
+    <View style={{ flex: 1 }}>
+      <BtnVolver titulo="MIS FAVORITOS" />
+      <FlatList
+        data={productos}
+        keyExtractor={p => p.id}
+        numColumns={2}
+        contentContainerStyle={styles.grid}
+        columnWrapperStyle={{ gap: 12, paddingHorizontal: SPACING.lg }}
       renderItem={({ item }) => (
         <View style={styles.card}>
           <View style={styles.imgWrap}>
@@ -83,6 +86,7 @@ export default function FavoritosScreen() {
         </View>
       )}
     />
+    </View>
   );
 }
 
