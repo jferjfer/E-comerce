@@ -493,6 +493,35 @@ app.all('/api/usuarios/rrhh*', async (req, res) => {
   }
 });
 
+app.post('/api/usuarios/push-token', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: `${AUTH_URL}/api/usuarios/push-token`,
+      data: req.body,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 5000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+app.get('/api/usuarios/push-token/:id', async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `${AUTH_URL}/api/usuarios/push-token/${req.params.id}`,
+      headers: { Authorization: req.headers.authorization },
+      timeout: 5000
+    });
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 // Manejo directo de rutas principales de productos
 app.get('/api/productos', async (req, res) => {
   try {
