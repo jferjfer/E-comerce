@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { useAuthStore } from '@/store/useAuthStore';
 import { API_URL } from '@/constants';
@@ -33,8 +32,7 @@ export function usePushNotifications() {
     if (!token || !usuario) return;
 
     const registrar = async () => {
-      if (!Device.isDevice) return; // No funciona en emulador
-
+      // Solicitar permiso
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
@@ -54,11 +52,12 @@ export function usePushNotifications() {
         });
       }
 
-      const pushToken = await Notifications.getExpoPushTokenAsync({
-        projectId: '16f267b9-bcd5-4485-b21e-a1dc7adbf953',
-      });
-
-      await registrarToken(pushToken.data, token);
+      try {
+        const pushToken = await Notifications.getExpoPushTokenAsync({
+          projectId: '16f267b9-bcd5-4485-b21e-a1dc7adbf953',
+        });
+        await registrarToken(pushToken.data, token);
+      } catch {}
     };
 
     registrar();
