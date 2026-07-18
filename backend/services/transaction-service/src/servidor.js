@@ -1192,7 +1192,7 @@ async function aplicarBonoSiExiste(pedidoId) {
     const r = await pool.query('SELECT codigo_bono, usuario_id FROM pedido WHERE id = $1', [pedidoId]);
     const { codigo_bono, usuario_id } = r.rows[0] || {};
     if (!codigo_bono) return;
-    await axios.post('http://marketing-service:3006/api/bonos/aplicar', {
+    await axios.post('http://credit-service:3008/api/bonos/aplicar', {
       codigo: codigo_bono,
       usuario_id,
       pedido_id: pedidoId
