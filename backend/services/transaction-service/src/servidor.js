@@ -1186,6 +1186,23 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
   }
 });
 
+// Helper: aplicar bono cuando el pago es confirmado por webhook
+async function aplicarBonoSiExiste(pedidoId) {
+  try {
+    const r = await pool.query('SELECT codigo_bono, usuario_id FROM pedido WHERE id = $1', [pedidoId]);
+    const { codigo_bono, usuario_id } = r.rows[0] || {};
+    if (!codigo_bono) return;
+    await axios.post('http://marketing-service:3006/api/bonos/aplicar', {
+      codigo: codigo_bono,
+      usuario_id,
+      pedido_id: pedidoId
+    }, { timeout: 3000 });
+    console.log(`🎁 Bono ${codigo_bono} aplicado para pedido ${pedidoId}`);
+  } catch (e) {
+    console.log(`⚠️ No se pudo aplicar bono para pedido ${pedidoId}: ${e.message}`);
+  }
+}
+
 // ============================================
 // SSE — Server-Sent Events
 // ============================================
@@ -1888,6 +1905,9 @@ aplicacion.post('/api/pagos/sistecredito/confirmar', async (req, res) => {
         fecha: new Date().toISOString()
       }, { timeout: 3000 }).catch(() => {});
 
+      // Aplicar bono si existe
+      aplicarBonoSiExiste(pedidoId);
+
     } else {
       console.log(`❌ Sistecredito pago no exitoso para pedido ${pedidoId}: ${transactionStatus}`);
       axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
@@ -2026,6 +2046,10 @@ aplicacion.post('/api/pagos/addi/webhook', async (req, res) => {
         pedido_id: pedidoId, total: pedido.total, usuario_id: pedido.usuario_id,
         metodo_pago: 'addi', fecha: new Date().toISOString()
       }, { timeout: 3000 }).catch(() => {});
+
+      // Aplicar bono si existe
+      aplicarBonoSiExiste(pedidoId);
+
     } else {
       console.log(`❌ ADDI pago no aprobado para pedido ${pedidoId}: ${addiStatus}`);
       axios.get(`http://auth-service:3011/api/usuarios/${pedido.usuario_id}`, { timeout: 2000 })
