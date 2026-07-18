@@ -1,7 +1,7 @@
 import { MetodoPago } from '@/types'
 
 export const SISTECREDITO_LOGO = 'https://importaexpertos.com/compras/img/cms/logo-sistecredito-transparente.png'
-export const ADDI_LOGO = 'https://www.addi.com/favicon.ico'
+export const ADDI_LOGO = '/addi-logo.svg'
 
 export const metodosPago: MetodoPago[] = [
   {
