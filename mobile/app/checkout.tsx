@@ -603,11 +603,10 @@ export default function CheckoutScreen() {
     }
   };
 
-  const onPagoExitoso = async () => {
+  const onPagoExitoso = async (aplicarBonoFrontend = true) => {
     setDatosEpayco(null);
-    // BUG-17 FIX: aplicar bono y vaciar carrito después de que ePayco confirma
-    // El webhook del backend confirmará el pedido de forma independiente
-    if (bonoValidado?.valido && usuario && orderId) {
+    // Solo aplicar bono desde frontend para ePayco — ADDI y Sistecredito lo aplican en el webhook del backend
+    if (aplicarBonoFrontend && bonoValidado?.valido && usuario && orderId) {
       await api.aplicarBono(codigoBono.trim().toUpperCase(), usuario.id, orderId).catch(() => {});
     }
     vaciarCarrito();
@@ -641,8 +640,8 @@ export default function CheckoutScreen() {
         id: 'addi',
         nombre: 'ADDI — Compra ahora, paga después',
         desc: 'Paga en cuotas quincenales sin tarjeta de crédito',
-        emoji: '📅',
-        logo: null,
+        emoji: '🅰',
+        logo: require('../assets/addi-logo.png'),
       },
       {
         id: 'sistecredito',
@@ -671,6 +670,8 @@ export default function CheckoutScreen() {
             <View style={styles.metodoIconWrap}>
               {m.id === 'sistecredito' ? (
                 <Image source={m.logo} style={{ width: 36, height: 20 }} resizeMode="contain" />
+              ) : m.id === 'addi' ? (
+                <Image source={m.logo} style={{ width: 32, height: 32, borderRadius: 8 }} resizeMode="contain" />
               ) : (
                 <Text style={{ fontSize: 20 }}>{m.emoji}</Text>
               )}
@@ -754,7 +755,7 @@ export default function CheckoutScreen() {
           <View style={styles.metodoResumen}>
             <View style={styles.metodoResumenIcon}>
               {metodo === 'addi' ? (
-                <Text style={{ fontSize: 20 }}>📅</Text>
+                <Image source={require('../assets/addi-logo.png')} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="contain" />
               ) : metodo === 'sistecredito' ? (
                 <Image source={require('../assets/sistecredito-logo.png')} style={{ width: 36, height: 20 }} resizeMode="contain" />
               ) : (
@@ -864,7 +865,7 @@ export default function CheckoutScreen() {
           <Modal visible animationType="slide" onRequestClose={() => { setAddiUrl(null); setError('Pago cancelado.'); }}>
             <View style={epaycoStyles.container}>
               <View style={epaycoStyles.header}>
-                <Text style={epaycoStyles.headerTxt}>📅 ADDI — Compra ahora, paga después</Text>
+                <Text style={epaycoStyles.headerTxt}>ADDI — Compra ahora, paga después</Text>
                 <TouchableOpacity
                   onPress={() => { setAddiUrl(null); setError('Pago cancelado. Puedes intentarlo de nuevo.'); }}
                   style={epaycoStyles.cerrarBtn}
@@ -876,12 +877,32 @@ export default function CheckoutScreen() {
                 source={{ uri: addiUrl }}
                 onNavigationStateChange={async (navState) => {
                   const url = navState.url || '';
-                  if (url.includes('estado=aprobado')) {
+                  if (!url.includes('pago/respuesta')) return;
+                  // ADDI redirige a egoscolombia.com.co/pago/respuesta?metodo=addi&pedido=XXX
+                  // Consultar estado real del pedido en BD
+                  if (orderId && token) {
+                    for (let i = 0; i < 8; i++) {
+                      await new Promise(r => setTimeout(r, 3000));
+                      try {
+                        const res = await fetch(`${API_URL}/api/pedidos`, {
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        const data = await res.json();
+                        const pedido = (data.pedidos || []).find((p: any) => p.id === orderId);
+                        if (pedido?.estado === 'Confirmado') {
+                          setAddiUrl(null);
+                          onPagoExitoso(false); // bono ya lo aplica el webhook
+                          return;
+                        }
+                        if (pedido?.estado === 'Cancelado') {
+                          setAddiUrl(null);
+                          setError('Tu solicitud de crédito con ADDI no fue aprobada. Puedes intentar con otro método.');
+                          return;
+                        }
+                      } catch {}
+                    }
                     setAddiUrl(null);
-                    onPagoExitoso();
-                  } else if (url.includes('estado=rechazado') || url.includes('estado=cancelado')) {
-                    setAddiUrl(null);
-                    setError('Pago con ADDI no completado. Puedes intentarlo de nuevo.');
+                    setError('ADDI está evaluando tu solicitud. Revisa en "Mis Pedidos" en unos minutos.');
                   }
                 }}
                 javaScriptEnabled
@@ -909,9 +930,7 @@ export default function CheckoutScreen() {
                 source={{ uri: sistecreditoUrl }}
                 onNavigationStateChange={async (navState) => {
                   const url = navState.url || '';
-                  // Detectar retorno exitoso — Sistecredito redirige a la redirectionUrl
                   if (url.includes('egoscolombia.com.co') || url.includes('pago/respuesta')) {
-                    // Consultar estado del pedido
                     if (orderId && token) {
                       for (let i = 0; i < 5; i++) {
                         await new Promise(r => setTimeout(r, 3000));
@@ -923,7 +942,7 @@ export default function CheckoutScreen() {
                           const pedido = (data.pedidos || []).find((p: any) => p.id === orderId);
                           if (pedido?.estado === 'Confirmado') {
                             setSistecreditoUrl(null);
-                            onPagoExitoso();
+                            onPagoExitoso(false); // bono ya lo aplica el webhook
                             return;
                           }
                         } catch {}
