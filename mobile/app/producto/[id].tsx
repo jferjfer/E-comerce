@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, Dimensions, Modal,
-  TextInput, FlatList, Share
+  TextInput, Share, Platform, StatusBar as RNStatusBar
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
@@ -16,6 +16,85 @@ import ProductCard from '@/components/ProductCard';
 import { haptic } from '@/hooks/useHaptics';
 
 const { width } = Dimensions.get('window');
+const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 44;
+const REL_WIDTH = 140;
+
+// Imagen relacionada con ratio real
+function ImagenAdaptable({ uri, ancho }: { uri: string; ancho: number }) {
+  const [alto, setAlto] = useState(ancho * 1.25);
+  useEffect(() => {
+    if (!uri) return;
+    Image.getSize(
+      uri,
+      (w, h) => { if (w > 0 && h > 0) setAlto(Math.round(ancho * h / w)); },
+      () => {}
+    );
+  }, [uri]);
+  return (
+    <Image
+      source={{ uri }}
+      style={{ width: ancho, height: alto, backgroundColor: '#f5f0eb' }}
+      resizeMode="contain"
+    />
+  );
+}
+
+// Galería con swipe horizontal — alto calculado de la imagen más alta
+function GaleriaSwipe({ imagenes, imgActiva, onCambiar }: {
+  imagenes: string[];
+  imgActiva: number;
+  onCambiar: (i: number) => void;
+}) {
+  const [altoMax, setAltoMax] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (!imagenes.length) return;
+    const altos = new Array(imagenes.length).fill(0);
+    let pendientes = imagenes.length;
+    imagenes.forEach((uri, idx) => {
+      Image.getSize(
+        uri,
+        (w, h) => {
+          altos[idx] = w > 0 && h > 0 ? Math.round(width * h / w) : Math.round(width * 1.2);
+          pendientes--;
+          if (pendientes === 0) setAltoMax(Math.max(...altos));
+        },
+        () => {
+          altos[idx] = Math.round(width * 1.2);
+          pendientes--;
+          if (pendientes === 0) setAltoMax(Math.max(...altos));
+        }
+      );
+    });
+  }, [imagenes.join(',')]);
+
+  // Mientras calcula, mostrar la imagen con alto provisional sin brinco
+  const alto = altoMax ?? Math.round(width * 1.2);
+
+  return (
+    <View style={{ width, height: alto, backgroundColor: '#f5f0eb', overflow: 'hidden' }}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={e => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+          if (idx !== imgActiva) { haptic.swipeImagen(); onCambiar(idx); }
+        }}
+      >
+        {imagenes.map((uri, i) => (
+          <Image
+            key={i}
+            source={{ uri }}
+            style={{ width, height: alto, backgroundColor: '#f5f0eb' }}
+            resizeMode="contain"
+          />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
 const fmt = (n: number) => '$' + n.toLocaleString('es-CO');
 
 export default function ProductoDetallePage() {
@@ -169,58 +248,41 @@ export default function ProductoDetallePage() {
   const esFav = isFavorite(producto.id);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="never">
+
+      {/* Botón volver manual */}
+      <TouchableOpacity style={styles.btnVolver} onPress={() => router.back()}>
+        <Text style={styles.btnVolverTxt}>←</Text>
+      </TouchableOpacity>
 
       {/* Galería con swipe horizontal */}
-      <View style={styles.galeria}>
-        <FlatList
-          data={imagenes}
-          keyExtractor={(_, i) => String(i)}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={e => {
-            const idx = Math.round(e.nativeEvent.contentOffset.x / width);
-            if (idx !== imgActiva) {
-              haptic.swipeImagen();
-              setImgActiva(idx);
-            }
-          }}
-          renderItem={({ item }) => (
-            <Image source={{ uri: item }} style={styles.imgPrincipal} resizeMode="cover" />
-          )}
-        />
+      <GaleriaSwipe
+        imagenes={imagenes}
+        imgActiva={imgActiva}
+        onCambiar={setImgActiva}
+      />
 
-        {/* Indicadores de puntos */}
-        {imagenes.length > 1 && (
-          <View style={styles.dotsRow}>
-            {imagenes.map((_, i) => (
-              <View key={i} style={[styles.dot, imgActiva === i && styles.dotActivo]} />
-            ))}
-          </View>
-        )}
+      {/* Overlays flotantes */}
+      {producto.es_eco && (
+        <View style={styles.ecoBadge}><Text style={styles.ecoBadgeTxt}>🌿 Eco</Text></View>
+      )}
+      {!producto.en_stock && (
+        <View style={styles.agotadoOverlay}>
+          <Text style={styles.agotadoTxt}>Agotado</Text>
+        </View>
+      )}
+      <TouchableOpacity style={styles.shareBtn} onPress={handleCompartir}>
+        <Text style={{ fontSize: 16 }}>🔗</Text>
+      </TouchableOpacity>
 
-        {/* Contador */}
-        {imagenes.length > 1 && (
-          <View style={styles.imgCounter}>
-            <Text style={styles.imgCounterTxt}>{imgActiva + 1}/{imagenes.length}</Text>
-          </View>
-        )}
-
-        {!producto.en_stock && (
-          <View style={styles.agotadoOverlay}>
-            <Text style={styles.agotadoTxt}>Agotado</Text>
-          </View>
-        )}
-        {producto.es_eco && (
-          <View style={styles.ecoBadge}><Text style={styles.ecoBadgeTxt}>🌿 Eco</Text></View>
-        )}
-
-        {/* Botón compartir sobre la imagen */}
-        <TouchableOpacity style={styles.shareBtn} onPress={handleCompartir}>
-          <Text style={styles.shareBtnTxt}>️</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Dots debajo de la imagen */}
+      {imagenes.length > 1 && (
+        <View style={styles.dotsRow}>
+          {imagenes.map((_, i) => (
+            <View key={i} style={[styles.dot, imgActiva === i && styles.dotActivo]} />
+          ))}
+        </View>
+      )}
 
       {/* Info principal */}
       <View style={styles.info}>
@@ -236,20 +298,21 @@ export default function ProductoDetallePage() {
         {/* Precio */}
         <Text style={styles.precio}>{fmt(producto.precio)}</Text>
 
-        {/* Addi — cuotas informativas (banner estático hasta aprobación) */}
+        {/* ADDI y Sistecredito — banner informativo */}
         {producto.en_stock && producto.precio >= 50000 && (
           <View style={styles.addiBanner}>
-            <Text style={styles.addiTexto}>
-              3 cuotas de{' '}
-              <Text style={styles.addiCuota}>{fmt(Math.ceil(producto.precio / 3))}</Text>
-              {' '}desde 0% con
-            </Text>
+            <Text style={styles.addiTexto}>Págalo en cuotas con</Text>
             <Image
               source={require('../../assets/addi-logo.png')}
               style={styles.addiLogo}
               resizeMode="contain"
             />
-            <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 4 }}>Próx.</Text>
+            <Text style={{ fontSize: 12, color: COLORS.bordeMedio }}>|</Text>
+            <Image
+              source={require('../../assets/sistecredito-logo.png')}
+              style={{ width: 70, height: 16 }}
+              resizeMode="contain"
+            />
           </View>
         )}
 
@@ -407,7 +470,7 @@ export default function ProductoDetallePage() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
             {relacionados.map(rel => (
               <TouchableOpacity key={rel.id} style={styles.relCard} onPress={() => router.push(`/producto/${rel.id}`)}>
-                <Image source={{ uri: rel.imagen }} style={styles.relImg} resizeMode="cover" />
+                <ImagenAdaptable uri={rel.imagen} ancho={REL_WIDTH} />
                 <View style={{ padding: 8 }}>
                   <Text style={{ fontSize: 9, color: COLORS.textoGrisSub, textTransform: 'uppercase' }}>{rel.categoria}</Text>
                   <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.textoNegro }} numberOfLines={2}>{rel.nombre}</Text>
@@ -495,19 +558,9 @@ export default function ProductoDetallePage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.fondoCard },
-  galeria: { width, height: width * 1.333, position: 'relative', backgroundColor: '#f5f0eb', overflow: 'hidden' },
-  imgPrincipal: {
-    width,
-    height: width * 1.333,
-    backgroundColor: '#f5f0eb',
-  },
-  dotsRow: {
-    position: 'absolute', bottom: 12, left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
-  },
-  dot: { width: 20, height: 2, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.35)' },
-  dotActivo: { width: 32, height: 2.5, borderRadius: 1.5, backgroundColor: COLORS.dorado },
+  container: { flex: 1, backgroundColor: COLORS.fondoCard, paddingTop: STATUS_BAR_HEIGHT },
+  galeria: { width, backgroundColor: '#f5f0eb', position: 'relative' },
+  imgPrincipal: { width, backgroundColor: '#f5f0eb' },
   imgCounter: {
     position: 'absolute', top: 12, right: 12,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -515,17 +568,42 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   imgCounterTxt: { color: COLORS.blanco, fontSize: 11, fontWeight: '600' },
+  btnVolver: {
+    position: 'absolute',
+    top: STATUS_BAR_HEIGHT + 8,
+    left: 12,
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center', justifyContent: 'center',
+    zIndex: 20,
+  },
+  btnVolverTxt: { color: COLORS.blanco, fontSize: 18, fontWeight: '700' },
   shareBtn: {
-    position: 'absolute', top: 12, left: 12,
+    position: 'absolute', top: STATUS_BAR_HEIGHT + 8, right: 12,
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center', justifyContent: 'center',
+    zIndex: 10,
   },
-  shareBtnTxt: { fontSize: 16 },
-  agotadoOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
-  agotadoTxt: { backgroundColor: 'rgba(255,255,255,0.95)', color: COLORS.textoNegro, fontSize: 14, fontWeight: '700', paddingHorizontal: 16, paddingVertical: 6, borderRadius: RADIUS.full },
-  ecoBadge: { position: 'absolute', top: 52, left: 12, backgroundColor: '#10b981', borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3 },
-  ecoBadgeTxt: { color: COLORS.blanco, fontSize: 11, fontWeight: '700' },
+  imgCounter: {
+    position: 'absolute', top: STATUS_BAR_HEIGHT + 8, right: 56,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    zIndex: 10,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    backgroundColor: '#f5f0eb',
+  },
+  dot: { width: 6, height: 3, borderRadius: 2, backgroundColor: '#c4b9ab' },
+  dotActivo: { width: 24, height: 3, borderRadius: 2, backgroundColor: '#111827' },
+  ecoBadge: { position: 'absolute', top: STATUS_BAR_HEIGHT + 52, left: 12, backgroundColor: '#10b981', borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3, zIndex: 10 },
+  agotadoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center', zIndex: 10 },
   info: { padding: SPACING.lg, backgroundColor: COLORS.fondoCard },
   categoria: { fontSize: 11, color: COLORS.textoGrisSub, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
   nombre: { fontSize: 22, fontWeight: '800', color: COLORS.textoNegro, marginBottom: 8, lineHeight: 28 },
