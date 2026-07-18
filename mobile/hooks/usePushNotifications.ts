@@ -16,7 +16,7 @@ Notifications.setNotificationHandler({
 
 async function registrarToken(token: string, authToken: string) {
   try {
-    await fetch(`${API_URL}/api/auth/push-token`, {
+    await fetch(`${API_URL}/api/usuarios/push-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
       body: JSON.stringify({ push_token: token }),
