@@ -2035,7 +2035,7 @@ aplicacion.post('/api/pagos/addi/webhook', async (req, res) => {
         }).catch(() => {});
     }
 
-    res.json({ ok: true, estado, pedido_id: pedidoId });
+    res.json({ ...datos, ok: true, estado, pedido_id: pedidoId });
   } catch (error) {
     console.error('Error procesando webhook ADDI:', error.message);
     res.status(500).json({ error: 'Error procesando webhook' });

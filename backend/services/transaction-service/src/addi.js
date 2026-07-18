@@ -90,8 +90,9 @@ function verificarWebhook(req) {
 
 // approved | rejected | cancelled | fraud_prevention_rejected
 function interpretarEstado(addiStatus) {
-  if (addiStatus === 'approved') return { estado: 'Confirmado', exitoso: true };
-  if (addiStatus === 'cancelled') return { estado: 'Cancelado', exitoso: false };
+  const s = (addiStatus || '').toUpperCase();
+  if (s === 'APPROVED') return { estado: 'Confirmado', exitoso: true };
+  if (s === 'PENDING') return { estado: 'Creado', exitoso: false };
   return { estado: 'Cancelado', exitoso: false };
 }
 
