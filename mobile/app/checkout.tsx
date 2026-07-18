@@ -686,7 +686,7 @@ export default function CheckoutScreen() {
         <View style={styles.avisoSeguridad}>
           <Text style={{ fontSize: 14 }}>🛡️</Text>
           <Text style={styles.avisoTxt}>
-            Pago seguro. ePayco acepta tarjetas, PSE, Nequi, Daviplata y más. Sistecredito permite pagar a cuotas sin tarjeta.
+            Pago seguro. ePayco acepta tarjetas, PSE, Nequi y más. ADDI y Sistecredito permiten pagar en cuotas sin tarjeta de crédito.
           </Text>
         </View>
 

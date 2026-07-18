@@ -188,6 +188,17 @@ export default function ConfirmationStep({
         </div>
       )}
 
+      {/* Aviso ADDI */}
+      {selectedMethod === 'addi' && (
+        <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <img src="/addi-logo.svg" alt="ADDI" className="h-5 w-auto mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-blue-800 space-y-1">
+            <p><strong>Serás redirigido a ADDI</strong> para completar tu solicitud de crédito.</p>
+            <p>ADDI evaluará tu solicitud en tiempo real. El proceso toma entre 20 segundos y 10 minutos.</p>
+          </div>
+        </div>
+      )}
+
       {/* Aviso Sistecredito */}
       {esSistecredito && (
         <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
