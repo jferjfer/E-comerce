@@ -20,8 +20,23 @@ export default function EpaycoRespuestaPage() {
   const x_response_reason   = params.get('x_response_reason_text') || ''
   const x_cod_response      = params.get('x_cod_response') || params.get('x_response_code_transaction') || ''
 
+  // Parámetros de ADDI
+  const metodo    = params.get('metodo') || ''
+  const pedidoId  = params.get('pedido') || ''
+
   useEffect(() => {
-    // Log para debug
+    // ── ADDI: consultar estado del pedido directamente ──
+    if (metodo === 'addi' && pedidoId) {
+      if (token) {
+        consultarEstadoPedido(pedidoId)
+      } else {
+        // Sin token — igual consultamos sin auth para ver el estado
+        setEstado('pendiente')
+        setDetalle('Inicia sesión para verificar el estado de tu pedido con ADDI.')
+      }
+      return
+    }
+
     const todosParams = Object.fromEntries(params.entries())
     console.log('ePayco respuesta URL completa:', window.location.href)
     console.log('ePayco respuesta params:', todosParams)
@@ -85,7 +100,7 @@ export default function EpaycoRespuestaPage() {
         setDetalle('Inicia sesión para verificar el estado de tu pedido.')
       }
     }
-  }, [x_response, x_cod_response])
+  }, [x_response, x_cod_response, metodo, pedidoId])
 
   const consultarPorRefPayco = async (refPayco: string, intentos = 0) => {
     try {
@@ -138,15 +153,19 @@ export default function EpaycoRespuestaPage() {
           setDetalle('Tu pago fue procesado correctamente.')
         } else if (pedido.estado === 'Cancelado' || pedido.estado === 'Rechazado') {
           setEstado('fallido')
-          setDetalle('El pago fue rechazado o cancelado.')
+          setDetalle(metodo === 'addi'
+            ? 'Tu solicitud de crédito con ADDI no fue aprobada. Puedes intentar con otro método de pago.'
+            : 'El pago fue rechazado o cancelado.')
         } else if (pedido.estado === 'Creado' && intentos < 4) {
           // Webhook aún no llegó — reintentar hasta 4 veces cada 3 segundos
           setDetalle(`Verificando pago... (${intentos + 1}/4)`)
           setTimeout(() => consultarEstadoPedido(pedidoId, intentos + 1), 3000)
         } else {
-          // Después de 4 intentos sigue en Creado — mostrar pendiente real
+          // Después de 4 intentos sigue en Creado
           setEstado('pendiente')
-          setDetalle('Tu pago está siendo validado por ePayco. Recibirás un correo cuando sea confirmado.')
+          setDetalle(metodo === 'addi'
+            ? 'ADDI está evaluando tu solicitud de crédito. Recibirás un correo cuando sea confirmado (puede tomar hasta 10 minutos).'
+            : 'Tu pago está siendo validado por ePayco. Recibirás un correo cuando sea confirmado.')
         }
       } else {
         setEstado('pendiente')
