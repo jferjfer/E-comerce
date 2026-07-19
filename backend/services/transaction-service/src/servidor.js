@@ -1196,20 +1196,49 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
   }
 });
 
+// Firebase Admin SDK para push notifications FCM V1
+const firebaseAdmin = (() => {
+  try {
+    const admin = require('firebase-admin');
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(require('./firebase-service-account.json'))
+      });
+    }
+    return admin;
+  } catch (e) {
+    console.log('⚠️ Firebase Admin no disponible:', e.message);
+    return null;
+  }
+})();
+
 // Helper: enviar notificación push al cliente
 async function enviarPushNotificacion(usuarioId, titulo, cuerpo) {
   try {
     const resToken = await axios.get(`http://auth-service:3011/api/usuarios/push-token/${usuarioId}`, { timeout: 2000 });
     const pushToken = resToken.data?.push_token;
-    if (!pushToken || !pushToken.startsWith('ExponentPushToken')) return;
-    await axios.post('https://exp.host/--/api/v2/push/send', {
-      to: pushToken,
-      title: titulo,
-      body: cuerpo,
-      sound: 'default',
-      channelId: 'pedidos',
-    }, { timeout: 5000 });
-    console.log(`📣 Push enviado a usuario ${usuarioId}: ${titulo}`);
+    if (!pushToken) return;
+
+    // FCM V1 via Firebase Admin SDK
+    if (firebaseAdmin && pushToken.startsWith('ExponentPushToken')) {
+      // Expo Push Token — usar Expo Push API con FCM V1
+      await axios.post('https://exp.host/--/api/v2/push/send', {
+        to: pushToken,
+        title: titulo,
+        body: cuerpo,
+        sound: 'default',
+        channelId: 'pedidos',
+      }, { timeout: 5000 });
+      console.log(`📣 Push enviado a usuario ${usuarioId}: ${titulo}`);
+    } else if (firebaseAdmin && pushToken) {
+      // FCM token nativo
+      await firebaseAdmin.messaging().send({
+        token: pushToken,
+        notification: { title: titulo, body: cuerpo },
+        android: { channelId: 'pedidos', priority: 'high' },
+      });
+      console.log(`📣 Push FCM enviado a usuario ${usuarioId}: ${titulo}`);
+    }
   } catch (e) {
     console.log(`⚠️ Push no enviado a ${usuarioId}: ${e.message}`);
   }
