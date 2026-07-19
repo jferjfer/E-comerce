@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "340517383787",
+    "project_id": "egos-colombia",
+    "storage_bucket": "egos-colombia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:340517383787:android:e3d25e9fa288f3d4e64b2e",
+        "android_client_info": {
+          "package_name": "com.egoscolombia.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBktb6bpfLYJjAOU2kcumhOz8CM1A7aC-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
