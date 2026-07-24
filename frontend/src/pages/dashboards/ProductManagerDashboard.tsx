@@ -293,8 +293,10 @@ export default function ProductManagerDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       })
       const d = await r.json()
-      setProveedores(d.proveedores || [])
-    } catch {}
+      const lista = d.proveedores || []
+      setProveedores(lista)
+      return lista
+    } catch { return [] }
   }
 
   const cargarProductos = async () => {
@@ -347,9 +349,9 @@ export default function ProductManagerDashboard() {
     setMostrarForm(true)
   }
 
-  const abrirEditar = (p: Producto) => {
+  const abrirEditar = async (p: Producto) => {
     setEditando(p)
-    cargarProveedores()
+    await cargarProveedores()
     // Si el producto no tiene SKU (ej: hardcodeado), asignar uno del fallback o generar uno
     const skuExistente = (p as any).sku || SKU_FALLBACK[p.id] || generarSkuUnico()
     setForm({
