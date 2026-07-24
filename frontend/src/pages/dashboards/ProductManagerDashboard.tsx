@@ -349,6 +349,7 @@ export default function ProductManagerDashboard() {
 
   const abrirEditar = (p: Producto) => {
     setEditando(p)
+    cargarProveedores()
     // Si el producto no tiene SKU (ej: hardcodeado), asignar uno del fallback o generar uno
     const skuExistente = (p as any).sku || SKU_FALLBACK[p.id] || generarSkuUnico()
     setForm({
