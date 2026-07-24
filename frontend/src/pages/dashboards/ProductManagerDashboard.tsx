@@ -632,6 +632,11 @@ export default function ProductManagerDashboard() {
                         {p.costo_adquisicion && (
                           <p className="text-xs text-gray-400">Costo: {formatPrice(p.costo_adquisicion)}</p>
                         )}
+                        {(p as any).proveedor_id && proveedores.find(pv => pv.id === (p as any).proveedor_id) && (
+                          <p className="text-xs text-blue-500 truncate">
+                            🏭 {proveedores.find(pv => pv.id === (p as any).proveedor_id)?.nombre}
+                          </p>
+                        )}
                         <div className="flex items-center justify-between mt-2">
                           <button
                             onClick={() => toggleStock(p.id, p.en_stock)}
