@@ -31,7 +31,15 @@ export const useAuthStore = create<AuthStore>()(
       cargarTokenSeguro: async () => {
         const token = await secureStorage.get(SECURE_TOKEN_KEY);
         if (token) {
-          // Si hay token en SecureStore, restaurar sesion
+          // Verificar que el token no haya expirado
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const expirado = payload.exp && payload.exp * 1000 < Date.now();
+            if (expirado) {
+              await secureStorage.remove(SECURE_TOKEN_KEY);
+              return;
+            }
+          } catch {}
           set({ token, estaAutenticado: true });
           actualizarActividad();
         }

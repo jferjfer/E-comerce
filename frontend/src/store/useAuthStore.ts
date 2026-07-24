@@ -89,7 +89,19 @@ export const useTiendaAuth = create<TiendaAuth>()(
       }
     }),
     {
-      name: 'auth-storage'
+      name: 'auth-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          try {
+            const payload = JSON.parse(atob(state.token.split('.')[1]));
+            if (payload.exp && payload.exp * 1000 < Date.now()) {
+              state.token = null;
+              state.usuario = null;
+              state.estaAutenticado = false;
+            }
+          } catch {}
+        }
+      }
     }
   )
 )
