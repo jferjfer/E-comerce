@@ -126,13 +126,13 @@ const SKU_FALLBACK: Record<string, string> = {
 const IVA           = 0.19
 const COM_EPAYCO    = 0.0299 * 1.19   // 2.99% + IVA sobre comisión
 const FIX_EPAYCO    = 900 * 1.19      // $900 + IVA
-const COSTO_ENVIO   = 25000
+const COSTO_ENVIO   = 13000
 const COSTO_EMPAQUE = 5000
 const DENOMINADOR   = 1 - (IVA + COM_EPAYCO)
 
 function calcularPVP(costoAdquisicion: number, costoEnvio = COSTO_ENVIO, costoEmpaque = COSTO_EMPAQUE): number {
   const Cp  = costoAdquisicion
-  const U   = costoAdquisicion          // Utilidad = Cp
+  const U   = costoAdquisicion * 0.5    // Utilidad = 50% del costo
   const Gv  = costoEnvio + costoEmpaque
   const num = Cp + U + Gv + FIX_EPAYCO
   return Math.ceil(num / DENOMINADOR)
@@ -315,7 +315,7 @@ export default function ProductManagerDashboard() {
       )
     : 0
 
-  const utilidadPreview = parseFloat(form.costo_adquisicion) || 0
+  const utilidadPreview = (parseFloat(form.costo_adquisicion) || 0) * 0.5
 
   // Genera un secuencial único basado en los SKUs existentes para evitar duplicados
   const generarSkuUnico = (): string => {
