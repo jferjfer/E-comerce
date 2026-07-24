@@ -223,7 +223,13 @@ export default function ProductManagerDashboard() {
   const [archivosAdicionalesPendientes, setArchivosAdicionalesPendientes] = useState<File[]>([])
   const [mensajeCat, setMensajeCat] = useState<{tipo: string, texto: string} | null>(null)
 
-  useEffect(() => { cargarProductos(); cargarProveedores(); cargarCategorias() }, [])
+  useEffect(() => { 
+    if (token) {
+      cargarProductos(); 
+      cargarProveedores(); 
+      cargarCategorias();
+    }
+  }, [token])
 
   const cargarCategorias = async () => {
     setCargandoCats(true)
