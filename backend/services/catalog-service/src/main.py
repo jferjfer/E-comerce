@@ -463,13 +463,13 @@ async def subir_imagen(
         print(f"❌ Tipo de archivo inválido: {imagen.content_type}")
         raise HTTPException(status_code=400, detail="Solo se permiten imágenes")
     
-    # Validar tamaño (5MB máximo)
+    # Validar tamaño (15MB máximo)
     contenido = await imagen.read()
     print(f"   Tamaño: {len(contenido)} bytes")
     
-    if len(contenido) > 5 * 1024 * 1024:
+    if len(contenido) > 15 * 1024 * 1024:
         print(f"❌ Imagen muy grande: {len(contenido)} bytes")
-        raise HTTPException(status_code=400, detail="Imagen muy grande (máximo 5MB)")
+        raise HTTPException(status_code=400, detail="Imagen muy grande (máximo 15MB)")
     
     try:
         print(f"☁️ Subiendo a Cloudinary...")
@@ -515,8 +515,8 @@ async def subir_imagenes_adicionales(
                 raise HTTPException(status_code=400, detail=f"Archivo {imagen.filename} no es una imagen")
             
             contenido = await imagen.read()
-            if len(contenido) > 5 * 1024 * 1024:
-                raise HTTPException(status_code=400, detail=f"Imagen {imagen.filename} muy grande (máximo 5MB)")
+            if len(contenido) > 15 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail=f"Imagen {imagen.filename} muy grande (máximo 15MB)")
             
             archivos_bytes.append(contenido)
         

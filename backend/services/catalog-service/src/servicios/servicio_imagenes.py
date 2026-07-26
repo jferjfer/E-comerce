@@ -21,7 +21,7 @@ async def subir_imagen_producto(archivo_bytes: bytes, producto_id: str) -> str:
         imagen = Image.open(io.BytesIO(archivo_bytes))
         
         # Redimensionar si es muy grande (máximo 1200x1200)
-        max_size = (1200, 1200)
+        max_size = (2400, 3200)
         if imagen.size[0] > max_size[0] or imagen.size[1] > max_size[1]:
             imagen.thumbnail(max_size, Image.Resampling.LANCZOS)
             print(f"  ↓ Redimensionada a {imagen.size}")

@@ -1190,7 +1190,7 @@ export default function ProductManagerDashboard() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0]
                         if (!file) return
-                        if (file.size > 5 * 1024 * 1024) { setMensaje({ tipo: 'error', texto: 'Máx 5MB' }); return }
+                        if (file.size > 15 * 1024 * 1024) { setMensaje({ tipo: 'error', texto: 'Máx 15MB' }); return }
                         const prodId = editando?.id || `temp_${Date.now()}`
                         const formData = new FormData()
                         formData.append('imagen', file)
@@ -1204,7 +1204,7 @@ export default function ProductManagerDashboard() {
                         } catch { setMensaje({ tipo: 'error', texto: 'Error de conexión' }) }
                       }}
                       className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-900 file:text-white cursor-pointer" />
-                    <p className="text-xs text-gray-400">Sube una imagen o pega una URL. Máx 5MB.</p>
+                    <p className="text-xs text-gray-400">Sube una imagen o pega una URL. Máx 15MB.</p>
                   </div>
                   {form.imagen_url && (
                     <img src={form.imagen_url} alt="preview"
@@ -1266,7 +1266,7 @@ export default function ProductManagerDashboard() {
                     <p className="text-xs text-gray-400">
                       {archivosAdicionalesPendientes.length > 0
                         ? `⏳ ${archivosAdicionalesPendientes.length} imagen(es) se subirán al guardar el producto`
-                        : `Puedes subir varias a la vez. Máx 5MB por imagen. Quedan ${5 - form.imagenes_adicionales.length} espacio(s).`
+                        : `Puedes subir varias a la vez. Máx 15MB por imagen. Quedan ${5 - form.imagenes_adicionales.length} espacio(s).`
                       }
                     </p>
                   </div>
