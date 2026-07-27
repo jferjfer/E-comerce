@@ -10,6 +10,7 @@ const sistecredito = require('./sistecredito');
 const epayco = require('./epayco');
 const addi = require('./addi');
 const tiktok = require('./tiktok');
+const meta = require('./meta');
 
 // Transporter de correo — Hostinger SSL puerto 465
 const crearTransporter = (user, pass) => require('nodemailer').createTransport({
@@ -888,6 +889,7 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
           const ua = req.headers['user-agent'] || '';
           tiktok.completePayment(pedidoId, totalPedido, { email, id, ip, user_agent: ua });
           tiktok.placeAnOrder(pedidoId, totalPedido, { email, id, ip, user_agent: ua });
+          meta.purchase(pedidoId, totalPedido, { email, ip, user_agent: ua });
         }).catch(() => {});
     }
 
@@ -2365,6 +2367,7 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
           const { email, id } = resU.data.usuario || {};
           tiktok.completePayment(pedidoId, pedido.total, { email, id, ip: '', user_agent: '' });
           tiktok.placeAnOrder(pedidoId, pedido.total, { email, id, ip: '', user_agent: '' });
+          meta.purchase(pedidoId, pedido.total, { email });
         }).catch(() => {});
 
       console.log(`✅ Pago ePayco confirmado para pedido ${pedidoId}`);
