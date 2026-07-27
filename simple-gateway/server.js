@@ -1135,6 +1135,39 @@ app.get('/api/eventos/pedidos', (req, res) => {
   }
 });
 
+// Feed de productos para Facebook / Instagram Commerce
+app.get('/api/productos/feed/facebook', async (req, res) => {
+  try {
+    const respuesta = await axios.get(`${CATALOG_URL}/api/productos?limite=500`, { timeout: 10000 });
+    const productos = respuesta.data?.productos || [];
+    const base = 'https://egoscolombia.com.co';
+
+    const filas = productos
+      .filter(p => p.en_stock && p.precio > 0 && p.imagen)
+      .map(p => {
+        const id = String(p.id).replace(/,/g, '');
+        const titulo = (p.nombre || '').replace(/,/g, ' ').replace(/"/g, "'");
+        const desc = (p.descripcion || titulo).replace(/,/g, ' ').replace(/"/g, "'").slice(0, 200);
+        const precio = `${p.precio} COP`;
+        const link = `${base}/producto/${p.id}`;
+        const imagen = p.imagen || '';
+        const categoria = p.categoria || 'Ropa';
+        return `"${id}","${titulo}","${desc}","${precio}","${link}","${imagen}","in stock","new","${categoria}","CO"`;
+      });
+
+    const csv = [
+      '"id","title","description","price","link","image_link","availability","condition","google_product_category","shipping_country"',
+      ...filas
+    ].join('\n');
+
+    res.set('Content-Type', 'text/csv; charset=utf-8');
+    res.set('Content-Disposition', 'attachment; filename="egos-facebook-feed.csv"');
+    res.send(csv);
+  } catch (e) {
+    res.status(500).json({ error: 'Error generando feed' });
+  }
+});
+
 // Sitemap dinámico — genera URLs de productos desde catalog-service
 app.get('/sitemap.xml', async (req, res) => {
   try {
