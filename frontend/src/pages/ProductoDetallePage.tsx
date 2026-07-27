@@ -20,6 +20,7 @@ interface Resena {
 }
 
 import { tiktokPixel } from '@/utils/tiktokPixel'
+import { metaPixel } from '@/utils/metaPixel'
 
 export default function ProductoDetallePage() {
   const { id } = useParams<{ id: string }>()
@@ -68,6 +69,7 @@ export default function ProductoDetallePage() {
       if (prod.tallas?.length) setTallaSeleccionada(prod.tallas[0])
       if (prod.colores?.length) setColorSeleccionado(prod.colores[0])
       tiktokPixel.viewContent({ id: prod.id?.toString() || '', nombre: prod.nombre || '', precio: prod.precio || 0, categoria: prod.categoria || '' })
+      metaPixel.viewContent(prod.id?.toString() || '', prod.precio || 0, prod.nombre || '')
 
       // Cargar relacionados por categoría
       const dataRel = await api.obtenerProductos()

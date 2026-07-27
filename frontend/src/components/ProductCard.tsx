@@ -9,7 +9,7 @@ import { formatPrice } from '@/utils/sanitize'
 import { API_URL } from '@/config/api'
 
 import { tiktokPixel } from '@/utils/tiktokPixel'
-
+import { metaPixel } from '@/utils/metaPixel'
 interface PropsTarjetaProducto {
   product: Producto
   onViewDetails: (producto: Producto) => void
@@ -45,6 +45,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
     agregarItem({ ...producto, talla: tallaSeleccionada || undefined, color: colorSeleccionado || undefined } as any)
     addNotification(`${producto.nombre}${tallaSeleccionada ? ` (${tallaSeleccionada})` : ''} agregado al carrito`, 'success')
     tiktokPixel.addToCart({ id: producto.id, nombre: producto.nombre, precio: producto.precio, cantidad: 1 })
+    metaPixel.addToCart(producto.id, producto.precio)
     setTimeout(() => setAgregando(false), 600)
   }
 

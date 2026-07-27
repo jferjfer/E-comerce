@@ -1165,6 +1165,13 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
       datos: { pedidoId, total: carrito.total, usuario_id: usuarioId, estado: 'Creado', metodo_pago }
     }, { timeout: 2000 }).catch(() => {});
 
+    // Meta Conversions API — InitiateCheckout
+    meta.initiateCheckout(pedidoId, totalFinal, {
+      email: datosUsuario.email,
+      ip: req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '',
+      user_agent: req.headers['user-agent'] || ''
+    });
+
     // FIX 3: Notificación interna a ventas@ con los datos del pedido
     notificarNuevoPedidoInterno({
       id: pedidoId,

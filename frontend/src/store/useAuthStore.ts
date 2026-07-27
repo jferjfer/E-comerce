@@ -4,6 +4,7 @@ import { Usuario } from '@/types'
 import { api } from '@/services/api'
 import { useTiendaCarrito } from './useCartStore'
 import { useUserStore } from './useUserStore'
+import { metaPixel } from '@/utils/metaPixel'
 
 interface TiendaAuth {
   usuario: Usuario | null
@@ -76,7 +77,7 @@ export const useTiendaAuth = create<TiendaAuth>()(
           
           if (resultado.exito) {
             console.log('✅ Registro exitoso, iniciando sesión automática...');
-            // Si el registro fue exitoso, iniciar sesión automáticamente
+            metaPixel.completeRegistration()
             return await get().iniciarSesion(datos.email, datos.password)
           }
           
