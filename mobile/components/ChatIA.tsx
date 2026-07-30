@@ -374,9 +374,6 @@ export default function ChatIA() {
                   <View style={[styles.burbuja, m.esUsuario ? styles.burbujaUsuario : styles.burbujaIA]}>
                     {!m.esUsuario && (
                       <View style={styles.iaLabel}>
-                        <View style={styles.iaDot}>
-                          <Text style={{ fontSize: 8, color: COLORS.dorado }}>E</Text>
-                        </View>
                         <Text style={styles.iaNombre}>Noa</Text>
                       </View>
                     )}
@@ -446,9 +443,6 @@ export default function ChatIA() {
                 <View style={{ alignItems: 'flex-start' }}>
                   <View style={[styles.burbuja, styles.burbujaIA]}>
                     <View style={styles.iaLabel}>
-                      <View style={styles.iaDot}>
-                        <Text style={{ fontSize: 8, color: COLORS.dorado, fontFamily: 'BodoniModa-Regular' }}>E</Text>
-                      </View>
                       <Text style={styles.iaNombre}>Noa</Text>
                     </View>
                     {/* Typing dots animados igual al web */}

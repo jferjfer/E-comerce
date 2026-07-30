@@ -242,8 +242,8 @@ export default function ProductoDetallePage() {
                 <img src="/addi-logo.svg" alt="Addi" className="h-5 w-auto"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                 <span className="text-gray-300">|</span>
-                <img src="https://importaexpertos.com/compras/img/cms/logo-sistecredito-transparente.png"
-                  alt="Sistecredito" className="h-4 w-auto"
+                <img src="/sistecredito-logo.png"
+                  alt="Sistecredito" className="h-6 w-auto object-contain"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
               </div>
             )}

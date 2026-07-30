@@ -310,7 +310,7 @@ export default function ProductoDetallePage() {
             <Text style={{ fontSize: 12, color: COLORS.bordeMedio }}>|</Text>
             <Image
               source={require('../../assets/sistecredito-logo.png')}
-              style={{ width: 70, height: 16 }}
+              style={{ width: 36, height: 36 }}
               resizeMode="contain"
             />
           </View>
