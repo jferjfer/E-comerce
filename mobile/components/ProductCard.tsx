@@ -158,7 +158,7 @@ function BottomSheetAgregar({
           disabled={!producto.en_stock}
         >
           <Text style={styles.btnAgregarTxt}>
-            {producto.en_stock ? `Agregar al carrito — ${fmt(producto.precio * cantidad)}` : 'Agotado'}
+            {producto.en_stock ? 'Agregar al carrito' : 'Agotado'}
           </Text>
         </TouchableOpacity>
 
