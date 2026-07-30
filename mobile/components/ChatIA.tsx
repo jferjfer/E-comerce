@@ -333,7 +333,8 @@ export default function ChatIA() {
       <Modal visible={abierto} animationType="slide" transparent onRequestClose={() => setAbierto(false)}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}
         >
           <View style={styles.chatContainer}>
 
@@ -341,7 +342,7 @@ export default function ChatIA() {
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 <View style={styles.avatarWrap}>
-                  <EgosLogo size="sm" showSlogan={false} />
+                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.dorado, lineHeight: 26 }}>E</Text>
                 </View>
                 <View>
                   <Text style={styles.headerNombre}>Noa</Text>
