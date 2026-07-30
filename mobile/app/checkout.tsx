@@ -638,15 +638,15 @@ export default function CheckoutScreen() {
       },
       {
         id: 'addi',
-        nombre: 'ADDI — Compra ahora, paga después',
-        desc: 'Paga en cuotas quincenales sin tarjeta de crédito',
+        nombre: 'ADDI',
+        desc: 'Compra hoy, paga después sin tarjeta',
         emoji: '🅰',
         logo: require('../assets/addi-logo.png'),
       },
       {
         id: 'sistecredito',
-        nombre: 'Sistecredito — Paga a cuotas',
-        desc: 'Financia tu compra en cuotas sin tarjeta de crédito',
+        nombre: 'Sistecredito',
+        desc: 'Crédito inmediato para tu compra',
         logo: require('../assets/sistecredito-logo.png'),
       },
     ];
@@ -669,7 +669,7 @@ export default function CheckoutScreen() {
             </View>
             <View style={styles.metodoIconWrap}>
               {m.id === 'sistecredito' ? (
-                <Image source={m.logo} style={{ width: 36, height: 20 }} resizeMode="contain" />
+                <Image source={m.logo} style={m.id === "sistecredito" ? { width: 38, height: 38 } : { width: 32, height: 32 }} resizeMode="contain" />
               ) : m.id === 'addi' ? (
                 <Image source={m.logo} style={{ width: 32, height: 32, borderRadius: 8 }} resizeMode="contain" />
               ) : (
@@ -757,7 +757,7 @@ export default function CheckoutScreen() {
               {metodo === 'addi' ? (
                 <Image source={require('../assets/addi-logo.png')} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="contain" />
               ) : metodo === 'sistecredito' ? (
-                <Image source={require('../assets/sistecredito-logo.png')} style={{ width: 36, height: 20 }} resizeMode="contain" />
+                <Image source={require('../assets/sistecredito-logo.png')} style={{ width: 38, height: 38 }} resizeMode="contain" />
               ) : (
                 <Text style={{ fontSize: 16 }}>💳</Text>
               )}
@@ -767,7 +767,7 @@ export default function CheckoutScreen() {
                 {metodo === 'addi' ? 'ADDI' : metodo === 'sistecredito' ? 'Sistecredito' : 'Pagar en línea'}
               </Text>
               <Text style={styles.metodoResumenDesc}>
-                {metodo === 'addi' ? 'Pago en cuotas quincenales sin tarjeta' : metodo === 'sistecredito' ? 'Pago a cuotas sin tarjeta de crédito' : 'Tarjeta, PSE, Nequi, Daviplata, Efecty'}
+                {metodo === 'addi' ? 'Compra hoy, paga después sin tarjeta' : metodo === 'sistecredito' ? 'Crédito inmediato para tu compra' : 'Tarjeta, PSE, Nequi, Daviplata, Efecty'}
               </Text>
             </View>
           </View>
