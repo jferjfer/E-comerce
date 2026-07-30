@@ -323,6 +323,7 @@ export default function HomePage() {
                     <i className="fas fa-shopping-cart mr-2"></i>
                     Agregar al Carrito
                   </button>
+                  {/* Botón Avatar 3D — desactivado hasta implementación
                   <button
                     onClick={() => {
                       cerrarModalProducto()
@@ -333,6 +334,7 @@ export default function HomePage() {
                     <i className="fas fa-user-astronaut mr-2"></i>
                     Probar en Avatar 3D
                   </button>
+                  */}
                   {/* Botón AR original (deshabilitado)
                   <button 
                     onClick={() => {

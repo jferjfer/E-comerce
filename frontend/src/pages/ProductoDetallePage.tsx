@@ -337,6 +337,7 @@ export default function ProductoDetallePage() {
                 <i className={`${isFavorite(producto.id) ? 'fas' : 'far'} fa-heart`}></i>
               </button>
 
+              {/* Botón Avatar 3D — desactivado hasta implementación
               <button
                 onClick={() => navigate('/virtual-tryon', { state: { productUrl: producto.imagen } })}
                 className="w-12 h-12 rounded-xl border-2 border-gray-200 text-gray-400 hover:border-primary hover:text-primary flex items-center justify-center transition-all"
@@ -344,6 +345,7 @@ export default function ProductoDetallePage() {
               >
                 <i className="fas fa-user-astronaut text-sm"></i>
               </button>
+              */}
             </div>
 
             {/* Beneficios */}
