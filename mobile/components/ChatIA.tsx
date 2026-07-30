@@ -342,7 +342,7 @@ export default function ChatIA() {
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 <View style={styles.avatarWrap}>
-                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.dorado, lineHeight: 26 }}>E</Text>
+                  <EgosLogo size="sm" showSlogan={false} />
                 </View>
                 <View>
                   <Text style={styles.headerNombre}>Noa</Text>
@@ -576,10 +576,11 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatarWrap: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 52, height: 52, borderRadius: 12,
     backgroundColor: COLORS.negro,
     borderWidth: 1, borderColor: 'rgba(197,164,126,0.4)',
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
   headerNombre: { fontSize: 16, fontWeight: '700', color: COLORS.blanco },
   headerStatus: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
