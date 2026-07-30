@@ -195,9 +195,15 @@ export default function PerfilScreen() {
       <View style={styles.menu}>
         <MenuItem icon="📦" label="Mis Pedidos" onPress={() => router.push('/(tabs)/pedidos')} />
         <MenuItem icon="❤️" label={`Favoritos${favorites.length > 0 ? ` (${favorites.length})` : ''}`} onPress={() => router.push('/favoritos')} />
+        {/* Métodos de Pago — desactivado temporalmente
         <MenuItem icon="💳" label="Métodos de Pago" onPress={() => router.push('/pagos')} />
+        */}
+        {/* Crédito EGOS — desactivado temporalmente
         {esCliente && <MenuItem icon="💰" label="Crédito EGOS" onPress={() => router.push('/credito')} />}
+        */}
+        {/* Descubre Tu Estilo — desactivado temporalmente
         {esCliente && <MenuItem icon="✨" label="Descubre Tu Estilo" onPress={() => router.push('/estilo')} />}
+        */}
       </View>
 
       {/* Legal */}
