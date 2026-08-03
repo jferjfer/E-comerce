@@ -20,6 +20,7 @@
       "bundleIdentifier": "com.egoscolombia.app",
       "buildNumber": "1",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "EGOS necesita acceso a la cámara para el probador virtual de ropa.",
         "NSPhotoLibraryUsageDescription": "EGOS necesita acceso a tus fotos para el probador virtual de ropa.",
         "NSFaceIDUsageDescription": "EGOS usa Face ID para proteger tu cuenta."
