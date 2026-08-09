@@ -28,8 +28,7 @@ jobs:
             -in distribution.pem \
             -inkey ios_key.key \
             -out distribution_macos.p12 \
-            -passout pass:EgosIOS2026 \
-            -legacy
+            -passout pass:EgosIOS2026
           
           echo "P12 generado"
           openssl pkcs12 -in distribution_macos.p12 -passin pass:EgosIOS2026 -noout && echo "P12 VÁLIDO ✅"
