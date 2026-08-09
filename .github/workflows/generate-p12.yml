@@ -1,0 +1,42 @@
+name: Generate iOS P12
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-p12:
+    runs-on: macos-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate P12 from certificate
+        run: |
+          # Decodificar el certificado .cer
+          echo "${{ secrets.IOS_CERT_BASE64 }}" | base64 -d > distribution.cer
+          
+          # Decodificar la clave privada
+          echo "${{ secrets.IOS_KEY_BASE64 }}" | base64 -d > ios_key.key
+          
+          # Convertir .cer a .pem
+          openssl x509 -in distribution.cer -inform DER -out distribution.pem
+          
+          # Generar .p12 en macOS (compatible con Apple)
+          openssl pkcs12 -export \
+            -in distribution.pem \
+            -inkey ios_key.key \
+            -out distribution_macos.p12 \
+            -passout pass:EgosIOS2026 \
+            -legacy
+          
+          echo "P12 generado"
+          openssl pkcs12 -in distribution_macos.p12 -passin pass:EgosIOS2026 -noout && echo "P12 VÁLIDO ✅"
+
+      - name: Upload P12
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-distribution-p12
+          path: distribution_macos.p12
+          retention-days: 1
