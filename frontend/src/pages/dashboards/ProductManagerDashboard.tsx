@@ -132,7 +132,7 @@ const DENOMINADOR   = 1 - (IVA + COM_EPAYCO)
 
 function calcularPVP(costoAdquisicion: number, costoEnvio = COSTO_ENVIO, costoEmpaque = COSTO_EMPAQUE): number {
   const Cp  = costoAdquisicion
-  const U   = costoAdquisicion * 0.5    // Utilidad = 50% del costo
+  const U   = costoAdquisicion * 0.8    // Utilidad = 80% del costo
   const Gv  = costoEnvio + costoEmpaque
   const num = Cp + U + Gv + FIX_EPAYCO
   return Math.ceil(num / DENOMINADOR)
@@ -323,7 +323,7 @@ export default function ProductManagerDashboard() {
       )
     : 0
 
-  const utilidadPreview = (parseFloat(form.costo_adquisicion) || 0) * 0.5
+  const utilidadPreview = (parseFloat(form.costo_adquisicion) || 0) * 0.8
 
   // Genera un secuencial único basado en los SKUs existentes para evitar duplicados
   const generarSkuUnico = (): string => {
