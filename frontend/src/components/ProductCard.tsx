@@ -10,6 +10,7 @@ import { API_URL } from '@/config/api'
 
 import { tiktokPixel } from '@/utils/tiktokPixel'
 import { metaPixel } from '@/utils/metaPixel'
+import { getBadgeOferta } from '@/utils/marketing'
 interface PropsTarjetaProducto {
   product: Producto
   onViewDetails: (producto: Producto) => void
@@ -27,6 +28,7 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
   const tieneTallas = producto.tallas && producto.tallas.length > 0
   const tieneColores = producto.colores && producto.colores.length > 0
   const necesitaSelector = tieneTallas || tieneColores
+  const badge = getBadgeOferta(producto.id, producto.precio)
 
   const manejarClickAgregar = () => {
     if (!producto.en_stock) return
@@ -117,6 +119,13 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
           </span>
         )}
 
+        {/* Badge oferta rotativo */}
+        {badge && !producto.es_eco && (
+          <span className={`absolute top-2 left-2 ${badge.color} text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow`}>
+            {badge.label}
+          </span>
+        )}
+
         {/* Favorito */}
         <button
           onClick={manejarToggleFavorito}
@@ -160,9 +169,16 @@ export default function ProductCard({ product: producto, onViewDetails }: PropsT
         </h3>
 
         {/* Precio */}
-        <p className="text-base font-bold text-primary mb-2.5">
-          {formatPrice(producto.precio)}
-        </p>
+        <div className="mb-2.5">
+          {badge && (
+            <p className="text-xs text-gray-400 line-through">
+              {formatPrice(badge.precioReferencia)}
+            </p>
+          )}
+          <p className="text-base font-bold text-primary">
+            {formatPrice(producto.precio)}
+          </p>
+        </div>
 
         {/* Selector talla/color */}
         {mostrarSelector && (

@@ -10,6 +10,8 @@ import { formatPrice } from '@/utils/sanitize'
 import { useCartStore } from '@/store/useCartStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 
+import { ordenarProductosRotativo } from '@/utils/marketing'
+
 export default function CatalogPage() {
   const navigate = useNavigate()
   const [filters, setFilters] = useState({
@@ -41,7 +43,7 @@ export default function CatalogPage() {
           api.obtenerProductos(),
           api.obtenerCategorias()
         ])
-        setProductos(dataProductos.productos || [])
+        setProductos(ordenarProductosRotativo(dataProductos.productos || []))
         const cats = (dataCategorias.categorias || []).map((c: any) => c.nombre)
         setCategorias(cats)
         console.log(`✅ ${dataProductos.productos?.length || 0} productos cargados`)
