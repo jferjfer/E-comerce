@@ -75,13 +75,13 @@ export default function CatalogPage() {
 
   const productosFiltrados = useMemo(() => {
     let filtrados = [...productos]
-    // Ocultar categorías restringidas del grid general
     if (!CATEGORIAS_RESTRINGIDAS.includes(filters.category)) {
       filtrados = filtrados.filter(p => !CATEGORIAS_RESTRINGIDAS.includes(p.categoria || ''))
     }
     if (filters.category) filtrados = filtrados.filter(p => p.categoria === filters.category)
     if (filters.sortBy === 'price-low') filtrados.sort((a, b) => a.precio - b.precio)
     else if (filters.sortBy === 'price-high') filtrados.sort((a, b) => b.precio - a.precio)
+    else filtrados = ordenarProductosRotativo(filtrados) // rotación cada 3h cuando es relevancia
     setPaginaActual(1)
     return filtrados
   }, [productos, filters, lenceriaConfirmada])
