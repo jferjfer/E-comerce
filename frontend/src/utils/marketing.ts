@@ -33,9 +33,9 @@ export function getBadgeOferta(productoId: string, precio: number) {
   }
 }
 
-// Orden rotativo de productos — cambia cada 3 horas
+// Orden rotativo de productos — cambia cada 3 horas (TEST: 1 minuto)
 export function ordenarProductosRotativo<T extends { id: string }>(productos: T[]): T[] {
-  const bloque3h = Math.floor(Date.now() / (3 * 60 * 60 * 1000))
+  const bloque3h = Math.floor(Date.now() / (1 * 60 * 1000)) // 1 minuto para pruebas
   return [...productos].sort((a, b) => {
     const seedA = Math.abs(hashStr(`${a.id}-${bloque3h}`))
     const seedB = Math.abs(hashStr(`${b.id}-${bloque3h}`))

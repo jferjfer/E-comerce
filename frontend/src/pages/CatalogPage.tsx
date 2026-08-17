@@ -32,8 +32,13 @@ export default function CatalogPage() {
   const [mostrarModalAdultos, setMostrarModalAdultos] = useState(false)
   const [lenceriaConfirmada, setLenceriaConfirmada] = useState(false)
   const CATEGORIAS_RESTRINGIDAS = ['Lencería']
+  const [tickRotacion, setTickRotacion] = useState(0)
 
-  // Cargar productos del backend
+  // Re-render cada minuto para rotar productos
+  useEffect(() => {
+    const interval = setInterval(() => setTickRotacion(t => t + 1), 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])  // Cargar productos del backend
   useEffect(() => {
     const cargarProductos = async () => {
       setCargando(true)
@@ -84,7 +89,7 @@ export default function CatalogPage() {
     else filtrados = ordenarProductosRotativo(filtrados) // rotación cada 3h cuando es relevancia
     setPaginaActual(1)
     return filtrados
-  }, [productos, filters, lenceriaConfirmada])
+  }, [productos, filters, lenceriaConfirmada, tickRotacion])
 
   const clearFilters = () => {
     setFilters({ category: '', size: '', color: '', sortBy: 'relevance' })
