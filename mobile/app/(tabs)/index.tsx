@@ -17,6 +17,8 @@ import EgosLogo from '@/components/EgosLogo';
 import { networkCache } from '@/hooks/useNetwork';
 import { useFadeIn } from '@/hooks/useAnimations';
 import ChatIA from '@/components/ChatIA';
+import CampanaPopup from '@/components/CampanaPopup';
+import { Tendencias } from '@/components/HomeSecciones';
 
 const { width } = Dimensions.get('window');
 
@@ -278,17 +280,7 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* BANNER CAMPAÑAS FIJO — no scrollea */}
-      <View style={styles.hero}>
-        <Image
-          source={{ uri: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop' }}
-          style={StyleSheet.absoluteFillObject}
-          resizeMode="cover"
-        />
-        <View style={styles.heroOverlay}>
-          <HeroCarousel />
-        </View>
-      </View>
+      {/* Banner campaña eliminado — reemplazado por CampanaPopup y Tendencias */}
 
       {/* Bienvenida — manejada desde _layout.tsx */}
 
@@ -302,6 +294,11 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <>
+            {/* Popup campaña */}
+            <CampanaPopup />
+            {/* Sección tendencias */}
+            <Tendencias />
+
             <View style={styles.filtros}>
               {/* Búsqueda */}
               <View style={styles.searchBox}>
@@ -490,7 +487,7 @@ const styles = StyleSheet.create({
   ordenTxtActivo: { color: COLORS.dorado, fontWeight: '600' },
   contador: { marginLeft: 4, fontSize: 11, color: COLORS.textoGrisSub, alignSelf: 'center' },
   row: { paddingHorizontal: SPACING.lg, justifyContent: 'space-between' },
-  grid: { paddingTop: SPACING.lg },
+  grid: { paddingTop: 0 },
   btnMas: {
     borderWidth: 1.5, borderColor: COLORS.negro,
     borderRadius: RADIUS.full, paddingVertical: 14,
