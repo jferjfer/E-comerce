@@ -250,7 +250,10 @@ export const api = {
   async chatIA(mensaje: string, historial: any[] = [], usuarioId?: string, token?: string) {
     const res = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ mensaje, historial, usuario_id: usuarioId ? String(usuarioId) : undefined, token }),
     });
     const data = await res.json();

@@ -35,17 +35,10 @@ const QUICK_ACTIONS = [
 const CHAT_STORAGE_KEY = 'egos_chat_history';
 
 function ProductoImagen({ uri }: { uri: string }) {
-  const [ratio, setRatio] = React.useState(1);
-  React.useEffect(() => {
-    if (!uri) return;
-    Image.getSize(uri, (w, h) => {
-      if (w > 0 && h > 0) setRatio(h / w);
-    }, () => setRatio(1));
-  }, [uri]);
   return (
     <Image
       source={{ uri }}
-      style={[styles.productoImg, { aspectRatio: 1 / ratio }]}
+      style={styles.productoImg}
       resizeMode="cover"
     />
   );
@@ -650,6 +643,7 @@ const styles = StyleSheet.create({
   },
   productoImg: {
     width: '100%',
+    aspectRatio: 3/4,
     backgroundColor: COLORS.fondoGris,
   },
   productoInfo: {
