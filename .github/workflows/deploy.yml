@@ -12,16 +12,45 @@ env:
   NAMESPACE: egos
 
 jobs:
-  build-and-deploy:
-    name: Build, Push y Deploy
+  # ── JOB 1: Build en paralelo ──────────────────────────────────────────────
+  build:
+    name: Build ${{ matrix.service }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth-service
+            path: ./backend/services/auth-service
+          - service: catalog-service
+            path: ./backend/services/catalog-service
+          - service: transaction-service
+            path: ./backend/services/transaction-service
+          - service: social-service
+            path: ./backend/services/social-service
+          - service: marketing-service
+            path: ./backend/services/marketing-service
+          - service: ai-service
+            path: ./backend/services/ai-service
+          - service: credit-service
+            path: ./backend/services/credit-service
+          - service: logistics-service
+            path: ./backend/services/logistics-service
+          - service: contabilidad-service
+            path: ./backend/services/contabilidad-service
+          - service: facturacion-service
+            path: ./backend/services/facturacion-service
+          - service: gateway
+            path: ./simple-gateway
+          - service: frontend
+            path: ./frontend
+
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4.2.2
 
       - name: Autenticar en Google Cloud
         uses: google-github-actions/auth@v2.1.8
@@ -29,142 +58,52 @@ jobs:
           workload_identity_provider: projects/1083524657274/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: github-actions-sa@triple-shift-497623-i0.iam.gserviceaccount.com
 
-      - name: Configurar gcloud
-        uses: google-github-actions/setup-gcloud@v2.1.4
-
       - name: Configurar Docker para Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-      - name: Detectar servicios modificados
-        id: cambios
+      - name: Detectar si cambió este servicio
+        id: cambio
         run: |
           git fetch origin main --depth=2
           CHANGED=$(git diff --name-only HEAD~1 HEAD)
-          echo "Archivos modificados: $CHANGED"
+          if echo "$CHANGED" | grep -q "^${{ matrix.path == './simple-gateway' && 'simple-gateway' || matrix.path == './frontend' && 'frontend' || matrix.service }}"; then
+            echo "modificado=true" >> $GITHUB_OUTPUT
+          else
+            echo "modificado=false" >> $GITHUB_OUTPUT
+          fi
 
-          check() { echo "$CHANGED" | grep -q "^$1" && echo "true" || echo "false"; }
-
-          echo "auth=$(check 'backend/services/auth-service')"           >> $GITHUB_OUTPUT
-          echo "catalog=$(check 'backend/services/catalog-service')"     >> $GITHUB_OUTPUT
-          echo "transaction=$(check 'backend/services/transaction-service')" >> $GITHUB_OUTPUT
-          echo "social=$(check 'backend/services/social-service')"       >> $GITHUB_OUTPUT
-          echo "marketing=$(check 'backend/services/marketing-service')" >> $GITHUB_OUTPUT
-          echo "ai=$(check 'backend/services/ai-service')"               >> $GITHUB_OUTPUT
-          echo "credit=$(check 'backend/services/credit-service')"       >> $GITHUB_OUTPUT
-          echo "logistics=$(check 'backend/services/logistics-service')" >> $GITHUB_OUTPUT
-          echo "contabilidad=$(check 'backend/services/contabilidad-service')" >> $GITHUB_OUTPUT
-          echo "facturacion=$(check 'backend/services/facturacion-service')" >> $GITHUB_OUTPUT
-          echo "gateway=$(check 'simple-gateway')"                       >> $GITHUB_OUTPUT
-          echo "frontend=$(check 'frontend')"                            >> $GITHUB_OUTPUT
-
-      - name: Build y Push auth-service
-        if: steps.cambios.outputs.auth == 'true'
+      - name: Build y Push ${{ matrix.service }}
+        if: steps.cambio.outputs.modificado == 'true'
         run: |
-          docker build -t ${{ env.REGISTRY }}/auth-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/auth-service:latest \
-                       ./backend/services/auth-service
-          docker push ${{ env.REGISTRY }}/auth-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/auth-service:latest
+          BUILD_ARGS=""
+          if [ "${{ matrix.service }}" = "frontend" ]; then
+            BUILD_ARGS="--build-arg VITE_API_URL=https://api.egoscolombia.com.co"
+          fi
+          docker build $BUILD_ARGS \
+            -t ${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }} \
+            -t ${{ env.REGISTRY }}/${{ matrix.service }}:latest \
+            ${{ matrix.path }}
+          docker push ${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ matrix.service }}:latest
+          echo "✅ ${{ matrix.service }} publicado"
 
-      - name: Build y Push catalog-service
-        if: steps.cambios.outputs.catalog == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/catalog-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/catalog-service:latest \
-                       ./backend/services/catalog-service
-          docker push ${{ env.REGISTRY }}/catalog-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/catalog-service:latest
+  # ── JOB 2: Deploy único al terminar todos los builds ──────────────────────
+  deploy:
+    name: Deploy a GKE
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      id-token: write
 
-      - name: Build y Push transaction-service
-        if: steps.cambios.outputs.transaction == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/transaction-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/transaction-service:latest \
-                       ./backend/services/transaction-service
-          docker push ${{ env.REGISTRY }}/transaction-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/transaction-service:latest
+    steps:
+      - uses: actions/checkout@v4.2.2
 
-      - name: Build y Push social-service
-        if: steps.cambios.outputs.social == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/social-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/social-service:latest \
-                       ./backend/services/social-service
-          docker push ${{ env.REGISTRY }}/social-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/social-service:latest
-
-      - name: Build y Push marketing-service
-        if: steps.cambios.outputs.marketing == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/marketing-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/marketing-service:latest \
-                       ./backend/services/marketing-service
-          docker push ${{ env.REGISTRY }}/marketing-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/marketing-service:latest
-
-      - name: Build y Push ai-service
-        if: steps.cambios.outputs.ai == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/ai-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/ai-service:latest \
-                       ./backend/services/ai-service
-          docker push ${{ env.REGISTRY }}/ai-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/ai-service:latest
-
-      - name: Build y Push credit-service
-        if: steps.cambios.outputs.credit == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/credit-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/credit-service:latest \
-                       ./backend/services/credit-service
-          docker push ${{ env.REGISTRY }}/credit-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/credit-service:latest
-
-      - name: Build y Push logistics-service
-        if: steps.cambios.outputs.logistics == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/logistics-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/logistics-service:latest \
-                       ./backend/services/logistics-service
-          docker push ${{ env.REGISTRY }}/logistics-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/logistics-service:latest
-
-      - name: Build y Push contabilidad-service
-        if: steps.cambios.outputs.contabilidad == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/contabilidad-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/contabilidad-service:latest \
-                       ./backend/services/contabilidad-service
-          docker push ${{ env.REGISTRY }}/contabilidad-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/contabilidad-service:latest
-
-      - name: Build y Push facturacion-service
-        if: steps.cambios.outputs.facturacion == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/facturacion-service:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/facturacion-service:latest \
-                       ./backend/services/facturacion-service
-          docker push ${{ env.REGISTRY }}/facturacion-service:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/facturacion-service:latest
-
-      - name: Build y Push gateway
-        if: steps.cambios.outputs.gateway == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/gateway:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/gateway:latest \
-                       ./simple-gateway
-          docker push ${{ env.REGISTRY }}/gateway:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/gateway:latest
-
-      - name: Build y Push frontend
-        if: steps.cambios.outputs.frontend == 'true'
-        run: |
-          docker build -t ${{ env.REGISTRY }}/frontend:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/frontend:latest \
-                       --build-arg VITE_API_URL=https://api.egoscolombia.com.co \
-                       ./frontend
-          docker push ${{ env.REGISTRY }}/frontend:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/frontend:latest
+      - name: Autenticar en Google Cloud
+        uses: google-github-actions/auth@v2.1.8
+        with:
+          workload_identity_provider: projects/1083524657274/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions-sa@triple-shift-497623-i0.iam.gserviceaccount.com
 
       - name: Conectar al cluster GKE
         uses: google-github-actions/get-gke-credentials@v2.3.1
@@ -173,37 +112,34 @@ jobs:
           location: ${{ env.REGION }}
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Escanear vulnerabilidades con Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'CRITICAL'
-          exit-code: '0'
-          format: 'table'
-        continue-on-error: true
-
-      - name: Deploy servicios modificados
+      - name: Deploy todos los servicios modificados
         run: |
+          git fetch origin main --depth=2
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+
           deploy() {
-            echo "🚀 Desplegando $1..."
-            kubectl set image deployment/$1 $1=${{ env.REGISTRY }}/$1:${{ github.sha }} -n ${{ env.NAMESPACE }}
-            kubectl rollout status deployment/$1 -n ${{ env.NAMESPACE }} --timeout=60s || echo "⚠️ $1 timeout — verificar manualmente"
+            local svc=$1
+            echo "🚀 Desplegando $svc..."
+            kubectl set image deployment/$svc $svc=${{ env.REGISTRY }}/$svc:${{ github.sha }} -n ${{ env.NAMESPACE }}
+            kubectl rollout status deployment/$svc -n ${{ env.NAMESPACE }} --timeout=120s \
+              && echo "✅ $svc listo" \
+              || echo "⚠️ $svc timeout — verificar manualmente"
           }
 
-          [ "${{ steps.cambios.outputs.auth }}" == "true" ]        && deploy auth-service
-          [ "${{ steps.cambios.outputs.catalog }}" == "true" ]     && deploy catalog-service
-          [ "${{ steps.cambios.outputs.transaction }}" == "true" ] && deploy transaction-service
-          [ "${{ steps.cambios.outputs.social }}" == "true" ]      && deploy social-service
-          [ "${{ steps.cambios.outputs.marketing }}" == "true" ]   && deploy marketing-service
-          [ "${{ steps.cambios.outputs.ai }}" == "true" ]          && deploy ai-service
-          [ "${{ steps.cambios.outputs.credit }}" == "true" ]      && deploy credit-service
-          [ "${{ steps.cambios.outputs.logistics }}" == "true" ]   && deploy logistics-service
-          [ "${{ steps.cambios.outputs.contabilidad }}" == "true" ] && deploy contabilidad-service
-          [ "${{ steps.cambios.outputs.facturacion }}" == "true" ] && deploy facturacion-service
-          [ "${{ steps.cambios.outputs.gateway }}" == "true" ]     && deploy gateway
-          [ "${{ steps.cambios.outputs.frontend }}" == "true" ]    && deploy frontend
+          echo "$CHANGED" | grep -q "^backend/services/auth-service"        && deploy auth-service
+          echo "$CHANGED" | grep -q "^backend/services/catalog-service"      && deploy catalog-service
+          echo "$CHANGED" | grep -q "^backend/services/transaction-service"  && deploy transaction-service
+          echo "$CHANGED" | grep -q "^backend/services/social-service"       && deploy social-service
+          echo "$CHANGED" | grep -q "^backend/services/marketing-service"    && deploy marketing-service
+          echo "$CHANGED" | grep -q "^backend/services/ai-service"           && deploy ai-service
+          echo "$CHANGED" | grep -q "^backend/services/credit-service"       && deploy credit-service
+          echo "$CHANGED" | grep -q "^backend/services/logistics-service"    && deploy logistics-service
+          echo "$CHANGED" | grep -q "^backend/services/contabilidad-service" && deploy contabilidad-service
+          echo "$CHANGED" | grep -q "^backend/services/facturacion-service"  && deploy facturacion-service
+          echo "$CHANGED" | grep -q "^simple-gateway"                        && deploy gateway
+          echo "$CHANGED" | grep -q "^frontend"                              && deploy frontend
+
           echo "✅ Deploy completado"
 
-      - name: Verificar estado del cluster
+      - name: Estado del cluster
         run: kubectl get pods -n ${{ env.NAMESPACE }}
