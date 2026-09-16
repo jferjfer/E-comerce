@@ -247,18 +247,18 @@ export const api = {
   },
 
   // ── IA ────────────────────────────────────────────────────────────────────
-  async chatIA(mensaje: string, historial: any[] = [], usuarioId?: string, token?: string) {
+  async chatIA(mensaje: string, historial: any[] = [], usuarioId?: string, token?: string, imagenUrl?: string) {
+    const body: any = { mensaje, historial, usuario_id: usuarioId ? String(usuarioId) : undefined, token };
+    if (imagenUrl) body.imagen_url = imagenUrl;
     const res = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ mensaje, historial, usuario_id: usuarioId ? String(usuarioId) : undefined, token }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
-    // El backend devuelve {respuesta, productos_recomendados} directamente
-    // Normalizamos para que siempre tenga exito + respuesta
     return {
       exito: !!(data.respuesta || data.text || data.message),
       respuesta: data.respuesta || data.text || data.message || '',

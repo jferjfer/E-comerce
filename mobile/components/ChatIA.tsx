@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,
   TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView,
-  Platform, Keyboard, Animated, Image, PanResponder
+  Platform, Keyboard, Animated, Image, PanResponder, Alert
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
@@ -68,6 +69,7 @@ export default function ChatIA() {
   const [input, setInput] = useState('');
   const [escribiendo, setEscribiendo] = useState(false);
   const [mensajesNoLeidos, setMensajesNoLeidos] = useState(0);
+  const [enviandoImagen, setEnviandoImagen] = useState(false);
   const [fraseFantasma, setFraseFantasma] = useState<string | null>(null);
   const fantasmaOp = useRef(new Animated.Value(0)).current;
   const fantasmaY  = useRef(new Animated.Value(10)).current;
@@ -187,6 +189,95 @@ export default function ChatIA() {
   ).current;
 
   useEffect(() => { scrollAbajo(); }, [mensajes, escribiendo]);
+
+  const enviarImagen = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para analizar imágenes.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      const base64 = asset.base64;
+      const mime = asset.mimeType || 'image/jpeg';
+      const imagenUrl = `data:${mime};base64,${base64}`;
+
+      // Mostrar preview en el chat
+      const msgImagen: Mensaje = {
+        id: Date.now().toString(),
+        texto: '📸 [Imagen enviada para análisis]',
+        esUsuario: true,
+        hora: new Date(),
+      };
+      setMensajes(prev => [...prev, msgImagen]);
+      setEnviandoImagen(true);
+      setEscribiendo(true);
+      haptic.tap();
+
+      const historial = mensajes.map(m => ({
+        role: m.esUsuario ? 'user' : 'assistant',
+        content: m.texto,
+      }));
+
+      const resultado = await api.chatIA(
+        'Analiza este outfit y recomiéndame productos similares de EGOS Colombia',
+        historial,
+        usuario?.id,
+        token || undefined,
+        imagenUrl
+      );
+
+      const respuestaTexto = resultado.respuesta || resultado.text || resultado.message;
+      const msgIA: Mensaje = {
+        id: (Date.now() + 1).toString(),
+        texto: respuestaTexto || 'No pude analizar la imagen. Intenta con otra foto.',
+        esUsuario: false,
+        hora: new Date(),
+      };
+      setMensajes(prev => [...prev, msgIA]);
+      haptic.tap();
+
+      if (resultado.productos_recomendados?.length > 0) {
+        const recomendados = await Promise.all(
+          resultado.productos_recomendados.slice(0, 4).map(async (pid: string) => {
+            try {
+              const r = await api.getProducto(String(pid));
+              const p = r.producto || r;
+              return (p && p.nombre && p.imagen) ? p : null;
+            } catch { return null; }
+          })
+        );
+        const validos = recomendados.filter(Boolean);
+        if (validos.length > 0) {
+          setMensajes(prev => [...prev, {
+            id: (Date.now() + 2).toString(),
+            texto: '✨ Productos similares encontrados:',
+            esUsuario: false,
+            hora: new Date(),
+            productos: validos,
+          }]);
+        }
+      }
+    } catch (e: any) {
+      safeError('🔴 ChatIA imagen error:', e?.message || e);
+      setMensajes(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        texto: 'No pude analizar la imagen. Intenta de nuevo.',
+        esUsuario: false,
+        hora: new Date(),
+      }]);
+    } finally {
+      setEscribiendo(false);
+      setEnviandoImagen(false);
+    }
+  };
 
   const enviar = async (texto: string) => {
     if (!texto.trim()) return;
@@ -469,11 +560,18 @@ export default function ChatIA() {
 
             {/* Input */}
             <View style={styles.inputRow}>
+              <TouchableOpacity
+                style={[styles.camaraBtn, escribiendo && { opacity: 0.4 }]}
+                onPress={enviarImagen}
+                disabled={escribiendo}
+              >
+                <Ionicons name="camera" size={20} color={COLORS.dorado} />
+              </TouchableOpacity>
               <TextInput
                 style={styles.input}
                 value={input}
                 onChangeText={setInput}
-                placeholder="Escribe tu mensaje..."
+                placeholder="Escribe o envía una foto..."
                 placeholderTextColor={COLORS.textoGrisSub}
                 onSubmitEditing={() => enviar(input)}
                 returnKeyType="send"
@@ -630,6 +728,11 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   sendIcon: { color: COLORS.dorado, fontSize: 18 },
+  camaraBtn: {
+    width: 44, height: 44, backgroundColor: '#1f2937',
+    borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(197,164,126,0.3)',
+  },
   // Productos recomendados — igual que web ProductRecommendation
   // Productos recomendados — vertical layout (imagen arriba, info abajo)
   productosWrap: { marginTop: 10, gap: 10, width: '90%' },
