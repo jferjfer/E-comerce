@@ -148,20 +148,21 @@ def get_deepseek_client():
         _deepseek_client = OpenAI(api_key=api_key, base_url='https://api.deepseek.com')
     return _deepseek_client
 
-async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int) -> tuple:
+async def chat_con_ia(mensajes: list, temperatura: float, max_tokens: int, con_vision: bool = False) -> tuple:
     """Usa DeepSeek como proveedor principal de IA"""
+    modelo = 'deepseek-flash'
     loop = asyncio.get_event_loop()
     response = await loop.run_in_executor(
         None,
         lambda: deepseek_breaker.call(
             get_deepseek_client().chat.completions.create,
-            model='deepseek-chat',
+            model=modelo,
             messages=mensajes,
             temperature=temperatura,
             max_tokens=max_tokens
         )
     )
-    print('✅ Respuesta de DeepSeek')
+    print(f'✅ Respuesta de DeepSeek ({modelo})')
     return response.choices[0].message.content, 'deepseek'
 
 
@@ -274,6 +275,7 @@ class ChatRequest(BaseModel):
     historial: Optional[List[dict]] = []
     usuario_id: Optional[str] = None
     token: Optional[str] = None
+    imagen_url: Optional[str] = None  # URL de imagen para análisis visual
 
 class RecomendacionRequest(BaseModel):
     usuario_id: Optional[str] = None
@@ -363,13 +365,33 @@ Categorías disponibles: {', '.join(sorted(por_categoria.keys()))}
             for msg in request.historial[-20:]:
                 if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
                     mensajes.append(msg)
-        mensajes.append({'role': 'user', 'content': request.mensaje})
+        # Si hay imagen, usar prompt más corto para no saturar el contexto
+        if request.imagen_url:
+            system_prompt_vision = f"""Eres Noa, asesora de moda de EGOS Colombia. Analiza la imagen del cliente y recomienda productos similares del catálogo.
 
-        respuesta, proveedor = await chat_con_ia(
-            mensajes,
-            prompt_config['temp'],
-            prompt_config['tokens']
-        )
+CATÁLOGO RESUMIDO ({len(productos_en_stock)} productos):
+{chr(10).join([f"ID={p.get('id')}, {p.get('nombre')}, ${p.get('precio',0):,.0f}, Cat:{p.get('categoria','')}" for p in productos_en_stock[:30]])}
+
+INSTRUCCIONES:
+1. Describe brevemente lo que ves en la imagen
+2. Recomienda 2-3 productos similares del catálogo con sus IDs
+3. Máximo 150 palabras
+4. Al final incluye: PRODUCTOS_RECOMENDADOS: [id1, id2, id3]"""
+            mensajes_vision = [
+                {'role': 'system', 'content': system_prompt_vision},
+                {'role': 'user', 'content': [
+                    {'type': 'text', 'text': request.mensaje},
+                    {'type': 'image_url', 'image_url': {'url': request.imagen_url}}
+                ]}
+            ]
+            respuesta, proveedor = await chat_con_ia(mensajes_vision, 0.7, 400)
+        else:
+            mensajes.append({'role': 'user', 'content': request.mensaje})
+            respuesta, proveedor = await chat_con_ia(
+                mensajes,
+                prompt_config['temp'],
+                prompt_config['tokens']
+            )
         
         import re
         respuesta = re.sub(r'\s*[\(\[]ID:\s*\d+[\)\]]', '', respuesta, flags=re.IGNORECASE)
@@ -408,6 +430,41 @@ Categorías disponibles: {', '.join(sorted(por_categoria.keys()))}
             "version": "5.0.0",
             "proveedor_ia": "ninguno"
         }
+
+@app.post("/api/chat/imagen")
+async def chat_con_imagen(
+    imagen: UploadFile = File(...),
+    mensaje: str = Form(default="Analiza este outfit y recomiéndame productos similares de EGOS"),
+    usuario_id: Optional[str] = Form(default=None),
+    token: Optional[str] = Form(default=None)
+):
+    """Noa analiza una imagen y recomienda productos del catálogo"""
+    start = time.time()
+    try:
+        # Leer imagen y convertir a base64
+        contenido = await imagen.read()
+        if len(contenido) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Imagen muy grande (máximo 10MB)")
+        
+        img_b64 = base64.b64encode(contenido).decode()
+        mime = imagen.content_type or 'image/jpeg'
+        imagen_url = f"data:{mime};base64,{img_b64}"
+
+        # Construir request con imagen
+        req = ChatRequest(
+            mensaje=mensaje,
+            historial=[],
+            usuario_id=usuario_id,
+            token=token,
+            imagen_url=imagen_url
+        )
+        return await chat_asistente(req)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error chat imagen: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/recomendaciones/personalizada")
 async def recomendaciones(request: RecomendacionRequest):
