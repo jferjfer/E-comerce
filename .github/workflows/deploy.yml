@@ -1,145 +1,28 @@
-name: CI/CD — Deploy a GKE
+name: CI/CD — Deploy a Hostinger VPS
 
 on:
   push:
     branches: [main]
 
-env:
-  PROJECT_ID: triple-shift-497623-i0
-  REGION: us-central1
-  REGISTRY: us-central1-docker.pkg.dev/triple-shift-497623-i0/egos-registry
-  CLUSTER: autopilot-cluster-1
-  NAMESPACE: egos
-
 jobs:
-  # ── JOB 1: Build en paralelo ──────────────────────────────────────────────
-  build:
-    name: Build ${{ matrix.service }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: auth-service
-            path: ./backend/services/auth-service
-          - service: catalog-service
-            path: ./backend/services/catalog-service
-          - service: transaction-service
-            path: ./backend/services/transaction-service
-          - service: social-service
-            path: ./backend/services/social-service
-          - service: marketing-service
-            path: ./backend/services/marketing-service
-          - service: ai-service
-            path: ./backend/services/ai-service
-          - service: credit-service
-            path: ./backend/services/credit-service
-          - service: logistics-service
-            path: ./backend/services/logistics-service
-          - service: contabilidad-service
-            path: ./backend/services/contabilidad-service
-          - service: facturacion-service
-            path: ./backend/services/facturacion-service
-          - service: gateway
-            path: ./simple-gateway
-          - service: frontend
-            path: ./frontend
-
-    steps:
-      - uses: actions/checkout@v4.2.2
-
-      - name: Autenticar en Google Cloud
-        uses: google-github-actions/auth@v2.1.8
-        with:
-          workload_identity_provider: projects/1083524657274/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: github-actions-sa@triple-shift-497623-i0.iam.gserviceaccount.com
-
-      - name: Configurar Docker para Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-
-      - name: Detectar si cambió este servicio
-        id: cambio
-        run: |
-          git fetch origin main --depth=2
-          CHANGED=$(git diff --name-only HEAD~1 HEAD)
-          if echo "$CHANGED" | grep -q "^${{ matrix.path == './simple-gateway' && 'simple-gateway' || matrix.path == './frontend' && 'frontend' || matrix.service }}"; then
-            echo "modificado=true" >> $GITHUB_OUTPUT
-          else
-            echo "modificado=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build y Push ${{ matrix.service }}
-        if: steps.cambio.outputs.modificado == 'true'
-        run: |
-          BUILD_ARGS=""
-          if [ "${{ matrix.service }}" = "frontend" ]; then
-            BUILD_ARGS="--build-arg VITE_API_URL=https://api.egoscolombia.com.co"
-          fi
-          docker build $BUILD_ARGS \
-            -t ${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }} \
-            -t ${{ env.REGISTRY }}/${{ matrix.service }}:latest \
-            ${{ matrix.path }}
-          docker push ${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ matrix.service }}:latest
-          echo "✅ ${{ matrix.service }} publicado"
-
-  # ── JOB 2: Deploy único al terminar todos los builds ──────────────────────
   deploy:
-    name: Deploy a GKE
+    name: Deploy a VPS
     runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - name: Checkout código
+        uses: actions/checkout@v4.2.2
 
-      - name: Autenticar en Google Cloud
-        uses: google-github-actions/auth@v2.1.8
+      - name: Deploy por SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          workload_identity_provider: projects/1083524657274/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: github-actions-sa@triple-shift-497623-i0.iam.gserviceaccount.com
-
-      - name: Conectar al cluster GKE
-        uses: google-github-actions/get-gke-credentials@v2.3.1
-        with:
-          cluster_name: ${{ env.CLUSTER }}
-          location: ${{ env.REGION }}
-          project_id: ${{ env.PROJECT_ID }}
-
-      - name: Deploy todos los servicios modificados
-        run: |
-          git fetch origin main --depth=2
-          CHANGED=$(git diff --name-only HEAD~1 HEAD)
-
-          deploy() {
-            local svc=$1
-            echo "🚀 Desplegando $svc..."
-            kubectl set image deployment/$svc $svc=${{ env.REGISTRY }}/$svc:${{ github.sha }} -n ${{ env.NAMESPACE }}
-            kubectl rollout status deployment/$svc -n ${{ env.NAMESPACE }} --timeout=120s \
-              && echo "✅ $svc listo" \
-              || echo "⚠️ $svc timeout — verificar manualmente"
-          }
-
-          echo "$CHANGED" | grep -q "^backend/services/auth-service"        && deploy auth-service
-          echo "$CHANGED" | grep -q "^backend/services/catalog-service"      && deploy catalog-service
-          echo "$CHANGED" | grep -q "^backend/services/transaction-service"  && deploy transaction-service
-          echo "$CHANGED" | grep -q "^backend/services/social-service"       && deploy social-service
-          echo "$CHANGED" | grep -q "^backend/services/marketing-service"    && deploy marketing-service
-          echo "$CHANGED" | grep -q "^backend/services/ai-service"           && deploy ai-service
-          echo "$CHANGED" | grep -q "^backend/services/credit-service"       && deploy credit-service
-          echo "$CHANGED" | grep -q "^backend/services/logistics-service"    && deploy logistics-service
-          echo "$CHANGED" | grep -q "^backend/services/contabilidad-service" && deploy contabilidad-service
-          echo "$CHANGED" | grep -q "^backend/services/facturacion-service"  && deploy facturacion-service
-          echo "$CHANGED" | grep -q "^simple-gateway"                        && deploy gateway
-          echo "$CHANGED" | grep -q "^frontend"                              && deploy frontend
-
-          echo "✅ Deploy completado"
-
-      - name: Estado del cluster
-        run: kubectl get pods -n ${{ env.NAMESPACE }}
+          host: 2.25.228.166
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/egos
+            git pull origin main
+            docker compose build --parallel
+            docker compose up -d
+            docker compose ps
+            echo "✅ Deploy completado"

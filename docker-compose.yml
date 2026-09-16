@@ -1,0 +1,234 @@
+version: '3.8'
+
+networks:
+  egos-network:
+    driver: bridge
+
+services:
+
+  # ── REDIS ────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    networks: [egos-network]
+
+  # ── AUTH SERVICE ─────────────────────────────────────────────────────────
+  auth-service:
+    build: ./backend/services/auth-service
+    container_name: auth-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3011"
+      NODE_ENV: production
+      JWT_SECRETO: ${JWT_SECRETO}
+      JWT_SECRET: ${JWT_SECRETO}
+      DATABASE_URL: ${POSTGRES_AUTH_URL}
+      SMTP_HOST: smtp.hostinger.com
+      SMTP_PORT: "465"
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: https://egoscolombia.com.co
+
+  # ── CATALOG SERVICE ──────────────────────────────────────────────────────
+  catalog-service:
+    build: ./backend/services/catalog-service
+    container_name: catalog-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3002"
+      MONGODB_URI: ${MONGODB_CATALOG_URI}
+      MONGODB_CATALOG_URI: ${MONGODB_CATALOG_URI}
+      JWT_SECRETO: ${JWT_SECRETO}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+
+  # ── TRANSACTION SERVICE ──────────────────────────────────────────────────
+  transaction-service:
+    build: ./backend/services/transaction-service
+    container_name: transaction-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3003"
+      NODE_ENV: production
+      JWT_SECRETO: ${JWT_SECRETO}
+      JWT_SECRET: ${JWT_SECRETO}
+      DATABASE_URL: ${POSTGRES_TRANSACTION_URL}
+      EPAYCO_P_CUST_ID: ${EPAYCO_P_CUST_ID}
+      EPAYCO_P_KEY: ${EPAYCO_P_KEY}
+      EPAYCO_PUBLIC_KEY: ${EPAYCO_PUBLIC_KEY}
+      EPAYCO_PRIVATE_KEY: ${EPAYCO_PRIVATE_KEY}
+      EPAYCO_TEST: "false"
+      SMTP_HOST: smtp.hostinger.com
+      SMTP_PORT: "465"
+      SMTP_USER: ${SMTP_USER_VENTAS}
+      SMTP_PASS: ${SMTP_PASS_VENTAS}
+      SMTP_USER_VENTAS: ${SMTP_USER_VENTAS}
+      SMTP_PASS_VENTAS: ${SMTP_PASS_VENTAS}
+      FRONTEND_URL: https://egoscolombia.com.co
+      SISTECREDITO_SUBSCRIPTION_KEY: ${SISTECREDITO_SUBSCRIPTION_KEY}
+      SISTECREDITO_APPLICATION_KEY: ${SISTECREDITO_APPLICATION_KEY}
+      SISTECREDITO_APPLICATION_TOKEN: ${SISTECREDITO_APPLICATION_TOKEN}
+      SISTECREDITO_AMBIENTE: ${SISTECREDITO_AMBIENTE}
+
+  # ── SOCIAL SERVICE ───────────────────────────────────────────────────────
+  social-service:
+    build: ./backend/services/social-service
+    container_name: social-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3004"
+      JWT_SECRETO: ${JWT_SECRETO}
+      MONGODB_URI: ${MONGODB_SOCIAL_URI}
+
+  # ── MARKETING SERVICE ────────────────────────────────────────────────────
+  marketing-service:
+    build: ./backend/services/marketing-service
+    container_name: marketing-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3006"
+      JWT_SECRETO: ${JWT_SECRETO}
+      DATABASE_URL: ${POSTGRES_MARKETING_URL}
+      FRONTEND_URL: https://egoscolombia.com.co
+
+  # ── AI SERVICE ───────────────────────────────────────────────────────────
+  ai-service:
+    build: ./backend/services/ai-service
+    container_name: ai-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3007"
+      REDIS_URL: redis://redis:6379
+      MONGODB_CATALOG_URI: ${MONGODB_CATALOG_URI}
+      MONGODB_SOCIAL_URI: ${MONGODB_SOCIAL_URI}
+      MONGODB_AI_URI: ${MONGODB_AI_URI}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
+    depends_on: [redis]
+
+  # ── CREDIT SERVICE ───────────────────────────────────────────────────────
+  credit-service:
+    build: ./backend/services/credit-service
+    container_name: credit-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3008"
+      JWT_SECRETO: ${JWT_SECRETO}
+      DATABASE_URL: ${POSTGRES_CREDIT_URL}
+      AUTH_SERVICE_URL: http://auth-service:3011
+      SMTP_HOST: smtp.hostinger.com
+      SMTP_PORT: "465"
+      SMTP_USER: ${SMTP_USER_VENTAS}
+      SMTP_PASS: ${SMTP_PASS_VENTAS}
+      FRONTEND_URL: https://egoscolombia.com.co
+
+  # ── LOGISTICS SERVICE ────────────────────────────────────────────────────
+  logistics-service:
+    build: ./backend/services/logistics-service
+    container_name: logistics-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3009"
+      MONGODB_CATALOG_URI: ${MONGODB_CATALOG_URI}
+      SKYDROPX_CLIENT_ID: ${SKYDROPX_CLIENT_ID}
+      SKYDROPX_CLIENT_SECRET: ${SKYDROPX_CLIENT_SECRET}
+      SKYDROPX_WEBHOOK_TOKEN: ${SKYDROPX_WEBHOOK_TOKEN}
+      SKYDROPX_BODEGA_DIRECCION: ${SKYDROPX_BODEGA_DIRECCION}
+      TRANSACTION_SERVICE_URL: http://transaction-service:3003
+
+  # ── FACTURACION SERVICE ──────────────────────────────────────────────────
+  facturacion-service:
+    build: ./backend/services/facturacion-service
+    container_name: facturacion-service
+    restart: unless-stopped
+    networks: [egos-network]
+    volumes:
+      - ./Certificado.pfx:/app/certs/certificado.pfx:ro
+    environment:
+      PUERTO: "3010"
+      DATABASE_URL: ${POSTGRES_FACTURACION_URL}
+      AUTH_SERVICE_URL: http://auth-service:3011
+      TRANSACTION_SERVICE_URL: http://transaction-service:3003
+      DIAN_P12_PATH: /app/certs/certificado.pfx
+      DIAN_P12_PASSWORD: ${DIAN_P12_PASSWORD}
+      DIAN_SOFTWARE_ID: ${DIAN_SOFTWARE_ID}
+      DIAN_CLAVE_TECNICA: ${DIAN_CLAVE_TECNICA}
+      DIAN_PIN: ${DIAN_PIN}
+      DIAN_AMBIENTE: ${DIAN_AMBIENTE}
+      DIAN_TEST_SET_ID: ${DIAN_TEST_SET_ID}
+      DIAN_RESOLUCION: ${DIAN_RESOLUCION}
+      DIAN_PREFIJO: ${DIAN_PREFIJO}
+      SMTP_HOST: smtp.hostinger.com
+      SMTP_PORT: "465"
+      SMTP_USER: ${SMTP_USER_VENTAS}
+      SMTP_PASS: ${SMTP_PASS_VENTAS}
+      FRONTEND_URL: https://egoscolombia.com.co
+
+  # ── CONTABILIDAD SERVICE ─────────────────────────────────────────────────
+  contabilidad-service:
+    build: ./backend/services/contabilidad-service
+    container_name: contabilidad-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3012"
+      JWT_SECRETO: ${JWT_SECRETO}
+      DATABASE_URL: ${POSTGRES_CONTABILIDAD_URL}
+      TRANSACTION_DB_URL: ${POSTGRES_TRANSACTION_URL}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+
+  # ── GATEWAY ──────────────────────────────────────────────────────────────
+  gateway:
+    build: ./simple-gateway
+    container_name: gateway
+    restart: unless-stopped
+    networks: [egos-network]
+    ports:
+      - "3000:3000"
+    environment:
+      PUERTO: "3000"
+      AUTH_SERVICE_URL: http://auth-service:3011
+      CATALOG_SERVICE_URL: http://catalog-service:3002
+      TRANSACTION_SERVICE_URL: http://transaction-service:3003
+      SOCIAL_SERVICE_URL: http://social-service:3004
+      MARKETING_SERVICE_URL: http://marketing-service:3006
+      AI_SERVICE_URL: http://ai-service:3007
+      CREDIT_SERVICE_URL: http://credit-service:3008
+      LOGISTICS_SERVICE_URL: http://logistics-service:3009
+      FACTURACION_SERVICE_URL: http://facturacion-service:3010
+      CONTABILIDAD_SERVICE_URL: http://contabilidad-service:3012
+      FRONTEND_URL: http://frontend:3005
+    depends_on:
+      - auth-service
+      - catalog-service
+      - transaction-service
+      - social-service
+      - marketing-service
+      - ai-service
+      - credit-service
+      - logistics-service
+      - facturacion-service
+      - contabilidad-service
+
+  # ── FRONTEND ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: https://api.egoscolombia.com.co
+    container_name: frontend
+    restart: unless-stopped
+    networks: [egos-network]
+    ports:
+      - "3005:3005"
