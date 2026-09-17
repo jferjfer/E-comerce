@@ -3,7 +3,7 @@
     "name": "EGOS Colombia",
     "slug": "egos-colombia",
     "owner": "fercho1997",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -29,7 +29,7 @@
         "backgroundColor": "#111827"
       },
       "package": "com.egoscolombia.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "googleServicesFile": "./google-services.json",
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [

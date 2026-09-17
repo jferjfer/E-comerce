@@ -83,11 +83,14 @@ export default function AIAssistant() {
     setIsTyping(true)
 
     try {
-      // Construir historial para enviar al backend
-      const historial = messages.map(m => ({
-        role: m.isUser ? 'user' : 'assistant',
-        content: m.text
-      }))
+      // Historial limpio — solo mensajes de texto reales, sin mensajes de sistema
+      const historial = messages
+        .filter(m => !m.text.startsWith('✨') && !m.text.startsWith('📸'))
+        .slice(-20)
+        .map(m => ({
+          role: m.isUser ? 'user' : 'assistant',
+          content: m.text
+        }))
 
       // Llamar al backend AI Service
       const resultado = await api.chatIA(
@@ -125,21 +128,27 @@ export default function AIAssistant() {
 
   const mostrarProductosRecomendados = async (productosIds: string[]) => {
     try {
-      const { productos } = await api.obtenerProductos()
-      
-      // Filtrar productos que coincidan con los IDs recomendados
-      const recomendados = productos.filter(p => productosIds.includes(p.id))
-      
-      if (recomendados.length > 0) {
-        const recomendacionMessage: Message = {
+      // Consultar cada producto por ID individual (no cargar todos)
+      const recomendados = await Promise.all(
+        productosIds.slice(0, 4).map(async (pid) => {
+          try {
+            const r = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.egoscolombia.com.co'}/api/productos/${pid}`)
+            if (!r.ok) return null
+            const d = await r.json()
+            const p = d.producto || d
+            return (p && p.nombre && p.imagen) ? p : null
+          } catch { return null }
+        })
+      )
+      const validos = recomendados.filter(Boolean) as Producto[]
+      if (validos.length > 0) {
+        setMessages(prev => [...prev, {
           id: (Date.now() + 2).toString(),
           text: '✨ Aquí están los productos que te recomiendo:',
           isUser: false,
           timestamp: new Date(),
-          productos: recomendados
-        }
-        
-        setMessages(prev => [...prev, recomendacionMessage])
+          productos: validos
+        }])
       }
     } catch (error) {
       console.error('Error obteniendo productos recomendados:', error)
@@ -302,13 +311,67 @@ export default function AIAssistant() {
             {/* Input */}
             <div className="p-4 bg-white border-t border-gray-100">
               <div className="flex items-center space-x-3">
+                {/* Botón imagen */}
+                <label className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors border border-[#c5a47e]/30 flex-shrink-0">
+                  <i className="fas fa-camera text-sm" style={{color: '#c5a47e'}}></i>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isTyping}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = async (ev) => {
+                        const imagenUrl = ev.target?.result as string
+                        setMessages(prev => [...prev, {
+                          id: Date.now().toString(),
+                          text: '📸 [Imagen enviada para análisis]',
+                          isUser: true,
+                          timestamp: new Date()
+                        }])
+                        setIsTyping(true)
+                        try {
+                          const resultado = await api.chatIA(
+                            'Analiza este outfit y reciómendame productos similares de EGOS Colombia',
+                            [],
+                            permiteFuncionalidad ? usuario?.id : undefined,
+                            permiteFuncionalidad ? token || undefined : undefined,
+                            imagenUrl
+                          )
+                          setMessages(prev => [...prev, {
+                            id: (Date.now()+1).toString(),
+                            text: resultado.respuesta || 'No pude analizar la imagen.',
+                            isUser: false,
+                            timestamp: new Date()
+                          }])
+                          if (resultado.productos_recomendados?.length > 0) {
+                            await mostrarProductosRecomendados(resultado.productos_recomendados)
+                          }
+                        } catch {
+                          setMessages(prev => [...prev, {
+                            id: (Date.now()+1).toString(),
+                            text: 'No pude analizar la imagen. Intenta de nuevo.',
+                            isUser: false,
+                            timestamp: new Date()
+                          }])
+                        } finally {
+                          setIsTyping(false)
+                        }
+                      }
+                      reader.readAsDataURL(file)
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
                 <div className="flex-1 relative">
                   <input
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputText)}
-                    placeholder="Escribe tu mensaje..."
+                    placeholder="Escribe o envía una foto..."
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#c5a47e]/40 focus:border-[#c5a47e] focus:bg-white transition-colors"
                     disabled={isTyping}
                   />
@@ -316,7 +379,7 @@ export default function AIAssistant() {
                 <button
                   onClick={() => handleSendMessage(inputText)}
                   disabled={isTyping || !inputText.trim()}
-                  className="w-12 h-12 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-all transform hover:scale-105 disabled:opacity-40 disabled:transform-none flex items-center justify-center shadow-lg"
+                  className="w-12 h-12 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-all transform hover:scale-105 disabled:opacity-40 disabled:transform-none flex items-center justify-center shadow-lg flex-shrink-0"
                 >
                   <i className="fas fa-paper-plane" style={{color: '#c5a47e'}}></i>
                 </button>
