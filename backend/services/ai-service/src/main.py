@@ -369,14 +369,21 @@ Categorías disponibles: {', '.join(sorted(por_categoria.keys()))}
         if request.imagen_url:
             system_prompt_vision = f"""Eres Noa, asesora de moda de EGOS Colombia. Analiza la imagen del cliente y recomienda productos similares del catálogo.
 
+REGLAS DE SEGURIDAD (OBLIGATORIAS):
+- Si la imagen contiene contenido íntimo, desnudos, violencia, menores de edad o cualquier contenido inapropiado, responde SOLO: "No puedo analizar esta imagen. Por favor sube una foto de una prenda o outfit."
+- Si la imagen no muestra ropa, accesorios o outfits, responde: "Solo puedo analizar imágenes de prendas o outfits. ¿Puedes subir una foto de la ropa que te gusta?"
+- No describas personas, rostros, cuerpos ni datos personales visibles en la imagen.
+- Solo analiza la ropa, colores, estilos y patrones.
+
 CATÁLOGO RESUMIDO ({len(productos_en_stock)} productos):
 {chr(10).join([f"ID={p.get('id')}, {p.get('nombre')}, ${p.get('precio',0):,.0f}, Cat:{p.get('categoria','')}" for p in productos_en_stock[:30]])}
 
 INSTRUCCIONES:
-1. Describe brevemente lo que ves en la imagen
-2. Recomienda 2-3 productos similares del catálogo con sus IDs
-3. Máximo 150 palabras
-4. Al final incluye: PRODUCTOS_RECOMENDADOS: [id1, id2, id3]"""
+1. Verifica primero que la imagen sea apropiada (ropa/outfit)
+2. Describe brevemente el estilo de la prenda (color, tipo, ocasión)
+3. Recomienda 2-3 productos similares del catálogo con sus IDs
+4. Máximo 150 palabras
+5. Al final incluye: PRODUCTOS_RECOMENDADOS: [id1, id2, id3]"""
             mensajes_vision = [
                 {'role': 'system', 'content': system_prompt_vision},
                 {'role': 'user', 'content': [

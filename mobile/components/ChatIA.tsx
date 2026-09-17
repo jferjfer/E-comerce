@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,
   TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView,
-  Platform, Keyboard, Animated, Image, PanResponder, Alert
+  Platform, Keyboard, Animated, Image, PanResponder, Alert,
+  useWindowDimensions
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -23,7 +24,8 @@ interface Mensaje {
   texto: string;
   esUsuario: boolean;
   hora: Date;
-  productos?: any[]; // productos recomendados con datos completos
+  productos?: any[];
+  imagen?: string; // preview URI de imagen adjunta
 }
 
 const QUICK_ACTIONS = [
@@ -61,6 +63,7 @@ const FRASES_FANTASMA = [
 ];
 
 export default function ChatIA() {
+  const { width: W, height: H } = useWindowDimensions();
   const { usuario, token } = useAuthStore();
   const agregarItem = useCartStore(s => s.agregarItem);
   const addNotification = useNotificationStore(s => s.addNotification);
@@ -70,14 +73,14 @@ export default function ChatIA() {
   const [escribiendo, setEscribiendo] = useState(false);
   const [mensajesNoLeidos, setMensajesNoLeidos] = useState(0);
   const [enviandoImagen, setEnviandoImagen] = useState(false);
+  const [imagenPendiente, setImagenPendiente] = useState<{url: string, preview: string} | null>(null);
   const [fraseFantasma, setFraseFantasma] = useState<string | null>(null);
   const fantasmaOp = useRef(new Animated.Value(0)).current;
   const fantasmaY  = useRef(new Animated.Value(10)).current;
   const scrollRef = useRef<ScrollView>(null);
   const fabAnim = useRef(new Animated.Value(1)).current;
-  // Posición draggable del FAB
-  const fabPos = useRef(new Animated.ValueXY({ x: SCREEN.width - 76, y: SCREEN.height - 180 })).current;
-  const lastPos = useRef({ x: SCREEN.width - 76, y: SCREEN.height - 180 });
+  const fabPos = useRef(new Animated.ValueXY({ x: W - 76, y: H - 180 })).current;
+  const lastPos = useRef({ x: W - 76, y: H - 180 });
 
   const panResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -92,13 +95,11 @@ export default function ChatIA() {
     ),
     onPanResponderRelease: (_, gs) => {
       fabPos.flattenOffset();
-      // Guardar posición actual
       lastPos.current = {
-        x: Math.max(10, Math.min(SCREEN.width - 66, lastPos.current.x + gs.dx)),
-        y: Math.max(50, Math.min(SCREEN.height - 160, lastPos.current.y + gs.dy)),
+        x: Math.max(10, Math.min(W - 66, lastPos.current.x + gs.dx)),
+        y: Math.max(50, Math.min(H - 160, lastPos.current.y + gs.dy)),
       };
-      // Snap a los bordes
-      const snapX = lastPos.current.x < SCREEN.width / 2 ? 10 : SCREEN.width - 66;
+      const snapX = lastPos.current.x < W / 2 ? 10 : W - 66;
       Animated.spring(fabPos, {
         toValue: { x: snapX, y: lastPos.current.y },
         useNativeDriver: false,
@@ -194,64 +195,97 @@ export default function ChatIA() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para analizar imágenes.');
+        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería.');
         return;
       }
+
+      // Aviso de privacidad antes de abrir galería
+      await new Promise<void>((resolve, reject) => {
+        Alert.alert(
+          '📸 Análisis de imagen',
+          'La imagen será procesada por IA para recomendarte productos. No subas fotos con personas, datos personales ni contenido inapropiado. Solo imágenes de prendas o outfits.',
+          [
+            { text: 'Cancelar', style: 'cancel', onPress: () => reject() },
+            { text: 'Entendido', onPress: () => resolve() },
+          ]
+        );
+      });
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
-        quality: 0.6,
+        quality: 0.5,
         base64: true,
       });
       if (result.canceled || !result.assets?.[0]) return;
       const asset = result.assets[0];
-      const base64 = asset.base64;
+
+      // Validar tamaño máximo 2MB
+      const base64Size = (asset.base64?.length || 0) * 0.75;
+      if (base64Size > 2 * 1024 * 1024) {
+        Alert.alert('Imagen muy grande', 'Por favor selecciona una imagen de menos de 2MB o recórtala.');
+        return;
+      }
+
       const mime = asset.mimeType || 'image/jpeg';
-      const imagenUrl = `data:${mime};base64,${base64}`;
+      const imagenUrl = `data:${mime};base64,${asset.base64}`;
+      setImagenPendiente({ url: imagenUrl, preview: asset.uri });
+    } catch {
+      // Usuario canceló el aviso
+    }
+  };
 
-      // Mostrar preview en el chat
-      const msgImagen: Mensaje = {
-        id: Date.now().toString(),
-        texto: '📸 [Imagen enviada para análisis]',
-        esUsuario: true,
-        hora: new Date(),
-      };
-      setMensajes(prev => [...prev, msgImagen]);
-      setEnviandoImagen(true);
-      setEscribiendo(true);
-      haptic.tap();
+  const enviarConImagen = async (texto: string) => {
+    if (!imagenPendiente) return;
+    const imagenUrl = imagenPendiente.url;
+    const previewUri = imagenPendiente.preview;
+    setImagenPendiente(null);
+    setInput('');
+    haptic.tap();
+    Keyboard.dismiss();
 
-      const historial = mensajes.map(m => ({
-        role: m.esUsuario ? 'user' : 'assistant',
-        content: m.texto,
-      }));
+    // Burbuja del usuario con imagen + texto (estilo Gemini)
+    const msgUsuario: Mensaje = {
+      id: Date.now().toString(),
+      texto: texto.trim() || '',
+      esUsuario: true,
+      hora: new Date(),
+      imagen: previewUri,
+    };
+    setMensajes(prev => [...prev, msgUsuario]);
+    setEscribiendo(true);
 
-      const resultado = await api.chatIA(
-        'Analiza este outfit y recomiéndame productos similares de EGOS Colombia',
-        historial,
-        usuario?.id,
-        token || undefined,
-        imagenUrl
-      );
+    try {
+      const historial = mensajes
+        .filter(m => !m.texto.startsWith('✨') && !m.texto.startsWith('📸'))
+        .slice(-10)
+        .map(m => ({ role: m.esUsuario ? 'user' : 'assistant', content: m.texto }));
+
+      const mensajeTexto = texto.trim() || 'Analiza este outfit y reciómendame productos similares de EGOS Colombia';
+
+      const resultado = await api.chatIA(mensajeTexto, historial, usuario?.id, token || undefined, imagenUrl);
 
       const respuestaTexto = resultado.respuesta || resultado.text || resultado.message;
-      const msgIA: Mensaje = {
+      setMensajes(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        texto: respuestaTexto || 'No pude analizar la imagen. Intenta con otra foto.',
+        texto: respuestaTexto || 'No pude analizar la imagen.',
         esUsuario: false,
         hora: new Date(),
-      };
-      setMensajes(prev => [...prev, msgIA]);
+      }]);
       haptic.tap();
 
       if (resultado.productos_recomendados?.length > 0) {
         const recomendados = await Promise.all(
           resultado.productos_recomendados.slice(0, 4).map(async (pid: string) => {
-            try {
-              const r = await api.getProducto(String(pid));
-              const p = r.producto || r;
-              return (p && p.nombre && p.imagen) ? p : null;
-            } catch { return null; }
+            for (let intento = 0; intento < 2; intento++) {
+              try {
+                const p = await api.getProducto(String(pid));
+                if (p && p.nombre && p.imagen && p.id) return p;
+              } catch {
+                if (intento === 0) await new Promise(res => setTimeout(res, 500));
+              }
+            }
+            return null;
           })
         );
         const validos = recomendados.filter(Boolean);
@@ -295,10 +329,11 @@ export default function ChatIA() {
     Keyboard.dismiss();
 
     try {
-      const historial = mensajes.map(m => ({
-        role: m.esUsuario ? 'user' : 'assistant',
-        content: m.texto,
-      }));
+      // Historial limpio — sin mensajes de sistema ni imágenes
+      const historial = mensajes
+        .filter(m => !m.texto.startsWith('✨') && !m.texto.startsWith('📸'))
+        .slice(-20)
+        .map(m => ({ role: m.esUsuario ? 'user' : 'assistant', content: m.texto }));
 
       const resultado = await api.chatIA(
         texto.trim(),
@@ -324,17 +359,20 @@ export default function ChatIA() {
       haptic.tap();
       if (!abierto) setMensajesNoLeidos(n => n + 1);
 
-      // Buscar cada producto por ID individual para datos completos (imagen, nombre, precio)
       if (resultado.productos_recomendados?.length > 0) {
         try {
           const recomendados = await Promise.all(
             resultado.productos_recomendados.slice(0, 4).map(async (pid: string) => {
-              try {
-                const r = await api.getProducto(String(pid));
-                const p = r.producto || r;
-                if (p && p.nombre && p.imagen) return p;
-                return null;
-              } catch { return null; }
+              // Intentar hasta 2 veces por producto
+              for (let intento = 0; intento < 2; intento++) {
+                try {
+                  const p = await api.getProducto(String(pid));
+                  if (p && p.nombre && p.imagen && p.id) return p;
+                } catch {
+                  if (intento === 0) await new Promise(res => setTimeout(res, 500));
+                }
+              }
+              return null;
             })
           );
           const validos = recomendados.filter(Boolean);
@@ -375,18 +413,9 @@ export default function ChatIA() {
 
   return (
     <>
-      {/* Mensaje fantasma — aparece una sola vez */}
+      {/* Mensaje fantasma */}
       {fraseFantasma && (
-        <View
-          style={[
-            styles.fantasma,
-            {
-              position: 'absolute',
-              right: SCREEN.width - lastPos.current.x - 56,
-              top: lastPos.current.y - 58,
-            }
-          ]}
-        >
+        <View style={[styles.fantasma, { position: 'absolute', right: W - lastPos.current.x - 56, top: lastPos.current.y - 58 }]}>
           <Animated.Text style={[styles.fantasmaTxt, { opacity: fantasmaOp }]}>{fraseFantasma}</Animated.Text>
           <View style={styles.fantasmaArrow} />
         </View>
@@ -417,8 +446,8 @@ export default function ChatIA() {
       <Modal visible={abierto} animationType="slide" transparent onRequestClose={() => setAbierto(false)}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
           <View style={styles.chatContainer}>
 
@@ -461,9 +490,19 @@ export default function ChatIA() {
                         <Text style={styles.iaNombre}>Noa</Text>
                       </View>
                     )}
-                    <Text style={[styles.burbujaTexto, m.esUsuario && { color: COLORS.blanco }]}>
-                      {m.texto}
-                    </Text>
+                    {/* Imagen adjunta estilo Gemini */}
+                    {m.imagen && (
+                      <Image
+                        source={{ uri: m.imagen }}
+                        style={styles.burbujaImagen}
+                        resizeMode="cover"
+                      />
+                    )}
+                    {m.texto ? (
+                      <Text style={[styles.burbujaTexto, m.esUsuario && { color: COLORS.blanco }]}>
+                        {m.texto}
+                      </Text>
+                    ) : null}
                     <Text style={[styles.burbujaHora, m.esUsuario && { color: 'rgba(255,255,255,0.5)' }]}>
                       {hora(m.hora)}
                     </Text>
@@ -558,6 +597,19 @@ export default function ChatIA() {
               </View>
             )}
 
+            {/* Preview imagen pendiente estilo Gemini */}
+            {imagenPendiente && (
+              <View style={styles.imagenPreviewRow}>
+                <Image source={{ uri: imagenPendiente.preview }} style={styles.imagenPreview} />
+                <TouchableOpacity
+                  style={styles.imagenPreviewX}
+                  onPress={() => setImagenPendiente(null)}
+                >
+                  <Text style={{ color: COLORS.blanco, fontSize: 10, fontWeight: '800' }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {/* Input */}
             <View style={styles.inputRow}>
               <TouchableOpacity
@@ -565,23 +617,23 @@ export default function ChatIA() {
                 onPress={enviarImagen}
                 disabled={escribiendo}
               >
-                <Ionicons name="camera" size={20} color={COLORS.dorado} />
+                <Ionicons name="camera" size={20} color={imagenPendiente ? '#10b981' : COLORS.dorado} />
               </TouchableOpacity>
               <TextInput
                 style={styles.input}
                 value={input}
                 onChangeText={setInput}
-                placeholder="Escribe o envía una foto..."
+                placeholder={imagenPendiente ? '¿Qué quieres saber?' : 'Escribe o envía una foto...'}
                 placeholderTextColor={COLORS.textoGrisSub}
-                onSubmitEditing={() => enviar(input)}
+                onSubmitEditing={() => imagenPendiente ? enviarConImagen(input) : enviar(input)}
                 returnKeyType="send"
                 editable={!escribiendo}
                 multiline
               />
               <TouchableOpacity
-                style={[styles.sendBtn, (!input.trim() || escribiendo) && { opacity: 0.4 }]}
-                onPress={() => enviar(input)}
-                disabled={!input.trim() || escribiendo}
+                style={[styles.sendBtn, ((!input.trim() && !imagenPendiente) || escribiendo) && { opacity: 0.4 }]}
+                onPress={() => imagenPendiente ? enviarConImagen(input) : enviar(input)}
+                disabled={(!input.trim() && !imagenPendiente) || escribiendo}
               >
                 {escribiendo
                   ? <ActivityIndicator color={COLORS.dorado} size="small" />
@@ -652,6 +704,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.blanco,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     height: '85%', overflow: 'hidden',
+    ...(Platform.OS === 'android' ? { flex: 1 } : {}),
   },
   header: {
     backgroundColor: COLORS.negroHeader,
@@ -732,6 +785,32 @@ const styles = StyleSheet.create({
     width: 44, height: 44, backgroundColor: '#1f2937',
     borderRadius: 22, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(197,164,126,0.3)',
+  },
+  // Preview imagen pendiente estilo Gemini
+  imagenPreviewRow: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: COLORS.blanco,
+  },
+  imagenPreview: {
+    width: 72, height: 72,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.fondoGris,
+  },
+  imagenPreviewX: {
+    position: 'absolute',
+    top: 4, left: SPACING.md + 56,
+    width: 20, height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  // Imagen dentro de burbuja estilo Gemini
+  burbujaImagen: {
+    width: 200, height: 200,
+    borderRadius: RADIUS.md,
+    marginBottom: 6,
   },
   // Productos recomendados — igual que web ProductRecommendation
   // Productos recomendados — vertical layout (imagen arriba, info abajo)

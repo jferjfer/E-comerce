@@ -85,8 +85,22 @@ export const api = {
   },
 
   async getProducto(id: string) {
-    const res = await fetch(`${API_URL}/api/productos/${id}`);
-    return res.json();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(`${API_URL}/api/productos/${id}`, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'EGOS-Mobile/1.0' },
+      });
+      clearTimeout(timeout);
+      if (!res.ok) return null;
+      const data = await res.json();
+      // Normalizar — siempre devolver el objeto producto directamente
+      return data.producto || data;
+    } catch {
+      clearTimeout(timeout);
+      return null;
+    }
   },
 
   async getCategorias() {

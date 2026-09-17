@@ -31,6 +31,7 @@
       "package": "com.egoscolombia.app",
       "versionCode": 3,
       "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
@@ -49,13 +50,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {
         "projectId": "16f267b9-bcd5-4485-b21e-a1dc7adbf953"
       }
-    },
-    "owner": "fercho1997"
+    }
   }
 }
