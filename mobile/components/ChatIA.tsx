@@ -597,47 +597,27 @@ export default function ChatIA() {
               </View>
             )}
 
-            {/* Preview imagen pendiente estilo Gemini */}
-            {imagenPendiente && (
-              <View style={styles.imagenPreviewRow}>
-                <Image source={{ uri: imagenPendiente.preview }} style={styles.imagenPreview} />
-                <TouchableOpacity
-                  style={styles.imagenPreviewX}
-                  onPress={() => setImagenPendiente(null)}
-                >
-                  <Text style={{ color: COLORS.blanco, fontSize: 10, fontWeight: '800' }}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
             {/* Input */}
             <View style={styles.inputRow}>
-              <TouchableOpacity
-                style={[styles.camaraBtn, escribiendo && { opacity: 0.4 }]}
-                onPress={enviarImagen}
-                disabled={escribiendo}
-              >
-                <Ionicons name="camera" size={20} color={imagenPendiente ? '#10b981' : COLORS.dorado} />
-              </TouchableOpacity>
               <TextInput
                 style={styles.input}
                 value={input}
                 onChangeText={setInput}
-                placeholder={imagenPendiente ? '¿Qué quieres saber?' : 'Escribe o envía una foto...'}
+                placeholder="Escribe tu mensaje..."
                 placeholderTextColor={COLORS.textoGrisSub}
-                onSubmitEditing={() => imagenPendiente ? enviarConImagen(input) : enviar(input)}
+                onSubmitEditing={() => enviar(input)}
                 returnKeyType="send"
                 editable={!escribiendo}
                 multiline
               />
               <TouchableOpacity
-                style={[styles.sendBtn, ((!input.trim() && !imagenPendiente) || escribiendo) && { opacity: 0.4 }]}
-                onPress={() => imagenPendiente ? enviarConImagen(input) : enviar(input)}
-                disabled={(!input.trim() && !imagenPendiente) || escribiendo}
+                style={[styles.sendBtn, (!input.trim() || escribiendo) && { opacity: 0.4 }]}
+                onPress={() => enviar(input)}
+                disabled={!input.trim() || escribiendo}
               >
                 {escribiendo
-                  ? <ActivityIndicator color={COLORS.dorado} size="small" />
-                  : <Text style={styles.sendIcon}>➤</Text>
+                  ? <ActivityIndicator color={'#000000'} size="small" />
+                  : <Ionicons name="send" size={20} color="#000000" />
                 }
               </TouchableOpacity>
             </View>
@@ -776,11 +756,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: COLORS.bordeClaro,
   },
   sendBtn: {
-    width: 48, height: 48, backgroundColor: COLORS.negroHeader,
-    borderRadius: 24, alignItems: 'center', justifyContent: 'center',
-    ...SHADOW.md,
+    width: 48, height: 48,
+    backgroundColor: '#c5a47e',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 6,
   },
-  sendIcon: { color: COLORS.dorado, fontSize: 18 },
+  sendIcon: { color: '#000000', fontSize: 20, fontWeight: '900' },
   camaraBtn: {
     width: 44, height: 44, backgroundColor: '#1f2937',
     borderRadius: 22, alignItems: 'center', justifyContent: 'center',
