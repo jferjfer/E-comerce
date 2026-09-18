@@ -760,7 +760,8 @@ app.post('/api/contabilidad/compras/:id/soporte', upload.single('archivo'), asyn
 // Webhook Meta — WhatsApp, Instagram, Messenger
 app.all('/webhook/meta*', async (req, res) => {
   try {
-    const url = req.method === 'GET'
+    const isGet = req.method === 'GET';
+    const url = isGet
       ? `${META_BOT_URL}/webhook/meta?${new URLSearchParams(req.query).toString()}`
       : `${META_BOT_URL}/webhook/meta`;
     const response = await axios({
@@ -768,11 +769,12 @@ app.all('/webhook/meta*', async (req, res) => {
       url,
       data: req.body,
       headers: { 'Content-Type': 'application/json' },
-      timeout: 10000
+      timeout: 10000,
+      responseType: 'text'
     });
     res.status(response.status).send(response.data);
   } catch (error) {
-    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+    res.status(error.response?.status || 500).send(error.response?.data || error.message);
   }
 });
 
