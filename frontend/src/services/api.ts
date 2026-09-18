@@ -371,12 +371,14 @@ export const api = {
     }
   },
 
-  async chatIA(mensaje: string, historial: any[] = [], usuarioId?: string, token?: string) {
+  async chatIA(mensaje: string, historial: any[] = [], usuarioId?: string, token?: string, imagenUrl?: string) {
     try {
+      const body: any = { mensaje, historial, usuario_id: usuarioId, token };
+      if (imagenUrl) body.imagen_url = imagenUrl;
       const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensaje, historial, usuario_id: usuarioId, token })
+        body: JSON.stringify(body)
       });
 
       const data = await response.json();
