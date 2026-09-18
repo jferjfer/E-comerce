@@ -52,6 +52,8 @@ services:
     container_name: transaction-service
     restart: unless-stopped
     networks: [egos-network]
+    volumes:
+      - ./backend/services/transaction-service/src/firebase-service-account.json:/app/src/firebase-service-account.json:ro
     environment:
       PUERTO: "3003"
       NODE_ENV: production
