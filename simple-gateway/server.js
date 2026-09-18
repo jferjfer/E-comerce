@@ -314,6 +314,8 @@ app.use((req, res, next) => {
 });
 
 // URLs de microservicios - usa variables de entorno si existen (Render), sino usa Docker network (local)
+const META_BOT_URL = process.env.META_BOT_SERVICE_URL || 'http://meta-bot-service:3013';
+
 const CONTABILIDAD_URL = process.env.CONTABILIDAD_SERVICE_URL || 'http://contabilidad-service:3012';
 const FACTURACION_URL = process.env.FACTURACION_SERVICE_URL || 'http://facturacion-service:3010';
 
@@ -754,6 +756,25 @@ app.post('/api/contabilidad/compras/:id/soporte', upload.single('archivo'), asyn
     res.status(error.response?.status || 500).json(error.response?.data || { error: error.message })
   }
 })
+
+// Webhook Meta — WhatsApp, Instagram, Messenger
+app.all('/webhook/meta*', async (req, res) => {
+  try {
+    const url = req.method === 'GET'
+      ? `${META_BOT_URL}/webhook/meta?${new URLSearchParams(req.query).toString()}`
+      : `${META_BOT_URL}/webhook/meta`;
+    const response = await axios({
+      method: req.method,
+      url,
+      data: req.body,
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    res.status(response.status).send(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
 
 app.all('/api/contabilidad*', async (req, res) => {
   try {

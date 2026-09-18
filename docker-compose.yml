@@ -223,6 +223,24 @@ services:
       - facturacion-service
       - contabilidad-service
 
+  # ── META BOT SERVICE ────────────────────────────────────────────
+  meta-bot-service:
+    build: ./backend/services/meta-bot-service
+    container_name: meta-bot-service
+    restart: unless-stopped
+    networks: [egos-network]
+    environment:
+      PUERTO: "3013"
+      META_VERIFY_TOKEN: "egos_webhook_2026"
+      META_PAGE_ACCESS_TOKEN: ${META_PAGE_ACCESS_TOKEN}
+      META_IG_ACCESS_TOKEN: ${META_IG_ACCESS_TOKEN}
+      META_WA_TOKEN: ${META_WA_TOKEN}
+      META_WA_PHONE_NUMBER_ID: ${META_WA_PHONE_NUMBER_ID}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
+      CATALOG_SERVICE_URL: http://catalog-service:3002
+      TRANSACTION_SERVICE_URL: http://transaction-service:3003
+      EPAYCO_PUBLIC_KEY: ${EPAYCO_PUBLIC_KEY}
+
   # ── FRONTEND ─────────────────────────────────────────────────────────────
   frontend:
     build:
