@@ -8,6 +8,55 @@ import { secureStorage, limpiarRateLimit, verificarRateLimit, actualizarActivida
 
 const SECURE_TOKEN_KEY = 'egos_auth_token';
 
+// Decodificar JWT payload — compatible con Hermes RN 0.76 sin atob ni TextDecoder
+function decodeJwtPayload(token: string): any {
+  try {
+    const base64 = token.split('.')[1];
+    if (!base64) return null;
+
+    // Base64url → base64 estándar
+    const b64 = base64.replace(/-/g, '+').replace(/_/g, '/') +
+      '=='.slice(0, (4 - base64.length % 4) % 4);
+
+    // Decodificar base64 manualmente sin atob ni TextDecoder
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    let result = '';
+    let i = 0;
+    while (i < b64.length) {
+      const a = chars.indexOf(b64[i++]);
+      const b = chars.indexOf(b64[i++]);
+      const c = chars.indexOf(b64[i++]);
+      const d = chars.indexOf(b64[i++]);
+      if (a < 0 || b < 0) break;
+      result += String.fromCharCode((a << 2) | (b >> 4));
+      if (c >= 0) result += String.fromCharCode(((b & 15) << 4) | (c >> 2));
+      if (d >= 0) result += String.fromCharCode(((c & 3) << 6) | d);
+    }
+
+    // Decodificar UTF-8 manualmente
+    let utf8 = '';
+    let j = 0;
+    while (j < result.length) {
+      const code = result.charCodeAt(j++);
+      if (code < 128) {
+        utf8 += String.fromCharCode(code);
+      } else if (code > 191 && code < 224) {
+        utf8 += String.fromCharCode(((code & 31) << 6) | (result.charCodeAt(j++) & 63));
+      } else {
+        utf8 += String.fromCharCode(
+          ((code & 15) << 12) |
+          ((result.charCodeAt(j++) & 63) << 6) |
+          (result.charCodeAt(j++) & 63)
+        );
+      }
+    }
+
+    return JSON.parse(utf8);
+  } catch {
+    return null;
+  }
+}
+
 interface AuthStore {
   usuario: Usuario | null;
   token: string | null;
@@ -29,20 +78,20 @@ export const useAuthStore = create<AuthStore>()(
 
       // Cargar token desde SecureStore al iniciar
       cargarTokenSeguro: async () => {
-        const token = await secureStorage.get(SECURE_TOKEN_KEY);
-        if (token) {
-          // Verificar que el token no haya expirado
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const expirado = payload.exp && payload.exp * 1000 < Date.now();
-            if (expirado) {
-              await secureStorage.remove(SECURE_TOKEN_KEY);
-              return;
-            }
-          } catch {}
-          set({ token, estaAutenticado: true });
-          actualizarActividad();
-        }
+        try {
+          const token = await secureStorage.get(SECURE_TOKEN_KEY);
+          if (token) {
+            try {
+              const payload = decodeJwtPayload(token);
+              if (payload?.exp && payload.exp * 1000 < Date.now()) {
+                await secureStorage.delete(SECURE_TOKEN_KEY);
+                return;
+              }
+            } catch {}
+            set({ token, estaAutenticado: true });
+            actualizarActividad();
+          }
+        } catch {}
       },
 
       iniciarSesion: async (email, password) => {
@@ -100,17 +149,17 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       cerrarSesion: () => {
-        // Eliminar token del SecureStore
-        secureStorage.delete(SECURE_TOKEN_KEY);
+        secureStorage.delete(SECURE_TOKEN_KEY).catch(() => {});
         set({ usuario: null, token: null, estaAutenticado: false });
-        setTimeout(async () => {
-          try {
-            const { useCartStore } = await import('@/store/useCartStore');
-            useCartStore.getState().vaciarCarrito();
-            const { useUserStore } = await import('@/store/useUserStore');
-            useUserStore.getState().logout();
-          } catch {}
-        }, 0);
+        // Limpiar stores secundarios de forma síncrona para evitar setState en componentes desmontados
+        try {
+          const cartMod = require('@/store/useCartStore');
+          cartMod.useCartStore.getState().vaciarCarrito();
+        } catch {}
+        try {
+          const userMod = require('@/store/useUserStore');
+          userMod.useUserStore.getState().logout();
+        } catch {}
       },
 
       registrar: async (datos) => {
@@ -133,7 +182,7 @@ export const useAuthStore = create<AuthStore>()(
       // El token se guarda en SecureStore por separado
       partialize: (state) => ({
         usuario: state.usuario,
-        estaAutenticado: state.estaAutenticado,
+        // estaAutenticado NO se persiste — siempre arranca en false hasta verificar token
         // token NO se persiste en AsyncStorage
       }),
       storage: createJSONStorage(() => AsyncStorage),

@@ -23,6 +23,11 @@ export const secureStorage = {
       return null;
     }
   },
+  async remove(key: string): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {}
+  },
   async delete(key: string): Promise<void> {
     try {
       await SecureStore.deleteItemAsync(key);

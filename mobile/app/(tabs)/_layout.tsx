@@ -13,7 +13,7 @@ const TAB_HEIGHT = Platform.OS === 'ios' ? (height > 800 ? 80 : 65) : 62;
 const TAB_PB = Platform.OS === 'ios' ? (height > 800 ? 24 : 8) : 8;
 
 function TabIcon({ name, color, focused, badge }: {
-  name: string; color: string; focused: boolean; badge?: number
+  name: string; color: any; focused: boolean; badge?: number
 }) {
   return (
     <View style={tabStyles.wrap}>
@@ -27,7 +27,7 @@ function TabIcon({ name, color, focused, badge }: {
   );
 }
 
-function CarritoIcon({ color, focused }: { color: string; focused: boolean }) {
+function CarritoIcon({ color, focused }: { color: any; focused: boolean }) {
   const total = useCartStore(s => s.totalItems());
   return (
     <TabIcon

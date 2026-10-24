@@ -74,12 +74,15 @@ export default function EpaycoRespuestaPage() {
       x_cod_response === '9' || 
       x_cod_response === '10'
     ) {
-      setEstado('fallido')
-      const mensajeEstado = x_response === 'Cancelada' 
-        ? 'Pago cancelado por el usuario'
-        : x_response === 'Abandonada'
-        ? 'Pago abandonado — no se completó el proceso'
-        : x_response_reason || `Pago ${x_response?.toLowerCase() || 'no completado'}`
+      // Diferenciar: cancelación voluntaria vs rechazo técnico
+      const esCancelacion = x_response === 'Cancelada' || x_response === 'Abandonada'
+      const esExpiracion  = x_response === 'Expirada' || x_cod_response === '9' || x_cod_response === '10'
+      setEstado(esCancelacion ? 'pendiente' : 'fallido')
+      const mensajeEstado = esCancelacion
+        ? 'Decidiste no completar el pago en este momento. Puedes intentarlo cuando quieras.'
+        : esExpiracion
+        ? 'El tiempo para completar el pago expiró. Puedes intentarlo de nuevo.'
+        : x_response_reason || `El pago fue ${x_response?.toLowerCase() || 'rechazado'}. Verifica los datos e intenta de nuevo.`
       setDetalle(mensajeEstado)
     } else if (x_response) {
       // Cualquier otro valor de x_response no reconocido
@@ -234,7 +237,7 @@ export default function EpaycoRespuestaPage() {
       icon: 'fa-times-circle',
       color: 'text-red-500',
       bg: 'bg-red-50 border-red-200',
-      titulo: 'Pago rechazado',
+      titulo: 'Pago no completado',
       mensaje: detalle || x_response_reason || 'El pago no pudo ser procesado. Intenta con otro método.'
     },
     cargando: {
@@ -308,7 +311,7 @@ export default function EpaycoRespuestaPage() {
         )}
 
         <div className="space-y-2">
-          {estado !== 'fallido' && (
+          {estado !== 'fallido' && estado !== 'pendiente' && (
             <button
               onClick={() => navigate('/orders')}
               className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors"
@@ -317,13 +320,22 @@ export default function EpaycoRespuestaPage() {
               Ver mis pedidos
             </button>
           )}
-          {estado === 'fallido' && (
+          {estado === 'exitoso' && (
+            <button
+              onClick={() => navigate('/orders')}
+              className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors"
+            >
+              <i className="fas fa-shopping-bag mr-2"></i>
+              Ver mis pedidos
+            </button>
+          )}
+          {(estado === 'fallido' || estado === 'pendiente') && (
             <button
               onClick={() => navigate(-1)}
               className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-secondary transition-colors"
             >
               <i className="fas fa-redo mr-2"></i>
-              Reintentar pago
+              {estado === 'fallido' ? 'Reintentar pago' : 'Volver a pagar'}
             </button>
           )}
           <button

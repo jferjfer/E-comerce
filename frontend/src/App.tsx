@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/useAuthStore'
+import { useTiendaCarrito } from './store/useCartStore'
 import { useOrderNotifications } from './hooks/useOrderNotifications'
 import { useSocketIdentificacion } from './hooks/useSocket'
 import Header from './components/Header'
@@ -54,7 +55,16 @@ import ProductoDetallePage from './pages/ProductoDetallePage'
 function App() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
-  const { estaAutenticado } = useAuthStore()
+  const { estaAutenticado, token } = useAuthStore()
+  const sincronizarCarrito = useTiendaCarrito(s => s.sincronizarConBackend)
+
+  // Sincronizar carrito con backend al arrancar si ya hay sesión activa
+  // Esto garantiza que app mobile y web tengan el mismo carrito
+  useEffect(() => {
+    if (estaAutenticado && token) {
+      sincronizarCarrito()
+    }
+  }, [estaAutenticado, token])
 
   useOrderNotifications()
   useSocketIdentificacion()

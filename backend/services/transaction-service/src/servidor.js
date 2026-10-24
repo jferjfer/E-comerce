@@ -551,8 +551,7 @@ aplicacion.get('/api/carrito', autenticacion, async (req, res) => {
                  'id', cp.id_producto,
                  'cantidad', cp.cantidad,
                  'precio', cp.precio_unitario,
-                 'nombre', COALESCE(cp.nombre_producto, 'Producto ' || cp.id_producto),
-                 'imagen', 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop'
+                 'nombre', COALESCE(cp.nombre_producto, 'Producto ' || cp.id_producto)
                )
              ) FILTER (WHERE cp.id IS NOT NULL), '[]') as productos
       FROM carrito c
@@ -566,7 +565,26 @@ aplicacion.get('/api/carrito', autenticacion, async (req, res) => {
     let carrito;
     if (resultado.rows.length > 0) {
       const row = resultado.rows[0];
-      const productos = row.productos === '[]' ? [] : row.productos;
+      let productos = row.productos === '[]' ? [] : row.productos;
+
+      // Enriquecer con imagen real del catalog-service
+      productos = await Promise.all(productos.map(async (p) => {
+        try {
+          const resProd = await axios.get(`http://catalog-service:3002/api/productos/${p.id}`, { timeout: 3000 });
+          const prod = resProd.data?.producto || resProd.data;
+          return {
+            ...p,
+            imagen: prod?.imagen || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
+            tallas: prod?.tallas || [],
+            colores: prod?.colores || [],
+            descripcion: prod?.descripcion || '',
+            categoria: prod?.categoria || '',
+          };
+        } catch {
+          return { ...p, imagen: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop' };
+        }
+      }));
+
       const total = productos.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
 
       carrito = {
@@ -973,9 +991,14 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
 aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
-    const { metodo_pago, direccion_envio, items: itemsFrontend, descuento_bono = 0, codigo_bono = null } = req.body;
+    const { metodo_pago, direccion_envio, items: itemsFrontend, descuento_bono = 0, codigo_bono = null, plataforma = 'web' } = req.body;
 
     console.log(`💳 Procesando checkout para usuario ${usuarioId}${descuento_bono > 0 ? ` | Bono: -$${descuento_bono.toLocaleString('es-CO')}` : ''}`);
+
+    // 🔒 Solo clientes pueden comprar
+    if (req.usuario.rol !== 'cliente') {
+      return res.status(403).json({ error: 'Solo los clientes pueden realizar compras' });
+    }
 
     let carrito;
 
@@ -1014,11 +1037,17 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
         try {
           const resProd = await axios.get(`http://catalog-service:3002/api/productos/${item.id}`, { timeout: 4000 });
           const prod = resProd.data?.producto || resProd.data;
-          if (prod && prod.en_stock === false) {
+          if (!prod || !prod.id) {
+            productosAgotados.push(`Producto ${item.id} no encontrado`);
+          } else if (prod.en_stock === false) {
             productosAgotados.push(prod.nombre || `Producto ${item.id}`);
           }
         } catch (e) {
-          console.log(`⚠️ No se pudo verificar stock de ${item.id}: ${e.message}`);
+          if (e.response?.status === 404) {
+            productosAgotados.push(`Producto ${item.id} no encontrado`);
+          } else {
+            console.log(`⚠️ No se pudo verificar stock de ${item.id}: ${e.message}`);
+          }
         }
       }));
 
@@ -1091,8 +1120,8 @@ aplicacion.post('/api/checkout', autenticacion, async (req, res) => {
     }
 
     await pool.query(
-      'INSERT INTO pedido (id, usuario_id, estado, total, descuento_bono, codigo_bono) VALUES ($1, $2, $3, $4, $5, $6)',
-      [pedidoId, parseInt(usuarioId), 'Creado', Math.max(0, carrito.total - descuento_bono), descuento_bono, codigo_bono]
+      'INSERT INTO pedido (id, usuario_id, estado, total, descuento_bono, codigo_bono, plataforma) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [pedidoId, parseInt(usuarioId), 'Creado', Math.max(0, carrito.total - descuento_bono), descuento_bono, codigo_bono, plataforma]
     );
 
     // Copiar productos del carrito al pedido
@@ -1244,7 +1273,13 @@ async function enviarPushNotificacion(usuarioId, titulo, cuerpo) {
       await firebaseAdmin.messaging().send({
         token: pushToken,
         notification: { title: titulo, body: cuerpo },
-        android: { channelId: 'pedidos', priority: 'high' },
+        android: {
+          priority: 'high',
+          notification: { channelId: 'pedidos' }
+        },
+        apns: {
+          payload: { aps: { sound: 'default', badge: 1 } }
+        }
       });
       console.log(`📣 Push FCM enviado a usuario ${usuarioId}: ${titulo}`);
     }
@@ -1771,6 +1806,11 @@ aplicacion.post('/api/pagos/sistecredito/iniciar', async (req, res) => {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
     const pedido = pedidoResult.rows[0];
+
+    // Sistecredito tiene monto mínimo de $10.000 COP
+    if (parseFloat(pedido.total) < 10000) {
+      return res.status(400).json({ error: 'El monto mínimo para pagar con Sistecredito es $10.000 COP' });
+    }
 
     // Datos del cliente
     let cliente = {

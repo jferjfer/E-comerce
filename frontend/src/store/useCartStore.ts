@@ -92,7 +92,13 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
       },
       
       sincronizarConBackend: async () => {
-        const { token } = get();
+        // Usar token del auth store directamente — no depender del token interno del carrito
+        let token: string | null = null;
+        try {
+          const { useAuthStore } = await import('./useAuthStore');
+          token = useAuthStore.getState().token;
+        } catch {}
+
         if (!token) {
           console.log('🔄 No hay token, omitiendo sincronización de carrito');
           return;
@@ -101,8 +107,10 @@ export const useTiendaCarrito = create<TiendaCarrito>()(
         try {
           console.log('🔄 Sincronizando carrito con backend...');
           const carritoBackend = await api.obtenerCarrito(token);
-          set({ items: carritoBackend.items });
-          console.log('✅ Carrito sincronizado exitosamente');
+          if (carritoBackend.items.length > 0) {
+            set({ items: carritoBackend.items });
+            console.log(`✅ Carrito sincronizado: ${carritoBackend.items.length} items`);
+          }
         } catch (error) {
           console.error('❌ Error al sincronizar carrito:', error);
         }

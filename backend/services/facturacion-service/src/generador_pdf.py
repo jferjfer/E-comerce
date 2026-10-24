@@ -44,8 +44,8 @@ def fmt(valor: float) -> str:
     return f"${valor:,.0f}".replace(",", ".")
 
 def cufe_formateado(cufe: str) -> str:
-    """Divide el CUFE en bloques de 16 para legibilidad"""
-    return "  ".join([cufe[i:i+16] for i in range(0, len(cufe), 16)])
+    """Retorna el CUFE sin espacios para que sea válido en la DIAN"""
+    return cufe.strip()
 
 def estilo(nombre, **kwargs) -> ParagraphStyle:
     base = dict(fontName='Helvetica', fontSize=8, textColor=NEGRO, spaceAfter=0, spaceBefore=0, leading=10)

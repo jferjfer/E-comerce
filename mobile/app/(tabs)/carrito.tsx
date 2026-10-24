@@ -96,7 +96,7 @@ export default function CarritoScreen() {
           onPress={() =>
             Alert.alert('Vaciar carrito', '¿Estás seguro?', [
               { text: 'Cancelar' },
-              { text: 'Vaciar', onPress: () => { haptic.eliminar(); vaciarCarrito(); }, style: 'destructive' },
+              { text: 'Vaciar', onPress: () => setTimeout(() => { haptic.eliminar(); vaciarCarrito(); }, 300), style: 'destructive' },
             ])
           }
         >

@@ -19,7 +19,8 @@ class Usuario {
       nombre, apellido, email, contrasena, rol = 'cliente',
       documento_tipo, documento_numero, telefono,
       fecha_nacimiento, genero, direccion, barrio, ciudad,
-      departamento, acepta_terminos, acepta_datos, acepta_marketing
+      departamento, acepta_terminos, acepta_datos, acepta_marketing,
+      plataforma_registro = 'web'
     } = datosUsuario;
 
     const contrasenaHasheada = await bcrypt.hash(contrasena, 8);
@@ -29,9 +30,10 @@ class Usuario {
         nombre, apellido, email, password, rol,
         documento_tipo, documento_numero, telefono,
         fecha_nacimiento, genero, direccion, barrio, ciudad,
-        departamento, acepta_terminos, acepta_datos, acepta_marketing
+        departamento, acepta_terminos, acepta_datos, acepta_marketing,
+        plataforma_registro
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
       RETURNING id, nombre, apellido, email, rol, fecha_creacion
     `;
 
@@ -40,7 +42,8 @@ class Usuario {
       documento_tipo || null, documento_numero || null, telefono || null,
       fecha_nacimiento || null, genero || null, direccion || null, barrio || null, ciudad || null,
       departamento || null,
-      acepta_terminos || false, acepta_datos || false, acepta_marketing || false
+      acepta_terminos || false, acepta_datos || false, acepta_marketing || false,
+      plataforma_registro
     ]);
     return resultado.rows[0];
   }

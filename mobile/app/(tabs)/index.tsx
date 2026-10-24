@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   saludoNombre: { color: COLORS.dorado, fontWeight: '700', fontSize: 16 },
   hero: { height: 220, position: 'relative', overflow: 'hidden' },
   heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.52)',
     justifyContent: 'center',
   },

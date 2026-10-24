@@ -154,6 +154,5 @@ const styles = StyleSheet.create({
   pulseBar: {
     height: '100%',
     backgroundColor: COLORS.dorado,
-    transformOrigin: 'left',
   },
 });

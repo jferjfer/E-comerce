@@ -238,7 +238,7 @@ const g = StyleSheet.create({
   card: { width: CAT_W, height: CAT_H, borderRadius: RADIUS.lg, overflow: 'hidden', ...SHADOW.sm },
   cardGrande: { width: '100%', height: CAT_H * 0.85 },
   imagen: { width: '100%', height: '100%' },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)' },
   labelWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 14, backgroundColor: 'rgba(0,0,0,0.5)' },
   label: { fontFamily: 'Prata-Regular', fontSize: 14, color: COLORS.blanco },
   labelSub: { fontSize: 10, color: 'rgba(197,164,126,0.7)', marginTop: 2, letterSpacing: 0.5 },
@@ -259,7 +259,7 @@ export function Tendencias() {
         const lista = (d.productos || []).filter((p: any) => p.en_stock && p.imagen && !EXCLUIDAS.includes(p.categoria));
         // Mezclar aleatoriamente
         const seed = Date.now();
-        const mezclado = [...lista].sort((a, b) => Math.sin(seed * a.id.length) - Math.sin(seed * b.id.length));
+        const mezclado = [...lista].sort((a, b) => Math.sin(seed * String(a.id || '').length) - Math.sin(seed * String(b.id || '').length));
         setTodos(mezclado);
       })
       .catch(() => {});
@@ -345,7 +345,7 @@ const t = StyleSheet.create({
     shadowOpacity: 0.15, shadowRadius: 12, elevation: 6,
   },
   imagen: { width: '100%', height: '100%' },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)' },
   badge: {
     position: 'absolute', top: 10, left: 10,
     backgroundColor: COLORS.dorado, borderRadius: RADIUS.full,

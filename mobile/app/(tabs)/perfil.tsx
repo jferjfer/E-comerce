@@ -77,7 +77,16 @@ export default function PerfilScreen() {
   const handleLogout = () =>
     Alert.alert('Cerrar Sesión', '¿Estás seguro?', [
       { text: 'Cancelar' },
-      { text: 'Cerrar Sesión', style: 'destructive', onPress: () => { cerrarSesion(); router.replace('/login'); } },
+      {
+        text: 'Cerrar Sesión',
+        style: 'destructive',
+        onPress: () => {
+          // Navegar primero para desmontar el componente limpiamente
+          router.replace('/login');
+          // Cerrar sesión después de que la navegación complete
+          setTimeout(() => cerrarSesion(), 100);
+        },
+      },
     ]);
 
   if (!estaAutenticado) {

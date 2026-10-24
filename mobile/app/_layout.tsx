@@ -61,11 +61,12 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="light" backgroundColor={COLORS.negroHeader} />
+      <StatusBar style="light" />
 
       {/* Stack — siempre montado para que cargue en segundo plano */}
       <View style={{ flex: 1 }}>
-        <AppWrapper />
+        {/* AppWrapper solo cuando fase === 'app' — evita crash TurboModules al inicio */}
+        {fase === 'app' && <AppWrapper />}
         <Stack
           screenOptions={{
             headerShown: false,

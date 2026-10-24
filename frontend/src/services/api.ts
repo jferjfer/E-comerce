@@ -283,9 +283,10 @@ export const api = {
       const checkoutData = {
         metodo_pago: datos.metodoPago || 'pago_en_linea',
         direccion_envio: datos.direccion_envio || 'Dirección predeterminada',
-        items: datos.items || [],  // Enviar items con cantidades reales del frontend
+        items: datos.items || [],
         descuento_bono: datos.descuento_bono || 0,
-        codigo_bono: datos.codigo_bono || null
+        codigo_bono: datos.codigo_bono || null,
+        plataforma: 'web'
       };
 
       const response = await fetch(`${API_BASE_URL}/api/checkout`, {

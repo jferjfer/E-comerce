@@ -3,25 +3,27 @@
     "name": "EGOS Colombia",
     "slug": "egos-colombia",
     "owner": "fercho1997",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.egoscolombia.app",
-      "buildNumber": "1",
+      "buildNumber": "19",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "EGOS necesita acceso a tu cámara para que puedas subir fotos de prendas y recibir recomendaciones de moda personalizadas de Noa, nuestra asesora de IA.",
+        "NSPhotoLibraryUsageDescription": "EGOS necesita acceso a tu galería para que puedas subir fotos de outfits y recibir recomendaciones de moda personalizadas.",
+        "NSPhotoLibraryAddUsageDescription": "EGOS necesita permiso para guardar imágenes de productos en tu galería.",
+        "NSLocationWhenInUseUsageDescription": "EGOS puede usar tu ubicación para mostrarte tiendas cercanas y calcular costos de envío.",
+        "NSUserTrackingUsageDescription": "EGOS usa datos de uso anónimos para mejorar tu experiencia de compra y mostrarte productos relevantes.",
+        "NSFaceIDUsageDescription": "EGOS usa Face ID para proteger tu cuenta y facilitar el inicio de sesión seguro."
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -48,16 +50,30 @@
     },
     "scheme": "egos",
     "plugins": [
+      "./plugins/withFirebaseDisableSPM",
       "expo-router",
       "expo-font",
       "expo-secure-store",
-      "expo-sharing",
-      "expo-status-bar"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "EGOS necesita acceso a tu galería para subir fotos de outfits y recibir recomendaciones de moda personalizadas.",
+          "cameraPermission": "EGOS necesita acceso a tu cámara para subir fotos de prendas y recibir recomendaciones de Noa."
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
     ],
     "extra": {
       "eas": {
         "projectId": "16f267b9-bcd5-4485-b21e-a1dc7adbf953"
       }
-    }
+    },
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "newArchEnabled": false
   }
 }

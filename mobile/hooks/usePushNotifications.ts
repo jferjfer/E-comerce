@@ -1,54 +1,56 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { InteractionManager } from 'react-native';
+import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { useAuthStore } from '@/store/useAuthStore';
 import { API_URL } from '@/constants';
 
-// Detectar si estamos en Expo Go
 const isExpoGo = Constants.appOwnership === 'expo';
 
-async function registrarToken(pushToken: string, authToken: string) {
+async function registrarToken(fcmToken: string, authToken: string) {
   try {
     await fetch(`${API_URL}/api/usuarios/push-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-      body: JSON.stringify({ push_token: pushToken }),
+      body: JSON.stringify({ push_token: fcmToken }),
     });
   } catch {}
 }
 
 export function usePushNotifications() {
   const { token, usuario } = useAuthStore();
+  const registradoRef = useRef(false);
 
   useEffect(() => {
-    // No hacer nada en Expo Go — push notifications no están soportadas
     if (isExpoGo || !token || !usuario) return;
+    if (registradoRef.current) return;
+    if (!Device.isDevice) return;
 
-    const registrar = async () => {
-      try {
-        const { Platform } = await import('react-native');
-        const Notifications = await import('expo-notifications');
+    const task = InteractionManager.runAfterInteractions(() => {
+      registradoRef.current = true;
 
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status !== 'granted') return;
-
-        if (Platform.OS === 'android') {
-          await Notifications.setNotificationChannelAsync('pedidos', {
-            name: 'Estado de pedidos',
-            importance: Notifications.AndroidImportance.HIGH,
-            vibrationPattern: [0, 250, 250, 250],
-            sound: 'default',
+      const registrar = async () => {
+        try {
+          const messagingModule = await import('@react-native-firebase/messaging');
+          const messaging = messagingModule.default;
+          const authStatus = await messaging().requestPermission();
+          const enabled =
+            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+          if (!enabled) return;
+          const fcmToken = await messaging().getToken();
+          if (fcmToken) await registrarToken(fcmToken, token);
+          messaging().onTokenRefresh(async (newToken: string) => {
+            await registrarToken(newToken, token);
           });
+        } catch {
+          // Silenciar — no crashear por notificaciones
         }
+      };
 
-        const pushToken = await Notifications.getExpoPushTokenAsync({
-          projectId: '16f267b9-bcd5-4485-b21e-a1dc7adbf953',
-        });
-        await registrarToken(pushToken.data, token);
-      } catch {
-        // Silenciar cualquier error
-      }
-    };
+      registrar();
+    });
 
-    registrar();
+    return () => task.cancel();
   }, [token, usuario]);
 }

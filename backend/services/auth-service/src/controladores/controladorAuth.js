@@ -19,6 +19,16 @@ class ControladorAuth {
       if (value.password && !value.contrasena) {
         value.contrasena = value.password;
       }
+
+      // Capturar plataforma desde el header User-Agent o body
+      if (!value.plataforma_registro) {
+        const ua = req.headers['user-agent'] || '';
+        if (ua.includes('EGOS-Mobile') || ua.includes('Expo')) {
+          value.plataforma_registro = ua.includes('iOS') || ua.includes('iPhone') ? 'ios' : 'android';
+        } else {
+          value.plataforma_registro = 'web';
+        }
+      }
       
       // Registrar usuario
       const resultado = await ServicioAuth.registrarUsuario(value);

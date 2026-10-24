@@ -57,6 +57,7 @@ export default function SplashScreen({ onFinish }: Props) {
 
   useEffect(() => {
     Animated.sequence([
+      Animated.delay(100), // Esperar que la fuente se aplique completamente
       Animated.parallel([
         Animated.spring(eScale, { toValue: 1, useNativeDriver: true, tension: 55, friction: 8 }),
         Animated.timing(eOpacity, { toValue: 1, duration: 900, useNativeDriver: true }),
@@ -98,7 +99,7 @@ export default function SplashScreen({ onFinish }: Props) {
           fontSize: eFontSize,
           color: COLORS.dorado,
           fontWeight: '400',
-          lineHeight: eFontSize,
+          lineHeight: eFontSize * 1.2,
           marginBottom: -8,
           letterSpacing: -4,
           opacity: eOpacity,

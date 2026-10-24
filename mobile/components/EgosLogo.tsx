@@ -9,9 +9,9 @@ interface EgosLogoProps {
 
 export default function EgosLogo({ size = 'md', showSlogan = true }: EgosLogoProps) {
   const cfg = {
-    sm: { e: rf(18), egos: rf(11), sl: rf(7), ls: 4, lh: rf(20), mb: -2 },
-    md: { e: rf(26), egos: rf(14), sl: rf(8), ls: 7, lh: rf(28), mb: -3 },
-    lg: { e: Math.min(SCREEN.width * 0.22, rf(56)), egos: rf(28), sl: rf(10), ls: 14, lh: Math.min(SCREEN.width * 0.22, rf(56)), mb: -4 },
+    sm: { e: rf(18), egos: rf(11), sl: rf(7), ls: 4, lh: rf(18) * 1.4, mb: 0 },
+    md: { e: rf(26), egos: rf(14), sl: rf(8), ls: 7, lh: rf(26) * 1.4, mb: 0 },
+    lg: { e: Math.min(SCREEN.width * 0.22, rf(56)), egos: rf(28), sl: rf(10), ls: 14, lh: Math.min(SCREEN.width * 0.22, rf(56)) * 1.4, mb: 0 },
   }[size];
 
   return (

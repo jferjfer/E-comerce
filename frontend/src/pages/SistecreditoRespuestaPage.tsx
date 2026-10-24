@@ -44,8 +44,13 @@ export default function SistecreditoRespuestaPage() {
         setEstado('exitoso')
         setDetalle('Tu crédito fue aprobado. Recibirás un correo con el detalle de tus cuotas.')
       } else if (['Rejected', 'Cancelled', 'Expired', 'Abandoned', 'Failed'].includes(status)) {
-        setEstado('fallido')
-        setDetalle(tx?.paymentMethodResponse?.description || `Pago ${status?.toLowerCase()}. Intenta de nuevo.`)
+        const esCancelacion = ['Cancelled', 'Abandoned'].includes(status)
+        setEstado(esCancelacion ? 'pendiente' : 'fallido')
+        setDetalle(
+          esCancelacion
+            ? 'Decidiste no completar el pago en este momento. Puedes intentarlo cuando quieras.'
+            : tx?.paymentMethodResponse?.description || `Pago ${status?.toLowerCase()}. Intenta de nuevo.`
+        )
       } else if (intentos < 5) {
         // Aún procesando — reintentar
         setDetalle(`Verificando pago... (${intentos + 1}/5)`)

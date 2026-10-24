@@ -13,7 +13,7 @@ function Particula({ x, delay, height }: { x: number; delay: number; height: num
   const sc = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const anim = Animated.loop(
       Animated.sequence([
         Animated.delay(delay),
         Animated.parallel([
@@ -26,7 +26,9 @@ function Particula({ x, delay, height }: { x: number; delay: number; height: num
         ]),
         Animated.delay(500),
       ])
-    ).start();
+    );
+    anim.start();
+    return () => anim.stop();
   }, []);
 
   return (

@@ -89,10 +89,10 @@ export default function ChatIA() {
       fabPos.setOffset({ x: lastPos.current.x, y: lastPos.current.y });
       fabPos.setValue({ x: 0, y: 0 });
     },
-    onPanResponderMove: Animated.event(
-      [null, { dx: fabPos.x, dy: fabPos.y }],
-      { useNativeDriver: false }
-    ),
+    onPanResponderMove: (_, gs) => {
+      fabPos.x.setValue(gs.dx);
+      fabPos.y.setValue(gs.dy);
+    },
     onPanResponderRelease: (_, gs) => {
       fabPos.flattenOffset();
       lastPos.current = {

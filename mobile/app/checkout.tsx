@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator, TextInput,
-  Image, Modal
+  Image, Modal, Platform
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Stack, router } from 'expo-router';
@@ -487,6 +487,7 @@ export default function CheckoutScreen() {
         direccion_envio: usuario.direccion || 'Dirección predeterminada',
         descuento_bono: descuento,
         codigo_bono: bonoValidado?.valido ? codigoBono.trim().toUpperCase() : null,
+        plataforma: Platform.OS === 'ios' ? 'ios' : 'android',
         items: items.map(i => ({
           id: i.id, nombre: i.nombre, precio: i.precio,
           cantidad: i.cantidad,

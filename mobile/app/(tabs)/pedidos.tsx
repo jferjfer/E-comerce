@@ -9,6 +9,7 @@ import { COLORS, SPACING, RADIUS, SHADOW } from '@/constants';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { API_URL } from '@/constants';
+import { usePedidosStore } from '@/store/usePedidosStore';
 
 const ESTADO_COLORES: Record<string, string> = {
   Creado: '#6b7280', Confirmado: '#3b82f6', Alistado: '#f59e0b',
@@ -29,6 +30,7 @@ const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO');
 
 export default function PedidosScreen() {
   const { token } = useAuthStore();
+  const guardarPedidosCache = usePedidosStore(s => s.setPedidos);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,6 +55,7 @@ export default function PedidosScreen() {
       const lista = data.pedidos || [];
       console.log('📦 [Pedidos] Total pedidos:', lista.length);
       setPedidos(lista);
+      guardarPedidosCache(lista);
       setCargando(false);
       console.log('📦 [Pedidos] setCargando(false) ejecutado');
       // Cargar devoluciones en paralelo

@@ -377,7 +377,7 @@ def generar_xml_factura(numero, pedido_id, cliente, productos, fecha=None):
     _sub(order_ref, f"{CBC}ID", pedido_id)
 
     _supplier_party(root)
-    _customer_consumidor_final(root, doc_cliente, nombre_cliente)
+    _customer_consumidor_final(root, nit_para_cufe, nombre_cliente)
 
     pm = _sub(root, f"{CAC}PaymentMeans")
     _sub(pm, f"{CBC}ID",               "1")
