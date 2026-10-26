@@ -70,7 +70,10 @@ function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const pagoToken = params.get('pago_token')
-    if (!pagoToken || estaAutenticado) return
+    if (!pagoToken) return
+
+    // Limpiar la URL inmediatamente
+    window.history.replaceState({}, '', '/')
 
     const API_URL = import.meta.env.VITE_API_URL || 'https://api.egoscolombia.com.co'
     fetch(`${API_URL}/api/pagos/token/${pagoToken}`)
@@ -78,7 +81,6 @@ function App() {
       .then(data => {
         if (data.token) {
           useAuthStore.getState().iniciarSesionConToken(data.token)
-          window.history.replaceState({}, '', '/')
           setPedidoMeta({ pedido_id: data.pedido_id, total: parseFloat(data.total) })
           setTimeout(() => setShowCheckout(true), 300)
         }
