@@ -77,9 +77,9 @@ function App() {
       .then(data => {
         if (data.token) {
           useAuthStore.getState().iniciarSesionConToken(data.token)
-          // Limpiar el pago_token de la URL sin recargar
           window.history.replaceState({}, '', '/')
-          setShowCheckout(true)
+          // Delay para que React monte el componente antes de abrir el modal
+          setTimeout(() => setShowCheckout(true), 300)
         }
       })
       .catch(() => {})
