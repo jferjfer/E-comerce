@@ -2115,12 +2115,17 @@ aplicacion.post('/api/pagos/addi/iniciar', autenticacion, async (req, res) => {
     try {
       const resU = await axios.get(`http://auth-service:3011/api/usuarios/${usuarioId}`, { timeout: 3000 });
       const u = resU.data.usuario || {};
+      const esMeta = ['whatsapp','instagram','messenger'].includes(pedido.plataforma);
       cliente = {
-        nombre: `${u.nombre || ''} ${u.apellido || ''}`.trim() || cliente.nombre,
-        email: u.email || '',
+        nombre: `${u.nombre || ''} ${u.apellido || ''}`.trim() || (esMeta ? pedido.cliente_nombre : '') || cliente.nombre,
+        email: u.email || (esMeta ? pedido.cliente_email : '') || '',
         documento_tipo: u.documento_tipo || 'CC',
-        documento_numero: u.documento_numero || '',
-        telefono: u.telefono || '',
+        documento_numero: u.documento_numero || (esMeta ? pedido.cliente_documento || '222222222' : ''),
+        telefono: u.telefono || (esMeta ? pedido.cliente_telefono : '') || '',
+        direccion: u.direccion || (esMeta ? pedido.cliente_direccion : '') || 'Bogotá D.C.',
+        ciudad: u.ciudad || 'Bogotá',
+      };
+    } catch {}        telefono: u.telefono || '',
         direccion: u.direccion || u.ciudad || 'Bogotá D.C.',
         ciudad: u.ciudad || 'Bogotá',
       };
