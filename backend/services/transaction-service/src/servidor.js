@@ -1386,9 +1386,7 @@ aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
       { expiresIn: '2h' }
     );
 
-    // Invalidar el pago_token — un solo uso
-    await pool.query('UPDATE pedido SET pago_token = NULL WHERE id = $1', [pedido.id]);
-
+    // El link expira naturalmente cuando el pedido pasa de 'Creado'
     res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total });
   } catch (e) {
     console.error('Error validando pago_token:', e.message);
