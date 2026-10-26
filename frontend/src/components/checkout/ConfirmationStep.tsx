@@ -9,6 +9,7 @@ interface ConfirmationStepProps {
   onConfirm: (plazo?: number) => void
   onBack: () => void
   limiteCredito?: number
+  esMeta?: boolean
   // Bono — estado centralizado en CheckoutModal
   codigoBono: string
   bonoValidado: any
@@ -26,6 +27,7 @@ export default function ConfirmationStep({
   isLoading,
   onConfirm,
   onBack,
+  esMeta = false,
   codigoBono,
   bonoValidado,
   validandoBono,
@@ -108,8 +110,8 @@ export default function ConfirmationStep({
         </div>
       </div>
 
-      {/* Campo de bono */}
-      <div className="space-y-2">
+      {/* Campo de bono — oculto en flujo Meta */}
+      {!esMeta && <div className="space-y-2">
         <p className="text-sm font-semibold text-gray-700">
           <i className="fas fa-gift text-amber-500 mr-1.5"></i>
           ¿Tienes un código de bono?
@@ -145,7 +147,7 @@ export default function ConfirmationStep({
             <i className="fas fa-exclamation-circle"></i> {errorBono}
           </p>
         )}
-      </div>
+      </div>}
 
       {/* Selector de cuotas para crédito interno */}
       {esCredito && (
@@ -233,7 +235,7 @@ export default function ConfirmationStep({
           ) : (
             <>
               <i className={`fas ${esSistecredito ? 'fa-external-link-alt' : 'fa-lock'} mr-2 text-xs`}></i>
-              {esCredito ? 'Confirmar y financiar' : esSistecredito ? 'Continuar con Sistecredito' : 'Confirmar pedido'}
+              {esCredito ? 'Confirmar y financiar' : esSistecredito ? 'Continuar con Sistecredito' : esMeta ? 'Pagar ahora' : 'Confirmar pedido'}
             </>
           )}
         </button>

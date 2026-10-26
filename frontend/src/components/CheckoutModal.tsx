@@ -65,11 +65,11 @@ export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutM
     }
   }, [isOpen])
 
-  // Si viene de Meta (pedidoMeta), saltar al paso 2 con pedido ya creado
+  // Si viene de Meta (pedidoMeta), ir al paso 1 para elegir método de pago
   useEffect(() => {
     if (isOpen && pedidoMeta) {
-      setCurrentStep(2)
-      setSelectedMethod('pago_en_linea')
+      setCurrentStep(1)
+      setSelectedMethod('')
     }
   }, [isOpen, pedidoMeta])
 
@@ -357,6 +357,7 @@ export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutM
               onConfirm={processPayment}
               onBack={() => { setCurrentStep(1); setPedidoParaEpayco(null) }}
               limiteCredito={undefined}
+              esMeta={!!pedidoMeta}
               // Props del bono — estado centralizado en el modal
               codigoBono={codigoBono}
               bonoValidado={bonoValidado}
