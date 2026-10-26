@@ -78,11 +78,17 @@
             '</div>';
           document.body.appendChild(el);
           // Se elimina cuando React monta el modal
+          var _pagoLoadingStart = Date.now();
           window.__removePagoLoading = function() {
             var e = document.getElementById('pago-loading');
             if (!e) return;
-            e.classList.add('out');
-            setTimeout(function(){ e.remove(); }, 700);
+            var elapsed = Date.now() - _pagoLoadingStart;
+            var minDuration = 3800;
+            var wait = Math.max(0, minDuration - elapsed);
+            setTimeout(function() {
+              e.classList.add('out');
+              setTimeout(function(){ e.remove(); }, 700);
+            }, wait);
           };
         }
       })();
