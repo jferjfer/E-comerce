@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/useAuthStore'
 import { useTiendaCarrito } from './store/useCartStore'
@@ -66,7 +66,7 @@ function App() {
     }
   }, [estaAutenticado, token])
 
-  const pagoTokenUsado = React.useRef(false)
+  const pagoTokenUsado = useRef(false)
 
   // Autenticación automática desde link de WhatsApp/Instagram/Messenger
   useEffect(() => {
