@@ -82,7 +82,13 @@ function App() {
         if (data.token) {
           useAuthStore.getState().iniciarSesionConToken(data.token)
           setPedidoMeta({ pedido_id: data.pedido_id, total: parseFloat(data.total) })
-          setTimeout(() => setShowCheckout(true), 300)
+          setTimeout(() => {
+            setShowCheckout(true)
+            // Eliminar pantalla de carga del index.html
+            if ((window as any).__removePagoLoading) (window as any).__removePagoLoading()
+          }, 300)
+        } else {
+          if ((window as any).__removePagoLoading) (window as any).__removePagoLoading()
         }
       })
       .catch(() => {})
