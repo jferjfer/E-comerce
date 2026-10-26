@@ -66,11 +66,14 @@ function App() {
     }
   }, [estaAutenticado, token])
 
+  const pagoTokenUsado = React.useRef(false)
+
   // Autenticación automática desde link de WhatsApp/Instagram/Messenger
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const pagoToken = params.get('pago_token')
-    if (!pagoToken) return
+    if (!pagoToken || pagoTokenUsado.current) return
+    pagoTokenUsado.current = true
 
     // Limpiar la URL inmediatamente
     window.history.replaceState({}, '', '/')
