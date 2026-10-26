@@ -18,9 +18,10 @@ import { metaPixel } from '@/utils/metaPixel'
 interface CheckoutModalProps {
   isOpen: boolean
   onClose: () => void
+  pedidoMeta?: { pedido_id: string; total: number } | null
 }
 
-export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
+export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutModalProps) {
   const navigate = useNavigate()
   const { items, obtenerPrecioTotal, vaciarCarrito } = useCartStore()
   const { usuario, token, estaAutenticado } = useAuthStore()
@@ -41,7 +42,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [validandoBono, setValidandoBono] = useState(false)
   const [errorBono, setErrorBono] = useState('')
 
-  const total = obtenerPrecioTotal()
+  const total = pedidoMeta ? pedidoMeta.total : obtenerPrecioTotal()
   const montoBono = bonoValidado?.valido ? bonoValidado.monto : 0
   const totalConBono = Math.max(0, total - montoBono)
 
@@ -63,6 +64,14 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       metaPixel.initiateCheckout(total, items)
     }
   }, [isOpen])
+
+  // Si viene de Meta (pedidoMeta), saltar al paso 2 con pedido ya creado
+  useEffect(() => {
+    if (isOpen && pedidoMeta) {
+      setCurrentStep(2)
+      setSelectedMethod('pago_en_linea')
+    }
+  }, [isOpen, pedidoMeta])
 
   // Reset completo al cerrar
   useEffect(() => {
@@ -124,12 +133,6 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   */
 
   const processPayment = async (plazo?: number) => {
-    // ADDI_TEMP: no requerir token ni usuario para pago como invitado
-    // Revertir cuando ADDI apruebe:
-    // if (!token || !usuario) return
-    // if (usuario.rol !== 'cliente') { setError('Solo los clientes pueden realizar compras'); return }
-
-    // BUG-10 FIX: verificar ePayco ANTES de crear el pedido
     if (['pago_en_linea', 'pse', 'efectivo', 'nequi', 'daviplata'].includes(selectedMethod) && !epaycoActivo) {
       setError('La pasarela de pagos no está disponible en este momento. Intenta más tarde.')
       return
@@ -139,39 +142,38 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     setError(null)
     setPlazoCredito(plazo)
 
-    // Leer valores actuales desde refs para evitar closure stale
     const bonoActual = bonoValidadoRef.current
     const codigoActual = codigoBonoRef.current
-    const totalActual = totalRef.current
+    const totalActual = pedidoMeta ? pedidoMeta.total : totalRef.current
     const montoBonoActual = bonoActual?.valido ? bonoActual.monto : 0
     const totalFinal = Math.max(0, totalActual - montoBonoActual)
 
-    console.log('processPayment — bono:', bonoActual?.valido, 'monto:', montoBonoActual, 'total:', totalFinal)
-
     try {
-      // ADDI_TEMP: token opcional para invitados
-      const resultado = await api.procesarCheckout(token || '', {
-        metodoPago: selectedMethod,
-        direccion_envio: 'Por confirmar',
-        descuento_bono: montoBonoActual,
-        codigo_bono: bonoActual?.valido ? codigoActual.trim().toUpperCase() : null,
-        items: items.map(item => ({
-          id: item.id,
-          nombre: item.nombre,
-          precio: item.precio,
-          cantidad: item.cantidad,
-          talla: (item as any).talla || null,
-          color: (item as any).color || null,
-          sku: (item as any).sku || null
-        }))
-      })
-
-      if (!resultado.exito) {
-        setError(resultado.error || 'Error al procesar el pedido')
-        return
+      // Si viene de Meta, el pedido ya existe — no crear uno nuevo
+      let pedidoId: string
+      if (pedidoMeta) {
+        pedidoId = pedidoMeta.pedido_id
+      } else {
+        const resultado = await api.procesarCheckout(token || '', {
+          metodoPago: selectedMethod,
+          direccion_envio: 'Por confirmar',
+          descuento_bono: montoBonoActual,
+          codigo_bono: bonoActual?.valido ? codigoActual.trim().toUpperCase() : null,
+          items: items.map(item => ({
+            id: item.id, nombre: item.nombre, precio: item.precio,
+            cantidad: item.cantidad,
+            talla: (item as any).talla || null,
+            color: (item as any).color || null,
+            sku: (item as any).sku || null
+          }))
+        })
+        if (!resultado.exito) {
+          setError(resultado.error || 'Error al procesar el pedido')
+          setIsLoading(false)
+          return
+        }
+        pedidoId = resultado.orden.id
       }
-
-      const pedidoId = resultado.orden.id
 
       // ADDI — crear orden y redirigir al checkout de ADDI
       if (selectedMethod === 'addi') {

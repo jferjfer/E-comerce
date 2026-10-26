@@ -55,6 +55,7 @@ import ProductoDetallePage from './pages/ProductoDetallePage'
 function App() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [pedidoMeta, setPedidoMeta] = useState<{ pedido_id: string; total: number } | null>(null)
   const { estaAutenticado, token } = useAuthStore()
   const sincronizarCarrito = useTiendaCarrito(s => s.sincronizarConBackend)
 
@@ -78,7 +79,7 @@ function App() {
         if (data.token) {
           useAuthStore.getState().iniciarSesionConToken(data.token)
           window.history.replaceState({}, '', '/')
-          // Delay para que React monte el componente antes de abrir el modal
+          setPedidoMeta({ pedido_id: data.pedido_id, total: parseFloat(data.total) })
           setTimeout(() => setShowCheckout(true), 300)
         }
       })
@@ -164,7 +165,11 @@ function App() {
         </Routes>
 
         <CartModal isOpen={showCart} onClose={() => setShowCart(false)} onCheckout={handleCheckout} />
-        <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} />
+        <CheckoutModal
+          isOpen={showCheckout}
+          onClose={() => { setShowCheckout(false); setPedidoMeta(null) }}
+          pedidoMeta={pedidoMeta}
+        />
         <NotificationContainer />
         <AIAssistant />
         <CookieBanner />
