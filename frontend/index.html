@@ -54,16 +54,18 @@
           el.id = 'pago-loading';
           el.style.cssText = 'position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:9999;';
           el.innerHTML = '<style>' +
+            '@font-face{font-family:BodoniModa;src:url(https://fonts.gstatic.com/s/bodonimoda/v22/aFT67PxzY382XsXX63LUYL6GYFcan6NJrKp-VPjfJpSh34tFyd9Ng3QBewABrA.woff2) format(woff2);font-weight:400;font-style:normal}' +
+            '@font-face{font-family:Prata;src:url(https://fonts.gstatic.com/s/prata/v20/6xKhdSpbNNCT-vWIAG_5LWwJ.woff2) format(woff2)}' +
             '@keyframes eIn{0%{opacity:0;transform:scale(0.3)}60%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}' +
             '@keyframes upIn{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:translateY(0)}}' +
             '@keyframes lineIn{0%{width:0}100%{width:80px}}' +
             '@keyframes fadeIn{0%{opacity:0}100%{opacity:0.85}}' +
             '@keyframes dot{0%,100%{opacity:0.15;transform:scale(0.6)}50%{opacity:1;transform:scale(1)}}' +
             '@keyframes screenOut{0%{opacity:1}100%{opacity:0}}' +
-            '.e{font-size:clamp(80px,22vw,130px);color:#c5a47e;font-weight:900;line-height:1;letter-spacing:-4px;animation:eIn 0.9s cubic-bezier(.22,1,.36,1) 0.1s both}' +
-            '.egos{font-size:clamp(22px,6vw,38px);color:#fff;letter-spacing:clamp(10px,3vw,18px);text-transform:uppercase;margin-bottom:18px;animation:upIn 0.6s ease 1.15s both}' +
+            '.e{font-family:BodoniModa,Georgia,serif;font-size:clamp(80px,22vw,130px);color:#c5a47e;font-weight:400;line-height:1;letter-spacing:-4px;animation:eIn 0.9s cubic-bezier(.22,1,.36,1) 0.1s both}' +
+            '.egos{font-family:Prata,Georgia,serif;font-size:clamp(22px,6vw,38px);color:#fff;letter-spacing:clamp(10px,3vw,18px);text-transform:uppercase;margin-bottom:18px;animation:upIn 0.6s ease 1.15s both}' +
             '.line{height:1px;background:#c5a47e;opacity:0.5;margin-bottom:16px;animation:lineIn 0.7s ease 1.9s both}' +
-            '.slogan{font-size:clamp(9px,2vw,12px);color:#c5a47e;letter-spacing:clamp(3px,1vw,5px);text-transform:uppercase;font-style:italic;animation:fadeIn 0.6s ease 2.6s both}' +
+            '.slogan{font-family:BodoniModa,Georgia,serif;font-size:clamp(9px,2vw,12px);color:#c5a47e;letter-spacing:clamp(3px,1vw,5px);text-transform:uppercase;font-style:italic;animation:fadeIn 0.6s ease 2.6s both}' +
             '.dots{display:flex;gap:8px;justify-content:center;margin-top:32px;animation:fadeIn 0.5s ease 3.2s both}' +
             '.dot{width:6px;height:6px;border-radius:50%;background:#c5a47e;animation:dot 1.2s ease-in-out infinite}' +
             '.d2{animation-delay:0.18s!important}.d3{animation-delay:0.36s!important}' +
