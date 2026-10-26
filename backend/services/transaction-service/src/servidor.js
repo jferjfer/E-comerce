@@ -2125,10 +2125,6 @@ aplicacion.post('/api/pagos/addi/iniciar', autenticacion, async (req, res) => {
         direccion: u.direccion || (esMeta ? pedido.cliente_direccion : '') || 'Bogotá D.C.',
         ciudad: u.ciudad || 'Bogotá',
       };
-    } catch {}        telefono: u.telefono || '',
-        direccion: u.direccion || u.ciudad || 'Bogotá D.C.',
-        ciudad: u.ciudad || 'Bogotá',
-      };
     } catch {}
 
     const urlBase = process.env.FRONTEND_URL || 'https://egoscolombia.com.co';
