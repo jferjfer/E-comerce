@@ -18,7 +18,7 @@ import { metaPixel } from '@/utils/metaPixel'
 interface CheckoutModalProps {
   isOpen: boolean
   onClose: () => void
-  pedidoMeta?: { pedido_id: string; total: number } | null
+  pedidoMeta?: { pedido_id: string; total: number; productos: any[] } | null
 }
 
 export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutModalProps) {
@@ -358,6 +358,7 @@ export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutM
               onBack={() => { setCurrentStep(1); setPedidoParaEpayco(null) }}
               limiteCredito={undefined}
               esMeta={!!pedidoMeta}
+              productosMeta={pedidoMeta?.productos}
               // Props del bono — estado centralizado en el modal
               codigoBono={codigoBono}
               bonoValidado={bonoValidado}

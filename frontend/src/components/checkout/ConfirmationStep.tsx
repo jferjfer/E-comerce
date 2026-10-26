@@ -10,6 +10,7 @@ interface ConfirmationStepProps {
   onBack: () => void
   limiteCredito?: number
   esMeta?: boolean
+  productosMeta?: any[]
   // Bono — estado centralizado en CheckoutModal
   codigoBono: string
   bonoValidado: any
@@ -28,6 +29,7 @@ export default function ConfirmationStep({
   onConfirm,
   onBack,
   esMeta = false,
+  productosMeta,
   codigoBono,
   bonoValidado,
   validandoBono,
@@ -38,7 +40,8 @@ export default function ConfirmationStep({
   totalConBono,
   montoBono,
 }: ConfirmationStepProps) {
-  const { items, obtenerPrecioTotal } = useCartStore()
+  const { items: itemsCarrito, obtenerPrecioTotal } = useCartStore()
+  const items = (esMeta && productosMeta && productosMeta.length > 0) ? productosMeta : itemsCarrito
   const method = metodosPago.find(m => m.id === selectedMethod)
   const total = obtenerPrecioTotal()
   const [plazoSeleccionado, setPlazoSeleccionado] = useState(6)

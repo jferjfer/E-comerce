@@ -55,7 +55,7 @@ import ProductoDetallePage from './pages/ProductoDetallePage'
 function App() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
-  const [pedidoMeta, setPedidoMeta] = useState<{ pedido_id: string; total: number } | null>(null)
+  const [pedidoMeta, setPedidoMeta] = useState<{ pedido_id: string; total: number; productos: any[] } | null>(null)
   const { estaAutenticado, token } = useAuthStore()
   const sincronizarCarrito = useTiendaCarrito(s => s.sincronizarConBackend)
 
@@ -84,7 +84,7 @@ function App() {
       .then(data => {
         if (data.token) {
           useAuthStore.getState().iniciarSesionConToken(data.token)
-          setPedidoMeta({ pedido_id: data.pedido_id, total: parseFloat(data.total) })
+          setPedidoMeta({ pedido_id: data.pedido_id, total: parseFloat(data.total), productos: data.productos || [] })
           setTimeout(() => {
             setShowCheckout(true)
             // Eliminar pantalla de carga del index.html
