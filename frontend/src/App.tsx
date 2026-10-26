@@ -59,12 +59,31 @@ function App() {
   const sincronizarCarrito = useTiendaCarrito(s => s.sincronizarConBackend)
 
   // Sincronizar carrito con backend al arrancar si ya hay sesión activa
-  // Esto garantiza que app mobile y web tengan el mismo carrito
   useEffect(() => {
     if (estaAutenticado && token) {
       sincronizarCarrito()
     }
   }, [estaAutenticado, token])
+
+  // Autenticación automática desde link de WhatsApp/Instagram/Messenger
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const pagoToken = params.get('pago_token')
+    if (!pagoToken || estaAutenticado) return
+
+    const API_URL = import.meta.env.VITE_API_URL || 'https://api.egoscolombia.com.co'
+    fetch(`${API_URL}/api/pagos/token/${pagoToken}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.token) {
+          useAuthStore.getState().iniciarSesionConToken(data.token)
+          // Limpiar el pago_token de la URL sin recargar
+          window.history.replaceState({}, '', '/')
+          setShowCheckout(true)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useOrderNotifications()
   useSocketIdentificacion()

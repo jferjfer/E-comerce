@@ -364,6 +364,11 @@ async function inicializarBaseDatos() {
   
   while (reintentos > 0) {
     try {
+      // Agregar columna pago_token si no existe
+      await pool.query(`
+        ALTER TABLE pedido ADD COLUMN IF NOT EXISTS pago_token VARCHAR(64)
+      `).catch(() => {});
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS pedido_historial (
           id SERIAL PRIMARY KEY,
@@ -1348,6 +1353,48 @@ function emitirSSE(usuarioId, evento, datos) {
   clientes.forEach(res => { try { res.write(msg); } catch(e) {} });
   console.log(`📡 SSE emitido a usuario ${usuarioId}`);
 }
+
+// ── Guardar pago_token en pedido (llamado por el bot) ──
+aplicacion.post('/api/pagos/guardar-token', autenticacion, async (req, res) => {
+  try {
+    const { pedido_id, pago_token } = req.body;
+    await pool.query('UPDATE pedido SET pago_token = $1 WHERE id = $2', [pago_token, pedido_id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Endpoint público: validar pago_token de WhatsApp/Instagram/Messenger ──
+aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
+  try {
+    const { pagoToken } = req.params;
+    const r = await pool.query(
+      `SELECT p.id, p.usuario_id, p.estado, p.total FROM pedido p
+       WHERE p.pago_token = $1 AND p.estado = 'Creado' LIMIT 1`,
+      [pagoToken]
+    );
+    if (r.rows.length === 0)
+      return res.status(404).json({ error: 'Link inválido o ya utilizado' });
+
+    const pedido = r.rows[0];
+
+    // JWT temporal de 2 horas solo para este pedido
+    const tokenTemporal = jwt.sign(
+      { id: pedido.usuario_id, rol: 'cliente', pago_pedido: pedido.id },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    // Invalidar el pago_token — un solo uso
+    await pool.query('UPDATE pedido SET pago_token = NULL WHERE id = $1', [pedido.id]);
+
+    res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total });
+  } catch (e) {
+    console.error('Error validando pago_token:', e.message);
+    res.status(500).json({ error: 'Error validando token' });
+  }
+});
 
 // Ruta de salud
 aplicacion.get('/salud', (req, res) => {

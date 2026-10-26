@@ -271,7 +271,15 @@ NO agregues explicaciones, SOLO el JSON."""
         if not pedido_id:
             return {"error": "Sin ID pedido"}
 
-        link = f"{FRONTEND_URL}/checkout?pedido={pedido_id}"
+        # Generar pago_token de un solo uso y guardarlo en el pedido
+        import uuid
+        pago_token = uuid.uuid4().hex
+        async with httpx.AsyncClient(timeout=5) as c:
+            await c.post(f"{TRANSACTION_URL}/api/pagos/guardar-token",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"pedido_id": pedido_id, "pago_token": pago_token})
+
+        link = f"{FRONTEND_URL}/?pago_token={pago_token}"
         return {"exito": True, "pedido_id": pedido_id, "total": total, "link_pago": link}
     except Exception as e:
         print(f"❌ Error crear pedido: {e}")

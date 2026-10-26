@@ -12,6 +12,7 @@ interface TiendaAuth {
   estaAutenticado: boolean
   errorLogin: string | null
   iniciarSesion: (email: string, contrasena: string) => Promise<boolean>
+  iniciarSesionConToken: (token: string) => void
   cerrarSesion: () => void
   registrar: (datos: any) => Promise<boolean>
 }
@@ -60,6 +61,19 @@ export const useTiendaAuth = create<TiendaAuth>()(
           set({ errorLogin: 'Error de conexión. Verifica tu internet e intenta de nuevo.' })
           return false
         }
+      },
+
+      iniciarSesionConToken: (tokenJwt: string) => {
+        try {
+          const payload = JSON.parse(atob(tokenJwt.split('.')[1]))
+          set({
+            token: tokenJwt,
+            estaAutenticado: true,
+            errorLogin: null,
+            usuario: { id: payload.id, rol: payload.rol, email: '' } as any
+          })
+          useTiendaCarrito.getState().establecerToken(tokenJwt)
+        } catch {}
       },
 
       cerrarSesion: () => {
