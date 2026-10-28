@@ -188,40 +188,39 @@ async def get_productos(busqueda: str = "") -> list:
             "enfermera": ["Lencería"],
         }
 
-        STOP_WORDS = {"talla", "hombre", "mujer", "para", "con", "de", "la", "el", "los", "las", "un", "una"}
+        STOP_WORDS = {"talla", "para", "con", "de", "la", "el", "los", "las", "un", "una"}
         palabras_raw = busqueda.lower().split()
-        # Filtrar stop words y números para obtener palabras útiles
         palabras = [p for p in palabras_raw if p not in STOP_WORDS and not p.isdigit()]
-        termino = palabras[0] if palabras else ""
-        colores_pedidos = [p for p in palabras[1:] if len(p) > 2]
+        termino_principal = palabras[0] if palabras else ""
 
-        # Si el término coincide con una categoría, filtrar por categoría directamente
-        categorias_match = MAPA_CATEGORIAS.get(termino, [])
+        # Si el término tiene marca o especificación adicional, usar búsqueda completa
+        busqueda_completa = " ".join(palabras)
 
-        if categorias_match:
-            # Filtrar del caché por categoría
+        # Si el término principal coincide con una categoría Y no hay especificación adicional
+        categorias_match = MAPA_CATEGORIAS.get(termino_principal, [])
+
+        if categorias_match and len(palabras) == 1:
+            # Solo categoría genérica sin marca/especificación → filtrar por categoría
             prods = [p for p in catalogo_cache
                      if p.get("categoria") in categorias_match
                      and p.get("en_stock", True)
                      and p.get("imagen")]
         else:
-            # Búsqueda normal por texto
+            # Búsqueda por texto completo — incluye marca, color, estilo
             async with httpx.AsyncClient(timeout=10) as c:
                 url = f"{CATALOG_URL}/api/productos?limite=100"
-                if termino:
-                    url += f"&buscar={termino}"
+                if busqueda_completa:
+                    url += f"&buscar={busqueda_completa}"
                 r = await c.get(url)
                 prods = [p for p in r.json().get("productos", [])
                          if p.get("en_stock", True) and p.get("imagen")]
 
-        # Filtrar por colores reales del producto
-        if colores_pedidos:
-            prods_con_color = [p for p in prods if any(
-                any(cp in c.lower() for c in p.get("colores", []))
-                for cp in colores_pedidos
-            )]
-            if prods_con_color:
-                prods = prods_con_color
+            # Si no encontró nada con búsqueda completa, intentar solo con categoría
+            if not prods and categorias_match:
+                prods = [p for p in catalogo_cache
+                         if p.get("categoria") in categorias_match
+                         and p.get("en_stock", True)
+                         and p.get("imagen")]
 
         return prods[:9]
     except:
