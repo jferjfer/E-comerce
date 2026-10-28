@@ -1430,20 +1430,23 @@ async function calcularScorePrimeraCompra(telefono, fingerprint, ip) {
   let score = 0;
   const tel = (telefono || '').replace(/[^0-9]/g, '');
   try {
+    // Nivel 1: Device fingerprint (50pts) — señal más fuerte, sola es suficiente para bloquear
     if (fingerprint) {
       const r1 = await pool.query(
         'SELECT COUNT(*) as total FROM device_fingerprints WHERE hash = $1',
         [fingerprint]
       );
-      if (parseInt(r1.rows[0]?.total || '0') > 0) score += 40;
+      if (parseInt(r1.rows[0]?.total || '0') > 0) score += 50;
     }
+    // Nivel 2: IP con pedidos anteriores (15pts)
     if (ip) {
       const r2 = await pool.query(
         'SELECT COUNT(*) as total FROM device_fingerprints WHERE ip = $1',
         [ip]
       );
-      if (parseInt(r2.rows[0]?.total || '0') > 0) score += 10;
+      if (parseInt(r2.rows[0]?.total || '0') > 0) score += 15;
     }
+    // Nivel 3a: Teléfono en pedidos confirmados Meta (50pts) — sola es suficiente
     if (tel) {
       const r3a = await pool.query(
         `SELECT COUNT(*) as total FROM pedido
@@ -1451,8 +1454,9 @@ async function calcularScorePrimeraCompra(telefono, fingerprint, ip) {
          AND estado = 'Confirmado'`,
         [tel]
       );
-      if (parseInt(r3a.rows[0]?.total || '0') > 0) score += 30;
+      if (parseInt(r3a.rows[0]?.total || '0') > 0) score += 50;
     }
+    // Nivel 3b: Teléfono en usuarios registrados con compras (50pts) — sola es suficiente
     if (tel) {
       const r3b = await pool.query(
         `SELECT COUNT(*) as total FROM usuarios
@@ -1460,7 +1464,7 @@ async function calcularScorePrimeraCompra(telefono, fingerprint, ip) {
          AND total_compras > 0`,
         [tel]
       );
-      if (parseInt(r3b.rows[0]?.total || '0') > 0) score += 20;
+      if (parseInt(r3b.rows[0]?.total || '0') > 0) score += 50;
     }
   } catch (e) {
     console.error('Error en score engine:', e.message);
