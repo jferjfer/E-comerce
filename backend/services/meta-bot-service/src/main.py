@@ -191,7 +191,15 @@ async def get_productos(busqueda: str = "") -> list:
         # CAPA 1: Búsqueda directa en caché por nombre — más precisa
         def score_prod(p, terminos):
             nombre = p.get("nombre", "").lower()
-            return sum(10 if nombre.startswith(t) else 5 if t in nombre else 0 for t in terminos)
+            marca = p.get("marca", "").lower()
+            desc = p.get("descripcion", "").lower()
+            score = 0
+            for t in terminos:
+                if t in marca: score += 15       # marca es la señal más fuerte
+                elif nombre.startswith(t): score += 10
+                elif t in nombre: score += 5
+                elif t in desc: score += 2
+            return score
 
         if palabras_norm:
             scored = [(score_prod(p, palabras_norm), p) for p in catalogo_cache
