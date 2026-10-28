@@ -939,8 +939,7 @@ async def manejar_boton_ig(to: str, uid: str, button_id: str, button_text: str):
             await ig_send(to, "Tu carrito esta vacio. Dime que producto te gusta!")
             return True
         flujos[uid] = {"paso": "datos", "productos": carritos.get(uid, [])}
-        await ig_send(to, "Perfecto! Solo necesito tus datos de envio:
-Nombre, telefono, direccion y ciudad")
+        await ig_send(to, "Perfecto! Solo necesito tus datos de envio: Nombre, telefono, direccion y ciudad")
         return True
 
     if button_id == "confirmar_pedido":
@@ -951,12 +950,7 @@ Nombre, telefono, direccion y ciudad")
             pedido_id = resultado.get("pedido_id", "")
             link = resultado.get("link_pago", "")
             total = resultado.get("total", 0)
-            await ig_send(to, f"Tu pedido esta listo!
-
-Paga aqui: {link}
-Pedido #{pedido_id[:12]}
-Total: ${total:,.0f} COP
-Valido 30 minutos")
+            await ig_send(to, f"Tu pedido esta listo! Paga aqui: {link} | Pedido #{pedido_id[:12]} | Total: ${total:,.0f} COP | Valido 30 minutos")
             carritos[uid] = []
             if uid in flujos:
                 del flujos[uid]
@@ -1005,15 +999,9 @@ async def manejar_flujo_datos_ig(to: str, uid: str, mensaje: str):
     es_primera = primera_compra_cache.get(uid, True)
     descuento = round(total * 0.15) if es_primera else 0
     total_final = total - descuento
-    descuento_txt = f"
-Descuento primera compra 15%: -${descuento:,.0f}" if es_primera and descuento > 0 else ""
-    lineas = "
-".join([f"- {p.get('nombre')} ${p.get('precio',0):,.0f}" for p in items])
-    resumen = f"Resumen:
-{lineas}{descuento_txt}
-Total: ${total_final:,.0f} COP
-{direccion}, {ciudad}
-{nombre} | {telefono}"
+    descuento_txt = f"\nDescuento primera compra 15%: -${descuento:,.0f}" if es_primera and descuento > 0 else ""
+    lineas = "\n".join([f"- {p.get('nombre')} ${p.get('precio',0):,.0f}" for p in items])
+    resumen = f"Resumen:\n{lineas}{descuento_txt}\nTotal: ${total_final:,.0f} COP\n{direccion}, {ciudad}\n{nombre} | {telefono}"
     await ig_botones(to, resumen, [{"id": "confirmar_pedido", "title": "Confirmar"}, {"id": "corregir_datos", "title": "Corregir"}])
     return True
 
