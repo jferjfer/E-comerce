@@ -911,11 +911,13 @@ async def manejar_boton_ig(to: str, uid: str, button_id: str, button_text: str):
         talla = partes[2] if len(partes) > 2 else ""
         prod = next((p for p in catalogo_cache if str(p.get("id")) == pid), None)
         colores = prod.get("colores", []) if prod else []
-        flujos[uid] = {**flujos.get(uid, {}), "paso": "color", "prod_pendiente": pid, "talla_pendiente": talla}
         if colores:
+            flujos[uid] = {**flujos.get(uid, {}), "paso": "color", "prod_pendiente": pid, "talla_pendiente": talla}
             btns = [{"id": f"color_{pid}_{talla}_{c}", "title": c[:20]} for c in colores[:3]]
             await ig_botones(to, f"Talla {talla} ok! Color?", btns)
         else:
+            # Sin colores — agregar directamente y limpiar flujo
+            flujos[uid] = {k: v for k, v in flujos.get(uid, {}).items() if k not in ["paso", "prod_pendiente", "talla_pendiente"]}
             await _agregar_al_carrito_ig(to, uid, pid, talla, "")
         return True
 
@@ -1240,10 +1242,11 @@ async def recibir(request: Request):
                     await verificar_primera_compra(sid, uid)
 
                 # Flujo de datos de envío
-                if uid in flujos and flujos[uid].get("paso") == "datos":
-                    flujos[uid]["canal"] = "instagram"
-                    await manejar_flujo_datos_ig(sid, uid, msg)
-                    continue
+                if uid in flujos and flujos[uid].get("paso") in ["datos", "confirmar"]:
+                    if flujos[uid].get("paso") == "datos":
+                        flujos[uid]["canal"] = "instagram"
+                        await manejar_flujo_datos_ig(sid, uid, msg)
+                        continue
 
                 # Interceptar confirmación textual cuando el flujo está en "confirmar"
                 flujo_actual = flujos.get(uid, {})
