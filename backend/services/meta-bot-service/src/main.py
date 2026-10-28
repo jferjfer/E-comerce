@@ -879,13 +879,30 @@ async def recibir(request: Request):
                         order = m.get("order", {})
                         items_order = order.get("product_items", [])
                         if items_order:
-                            nombres = ", ".join([i.get("product_retailer_id","") for i in items_order[:3]])
-                            total_items = sum(i.get("quantity",1) for i in items_order)
-                            await wa_send(phone, f"¡Vi tu pedido del catálogo! 🛒\n{total_items} producto(s) seleccionado(s).\n\nPara procesar tu compra con descuento y envío, dime tu nombre, teléfono, dirección y ciudad 😊")
-                            flujos[uid] = {"paso": "datos", "productos": [
-                                {"id": i.get("product_retailer_id"), "nombre": i.get("product_retailer_id"), "precio": float(i.get("item_price",0)), "cantidad": i.get("quantity",1), "talla": "", "color": ""}
+                            # Verificar primera compra antes de procesar
+                            if uid not in primera_compra_cache:
+                                await verificar_primera_compra(phone, uid)
+                            es_primera = primera_compra_cache.get(uid, True)
+
+                            total_items = sum(i.get("quantity", 1) for i in items_order)
+                            productos_flujo = [
+                                {"id": i.get("product_retailer_id"), "nombre": i.get("product_retailer_id"),
+                                 "precio": float(i.get("item_price", 0)), "cantidad": i.get("quantity", 1),
+                                 "talla": "", "color": ""}
                                 for i in items_order
-                            ], "canal": "whatsapp"}
+                            ]
+                            total_bruto = sum(p["precio"] * p["cantidad"] for p in productos_flujo)
+
+                            descuento_msg = ""
+                            if es_primera:
+                                descuento = round(total_bruto * 0.15)
+                                descuento_msg = f"\n🎉 ¡Primera compra! Tienes 15% de descuento: -${descuento:,.0f} COP"
+
+                            await wa_send(phone,
+                                f"¡Vi tu pedido! 🛒 {total_items} producto(s) seleccionado(s).{descuento_msg}\n\n"
+                                f"Para procesar tu compra dime tu nombre, teléfono, dirección y ciudad 😊"
+                            )
+                            flujos[uid] = {"paso": "datos", "productos": productos_flujo, "canal": "whatsapp"}
                         else:
                             await wa_send(phone, "Vi que abriste el carrito 🛒||¿Quieres ver lo que tienes o seguir viendo productos?")
                         continue
