@@ -492,13 +492,14 @@ async def ig_botones(to: str, texto: str, botones: list):
 
 
 async def ig_imagen_botones_full(to: str, imagen_url: str, caption: str, botones: list):
-    ok = await ig_imagen(to, imagen_url)
-    if ok:
-        await asyncio.sleep(0.5)
-        await ig_send_one(to, caption)
+    # Enviar imagen primero
+    await ig_imagen(to, imagen_url)
     await asyncio.sleep(0.5)
+    # Enviar caption con botones juntos en un solo mensaje
     if botones:
-        await ig_botones(to, "¿Qué deseas hacer?", botones)
+        await ig_botones(to, caption, botones)
+    else:
+        await ig_send_one(to, caption)
 
 
 async def ig_productos_botones(to: str, productos: list, uid: str, pagina: int = 0):
@@ -1245,9 +1246,12 @@ async def recibir(request: Request):
                     continue
 
                 # Interceptar confirmación textual cuando el flujo está en "confirmar"
-                if uid in flujos and flujos[uid].get("paso") == "confirmar":
+                flujo_actual = flujos.get(uid, {})
+                print(f"📋 IG flujo [{uid}]: paso={flujo_actual.get('paso','ninguno')}")
+                if flujo_actual.get("paso") == "confirmar":
                     msg_lower = msg.lower().strip()
-                    if any(x in msg_lower for x in ["confirmar", "confirmo", "si", "sí", "yes", "dale", "listo", "ok"]):
+                    if any(x in msg_lower for x in ["confirmar", "confirmo", "si", "sí", "yes", "dale", "listo", "ok", "✅"]):
+                        print(f"✅ IG confirmando pedido para {uid}")
                         await manejar_boton_ig(sid, uid, "confirmar_pedido", "")
                         continue
                     elif any(x in msg_lower for x in ["corregir", "cambiar", "no", "error"]):
@@ -1301,6 +1305,7 @@ async def recibir(request: Request):
                         })
                         await asyncio.sleep(0.5)
                         await ig_mostrar_carrito(sid, uid)
+                    continue  # No procesar mas tags cuando se agrega al carrito
 
                 if ir_al_pago:
                     await manejar_boton_ig(sid, uid, "ir_al_pago", "")
