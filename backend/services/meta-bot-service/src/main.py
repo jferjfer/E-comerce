@@ -163,70 +163,74 @@ def catalogo_para_noa() -> str:
 
 async def get_productos(busqueda: str = "") -> list:
     try:
-        # Mapeo de términos comunes a categorías del catálogo
         MAPA_CATEGORIAS = {
-            "pantalon": ["Pantalones", "Jeans"],
-            "pantalones": ["Pantalones", "Jeans"],
-            "jean": ["Jeans"],
-            "jeans": ["Jeans"],
-            "short": ["Shorts"],
-            "shorts": ["Shorts"],
-            "bermuda": ["Bermudas"],
-            "camisa": ["Camisas"],
-            "camisas": ["Camisas"],
-            "vestido": ["Vestidos"],
-            "vestidos": ["Vestidos"],
-            "blusa": ["Blusas"],
-            "blusas": ["Blusas"],
-            "zapato": ["Calzado"],
-            "zapatos": ["Calzado"],
-            "calzado": ["Calzado"],
-            "sueter": ["Sueter"],
-            "blazer": ["Blazers"],
-            "lenceria": ["Lencería"],
-            "disfraz": ["Lencería"],
-            "enfermera": ["Lencería"],
+            "pantalon": ["Pantalones", "Jeans"], "pantalones": ["Pantalones", "Jeans"],
+            "jean": ["Jeans"], "jeans": ["Jeans"],
+            "short": ["Shorts"], "shorts": ["Shorts"], "bermuda": ["Bermudas"],
+            "camisa": ["Camisas"], "camisas": ["Camisas"],
+            "vestido": ["Vestidos"], "vestidos": ["Vestidos"],
+            "blusa": ["Blusas"], "blusas": ["Blusas"],
+            "zapato": ["Calzado"], "zapatos": ["Calzado"], "zapatilla": ["Calzado"],
+            "zapatillas": ["Calzado"], "tenis": ["Calzado"], "calzado": ["Calzado"],
+            "sueter": ["Sueter"], "blazer": ["Blazers"],
+            "lenceria": ["Lenceria", "Lencería"], "disfraz": ["Lenceria", "Lencería"],
+            "enfermera": ["Lenceria", "Lencería"],
         }
+        SINONIMOS = {
+            "zapatilla": "zapato", "zapatillas": "zapatos", "tenis": "zapatos",
+            "pantalon": "jean", "pantalones": "jeans",
+            "top": "blusa", "chompa": "sueter", "saco": "sueter",
+        }
+        STOP_WORDS = {"talla", "para", "con", "de", "la", "el", "los", "las", "un", "una", "quiero", "busco", "dame", "ver"}
 
-        STOP_WORDS = {"talla", "para", "con", "de", "la", "el", "los", "las", "un", "una"}
         palabras_raw = busqueda.lower().split()
         palabras = [p for p in palabras_raw if p not in STOP_WORDS and not p.isdigit()]
-        termino_principal = palabras[0] if palabras else ""
+        palabras_norm = [SINONIMOS.get(p, p) for p in palabras]
+        termino_principal = palabras_norm[0] if palabras_norm else ""
 
-        # Si el término tiene marca o especificación adicional, usar búsqueda completa
-        busqueda_completa = " ".join(palabras)
+        # CAPA 1: Búsqueda directa en caché por nombre — más precisa
+        def score_prod(p, terminos):
+            nombre = p.get("nombre", "").lower()
+            return sum(10 if nombre.startswith(t) else 5 if t in nombre else 0 for t in terminos)
 
-        # Si el término principal coincide con una categoría Y no hay especificación adicional
+        if palabras_norm:
+            scored = [(score_prod(p, palabras_norm), p) for p in catalogo_cache
+                      if p.get("en_stock", True) and p.get("imagen") and score_prod(p, palabras_norm) > 0]
+            scored.sort(key=lambda x: x[0], reverse=True)
+            if scored:
+                return [p for _, p in scored][:9]
+
+        # CAPA 2: Filtrar por categoría
         categorias_match = MAPA_CATEGORIAS.get(termino_principal, [])
-
-        if categorias_match and len(palabras) == 1:
-            # Solo categoría genérica sin marca/especificación → filtrar por categoría
-            prods = [p for p in catalogo_cache
-                     if p.get("categoria") in categorias_match
-                     and p.get("en_stock", True)
-                     and p.get("imagen")]
-        else:
-            # Búsqueda por texto completo — incluye marca, color, estilo
-            async with httpx.AsyncClient(timeout=10) as c:
-                url = f"{CATALOG_URL}/api/productos?limite=100"
-                if busqueda_completa:
-                    url += f"&buscar={busqueda_completa}"
-                r = await c.get(url)
-                prods = [p for p in r.json().get("productos", [])
-                         if p.get("en_stock", True) and p.get("imagen")]
-
-            # Si no encontró nada con búsqueda completa, intentar solo con categoría
-            if not prods and categorias_match:
-                prods = [p for p in catalogo_cache
+        if categorias_match:
+            prods_cat = [p for p in catalogo_cache
                          if p.get("categoria") in categorias_match
-                         and p.get("en_stock", True)
-                         and p.get("imagen")]
+                         and p.get("en_stock", True) and p.get("imagen")]
+            if prods_cat:
+                return prods_cat[:9]
 
-        return prods[:9]
-    except:
+        # CAPA 3: API del catálogo con término normalizado
+        busqueda_norm = " ".join(palabras_norm)
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.get(f"{CATALOG_URL}/api/productos?limite=100&buscar={busqueda_norm}")
+            prods_api = [p for p in r.json().get("productos", [])
+                         if p.get("en_stock", True) and p.get("imagen")]
+            if prods_api:
+                return prods_api[:9]
+
+        # CAPA 4: Fallback — buscar palabra por palabra
+        for palabra in palabras_norm:
+            fallback = [p for p in catalogo_cache
+                        if palabra in p.get("nombre", "").lower()
+                        and p.get("imagen") and p.get("en_stock", True)]
+            if fallback:
+                return fallback[:9]
+
         return [p for p in catalogo_cache if p.get("imagen") and p.get("en_stock", True)][:6]
 
-
+    except Exception as e:
+        print(f"❌ Error get_productos: {e}")
+        return [p for p in catalogo_cache if p.get("imagen") and p.get("en_stock", True)][:6]
 async def extraer_datos_envio(mensaje: str) -> dict:
     """Usa IA para extraer nombre, telefono, direccion y ciudad de cualquier formato"""
     try:
