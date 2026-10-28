@@ -981,6 +981,13 @@ aplicacion.put('/api/pedidos/:pedidoId/estado', autenticacion, async (req, res) 
       );
     }
 
+    // WhatsApp para clientes de Meta
+    pool.query('SELECT plataforma, cliente_telefono FROM pedido WHERE id = $1', [pedidoId])
+      .then(r => {
+        const { plataforma, cliente_telefono } = r.rows[0] || {};
+        notificarWhatsAppEstado(pedidoId, estado, totalPedido, plataforma, cliente_telefono);
+      }).catch(() => {});
+
     res.json({
       mensaje: 'Estado actualizado exitosamente',
       pedido_id: pedidoId,
@@ -1254,6 +1261,38 @@ const firebaseAdmin = (() => {
     return null;
   }
 })();
+
+// Helper: enviar mensaje WhatsApp cuando el pedido se confirma (solo para clientes de Meta)
+async function notificarWhatsAppEstado(pedidoId, estado, total, plataforma, telefono) {
+  if (!['whatsapp','instagram','messenger'].includes(plataforma)) return;
+  if (!telefono || !process.env.META_WA_TOKEN || !process.env.META_WA_PHONE_NUMBER_ID) return;
+
+  const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
+  const MENSAJES = {
+    Confirmado: `✅ *¡Tu pago fue confirmado!*\n\n📦 Pedido: #${pedidoId}\n💰 Total: ${fmt(total)}\n\nNuestro equipo ya está alistando tu pedido. Te avisaremos cuando esté en camino. 🛍️\n\n_EGOS — Wear Your Truth_`,
+    Cancelado:  `❌ *Pago no completado*\n\n📦 Pedido: #${pedidoId}\n\nTu pago no fue procesado. Si deseas intentarlo de nuevo escríbenos y te enviamos un nuevo link de pago. 💬`,
+    Alistado:   `📦 *¡Tu pedido está listo!*\n\n📦 Pedido: #${pedidoId}\n\nYa está empacado y listo para ser despachado. Pronto estará en camino. 🚚`,
+    'En Camino': `🚚 *¡Tu pedido va en camino!*\n\n📦 Pedido: #${pedidoId}\n\nTu pedido fue despachado. Pronto lo recibirás. ✨`,
+    Entregado:  `🎉 *¡Pedido entregado!*\n\n📦 Pedido: #${pedidoId}\n\nEsperamos que disfrutes tu compra. ¡Gracias por elegir EGOS! 💛`,
+  };
+
+  const mensaje = MENSAJES[estado];
+  if (!mensaje) return;
+
+  // Normalizar teléfono colombiano
+  const tel = telefono.replace(/[^0-9]/g, '');
+  const telFull = tel.startsWith('57') ? tel : `57${tel}`;
+
+  try {
+    await axios.post(`https://graph.facebook.com/v19.0/${process.env.META_WA_PHONE_NUMBER_ID}/messages`,
+      { messaging_product: 'whatsapp', to: telFull, type: 'text', text: { body: mensaje } },
+      { headers: { Authorization: `Bearer ${process.env.META_WA_TOKEN}` }, timeout: 5000 }
+    );
+    console.log(`📱 WhatsApp enviado a ${telFull}: ${estado}`);
+  } catch (e) {
+    console.log(`⚠️ WhatsApp no enviado: ${e.message}`);
+  }
+}
 
 // Helper: enviar notificación push al cliente
 async function enviarPushNotificacion(usuarioId, titulo, cuerpo) {
@@ -2021,6 +2060,7 @@ aplicacion.post('/api/pagos/sistecredito/confirmar', async (req, res) => {
           if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Confirmado', pedido.total);
         }).catch(() => {});
       enviarPushNotificacion(pedido.usuario_id, '✅ ¡Pago confirmado!', `Tu pedido #${pedidoId} fue aprobado por Sistecredito.`);
+      notificarWhatsAppEstado(pedidoId, 'Confirmado', pedido.total, pedido.plataforma || '', pedido.cliente_telefono || '');
 
       // Factura DIAN
       const productos = await pool.query(
@@ -2068,6 +2108,7 @@ aplicacion.post('/api/pagos/sistecredito/confirmar', async (req, res) => {
           const { email, nombre } = resU.data.usuario || {};
           if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Cancelado', pedido.total);
         }).catch(() => {});
+      notificarWhatsAppEstado(pedidoId, 'Cancelado', pedido.total, pedido.plataforma || '', pedido.cliente_telefono || '');
     }
 
     // Siempre responder 200 para que Sistecredito no reintente
@@ -2187,6 +2228,7 @@ aplicacion.post('/api/pagos/addi/webhook', async (req, res) => {
           if (email) enviarNotificacionEstado(email, nombre || 'Cliente', pedidoId, 'Confirmado', pedido.total);
         }).catch(() => {});
       enviarPushNotificacion(pedido.usuario_id, '✅ ¡Pago confirmado!', `Tu pedido #${pedidoId} fue aprobado por ADDI.`);
+      notificarWhatsAppEstado(pedidoId, 'Confirmado', pedido.total, pedido.plataforma || '', pedido.cliente_telefono || '');
 
       // Factura DIAN
       const productos = await pool.query('SELECT id_producto as id, nombre_producto as nombre, precio_unitario, cantidad FROM pedido_producto WHERE id_pedido = $1', [pedidoId]);
@@ -2390,6 +2432,10 @@ aplicacion.post('/api/pagos/epayco/confirmar', async (req, res) => {
           }
         })
         .catch(e => console.log(`⚠️ No se pudo enviar correo de confirmación: ${e.message}`));
+
+      // WhatsApp para clientes de Meta
+      pool.query('SELECT plataforma, cliente_telefono FROM pedido WHERE id = $1', [pedidoId])
+        .then(r => { const p = r.rows[0] || {}; notificarWhatsAppEstado(pedidoId, 'Confirmado', pedido.total, p.plataforma || '', p.cliente_telefono || ''); }).catch(() => {});
 
       // Generar factura electrónica automáticamente
       const productos = await pool.query(

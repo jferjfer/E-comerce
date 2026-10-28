@@ -413,6 +413,7 @@ export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutM
             metodoPago={selectedMethod}
             cuotaMensual={plazoCredito ? Math.ceil(totalConBono / plazoCredito) : undefined}
             plazo={plazoCredito}
+            esMeta={!!pedidoMeta}
           />
         )}
       </div>

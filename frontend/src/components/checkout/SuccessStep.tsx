@@ -9,6 +9,7 @@ interface SuccessStepProps {
   metodoPago?: string
   cuotaMensual?: number
   plazo?: number
+  esMeta?: boolean
 }
 
 // ADDI_TEMP: formulario de datos de envío post-pago para flujo sin login
@@ -146,7 +147,7 @@ function FormularioEnvio({ orderId, onGuardado }: { orderId: string; onGuardado:
 }
 // FIN ADDI_TEMP
 
-export default function SuccessStep({ orderId, onClose, metodoPago, cuotaMensual, plazo }: SuccessStepProps) {
+export default function SuccessStep({ orderId, onClose, metodoPago, cuotaMensual, plazo, esMeta }: SuccessStepProps) {
   const navigate = useNavigate()
   const esCredito = metodoPago === 'credito_interno'
   const esEfectivo = metodoPago === 'efectivo'
@@ -237,19 +238,42 @@ export default function SuccessStep({ orderId, onClose, metodoPago, cuotaMensual
 
       {/* Botones */}
       <div className="space-y-2">
-        <button
-          onClick={() => { onClose(); navigate('/orders') }}
-          className="w-full bg-primary text-white py-3 rounded-xl hover:bg-secondary transition-colors font-semibold text-sm"
-        >
-          <i className="fas fa-shopping-bag mr-2"></i>
-          Ver mis pedidos
-        </button>
-        <button
-          onClick={onClose}
-          className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm"
-        >
-          Seguir comprando
-        </button>
+        {esMeta ? (
+          <>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left">
+              <p className="text-xs font-semibold text-green-800 mb-1">
+                <i className="fab fa-whatsapp mr-1"></i>
+                Recibirás confirmación por WhatsApp
+              </p>
+              <p className="text-xs text-green-700">
+                Te enviaremos el estado de tu pedido directamente al chat donde hiciste tu compra.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-full bg-primary text-white py-3 rounded-xl hover:bg-secondary transition-colors font-semibold text-sm"
+            >
+              <i className="fas fa-check mr-2"></i>
+              Listo
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => { onClose(); navigate('/orders') }}
+              className="w-full bg-primary text-white py-3 rounded-xl hover:bg-secondary transition-colors font-semibold text-sm"
+            >
+              <i className="fas fa-shopping-bag mr-2"></i>
+              Ver mis pedidos
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+            >
+              Seguir comprando
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
