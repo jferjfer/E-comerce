@@ -894,7 +894,8 @@ async def manejar_boton_ig(to: str, uid: str, button_id: str, button_text: str):
             flujos[uid] = {**flujos.get(uid, {}), "paso": "talla", "prod_pendiente": pid}
             if tallas:
                 btns = [{"id": f"talla_{pid}_{t}", "title": t[:20]} for t in tallas[:3]]
-                await ig_botones(to, f"Talla para {prod.get('nombre')}?", btns)
+                tallas_txt = ", ".join(tallas)
+                await ig_botones(to, f"{prod.get('nombre')}\nTallas disponibles: {tallas_txt}\n¿Cuál necesitas?", btns)
             elif colores:
                 flujos[uid]["paso"] = "color"
                 btns = [{"id": f"color_{pid}___{c}", "title": c[:20]} for c in colores[:3]]
@@ -970,6 +971,12 @@ async def _agregar_al_carrito_ig(to: str, uid: str, pid: str, talla: str, color:
     prod = next((p for p in catalogo_cache if str(p.get("id")) == pid), None)
     if not prod:
         await ig_send(to, "Producto no encontrado")
+        return
+    # Validar talla si el producto tiene tallas definidas
+    tallas_prod = prod.get("tallas", [])
+    if tallas_prod and talla and talla not in tallas_prod:
+        tallas_txt = ", ".join(tallas_prod)
+        await ig_send(to, f"Esa talla no está disponible. Tallas disponibles: {tallas_txt}")
         return
     if uid not in carritos:
         carritos[uid] = []
@@ -1236,6 +1243,16 @@ async def recibir(request: Request):
                     flujos[uid]["canal"] = "instagram"
                     await manejar_flujo_datos_ig(sid, uid, msg)
                     continue
+
+                # Interceptar confirmación textual cuando el flujo está en "confirmar"
+                if uid in flujos and flujos[uid].get("paso") == "confirmar":
+                    msg_lower = msg.lower().strip()
+                    if any(x in msg_lower for x in ["confirmar", "confirmo", "si", "sí", "yes", "dale", "listo", "ok"]):
+                        await manejar_boton_ig(sid, uid, "confirmar_pedido", "")
+                        continue
+                    elif any(x in msg_lower for x in ["corregir", "cambiar", "no", "error"]):
+                        await manejar_boton_ig(sid, uid, "corregir_datos", "")
+                        continue
 
                 # Respuesta de Noa con contexto de primera compra
                 es_primera = primera_compra_cache.get(uid, True)
