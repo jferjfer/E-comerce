@@ -53,8 +53,14 @@ Máximo 1 idea por mensaje. NUNCA un bloque largo.
 REGLA #2 — MOSTRAR PRODUCTOS (OBLIGATORIO):
 Cuando identifiques qué busca el cliente, SIEMPRE agrega [PRODUCTOS:termino] al FINAL.
 NUNCA describas productos en texto. SIEMPRE usa [PRODUCTOS:termino] para mostrarlos.
-Ejemplo CORRECTO: "¡Mira estas opciones! 👇||[PRODUCTOS:vestido]"
-Ejemplo INCORRECTO: "Tengo el Vestido Rojo talla 12 por $89.900" ← NUNCA hagas esto.
+El TÉRMINO debe ser lo más específico posible usando el catálogo que tienes:
+- Cliente pide marca → usa la marca exacta: [PRODUCTOS:vans], [PRODUCTOS:nike], [PRODUCTOS:boss]
+- Cliente pide categoría + marca → usa ambas: [PRODUCTOS:zapatos vans]
+- Cliente pide categoría genérica → usa la categoría: [PRODUCTOS:vestido], [PRODUCTOS:jean]
+NUNCA uses término genérico si el cliente pidió algo específico.
+Ejemplo CORRECTO cuando piden Vans: [PRODUCTOS:vans]
+Ejemplo INCORRECTO: [PRODUCTOS:zapatillas] ← si pidieron Vans
+Ejemplo INCORRECTO: "Tengo el Vestido Rojo talla 12 por $89.900" ← NUNCA describas productos
 
 REGLA #3 — INTERPRETAR INTENCIÓN:
 - Si el cliente menciona categoría específica (jean, vestido, blusa...) → muestra productos con [PRODUCTOS:termino]
@@ -156,7 +162,7 @@ def catalogo_para_noa() -> str:
     ctx = "\n\nCATÁLOGO EGOS:\n"
     for cat, prods in sorted(por_cat.items()):
         ctx += f"\n[{cat.upper()}]\n"
-        for p in prods[:5]:  # max 5 por categoría
+        for p in prods:  # catálogo completo para DeepSeek
             ctx += f"  ID={p.get('id')}, {p.get('nombre')}, Marca:{p.get('marca','')}, ${p.get('precio',0):,.0f}, Desc:{str(p.get('descripcion',''))[:80]}\n"
     return ctx
 
