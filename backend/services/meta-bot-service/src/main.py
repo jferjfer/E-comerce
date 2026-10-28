@@ -280,6 +280,8 @@ NO agregues explicaciones, SOLO el JSON."""
         return {}
 
 
+async def crear_pedido_y_link(datos: dict) -> dict:
+
     try:
         # 1. Buscar o crear usuario por teléfono
         telefono = datos.get("telefono", "").strip()
@@ -885,12 +887,17 @@ async def recibir(request: Request):
                             es_primera = primera_compra_cache.get(uid, True)
 
                             total_items = sum(i.get("quantity", 1) for i in items_order)
-                            productos_flujo = [
-                                {"id": i.get("product_retailer_id"), "nombre": i.get("product_retailer_id"),
-                                 "precio": float(i.get("item_price", 0)), "cantidad": i.get("quantity", 1),
-                                 "talla": "", "color": ""}
-                                for i in items_order
-                            ]
+                            productos_flujo = []
+                            for i in items_order:
+                                pid = i.get("product_retailer_id", "")
+                                prod_cat = next((p for p in catalogo_cache if str(p.get("id")) == str(pid)), None)
+                                productos_flujo.append({
+                                    "id": pid,
+                                    "nombre": prod_cat.get("nombre", pid) if prod_cat else pid,
+                                    "precio": prod_cat.get("precio", float(i.get("item_price", 0))) if prod_cat else float(i.get("item_price", 0)),
+                                    "cantidad": i.get("quantity", 1),
+                                    "talla": "", "color": ""
+                                })
                             total_bruto = sum(p["precio"] * p["cantidad"] for p in productos_flujo)
 
                             descuento_msg = ""
