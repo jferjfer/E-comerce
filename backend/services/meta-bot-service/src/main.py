@@ -37,7 +37,8 @@ conversaciones: dict = {}
 carritos: dict = {}          # uid -> [{id, nombre, precio, cantidad, talla, color}]
 flujos: dict = {}            # uid -> {paso, ...datos}
 mensajes_procesados: set = set()
-productos_mostrados: dict = {}
+productos_mostrados: dict = {}  # uid -> lista completa de productos
+pagina_cache: dict = {}  # uid -> pagina actual (0-based, 3 por pagina)
 catalogo_cache: list = []
 primera_compra_cache: dict = {}  # uid -> bool
 primera_compra_cache: dict = {}  # uid -> bool
@@ -499,10 +500,17 @@ async def wa_imagen_botones(to: str, imagen_url: str, caption: str, botones: lis
     await wa_botones(to, "¿Qué deseas hacer?", botones)
 
 
-async def wa_productos_botones(to: str, productos: list, uid: str):
-    """Envía productos con imagen + botones Agregar / Ver detalle"""
-    productos_mostrados[uid] = productos[:3]
-    for i, p in enumerate(productos[:3]):
+async def wa_productos_botones(to: str, productos: list, uid: str, pagina: int = 0):
+    """Envía productos con imagen + botones Agregar / Ver detalle, con paginación de 3 en 3"""
+    productos_mostrados[uid] = productos  # guardar lista completa
+    pagina_cache[uid] = pagina
+
+    inicio = pagina * 3
+    fin = inicio + 3
+    pagina_actual = productos[inicio:fin]
+    hay_mas = len(productos) > fin
+
+    for i, p in enumerate(pagina_actual):
         imagen = p.get("imagen", "")
         nombre = p.get("nombre", "Producto EGOS")
         precio = p.get("precio", 0)
@@ -511,13 +519,22 @@ async def wa_productos_botones(to: str, productos: list, uid: str):
         colores = ", ".join(p.get("colores", []))
         if not imagen:
             continue
-        caption = f"{i+1}️⃣ {nombre}\n💰 ${precio:,.0f} COP\n📏 T:{tallas} | 🎨 {colores}"
+        num = inicio + i + 1
+        caption = f"{num}️⃣ {nombre}\n💰 ${precio:,.0f} COP\n📏 T:{tallas} | 🎨 {colores}"
         botones = [
             {"id": f"agregar_{pid}", "title": "🛒 Agregar"},
             {"id": f"detalle_{pid}", "title": "🔗 Ver detalle"},
         ]
         await wa_imagen_botones(to, imagen, caption, botones)
         await asyncio.sleep(1.0)
+
+    # Botón "Ver más" si hay más productos
+    if hay_mas:
+        total = len(productos)
+        mostrados = fin
+        await wa_botones(to, f"Mostrando {mostrados} de {total} productos 👆", [
+            {"id": f"ver_mas_{pagina + 1}", "title": f"Ver más 👉"},
+        ])
 
 
 # ── Carrito ───────────────────────────────────────────────────
@@ -637,6 +654,16 @@ async def manejar_boton_wa(to: str, uid: str, button_id: str, button_text: str):
             await wa_productos_botones(to, prods, uid)
         else:
             await wa_send(to, "No encontré productos en esa categoría 😔||¿Qué más te interesa?")
+        return True
+
+    # Ver más productos (paginación)
+    if button_id.startswith("ver_mas_"):
+        pagina = int(button_id.replace("ver_mas_", ""))
+        prods = productos_mostrados.get(uid, [])
+        if prods:
+            await wa_productos_botones(to, prods, uid, pagina)
+        else:
+            await wa_send(to, "No hay más productos para mostrar 😊")
         return True
 
     # Seguir viendo
