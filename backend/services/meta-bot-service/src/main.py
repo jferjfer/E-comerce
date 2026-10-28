@@ -39,46 +39,88 @@ flujos: dict = {}            # uid -> {paso, ...datos}
 mensajes_procesados: set = set()
 productos_mostrados: dict = {}
 catalogo_cache: list = []
+primera_compra_cache: dict = {}  # uid -> bool
+primera_compra_cache: dict = {}  # uid -> bool
 
 # ── Prompt ────────────────────────────────────────────────────
-PROMPT = """Eres Noa, asesora de moda y vendedora de EGOS Colombia. Atiendes por WhatsApp e Instagram.
+PROMPT = """Eres Noa, asesora de moda y vendedora de EGOS Colombia. Atiendes por WhatsApp, Instagram y Messenger.
 
 REGLA #1 — MENSAJES CORTOS:
 Divide SIEMPRE tu respuesta en 2-4 mensajes cortos separados por ||
 Máximo 1 idea por mensaje. NUNCA un bloque largo.
 
 REGLA #2 — MOSTRAR PRODUCTOS (OBLIGATORIO):
-Cuando el cliente diga su talla Y color (o tipo de prenda), SIEMPRE agrega [PRODUCTOS:termino] al FINAL.
+Cuando el cliente mencione una categoría o tipo de prenda, SIEMPRE agrega [PRODUCTOS:termino] al FINAL.
 NUNCA describas productos en texto. SIEMPRE usa [PRODUCTOS:termino] para mostrarlos.
-Ejemplo CORRECTO: "¡Mira estas opciones! 👇||[PRODUCTOS:short azul]"
-Ejemplo INCORRECTO: "Tengo el Short Azul talla 12 por $89.900" ← NUNCA hagas esto.
+Ejemplo CORRECTO: "¡Mira estas opciones! 👇||[PRODUCTOS:vestido]"
+Ejemplo INCORRECTO: "Tengo el Vestido Rojo talla 12 por $89.900" ← NUNCA hagas esto.
 
-REGLA #3 — CARRITO:
+REGLA #3 — MOSTRAR CATEGORÍAS (OBLIGATORIO AL INICIO):
+Después del saludo, SIEMPRE muestra las categorías disponibles con [MOSTRAR_CATEGORIAS].
+Ejemplo: "¿Qué estás buscando hoy? 👗||[MOSTRAR_CATEGORIAS]"
+
+REGLA #4 — CARRITO:
 Cuando el cliente confirme un producto (toca botón o dice "el 1", "ese", etc.),
 agrega al FINAL: [AGREGAR:id_producto:talla:color]
 
-REGLA #4 — IR AL PAGO:
+REGLA #5 — SUGERIR COMPLEMENTO:
+Después de agregar un producto al carrito, SIEMPRE sugiere un producto complementario.
+Ejemplo: después de un jean → sugiere una blusa. Después de un vestido → sugiere calzado.
+Usa [PRODUCTOS:categoria_complementaria] para mostrar la sugerencia.
+
+REGLA #6 — IR AL PAGO:
 Cuando el cliente quiera pagar, agrega al FINAL: [IR_AL_PAGO]
 
-PERSONALIDAD: Cálida, directa, vendedora. Amiga experta en moda colombiana.
+PERSONALIDAD: Cálida, directa, vendedora. Amiga experta en moda colombiana. Usa emojis con moderación.
 
 FLUJO:
-1. Saluda con energía
-2. Pregunta qué busca
-3. Pregunta talla Y color juntos
+1. Saluda personalizado según si es primera compra o cliente recurrente (el contexto te lo indica)
+2. Muestra categorías con [MOSTRAR_CATEGORIAS]
+3. Cliente elige categoría → pregunta talla y color
 4. Muestra productos con [PRODUCTOS:termino]
 5. Cliente elige → [AGREGAR:id:talla:color]
-6. Muestra carrito actualizado con botones "Seguir viendo" / "Ir al pago"
-7. Cuando cliente quiere pagar → [IR_AL_PAGO]
-8. Pide datos: Nombre | Teléfono | Dirección | Ciudad (todo junto)
-9. Confirma resumen con botones "Confirmar" / "Corregir"
-10. Crea pedido y envía link de pago
+6. Sugiere complemento con [PRODUCTOS:complemento]
+7. Muestra carrito con botones "Seguir viendo" / "Ir al pago"
+8. Cuando cliente quiere pagar → [IR_AL_PAGO]
+9. Pide datos: Nombre | Teléfono | Dirección | Ciudad
+10. Confirma resumen (con descuento si aplica) → botones "Confirmar" / "Corregir"
+11. Crea pedido y envía link de pago
 
-PROMOCIONES: Envío gratis +$150.000 | Primera compra 15% OFF código EGOS15
-NUNCA pidas datos de tarjeta."""
+PROMOCIONES: Envío gratis +$150.000
+NUNCA pidas datos de tarjeta.
+NUNCA menciones el código EGOS15 — el descuento se aplica automáticamente si es primera compra."""
 
 
 # ── Catálogo ──────────────────────────────────────────────────
+async def verificar_primera_compra(telefono: str, uid: str) -> bool:
+    """Verifica si el cliente tiene pedidos confirmados anteriores"""
+    if uid in primera_compra_cache:
+        return primera_compra_cache[uid]
+    try:
+        tel = telefono.replace('+', '').replace(' ', '')
+        async with httpx.AsyncClient(timeout=5) as c:
+            r = await c.get(f"{TRANSACTION_URL}/api/pagos/primera-compra/{tel}")
+            if r.status_code == 200:
+                es_primera = r.json().get('primera_compra', True)
+                primera_compra_cache[uid] = es_primera
+                return es_primera
+    except Exception as e:
+        print(f"⚠️ Error verificando primera compra: {e}")
+    primera_compra_cache[uid] = True
+    return True
+
+
+def categorias_disponibles() -> str:
+    """Retorna las categorías disponibles en el catálogo"""
+    if not catalogo_cache:
+        return "Vestidos, Jeans, Blusas, Shorts, Lencería, Blazers, Calzado"
+    cats = sorted(set(
+        p['categoria'] for p in catalogo_cache
+        if p.get('en_stock', True) and p.get('categoria')
+    ))
+    return ', '.join(cats)
+
+
 async def cargar_catalogo():
     global catalogo_cache
     try:
@@ -257,12 +299,20 @@ NO agregues explicaciones, SOLO el JSON."""
         items = datos.get("productos", [])
         total = sum(p.get("precio", 0) * p.get("cantidad", 1) for p in items)
 
+        # Calcular descuento 15% si es primera compra
+        telefono_check = datos.get("telefono", "").replace("+", "").replace(" ", "")
+        uid_check = f"wa_{telefono_check}"
+        es_primera = primera_compra_cache.get(uid_check, True)
+        total_bruto = sum(p.get("precio", 0) * p.get("cantidad", 1) for p in items)
+        descuento = round(total_bruto * 0.15) if es_primera else 0
+
         async with httpx.AsyncClient(timeout=15) as c:
             r = await c.post(f"{TRANSACTION_URL}/api/checkout",
                 headers={"Authorization": f"Bearer {token}"},
                 json={"metodo_pago": "pago_en_linea",
                       "direccion_envio": f"{datos.get('direccion')}, {datos.get('ciudad')}",
                       "plataforma": datos.get("canal", "whatsapp"),
+                      "descuento_bono": descuento,
                       "items": items})
             if r.status_code != 200:
                 return {"error": f"Error pedido: {r.text[:100]}"}
@@ -287,7 +337,7 @@ NO agregues explicaciones, SOLO el JSON."""
 
 
 # ── IA ────────────────────────────────────────────────────────
-async def noa(uid: str, mensaje: str, canal: str) -> str:
+async def noa(uid: str, mensaje: str, canal: str, es_primera: bool = True) -> str:
     if uid not in conversaciones:
         conversaciones[uid] = []
 
@@ -301,7 +351,13 @@ async def noa(uid: str, mensaje: str, canal: str) -> str:
             total += p.get("precio", 0) * p.get("cantidad", 1)
         carrito_ctx += f"  TOTAL: ${total:,.0f} COP\n"
 
-    msgs = [{"role": "system", "content": PROMPT + ctx + carrito_ctx + f"\n\nCanal: {canal}"}]
+    descuento_ctx = ""
+    if es_primera:
+        descuento_ctx = "\n\nCONTEXTO CLIENTE: Es su PRIMERA COMPRA. Menciona el 15% de descuento automático en el saludo inicial. El descuento se aplica automáticamente, no necesita código."
+    else:
+        descuento_ctx = "\n\nCONTEXTO CLIENTE: Cliente recurrente. NO menciones descuento de primera compra."
+
+    msgs = [{"role": "system", "content": PROMPT + ctx + carrito_ctx + descuento_ctx + f"\n\nCanal: {canal}"}]
     msgs += conversaciones[uid][-12:]
     msgs.append({"role": "user", "content": mensaje})
 
@@ -553,9 +609,31 @@ async def manejar_boton_wa(to: str, uid: str, button_id: str, button_text: str):
         await wa_send(to, f"🔗 Ver detalle: {FRONTEND_URL}/producto/{pid}")
         return True
 
+    # Botones de categorías
+    if button_id.startswith("cat_"):
+        cat_map = {
+            "cat_vestidos": "vestido", "cat_jeans": "jean",
+            "cat_blusas": "blusa", "cat_shorts": "short",
+            "cat_lenceria": "lenceria", "cat_blazers": "blazer",
+            "cat_calzado": "zapato"
+        }
+        termino = cat_map.get(button_id, button_id.replace("cat_", ""))
+        prods = await get_productos(termino)
+        if prods:
+            await wa_send(to, f"¡Mira estas opciones! 👇")
+            await wa_productos_botones(to, prods, uid)
+        else:
+            await wa_send(to, "No encontré productos en esa categoría 😔||¿Qué más te interesa?")
+        return True
+
     # Seguir viendo
     if button_id == "seguir_viendo":
-        await wa_send(to, "¡Claro! 😊||¿Qué más estás buscando?")
+        cats = categorias_disponibles()
+        await wa_botones(to, f"¡Claro! 😊 ¿Qué más buscas?\n\n{cats}", [
+            {"id": "cat_vestidos", "title": "👗 Vestidos"},
+            {"id": "cat_jeans", "title": "👖 Jeans"},
+            {"id": "cat_blusas", "title": "👚 Blusas"},
+        ])
         return True
 
     # Ir al pago
@@ -643,10 +721,23 @@ async def manejar_flujo_datos(to: str, uid: str, mensaje: str):
     items = flujo.get("productos", [])
     total = sum(p.get("precio", 0) * p.get("cantidad", 1) for p in items)
     lineas = "\n".join([f"• {p.get('nombre')} - ${p.get('precio',0):,.0f}" for p in items])
+
+    # Verificar si aplica descuento de primera compra
+    tel_norm = telefono.replace("+", "").replace(" ", "")
+    uid_flujo = f"wa_{tel_norm}"
+    es_primera = primera_compra_cache.get(uid_flujo, True)
+    descuento = round(total * 0.15) if es_primera else 0
+    total_final = total - descuento
+
+    descuento_txt = ""
+    if es_primera and descuento > 0:
+        descuento_txt = f"\n🎉 Descuento primera compra 15%: -${descuento:,.0f}"
+
     resumen = (
         f"✅ Resumen de tu pedido:\n\n"
-        f"{lineas}\n\n"
-        f"💰 Total: ${total:,.0f} COP\n"
+        f"{lineas}\n"
+        f"{descuento_txt}\n"
+        f"💰 Total a pagar: ${total_final:,.0f} COP\n"
         f"📍 {direccion}, {ciudad}\n"
         f"👤 {nombre} | {telefono}"
     )
@@ -723,14 +814,20 @@ async def recibir(request: Request):
 
                     print(f"📱 WA [{phone}]: {msg}")
 
+                    # Verificar primera compra al primer mensaje
+                    if uid not in primera_compra_cache:
+                        es_primera = await verificar_primera_compra(phone, uid)
+                        print(f"🎁 Primera compra [{phone}]: {es_primera}")
+
                     # Flujo de datos de envío
                     if uid in flujos and flujos[uid].get("paso") == "datos":
                         flujos[uid]["canal"] = "whatsapp"
                         await manejar_flujo_datos(phone, uid, msg)
                         continue
 
-                    # Respuesta de Noa
-                    respuesta = await noa(uid, msg, "WhatsApp")
+                    # Respuesta de Noa con contexto de primera compra
+                    es_primera = primera_compra_cache.get(uid, True)
+                    respuesta = await noa(uid, msg, "WhatsApp", es_primera)
 
                     # Extraer tags
                     busqueda_tag = None
@@ -747,11 +844,21 @@ async def recibir(request: Request):
                         respuesta = respuesta.replace(match_agr.group(0), "").strip()
 
                     ir_al_pago = "[IR_AL_PAGO]" in respuesta
-                    respuesta = respuesta.replace("[IR_AL_PAGO]", "").strip()
+                    mostrar_cats = "[MOSTRAR_CATEGORIAS]" in respuesta
+                    respuesta = respuesta.replace("[IR_AL_PAGO]", "").replace("[MOSTRAR_CATEGORIAS]", "").strip()
 
                     # Enviar respuesta
                     if respuesta:
                         await wa_send(phone, respuesta)
+
+                    # Mostrar categorías disponibles
+                    if mostrar_cats:
+                        cats = categorias_disponibles()
+                        await wa_botones(phone, f"Tenemos estas categorías disponibles:\n\n{cats}\n\n¿Cuál te interesa?", [
+                            {"id": "cat_vestidos", "title": "👗 Vestidos"},
+                            {"id": "cat_jeans", "title": "👖 Jeans"},
+                            {"id": "cat_blusas", "title": "👚 Blusas"},
+                        ])
 
                     # Mostrar productos con imagen + botones
                     if busqueda_tag:

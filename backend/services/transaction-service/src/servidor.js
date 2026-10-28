@@ -1393,6 +1393,26 @@ function emitirSSE(usuarioId, evento, datos) {
   console.log(`📡 SSE emitido a usuario ${usuarioId}`);
 }
 
+// ── Verificar primera compra por teléfono (llamado por el bot) ──
+aplicacion.get('/api/pagos/primera-compra/:telefono', async (req, res) => {
+  try {
+    const { telefono } = req.params;
+    const tel = telefono.replace(/[^0-9]/g, '');
+    // Buscar pedidos confirmados con ese teléfono
+    const r = await pool.query(
+      `SELECT COUNT(*) as total FROM pedido
+       WHERE REGEXP_REPLACE(cliente_telefono, '[^0-9]', '', 'g') = $1
+       AND estado = 'Confirmado'`,
+      [tel]
+    );
+    const total = parseInt(r.rows[0]?.total || '0');
+    res.json({ primera_compra: total === 0 });
+  } catch (e) {
+    console.error('Error verificando primera compra:', e.message);
+    res.json({ primera_compra: true });
+  }
+});
+
 // ── Guardar pago_token en pedido (llamado por el bot) ──
 aplicacion.post('/api/pagos/guardar-token', autenticacion, async (req, res) => {
   try {
