@@ -471,6 +471,69 @@ async def ig_productos(to: str, productos: list):
                 await asyncio.sleep(0.8)
 
 
+# ── Instagram botones ────────────────────────────────────────────────────────
+async def ig_botones(to: str, texto: str, botones: list):
+    token = IG_TOKEN or PAGE_TOKEN
+    if not token:
+        await ig_send(to, texto)
+        return
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.post("https://graph.instagram.com/v25.0/me/messages",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"recipient": {"id": to}, "message": {
+                    "text": texto,
+                    "quick_replies": [{"content_type": "text", "title": b["title"][:20], "payload": b["id"]} for b in botones[:3]]
+                }})
+            print(f"🔘 IG botones {r.status_code}")
+    except Exception as e:
+        print(f"❌ IG botones error: {e}")
+        await ig_send(to, texto)
+
+
+async def ig_imagen_botones_full(to: str, imagen_url: str, caption: str, botones: list):
+    ok = await ig_imagen(to, imagen_url)
+    if ok:
+        await asyncio.sleep(0.5)
+        await ig_send_one(to, caption)
+    await asyncio.sleep(0.5)
+    if botones:
+        await ig_botones(to, "¿Qué deseas hacer?", botones)
+
+
+async def ig_productos_botones(to: str, productos: list, uid: str, pagina: int = 0):
+    productos_mostrados[uid] = productos
+    pagina_cache[uid] = pagina
+    inicio = pagina * 3
+    fin = inicio + 3
+    pagina_actual = productos[inicio:fin]
+    hay_mas = len(productos) > fin
+    for i, p in enumerate(pagina_actual):
+        imagen = p.get("imagen", "")
+        nombre = p.get("nombre", "Producto EGOS")
+        precio = p.get("precio", 0)
+        pid = p.get("id", "")
+        tallas = ", ".join(p.get("tallas", []))
+        colores = ", ".join(p.get("colores", []))
+        if not imagen:
+            continue
+        num = inicio + i + 1
+        caption = f"{num}️⃣ {nombre}\n💰 ${precio:,.0f} COP\n📏 T:{tallas} | 🎨 {colores}"
+        botones = [{"id": f"agregar_{pid}", "title": "🛒 Agregar"}, {"id": f"detalle_{pid}", "title": "🔗 Ver detalle"}]
+        await ig_imagen_botones_full(to, imagen, caption, botones)
+        await asyncio.sleep(1.0)
+    if hay_mas:
+        await ig_botones(to, f"Mostrando {fin} de {len(productos)} 👆", [{"id": f"ver_mas_{pagina+1}", "title": "Ver más 👉"}])
+
+
+async def ig_mostrar_carrito(to: str, uid: str):
+    texto = resumen_carrito(uid)
+    await ig_botones(to, texto, [
+        {"id": "seguir_viendo", "title": "🛍️ Seguir viendo"},
+        {"id": "ir_al_pago", "title": "💳 Ir al pago"},
+    ])
+
+
 # ── WhatsApp ──────────────────────────────────────────────────
 async def wa_send(to: str, texto: str):
     partes = [p.strip() for p in texto.split("||") if p.strip()]
@@ -812,6 +875,149 @@ async def manejar_flujo_datos(to: str, uid: str, mensaje: str):
     return True
 
 
+
+async def manejar_boton_ig(to: str, uid: str, button_id: str, button_text: str):
+    """Maneja botones/postbacks de Instagram"""
+    if button_id.startswith("ver_mas_"):
+        pagina = int(button_id.replace("ver_mas_", ""))
+        prods = productos_mostrados.get(uid, [])
+        if prods:
+            await ig_productos_botones(to, prods, uid, pagina)
+        return True
+
+    if button_id.startswith("agregar_"):
+        pid = button_id.replace("agregar_", "")
+        prod = next((p for p in catalogo_cache if str(p.get("id")) == pid), None)
+        if prod:
+            tallas = prod.get("tallas", [])
+            colores = prod.get("colores", [])
+            flujos[uid] = {**flujos.get(uid, {}), "paso": "talla", "prod_pendiente": pid}
+            if tallas:
+                btns = [{"id": f"talla_{pid}_{t}", "title": t[:20]} for t in tallas[:3]]
+                await ig_botones(to, f"Talla para {prod.get('nombre')}?", btns)
+            elif colores:
+                flujos[uid]["paso"] = "color"
+                btns = [{"id": f"color_{pid}___{c}", "title": c[:20]} for c in colores[:3]]
+                await ig_botones(to, "Color?", btns)
+            else:
+                await _agregar_al_carrito_ig(to, uid, pid, "", "")
+        return True
+
+    if button_id.startswith("talla_"):
+        partes = button_id.split("_", 2)
+        pid = partes[1] if len(partes) > 1 else ""
+        talla = partes[2] if len(partes) > 2 else ""
+        prod = next((p for p in catalogo_cache if str(p.get("id")) == pid), None)
+        colores = prod.get("colores", []) if prod else []
+        flujos[uid] = {**flujos.get(uid, {}), "paso": "color", "prod_pendiente": pid, "talla_pendiente": talla}
+        if colores:
+            btns = [{"id": f"color_{pid}_{talla}_{c}", "title": c[:20]} for c in colores[:3]]
+            await ig_botones(to, f"Talla {talla} ok! Color?", btns)
+        else:
+            await _agregar_al_carrito_ig(to, uid, pid, talla, "")
+        return True
+
+    if button_id.startswith("color_"):
+        partes = button_id.split("_", 3)
+        pid = partes[1] if len(partes) > 1 else ""
+        talla = partes[2] if len(partes) > 2 else ""
+        color = partes[3] if len(partes) > 3 else ""
+        await _agregar_al_carrito_ig(to, uid, pid, talla, color)
+        return True
+
+    if button_id.startswith("detalle_"):
+        pid = button_id.replace("detalle_", "")
+        await ig_send(to, f"Ver detalle: {FRONTEND_URL}/producto/{pid}")
+        return True
+
+    if button_id == "seguir_viendo":
+        await ig_send(to, "Claro! Que mas buscas?")
+        return True
+
+    if button_id == "ir_al_pago":
+        if not carritos.get(uid):
+            await ig_send(to, "Tu carrito esta vacio. Dime que producto te gusta!")
+            return True
+        flujos[uid] = {"paso": "datos", "productos": carritos.get(uid, [])}
+        await ig_send(to, "Perfecto! Solo necesito tus datos de envio:
+Nombre, telefono, direccion y ciudad")
+        return True
+
+    if button_id == "confirmar_pedido":
+        flujo = flujos.get(uid, {})
+        await ig_send(to, "Generando tu link de pago...")
+        resultado = await crear_pedido_y_link(flujo)
+        if resultado.get("exito"):
+            pedido_id = resultado.get("pedido_id", "")
+            link = resultado.get("link_pago", "")
+            total = resultado.get("total", 0)
+            await ig_send(to, f"Tu pedido esta listo!
+
+Paga aqui: {link}
+Pedido #{pedido_id[:12]}
+Total: ${total:,.0f} COP
+Valido 30 minutos")
+            carritos[uid] = []
+            if uid in flujos:
+                del flujos[uid]
+        else:
+            await ig_send(to, "Hubo un problema. Contactanos: servicioalcliente@egoscolombia.com.co")
+        return True
+
+    if button_id == "corregir_datos":
+        flujos[uid] = {"paso": "datos", "productos": carritos.get(uid, [])}
+        await ig_send(to, "Sin problema! Enviame los datos correctos: Nombre, Telefono, Direccion, Ciudad")
+        return True
+
+    return False
+
+
+async def _agregar_al_carrito_ig(to: str, uid: str, pid: str, talla: str, color: str):
+    prod = next((p for p in catalogo_cache if str(p.get("id")) == pid), None)
+    if not prod:
+        await ig_send(to, "Producto no encontrado")
+        return
+    if uid not in carritos:
+        carritos[uid] = []
+    carritos[uid].append({"id": pid, "nombre": prod.get("nombre"), "precio": prod.get("precio", 0), "cantidad": 1, "talla": talla, "color": color})
+    await ig_send(to, f"{prod.get('nombre')} agregado al carrito!")
+    await asyncio.sleep(0.5)
+    await ig_mostrar_carrito(to, uid)
+
+
+async def manejar_flujo_datos_ig(to: str, uid: str, mensaje: str):
+    flujo = flujos.get(uid, {})
+    if flujo.get("paso") != "datos":
+        return False
+    await ig_send(to, "Procesando tus datos...")
+    datos = await extraer_datos_envio(mensaje)
+    nombre = datos.get("nombre", "").strip()
+    telefono = datos.get("telefono", "").strip()
+    direccion = datos.get("direccion", "").strip()
+    ciudad = datos.get("ciudad", "").strip()
+    faltantes = [f for f, v in [("nombre", nombre), ("telefono", telefono), ("direccion", direccion), ("ciudad", ciudad)] if not v]
+    if faltantes:
+        await ig_send(to, f"No pude identificar: {', '.join(faltantes)}. Enviame esos datos de nuevo")
+        return True
+    flujos[uid] = {**flujo, "paso": "confirmar", "nombre": nombre, "telefono": telefono, "direccion": direccion, "ciudad": ciudad}
+    items = flujo.get("productos", [])
+    total = sum(p.get("precio", 0) * p.get("cantidad", 1) for p in items)
+    es_primera = primera_compra_cache.get(uid, True)
+    descuento = round(total * 0.15) if es_primera else 0
+    total_final = total - descuento
+    descuento_txt = f"
+Descuento primera compra 15%: -${descuento:,.0f}" if es_primera and descuento > 0 else ""
+    lineas = "
+".join([f"- {p.get('nombre')} ${p.get('precio',0):,.0f}" for p in items])
+    resumen = f"Resumen:
+{lineas}{descuento_txt}
+Total: ${total_final:,.0f} COP
+{direccion}, {ciudad}
+{nombre} | {telefono}"
+    await ig_botones(to, resumen, [{"id": "confirmar_pedido", "title": "Confirmar"}, {"id": "corregir_datos", "title": "Corregir"}])
+    return True
+
+
 # ── Webhook GET ───────────────────────────────────────────────
 @app.get("/webhook/meta")
 async def verificar(request: Request):
@@ -1001,10 +1207,9 @@ async def recibir(request: Request):
             for ev in entry.get("messaging", []):
                 sid = ev.get("sender", {}).get("id")
                 msg_obj = ev.get("message", {})
-                msg = msg_obj.get("text", "")
                 mid = msg_obj.get("mid", "")
 
-                if not sid or not msg:
+                if not sid:
                     continue
                 if sid == IG_BOT_ID:
                     continue
@@ -1018,26 +1223,82 @@ async def recibir(request: Request):
                         mensajes_procesados.clear()
 
                 uid = f"ig_{sid}"
+
+                # Manejar postback (botones)
+                postback = ev.get("postback", {})
+                if postback:
+                    button_id = postback.get("payload", "")
+                    button_text = postback.get("title", "")
+                    print(f"🔘 IG postback [{sid}]: {button_id}")
+                    await manejar_boton_ig(sid, uid, button_id, button_text)
+                    continue
+
+                msg = msg_obj.get("text", "")
+                if not msg:
+                    continue
+
                 print(f"📸 IG [{sid}]: {msg}")
 
-                respuesta = await noa(uid, msg, "Instagram")
+                # Verificar primera compra al primer mensaje
+                if uid not in primera_compra_cache:
+                    await verificar_primera_compra(sid, uid)
 
+                # Flujo de datos de envío
+                if uid in flujos and flujos[uid].get("paso") == "datos":
+                    flujos[uid]["canal"] = "instagram"
+                    await manejar_flujo_datos_ig(sid, uid, msg)
+                    continue
+
+                # Respuesta de Noa con contexto de primera compra
+                es_primera = primera_compra_cache.get(uid, True)
+                respuesta = await noa(uid, msg, "Instagram", es_primera)
+
+                # Extraer tags
                 busqueda_tag = None
+                agregar_tag = None
+
                 match_prod = re.search(r'\[PRODUCTOS:([^\]]+)\]', respuesta)
                 if match_prod:
                     busqueda_tag = match_prod.group(1).strip()
                     respuesta = respuesta.replace(match_prod.group(0), "").strip()
 
-                respuesta = re.sub(r'\[[^\]]+\]', '', respuesta).strip()
+                match_agr = re.search(r'\[AGREGAR:([^\]]+)\]', respuesta)
+                if match_agr:
+                    agregar_tag = match_agr.group(1).strip()
+                    respuesta = respuesta.replace(match_agr.group(0), "").strip()
+
+                ir_al_pago = "[IR_AL_PAGO]" in respuesta
+                respuesta = respuesta.replace("[IR_AL_PAGO]", "").strip()
 
                 if respuesta:
                     await ig_send(sid, respuesta)
 
                 if busqueda_tag:
+                    print(f"🔍 IG Buscando: {busqueda_tag}")
                     prods = await get_productos(busqueda_tag)
+                    print(f"📦 IG Productos: {len(prods)}")
                     if prods:
-                        productos_mostrados[uid] = prods[:3]
-                        await ig_productos(sid, prods)
+                        await ig_productos_botones(sid, prods, uid)
+
+                if agregar_tag:
+                    partes = agregar_tag.split(":")
+                    pid = partes[0] if partes else ""
+                    talla = partes[1] if len(partes) > 1 else ""
+                    color = partes[2] if len(partes) > 2 else ""
+                    prod = next((p for p in catalogo_cache if str(p.get("id")) == pid), None)
+                    if prod:
+                        if uid not in carritos:
+                            carritos[uid] = []
+                        carritos[uid].append({
+                            "id": pid, "nombre": prod.get("nombre"),
+                            "precio": prod.get("precio", 0),
+                            "cantidad": 1, "talla": talla, "color": color
+                        })
+                        await asyncio.sleep(0.5)
+                        await ig_mostrar_carrito(sid, uid)
+
+                if ir_al_pago:
+                    await manejar_boton_ig(sid, uid, "ir_al_pago", "")
 
     # ── MESSENGER ──
     elif obj == "page":
