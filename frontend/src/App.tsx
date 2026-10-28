@@ -79,7 +79,7 @@ function App() {
     window.history.replaceState({}, '', '/')
 
     const API_URL = import.meta.env.VITE_API_URL || 'https://api.egoscolombia.com.co'
-    fetch(`${API_URL}/api/pagos/token/${pagoToken}`)
+    fetch(`${API_URL}/api/pagos/token/${pagoToken}?fp=${encodeURIComponent((window as any).__deviceFingerprint || '')}`)
       .then(r => r.json())
       .then(data => {
         if (data.token) {

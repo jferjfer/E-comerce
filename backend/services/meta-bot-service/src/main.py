@@ -93,7 +93,7 @@ NUNCA menciones el código EGOS15 — el descuento se aplica automáticamente si
 
 # ── Catálogo ──────────────────────────────────────────────────
 async def verificar_primera_compra(telefono: str, uid: str) -> bool:
-    """Verifica si el cliente tiene pedidos confirmados anteriores"""
+    """Verifica primera compra via score engine del backend (4 niveles anti-abuso)"""
     if uid in primera_compra_cache:
         return primera_compra_cache[uid]
     try:
@@ -103,6 +103,7 @@ async def verificar_primera_compra(telefono: str, uid: str) -> bool:
             if r.status_code == 200:
                 es_primera = r.json().get('primera_compra', True)
                 primera_compra_cache[uid] = es_primera
+                print(f"🔍 Primera compra [{tel}]: {es_primera}")
                 return es_primera
     except Exception as e:
         print(f"⚠️ Error verificando primera compra: {e}")

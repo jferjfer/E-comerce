@@ -1424,6 +1424,51 @@ aplicacion.post('/api/pagos/guardar-token', autenticacion, async (req, res) => {
   }
 });
 
+
+// Score engine: detecta si es primera compra real (anti-abuso Meta)
+async function calcularScorePrimeraCompra(telefono, fingerprint, ip) {
+  let score = 0;
+  const tel = (telefono || '').replace(/[^0-9]/g, '');
+  try {
+    if (fingerprint) {
+      const r1 = await pool.query(
+        'SELECT COUNT(*) as total FROM device_fingerprints WHERE hash = $1',
+        [fingerprint]
+      );
+      if (parseInt(r1.rows[0]?.total || '0') > 0) score += 40;
+    }
+    if (ip) {
+      const r2 = await pool.query(
+        'SELECT COUNT(*) as total FROM device_fingerprints WHERE ip = $1',
+        [ip]
+      );
+      if (parseInt(r2.rows[0]?.total || '0') > 0) score += 10;
+    }
+    if (tel) {
+      const r3a = await pool.query(
+        `SELECT COUNT(*) as total FROM pedido
+         WHERE REGEXP_REPLACE(COALESCE(cliente_telefono,''), '[^0-9]', '', 'g') = $1
+         AND estado = 'Confirmado'`,
+        [tel]
+      );
+      if (parseInt(r3a.rows[0]?.total || '0') > 0) score += 30;
+    }
+    if (tel) {
+      const r3b = await pool.query(
+        `SELECT COUNT(*) as total FROM usuarios
+         WHERE REGEXP_REPLACE(COALESCE(telefono,''), '[^0-9]', '', 'g') = $1
+         AND total_compras > 0`,
+        [tel]
+      );
+      if (parseInt(r3b.rows[0]?.total || '0') > 0) score += 20;
+    }
+  } catch (e) {
+    console.error('Error en score engine:', e.message);
+  }
+  console.log('Score primera compra tel:' + tel + ' fp:' + (fingerprint||'').slice(0,8) + ' ip:' + ip + ' score:' + score);
+  return score;
+}
+
 // ── Endpoint público: validar pago_token de WhatsApp/Instagram/Messenger ──
 aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
   try {
@@ -1469,8 +1514,22 @@ aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
       }
     }));
 
-    // El link expira naturalmente cuando el pedido pasa de 'Creado'
-    res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total, productos: productosEnriquecidos });
+    // Score engine anti-abuso: verificar si es primera compra real
+    const fingerprint = req.query.fp || req.headers['x-fp'] || '';
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
+    const telefono = pedido.cliente_telefono || '';
+    const score = await calcularScorePrimeraCompra(telefono, fingerprint, ip);
+    const esPrimeraCompra = score < 50;
+
+    // Guardar fingerprint para futuras validaciones
+    if (fingerprint) {
+      pool.query(
+        'INSERT INTO device_fingerprints (hash, pedido_id, telefono, ip) VALUES ($1, $2, $3, $4)',
+        [fingerprint, pedido.id, telefono, ip]
+      ).catch(() => {});
+    }
+
+    res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total, productos: productosEnriquecidos, es_primera_compra: esPrimeraCompra });
   } catch (e) {
     console.error('Error validando pago_token:', e.message);
     res.status(500).json({ error: 'Error validando token' });
@@ -2607,3 +2666,30 @@ aplicacion.listen(puerto, () => {
 });
 
 module.exports = aplicacion;
+// Score engine: detecta si es primera compra real (anti-abuso)
+async function calcularScorePrimeraCompra(telefono, fingerprint, ip) {
+  let score = 0;
+  const tel = (telefono || "").replace(/[^0-9]/g, "");
+  try {
+    if (fingerprint) {
+      const r1 = await pool.query("SELECT COUNT(*) as total FROM device_fingerprints WHERE hash = $1", [fingerprint]);
+      if (parseInt(r1.rows[0]?.total || "0") > 0) score += 40;
+    }
+    if (ip) {
+      const r2 = await pool.query("SELECT COUNT(*) as total FROM device_fingerprints WHERE ip = $1", [ip]);
+      if (parseInt(r2.rows[0]?.total || "0") > 0) score += 10;
+    }
+    if (tel) {
+      const r3a = await pool.query("SELECT COUNT(*) as total FROM pedido WHERE REGEXP_REPLACE(COALESCE(cliente_telefono,\"\"), \"[^0-9]\", \"\", \"g\") = $1 AND estado = \"Confirmado\"", [tel]);
+      if (parseInt(r3a.rows[0]?.total || "0") > 0) score += 30;
+    }
+    if (tel) {
+      const r3b = await pool.query("SELECT COUNT(*) as total FROM usuarios WHERE REGEXP_REPLACE(COALESCE(telefono,\"\"), \"[^0-9]\", \"\", \"g\") = $1 AND total_compras > 0", [tel]);
+      if (parseInt(r3b.rows[0]?.total || "0") > 0) score += 20;
+    }
+  } catch (e) {
+    console.error("Error en score engine:", e.message);
+  }
+  console.log("Score primera compra tel:" + tel + " fp:" + (fingerprint||"").slice(0,8) + " ip:" + ip + " score:" + score);
+  return score;
+}

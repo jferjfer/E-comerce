@@ -59,6 +59,51 @@
             '<div style="height:1px;background:#c5a47e;opacity:0.5;width:80px;margin:12px auto"></div>' +
             '<div style="font-family:Georgia,serif;font-size:9px;color:#c5a47e;letter-spacing:4px;text-transform:uppercase;font-style:italic">Wear Your Truth</div>' +
             '</div>';
+          // Fingerprint invisible: Canvas + WebGL + Audio
+          (function() {
+            try {
+              var parts = [];
+              // Canvas
+              var cv = document.createElement('canvas');
+              cv.width = 200; cv.height = 50;
+              var cx = cv.getContext('2d');
+              cx.textBaseline = 'top'; cx.font = '14px Arial';
+              cx.fillStyle = '#f60'; cx.fillRect(125,1,62,20);
+              cx.fillStyle = '#069'; cx.fillText('EGOS',2,15);
+              parts.push(cv.toDataURL().slice(-40));
+              // WebGL
+              var gl = document.createElement('canvas').getContext('webgl');
+              if (gl) {
+                var ext = gl.getExtension('WEBGL_debug_renderer_info');
+                if (ext) { parts.push(gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)); parts.push(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)); }
+                parts.push(gl.getParameter(gl.VERSION));
+              }
+              // Audio
+              try {
+                var ac = new (window.AudioContext||window.webkitAudioContext)();
+                var osc = ac.createOscillator(); var an = ac.createAnalyser(); var gn = ac.createGain();
+                gn.gain.value = 0; osc.connect(an); an.connect(gn); gn.connect(ac.destination);
+                osc.start(0);
+                var d = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(d);
+                parts.push(d.slice(0,8).join(',')); osc.stop(); ac.close();
+              } catch(e) {}
+              // Extra
+              parts.push(screen.width+'x'+screen.height);
+              parts.push(navigator.language);
+              parts.push(new Date().getTimezoneOffset());
+              parts.push(navigator.hardwareConcurrency||0);
+              // Hash
+              var s = parts.join('|'), h = 0;
+              for (var i = 0; i < s.length; i++) { h = ((h<<5)-h)+s.charCodeAt(i); h|=0; }
+              window.__deviceFingerprint = [
+                Math.abs(h).toString(16).padStart(8,'0'),
+                Math.abs(h*2654435761).toString(16).padStart(8,'0'),
+                Math.abs(h*1234567891).toString(16).padStart(8,'0'),
+                Math.abs(h*987654321).toString(16).padStart(8,'0')
+              ].join('');
+            } catch(e) { window.__deviceFingerprint = 'err_'+Date.now().toString(16); }
+          })();
+
           window.__removePagoLoading = function() {
             var e = document.getElementById('pago-loading');
             if (e) e.remove();
