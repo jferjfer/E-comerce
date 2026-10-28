@@ -1241,6 +1241,18 @@ async def recibir(request: Request):
                 if uid not in primera_compra_cache:
                     await verificar_primera_compra(sid, uid)
 
+                # Si el flujo está en paso=color, recordar al cliente
+                if uid in flujos and flujos[uid].get("paso") == "color":
+                    pid = flujos[uid].get("prod_pendiente", "")
+                    talla = flujos[uid].get("talla_pendiente", "")
+                    prod = next((p for p in catalogo_cache if str(p.get("id")) == pid), None)
+                    if prod:
+                        colores = prod.get("colores", [])
+                        if colores:
+                            btns = [{"id": f"color_{pid}_{talla}_{c}", "title": c[:20]} for c in colores[:3]]
+                            await ig_botones(sid, f"Por favor selecciona el color de {prod.get('nombre')}:", btns)
+                            continue
+
                 # Flujo de datos de envío
                 if uid in flujos and flujos[uid].get("paso") in ["datos", "confirmar"]:
                     if flujos[uid].get("paso") == "datos":
