@@ -157,7 +157,7 @@ def catalogo_para_noa() -> str:
     for cat, prods in sorted(por_cat.items()):
         ctx += f"\n[{cat.upper()}]\n"
         for p in prods[:5]:  # max 5 por categoría
-            ctx += f"  ID={p.get('id')}, {p.get('nombre')}, Marca:{p.get('marca','')}, ${p.get('precio',0):,.0f}\n"
+            ctx += f"  ID={p.get('id')}, {p.get('nombre')}, Marca:{p.get('marca','')}, ${p.get('precio',0):,.0f}, Desc:{str(p.get('descripcion',''))[:80]}\n"
     return ctx
 
 
