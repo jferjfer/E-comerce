@@ -317,7 +317,7 @@ export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutM
             <div className="flex justify-between items-center px-1">
               <span className="text-sm text-gray-500">
                 <i className="fas fa-shopping-bag mr-1.5"></i>
-                {items.length} producto(s)
+                {pedidoMeta ? (pedidoMeta.productos?.length || 1) : items.length} producto(s)
               </span>
               <div className="text-right">
                 {bonoValidado?.valido && (
@@ -375,7 +375,7 @@ export default function CheckoutModal({ isOpen, onClose, pedidoMeta }: CheckoutM
               <div className="mt-4 space-y-3">
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
                   <i className="fas fa-check-circle text-blue-500 mr-1"></i>
-                  Pedido <strong>#{pedidoParaEpayco}</strong> creado. Completa el pago:
+                  {pedidoMeta ? 'Completa tu pago de forma segura:' : <>Pedido <strong>#{pedidoParaEpayco}</strong> creado. Completa el pago:</>}
                 </div>
                 <EpaycoWidget
                   pedidoId={pedidoParaEpayco}
