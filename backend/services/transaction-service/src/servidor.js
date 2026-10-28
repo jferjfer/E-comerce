@@ -1427,12 +1427,15 @@ aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
 
     const pedido = r.rows[0];
 
-    // JWT temporal de 2 horas solo para este pedido
+    // JWT temporal de 30 minutos — un solo uso
     const tokenTemporal = jwt.sign(
       { id: pedido.usuario_id, rol: 'cliente', pago_pedido: pedido.id },
       JWT_SECRET,
-      { expiresIn: '2h' }
+      { expiresIn: '30m' }
     );
+
+    // Invalidar el pago_token — un solo uso
+    await pool.query('UPDATE pedido SET pago_token = NULL WHERE id = $1', [pedido.id]);
 
     // Enriquecer productos con imagen del catálogo
     const productos = pedido.productos || [];
