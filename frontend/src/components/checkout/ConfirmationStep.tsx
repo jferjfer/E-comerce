@@ -68,7 +68,14 @@ export default function ConfirmationStep({
         <div className="divide-y divide-gray-100">
           {items.map((item) => (
             <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-              <img src={item.imagen} alt={item.nombre} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+              {item.imagen && (
+                <img src={item.imagen} alt={item.nombre} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+              )}
+              {!item.imagen && (
+                <div className="w-10 h-10 rounded-lg flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                  <i className="fas fa-tshirt text-gray-400 text-sm"></i>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate">{item.nombre}</p>
                 <p className="text-xs text-gray-500">Cant: {item.cantidad}</p>

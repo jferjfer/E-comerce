@@ -1434,8 +1434,20 @@ aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
       { expiresIn: '2h' }
     );
 
+    // Enriquecer productos con imagen del catálogo
+    const productos = pedido.productos || [];
+    const productosEnriquecidos = await Promise.all(productos.map(async (p) => {
+      try {
+        const r = await axios.get(`http://catalog-service:3002/api/productos/${p.id}`, { timeout: 3000 });
+        const prod = r.data?.producto || r.data;
+        return { ...p, imagen: prod?.imagen || '' };
+      } catch {
+        return { ...p, imagen: '' };
+      }
+    }));
+
     // El link expira naturalmente cuando el pedido pasa de 'Creado'
-    res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total, productos: pedido.productos });
+    res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total, productos: productosEnriquecidos });
   } catch (e) {
     console.error('Error validando pago_token:', e.message);
     res.status(500).json({ error: 'Error validando token' });
