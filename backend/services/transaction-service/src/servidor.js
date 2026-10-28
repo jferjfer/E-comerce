@@ -1409,8 +1409,17 @@ aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
   try {
     const { pagoToken } = req.params;
     const r = await pool.query(
-      `SELECT p.id, p.usuario_id, p.estado, p.total FROM pedido p
-       WHERE p.pago_token = $1 AND p.estado = 'Creado' LIMIT 1`,
+      `SELECT p.id, p.usuario_id, p.estado, p.total,
+              COALESCE(json_agg(json_build_object(
+                'id', pp.id_producto,
+                'nombre', pp.nombre_producto,
+                'precio', pp.precio_unitario,
+                'cantidad', pp.cantidad
+              )) FILTER (WHERE pp.id IS NOT NULL), '[]') as productos
+       FROM pedido p
+       LEFT JOIN pedido_producto pp ON p.id = pp.id_pedido
+       WHERE p.pago_token = $1 AND p.estado = 'Creado'
+       GROUP BY p.id LIMIT 1`,
       [pagoToken]
     );
     if (r.rows.length === 0)
@@ -1426,7 +1435,7 @@ aplicacion.get('/api/pagos/token/:pagoToken', async (req, res) => {
     );
 
     // El link expira naturalmente cuando el pedido pasa de 'Creado'
-    res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total });
+    res.json({ token: tokenTemporal, pedido_id: pedido.id, total: pedido.total, productos: pedido.productos });
   } catch (e) {
     console.error('Error validando pago_token:', e.message);
     res.status(500).json({ error: 'Error validando token' });
