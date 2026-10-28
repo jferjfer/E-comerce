@@ -69,10 +69,10 @@ export default function ConfirmationStep({
           {items.map((item) => (
             <div key={item.id} className="flex items-center gap-3 px-4 py-3">
               {item.imagen && (
-                <img src={item.imagen} alt={item.nombre} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+                <img src={item.imagen} alt={item.nombre} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
               )}
               {!item.imagen && (
-                <div className="w-10 h-10 rounded-lg flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-lg flex-shrink-0 bg-gray-100 flex items-center justify-center">
                   <i className="fas fa-tshirt text-gray-400 text-sm"></i>
                 </div>
               )}
