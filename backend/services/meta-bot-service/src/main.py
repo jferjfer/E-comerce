@@ -846,6 +846,9 @@ async def recibir(request: Request):
                         if len(mensajes_procesados) > 1000:
                             mensajes_procesados.clear()
 
+                    # Debug: log tipo de mensaje
+                    print(f"📨 WA msg_type=[{m.get('type','')}] from=[{phone}]")
+
                     uid = f"wa_{phone}"
 
                     # Mensaje de botón interactivo
