@@ -867,6 +867,16 @@ async def recibir(request: Request):
                             await manejar_boton_wa(phone, uid, button_id, button_text)
                             continue
 
+                    # Carrito nativo de WhatsApp (tipo "order")
+                    if msg_type == "order":
+                        order = m.get("order", {})
+                        items_order = order.get("product_items", [])
+                        if items_order:
+                            await wa_mostrar_carrito(phone, uid)
+                        else:
+                            await wa_send(phone, "Vi que abriste el carrito 🛒||¿Quieres ver lo que tienes o seguir viendo productos?")
+                        continue
+
                     # Mensaje de texto
                     if msg_type != "text":
                         continue
