@@ -20,7 +20,8 @@
         "buildType": "app-bundle"
       },
       "ios": {
-        "distribution": "store"
+        "distribution": "store",
+        "image": "macos-sequoia-15.6-xcode-26.2"
       },
       "node": "20.20.2",
       "env": {
