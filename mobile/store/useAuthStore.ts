@@ -4,9 +4,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '@/types';
 import { api } from '@/services/api';
 import { API_URL } from '@/constants';
-import { secureStorage, limpiarRateLimit, verificarRateLimit, actualizarActividad } from '@/utils/security';
+import { limpiarRateLimit, verificarRateLimit, actualizarActividad } from '@/utils/security';
 
-const SECURE_TOKEN_KEY = 'egos_auth_token';
+// Usar AsyncStorage en vez de expo-secure-store (SecItemCopyMatching crashea en iOS 26
+// cuando se llama desde un background queue — bug conocido de iOS 26 + ExpoModulesCore)
+const TOKEN_KEY = 'egos_auth_token_v2';
+
+const tokenStorage = {
+  get: async (key: string): Promise<string | null> => {
+    try { return await AsyncStorage.getItem(key); } catch { return null; }
+  },
+  set: async (key: string, value: string): Promise<void> => {
+    try { await AsyncStorage.setItem(key, value); } catch {}
+  },
+  delete: async (key: string): Promise<void> => {
+    try { await AsyncStorage.removeItem(key); } catch {}
+  },
+};
 
 // Decodificar JWT payload — compatible con Hermes RN 0.76 sin atob ni TextDecoder
 function decodeJwtPayload(token: string): any {
@@ -14,11 +28,9 @@ function decodeJwtPayload(token: string): any {
     const base64 = token.split('.')[1];
     if (!base64) return null;
 
-    // Base64url → base64 estándar
     const b64 = base64.replace(/-/g, '+').replace(/_/g, '/') +
       '=='.slice(0, (4 - base64.length % 4) % 4);
 
-    // Decodificar base64 manualmente sin atob ni TextDecoder
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     let result = '';
     let i = 0;
@@ -33,7 +45,6 @@ function decodeJwtPayload(token: string): any {
       if (d >= 0) result += String.fromCharCode(((c & 3) << 6) | d);
     }
 
-    // Decodificar UTF-8 manualmente
     let utf8 = '';
     let j = 0;
     while (j < result.length) {
@@ -76,15 +87,14 @@ export const useAuthStore = create<AuthStore>()(
       estaAutenticado: false,
       errorLogin: null,
 
-      // Cargar token desde SecureStore al iniciar
       cargarTokenSeguro: async () => {
         try {
-          const token = await secureStorage.get(SECURE_TOKEN_KEY);
+          const token = await tokenStorage.get(TOKEN_KEY);
           if (token) {
             try {
               const payload = decodeJwtPayload(token);
               if (payload?.exp && payload.exp * 1000 < Date.now()) {
-                await secureStorage.delete(SECURE_TOKEN_KEY);
+                await tokenStorage.delete(TOKEN_KEY);
                 return;
               }
             } catch {}
@@ -95,7 +105,6 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       iniciarSesion: async (email, password) => {
-        // Rate limiting cliente
         const rl = verificarRateLimit(email);
         if (!rl.permitido) {
           set({ errorLogin: `Demasiados intentos. Espera ${rl.esperarSegundos} segundos.` });
@@ -108,14 +117,12 @@ export const useAuthStore = create<AuthStore>()(
             const usuario = data.usuario || data.datos?.usuario;
             const token = data.token || data.datos?.token;
 
-            // Guardar token en SecureStore (cifrado) en vez de AsyncStorage
-            await secureStorage.set(SECURE_TOKEN_KEY, token);
+            await tokenStorage.set(TOKEN_KEY, token);
 
             set({ usuario, token, estaAutenticado: true, errorLogin: null });
             limpiarRateLimit(email);
             actualizarActividad();
 
-            // Sincronizar carrito y favoritos
             setTimeout(async () => {
               try {
                 const { useCartStore } = await import('@/store/useCartStore');
@@ -149,9 +156,8 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       cerrarSesion: () => {
-        secureStorage.delete(SECURE_TOKEN_KEY).catch(() => {});
+        tokenStorage.delete(TOKEN_KEY);
         set({ usuario: null, token: null, estaAutenticado: false });
-        // Limpiar stores secundarios de forma síncrona para evitar setState en componentes desmontados
         try {
           const cartMod = require('@/store/useCartStore');
           cartMod.useCartStore.getState().vaciarCarrito();
@@ -178,12 +184,8 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
-      // Solo persistir datos NO sensibles en AsyncStorage
-      // El token se guarda en SecureStore por separado
       partialize: (state) => ({
         usuario: state.usuario,
-        // estaAutenticado NO se persiste — siempre arranca en false hasta verificar token
-        // token NO se persiste en AsyncStorage
       }),
       storage: createJSONStorage(() => AsyncStorage),
     }

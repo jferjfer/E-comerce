@@ -13,7 +13,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.egoscolombia.app",
-      "buildNumber": "19",
+      "buildNumber": "33",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "EGOS necesita acceso a tu cámara para que puedas subir fotos de prendas y recibir recomendaciones de moda personalizadas de Noa, nuestra asesora de IA.",
@@ -21,9 +21,15 @@
         "NSPhotoLibraryAddUsageDescription": "EGOS necesita permiso para guardar imágenes de productos en tu galería.",
         "NSLocationWhenInUseUsageDescription": "EGOS puede usar tu ubicación para mostrarte tiendas cercanas y calcular costos de envío.",
         "NSUserTrackingUsageDescription": "EGOS usa datos de uso anónimos para mejorar tu experiencia de compra y mostrarte productos relevantes.",
-        "NSFaceIDUsageDescription": "EGOS usa Face ID para proteger tu cuenta y facilitar el inicio de sesión seguro."
+        "NSFaceIDUsageDescription": "EGOS usa Face ID para proteger tu cuenta y facilitar el inicio de sesión seguro.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "entitlements": {
+        "aps-environment": "production"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -62,7 +68,8 @@
         }
       ],
       "@react-native-firebase/app",
-      "@react-native-firebase/messaging"
+      "@react-native-firebase/messaging",
+      "./plugins/withFirebaseAppDelegate"
     ],
     "extra": {
       "eas": {
@@ -73,7 +80,6 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
-    },
-    "newArchEnabled": false
+    }
   }
 }

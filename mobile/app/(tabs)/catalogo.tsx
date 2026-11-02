@@ -208,8 +208,7 @@ export default function CatalogoScreen() {
               </TouchableOpacity>
             </View>
           }
-          ListFooterComponent={
-            totalPaginas > 1 ? (
+          ListFooterComponent={(totalPaginas > 1 ? (
               <View style={styles.paginacion}>
                 <TouchableOpacity
                   style={[styles.pgBtn, pagina === 1 && styles.pgBtnDis]}
@@ -247,8 +246,7 @@ export default function CatalogoScreen() {
                   <Text style={[styles.pgTxt, pagina === totalPaginas && { opacity: 0.3 }]}>›</Text>
                 </TouchableOpacity>
               </View>
-            ) : null
-          }
+            ) : undefined) as any}
         />
       )}
 

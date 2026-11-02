@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, Platform, StatusBar as RNStatusBar } from 'react-native';
 import * as Font from 'expo-font';
 import { COLORS } from '@/constants';
+import { enableScreens } from 'react-native-screens';
+
+// Deshabilitar screens nativas para evitar crash de RNSTabBarController en iOS 26
+enableScreens(false);
 
 const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 44;
 import Notifications from '@/components/Notifications';

@@ -77,7 +77,7 @@ export default function ChatIA() {
   const [fraseFantasma, setFraseFantasma] = useState<string | null>(null);
   const fantasmaOp = useRef(new Animated.Value(0)).current;
   const fantasmaY  = useRef(new Animated.Value(10)).current;
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<any>(null);
   const fabAnim = useRef(new Animated.Value(1)).current;
   const fabPos = useRef(new Animated.ValueXY({ x: W - 76, y: H - 180 })).current;
   const lastPos = useRef({ x: W - 76, y: H - 180 });
@@ -186,7 +186,7 @@ export default function ChatIA() {
   }, [escribiendo]);
 
   const scrollAbajo = useRef(() =>
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
+    setTimeout(() => (scrollRef.current as any)?.scrollToEnd?.({ animated: true }), 100)
   ).current;
 
   useEffect(() => { scrollAbajo(); }, [mensajes, escribiendo]);
@@ -212,7 +212,7 @@ export default function ChatIA() {
       });
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.5,
         base64: true,

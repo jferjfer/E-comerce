@@ -266,7 +266,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.negroHeader} />
+      <StatusBar barStyle="light-content" />
 
       {/* HEADER FIJO — no scrollea */}
       <View style={styles.header}>
