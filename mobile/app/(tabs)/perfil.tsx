@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { COLORS, SPACING, RADIUS, SHADOW, rf } from '@/constants';
+import { API_URL } from '@/constants';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUserStore } from '@/store/useUserStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
@@ -81,13 +82,54 @@ export default function PerfilScreen() {
         text: 'Cerrar Sesión',
         style: 'destructive',
         onPress: () => {
-          // Navegar primero para desmontar el componente limpiamente
           router.replace('/login');
-          // Cerrar sesión después de que la navegación complete
           setTimeout(() => cerrarSesion(), 100);
         },
       },
     ]);
+
+  const handleEliminarCuenta = () =>
+    Alert.alert(
+      'Eliminar cuenta',
+      '¿Estás seguro? Esta acción es irreversible. Tus datos personales serán eliminados permanentemente.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sí, eliminar',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert(
+              'Confirmar eliminación',
+              'Última confirmación: se eliminarán tus datos personales, favoritos y carrito. El historial de pedidos se conserva por obligación legal.',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Eliminar definitivamente',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const res = await fetch(`${API_URL}/api/auth/cuenta`, {
+                        method: 'DELETE',
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      if (res.ok) {
+                        Alert.alert('Cuenta eliminada', 'Tu cuenta ha sido eliminada exitosamente.');
+                        router.replace('/login');
+                        setTimeout(() => cerrarSesion(), 100);
+                      } else {
+                        const d = await res.json();
+                        Alert.alert('Error', d.error || 'No se pudo eliminar la cuenta');
+                      }
+                    } catch {
+                      Alert.alert('Error', 'Error de conexión. Intenta de nuevo.');
+                    }
+                  },
+                },
+              ]
+            ),
+        },
+      ]
+    );
 
   if (!estaAutenticado) {
     return (
@@ -244,6 +286,13 @@ export default function PerfilScreen() {
         <Text style={styles.btnLogoutTxt}>Cerrar Sesión</Text>
       </TouchableOpacity>
 
+      {/* Eliminar cuenta — solo clientes, requerido por Apple */}
+      {usuario?.rol === 'cliente' && (
+        <TouchableOpacity style={styles.btnEliminarCuenta} onPress={handleEliminarCuenta}>
+          <Text style={styles.btnEliminarCuentaTxt}>Eliminar cuenta</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={{ height: 40 }} />
     </ScrollView>
   );
@@ -296,6 +345,9 @@ const styles = StyleSheet.create({
   infoEmpresaTxt: { fontSize: rf(12), color: COLORS.textoGrisSub, marginBottom: 2 },
   infoEmpresaSub: { fontSize: rf(11), color: COLORS.textoGrisSub },
 
-  btnLogout: { marginHorizontal: SPACING.lg, padding: 16, borderRadius: RADIUS.md, borderWidth: 1, borderColor: '#fecaca', alignItems: 'center', backgroundColor: '#fef2f2', marginBottom: SPACING.lg },
+  btnLogout: { marginHorizontal: SPACING.lg, padding: 16, borderRadius: RADIUS.md, borderWidth: 1, borderColor: '#fecaca', alignItems: 'center', backgroundColor: '#fef2f2', marginBottom: SPACING.sm },
+  btnLogoutTxt: { color: '#ef4444', fontWeight: '600', fontSize: rf(14) },
+  btnEliminarCuenta: { marginHorizontal: SPACING.lg, padding: 14, borderRadius: RADIUS.md, alignItems: 'center', marginBottom: SPACING.lg },
+  btnEliminarCuentaTxt: { color: '#9ca3af', fontSize: rf(12), textDecorationLine: 'underline' },
   btnLogoutTxt: { color: '#ef4444', fontWeight: '600', fontSize: rf(15) },
 });

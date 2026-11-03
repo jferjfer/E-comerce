@@ -85,4 +85,59 @@ router.post('/solicitar-eliminacion', autenticar, async (req, res) => {
   }
 });
 
+// Eliminación inmediata de cuenta (requerido por Apple App Store)
+router.delete('/cuenta', autenticar, async (req, res) => {
+  try {
+    const pool = require('../config/baseDatos');
+    const usuarioId = req.usuario.id;
+
+    // Verificar que el usuario existe
+    const check = await pool.query('SELECT id, email, rol FROM usuarios WHERE id = $1', [usuarioId]);
+    if (!check.rows.length) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const { email, rol } = check.rows[0];
+
+    // No permitir eliminar cuentas admin/ceo
+    const rolesProtegidos = ['ceo', 'admin', 'contador', 'rrhh'];
+    if (rolesProtegidos.includes(rol)) {
+      return res.status(403).json({ error: 'No se puede eliminar esta cuenta desde la app' });
+    }
+
+    // Anonimizar datos personales (mantener pedidos por obligación legal DIAN)
+    await pool.query(`
+      UPDATE usuarios SET
+        nombre = 'Cuenta',
+        apellido = 'Eliminada',
+        email = $1,
+        password = 'CUENTA_ELIMINADA_' || id::text,
+        telefono = NULL,
+        direccion = NULL,
+        ciudad = NULL,
+        documento_tipo = NULL,
+        documento_numero = NULL,
+        push_token = NULL,
+        activo = false,
+        fecha_actualizacion = CURRENT_TIMESTAMP
+      WHERE id = $2
+    `, [`eliminado_${usuarioId}@egos.deleted`, usuarioId]);
+
+    // Eliminar favoritos y carrito
+    await pool.query('DELETE FROM lista_deseos WHERE usuario_id = $1', [usuarioId]).catch(() => {});
+    await pool.query('DELETE FROM carrito_producto WHERE id_carrito IN (SELECT id FROM carrito WHERE usuario_id = $1)', [usuarioId]).catch(() => {});
+    await pool.query('DELETE FROM carrito WHERE usuario_id = $1', [usuarioId]).catch(() => {});
+
+    // Registrar la eliminación
+    await pool.query(
+      `INSERT INTO solicitud_eliminacion (usuario_id, email, motivo) VALUES ($1, $2, $3)`,
+      [usuarioId, email, 'Eliminación inmediata desde la app']
+    ).catch(() => {});
+
+    console.log(`🗑️ Cuenta eliminada: usuario ${usuarioId} (${email})`);
+    res.json({ mensaje: 'Cuenta eliminada exitosamente' });
+  } catch (e) {
+    console.error('Error eliminando cuenta:', e.message);
+    res.status(500).json({ error: 'Error eliminando la cuenta' });
+  }
+});
+
 module.exports = router;
