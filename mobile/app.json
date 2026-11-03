@@ -13,7 +13,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.egoscolombia.app",
-      "buildNumber": "32",
+      "buildNumber": "34",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "EGOS necesita acceso a tu cámara para que puedas subir fotos de prendas y recibir recomendaciones de moda personalizadas de Noa, nuestra asesora de IA.",
@@ -37,7 +37,7 @@
         "backgroundColor": "#111827"
       },
       "package": "com.egoscolombia.app",
-      "versionCode": 4,
+      "versionCode": 5,
       "googleServicesFile": "./google-services.json",
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
